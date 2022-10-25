@@ -1,0 +1,23 @@
+{
+    "name": "ciallo",
+    "version": "0.0.1",
+    "dependencies": [
+      "spdlog",
+      "glfw3",
+      {
+        "name": "imgui",
+        "features": ["docking-experimental","glfw-binding","opengl3-binding"]
+      },
+      "glew",
+      "stb",
+      "implot",
+      "entt",
+      "glm",
+      "boost-variant",
+      "boost-variant2",
+      "boost-math",
+      "boost-algorithm",
+      "boost-foreach",
+      "boost-property-map"
+    ]
+  }

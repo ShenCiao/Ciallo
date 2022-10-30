@@ -31,7 +31,7 @@ Window::Window()
 	glGetIntegerv(GL_CONTEXT_FLAGS, &contextFlags);
 	if (contextFlags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
-		spdlog::info("GL: Debug context created");
+		spdlog::info("GL: Debug context created!");
 		glEnable(GL_DEBUG_OUTPUT);
 		glDebugMessageCallback(GlDebugCallback, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);

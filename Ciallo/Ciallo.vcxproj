@@ -87,6 +87,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="ArticulatedLineEngine.cpp" />
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
@@ -96,17 +97,20 @@
     </ClCompile>
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Polyline.cpp" />
+    <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="Stroke.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ArticulatedLineEngine.h" />
     <ClInclude Include="Brush.h" />
     <ClInclude Include="CanvasPanel.hpp" />
     <ClInclude Include="GeometryPrimitives.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Polyline.h" />
+    <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>

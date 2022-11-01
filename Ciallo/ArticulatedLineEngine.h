@@ -2,10 +2,10 @@
 
 class ArticulatedLineEngine
 {
-	GLuint mVertShader;
-	GLuint mGeomShader;
-	GLuint mFragShader;
-	GLuint mProgram;
+	GLuint VertShader;
+	GLuint GeomShader;
+	GLuint FragShader;
+	GLuint Program;
 public:
 	ArticulatedLineEngine() = default;
 	void Init();

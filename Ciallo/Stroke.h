@@ -2,9 +2,9 @@
 
 class Stroke
 {
-	Geom::Polyline mPosition{};
-	std::vector<float> mWidth{};
-	entt::entity mBrush = entt::null;
+	Geom::Polyline Position{};
+	std::vector<float> Width{};
+	entt::entity Brush = entt::null;
 public:
 	Stroke() = default;
 };

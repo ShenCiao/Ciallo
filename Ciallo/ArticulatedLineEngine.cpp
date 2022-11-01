@@ -6,21 +6,21 @@
 void ArticulatedLineEngine::Init()
 {
 	std::filesystem::path root = "./shaders";
-	mVertShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.vert", GL_VERTEX_SHADER);
-	mGeomShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.geom", GL_GEOMETRY_SHADER);
-	mFragShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.frag", GL_FRAGMENT_SHADER);
-	mProgram = glCreateProgram();
-	glAttachShader(mProgram, mVertShader);
-	glAttachShader(mProgram, mGeomShader);
-	glAttachShader(mProgram, mFragShader);
-	glLinkProgram(mProgram);
+	VertShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.vert", GL_VERTEX_SHADER);
+	GeomShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.geom", GL_GEOMETRY_SHADER);
+	FragShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.frag", GL_FRAGMENT_SHADER);
+	Program = glCreateProgram();
+	glAttachShader(Program, VertShader);
+	glAttachShader(Program, GeomShader);
+	glAttachShader(Program, FragShader);
+	glLinkProgram(Program);
 
-	glDeleteShader(mVertShader);
-	glDeleteShader(mGeomShader);
-	glDeleteShader(mFragShader);
+	glDeleteShader(VertShader);
+	glDeleteShader(GeomShader);
+	glDeleteShader(FragShader);
 }
 
 void ArticulatedLineEngine::Destroy()
 {
-	glDeleteProgram(mProgram);
+	glDeleteProgram(Program);
 }

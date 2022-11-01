@@ -36,9 +36,6 @@
     <ClCompile Include="Stroke.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Brush.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CanvasPanel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -46,6 +43,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShaderUtilities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Global.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Drawing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,7 +65,7 @@
     <ClInclude Include="Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GeometryPrimitives.hpp">
+    <ClInclude Include="GeometryPrimitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Polyline.h">
@@ -71,16 +77,22 @@
     <ClInclude Include="Stroke.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Brush.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CanvasPanel.hpp">
+    <ClInclude Include="CanvasPanel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ArticulatedLineEngine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderUtilities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Drawing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

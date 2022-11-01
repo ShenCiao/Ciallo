@@ -4,7 +4,7 @@
 
 class Window
 {
-	GLFWwindow* mGlfwWindow = nullptr;
+	GLFWwindow* GlfwWindow = nullptr;
 
 public:
 	Window();

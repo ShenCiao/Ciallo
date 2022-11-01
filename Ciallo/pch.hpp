@@ -27,4 +27,5 @@ struct std::formatter<entt::entity> {
     }
 };
 // -----------------------------------------------------------------------------
-#include "GeometryPrimitives.hpp"
+#include "GeometryPrimitives.h"
+#include "Global.h"

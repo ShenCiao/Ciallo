@@ -15,12 +15,12 @@ Window::Window()
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	mGlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo Lab Version", nullptr, nullptr);
-	if (!mGlfwWindow)
+	GlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo Lab Version", nullptr, nullptr);
+	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");
 	}
-	glfwMakeContextCurrent(mGlfwWindow);
+	glfwMakeContextCurrent(GlfwWindow);
 	glfwSwapInterval(0); // TODO: default vsync introduce extra input-to-visual lag. Control it manually.
 
 	if (GLenum err = glewInit())
@@ -43,7 +43,7 @@ Window::Window()
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
 	io.FontGlobalScale = 1.5f;
-	ImGui_ImplGlfw_InitForOpenGL(mGlfwWindow, true);
+	ImGui_ImplGlfw_InitForOpenGL(GlfwWindow, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 }
 
@@ -54,13 +54,13 @@ Window::~Window()
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
-	glfwDestroyWindow(mGlfwWindow);
+	glfwDestroyWindow(GlfwWindow);
 	glfwTerminate();
 }
 
 bool Window::ShouldClose() const
 {
-	return glfwWindowShouldClose(mGlfwWindow);
+	return glfwWindowShouldClose(GlfwWindow);
 }
 
 void Window::BeginFrame() const
@@ -80,7 +80,7 @@ void Window::EndFrame() const
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	glfwSwapBuffers(mGlfwWindow);
+	glfwSwapBuffers(GlfwWindow);
 }
 
 void Window::GlfwErrorCallback(int error, const char* description)

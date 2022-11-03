@@ -112,7 +112,6 @@ void CanvasPanel::LoadTestImage()
 	
 	glTextureStorage2D(image_texture, 1, GL_RGBA8, image_width, image_height);
 	glTextureSubImage2D(image_texture, 0, 0, 0, image_width, image_height, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-	glGenerateTextureMipmap(image_texture);
 
 	stbi_image_free(image_data);
 }

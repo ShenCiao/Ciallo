@@ -11,7 +11,7 @@ void CanvasPanel::Draw()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { .0f, .0f });
 	ImGui::Begin("Canvas Panel", nullptr, flags);
 	auto& io = ImGui::GetIO();
-	ImGui::Image(reinterpret_cast<ImTextureID>(image_texture), ImVec2( image_width, image_height ));
+	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->Texture), ImVec2(ActiveDrawing->GetSizeInPixel().first, ActiveDrawing->GetSizeInPixel().second));
 	ImGui::End();
 	ImGui::PopStyleVar();
 	// bool notCloseWindow = true;

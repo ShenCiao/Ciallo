@@ -52,7 +52,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS
-;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS</PreprocessorDefinitions>
+;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
@@ -71,7 +71,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS
-;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS</PreprocessorDefinitions>
+;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>

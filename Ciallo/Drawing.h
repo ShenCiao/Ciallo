@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-class Drawing
+class Drawing : EntityObject
 {
 public:
 	GLuint Texture = 0;
@@ -13,5 +13,6 @@ public:
 	std::pair<int, int> GetSizeInPixel() const;
 	glm::vec2 GetSize() const;
 	void GenRenderTarget();
+	void DeleteRenderTarget();
 	glm::mat4 GetViewProjMatrix() const;
 };

@@ -4,6 +4,7 @@
 
 class CanvasPanel
 {
+public:
 	Drawing* ActiveDrawing = nullptr;
 	float DrawingRotation = 0.0f;
 	float Zoom = 1.0f;
@@ -12,7 +13,7 @@ class CanvasPanel
 	GLuint image_texture = 0;
 	int image_width = 0;
 	int image_height = 0;
-public:
+
 	void Draw();
 	void LoadTestImage();
 };

@@ -10,42 +10,36 @@
 
 Application::Application()
 {
-
+	Window = std::make_unique<class Window>();
 }
 
 void Application::Run()
 {
-	Window w;
-
-	Drawing d;
-	d.Dpi = 72.0f;
-	d.LowerRight = { 1.0f, 1.0f };
-	d.GenRenderTarget();
-
-	CanvasPanel cp;
-	cp.LoadTestImage();
-
-	while(!w.ShouldClose())
+	GenDefaultProject();
+	
+	while (!Window->ShouldClose())
 	{
-		w.BeginFrame();
-		cp.Draw();
+		Window->BeginFrame();
+		ActiveProject->CanvasPanel.Draw();
 		ImPlot::ShowDemoWindow();
 		ImGui::ShowDemoWindow();
-		w.EndFrame();
+		Window->EndFrame();
 	}
 }
 
-Project Application::CreateDefaultProject()
+void Application::GenDefaultProject()
 {
-	Project p;
-	auto& r = p.Registry;
-	entt::entity drawingE = r.create();
-	auto& drawing = r.emplace<Drawing>(drawingE);
-	// A4 paper setup.
-	drawing.UpperLeft = { 0.f, 0.f };
-	drawing.LowerRight = { 0.297f, 0.21f };
-	drawing.Dpi = 72.f;
-	drawing.GenRenderTarget();
+	ActiveProject = std::make_unique<Project>();
+	EntityObject::Registry = &ActiveProject->Registry;
 
-	return p;
+	auto drawing = std::make_unique<Drawing>();
+	drawing->UpperLeft = {0.0f, 0.0f};
+	drawing->LowerRight = {0.297f, 0.21f};
+	drawing->Dpi = 144.0f;
+	drawing->GenRenderTarget();
+	ActiveProject->MainDrawing = std::move(drawing);
+
+	CanvasPanel canvas;
+	canvas.ActiveDrawing = ActiveProject->MainDrawing.get();
+	ActiveProject->CanvasPanel = std::move(canvas);
 }

@@ -1,6 +1,7 @@
 ﻿#include "pch.hpp"
 #include "Drawing.h"
 
+#include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 std::pair<int, int> Drawing::GetSizeInPixel() const
@@ -18,11 +19,14 @@ glm::vec2 Drawing::GetSize() const
 void Drawing::GenRenderTarget()
 {
 	glCreateTextures(GL_TEXTURE_2D, 1, &Texture);
-	glTextureParameteri(Texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(Texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTextureStorage2D(Texture, 1, GL_RGBA8, GetSizeInPixel().first, GetSizeInPixel().second);
+	glTextureParameteri(Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureParameteri(Texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
+
+	auto [width, height] = GetSizeInPixel();
+
+	glTextureStorage2D(Texture, 1, GL_RGBA8, width, height);
 
 	glCreateFramebuffers(1, &FrameBuffer);
 	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, Texture, 0);
@@ -30,10 +34,12 @@ void Drawing::GenRenderTarget()
 	{
 		throw std::runtime_error("Framebuffer incomplete");
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
-	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Drawing::DeleteRenderTarget()
+{
+	glDeleteTextures(1, &Texture);
+	glDeleteFramebuffers(1, &FrameBuffer);
 }
 
 glm::mat4 Drawing::GetViewProjMatrix() const

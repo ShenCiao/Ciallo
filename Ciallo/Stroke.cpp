@@ -24,9 +24,9 @@ void Stroke::GenBuffers()
 	glVertexArrayAttribBinding(VertexArray, 1, 1);
 	glVertexArrayAttribFormat(VertexArray, 1, 1, GL_FLOAT, GL_FALSE, 0);
 
-	GLintptr offsets[2] = {0, 0};
-	GLint strides[2] = { 0, 0 };
-	
+	GLintptr offsets[] = { 0, 0 };
+	int strides[] = { sizeof(Geom::Point), sizeof(float) };
+
 	glVertexArrayVertexBuffers(VertexArray, 0, VertexBuffers.size(), VertexBuffers.data(), offsets, strides);
 }
 

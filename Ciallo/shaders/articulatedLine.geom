@@ -3,8 +3,9 @@
 layout(lines) in;
 layout(triangle_strip, max_vertices = 4) out;
 
-layout(location = 0) in vec4[] inColor;
-layout(location = 1) in float[] inWidth;
+layout(location = 0) in float[] inWidth;
+layout(location = 1) in vec4[] inColor;
+
 
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out flat vec2 p0;

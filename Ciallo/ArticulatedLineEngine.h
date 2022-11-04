@@ -8,8 +8,7 @@ public:
 	GLuint FragShader;
 	GLuint Program;
 
-	ArticulatedLineEngine() = default;
-	void Init();
-	void Destroy();
+	ArticulatedLineEngine();
+	~ArticulatedLineEngine();
 };
 

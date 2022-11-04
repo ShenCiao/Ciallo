@@ -3,12 +3,12 @@
 
 #include "ShaderUtilities.h"
 
-void ArticulatedLineEngine::Init()
+ArticulatedLineEngine::ArticulatedLineEngine()
 {
 	std::filesystem::path root = "./shaders";
-	VertShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.vert", GL_VERTEX_SHADER);
-	GeomShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.geom", GL_GEOMETRY_SHADER);
-	FragShader = ShaderUtilities::CreateFromFile(root/"articulatedLine.frag", GL_FRAGMENT_SHADER);
+	VertShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.vert", GL_VERTEX_SHADER);
+	GeomShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.geom", GL_GEOMETRY_SHADER);
+	FragShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.frag", GL_FRAGMENT_SHADER);
 	Program = glCreateProgram();
 	glAttachShader(Program, VertShader);
 	glAttachShader(Program, GeomShader);
@@ -20,7 +20,7 @@ void ArticulatedLineEngine::Init()
 	glDeleteShader(FragShader);
 }
 
-void ArticulatedLineEngine::Destroy()
+ArticulatedLineEngine::~ArticulatedLineEngine()
 {
 	glDeleteProgram(Program);
 }

@@ -18,22 +18,22 @@ void Application::Run()
 {
 	GenDefaultProject();
 
-	ArticulatedLineEngine alEngine{};
-	alEngine.Init(); // warning: not destroy yet.
 	Stroke s;
-	s.Position = { {0.3f, 0.3f}, {0.5f, 0.9f}, {0.6f, 0.9} };
-	s.Width = { 0.3f, 0.3f, 0.3f };
+	s.Position = { {-0.5f, -0.5f}, {0.5f, -0.5f}, {0.0f, 0.5f} };
+	s.Width = { 0.03f, 0.03f, 0.03f };
 	s.UploadPositionData();
 	s.UploadWidthData();
+
+	ArticulatedLineEngine alEngine{};
+	
 	glBindFramebuffer(GL_FRAMEBUFFER, ActiveProject->MainDrawing->FrameBuffer);
 	auto [width, height] = ActiveProject->MainDrawing->GetSizeInPixel();
-
 	glDisable(GL_CULL_FACE);
-
+	
 	glViewport(0, 0, width, height);
 	glUseProgram(alEngine.Program);
 	glBindVertexArray(s.VertexArray);
-	glDrawArrays(GL_LINE_STRIP, 0, 3);
+	glDrawArrays(GL_LINE_LOOP, 0, 3);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	while (!Window->ShouldClose())

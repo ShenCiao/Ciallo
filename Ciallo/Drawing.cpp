@@ -34,6 +34,11 @@ void Drawing::GenRenderTarget()
 	{
 		throw std::runtime_error("Framebuffer incomplete");
 	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glClearColor(1, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Drawing::DeleteRenderTarget()

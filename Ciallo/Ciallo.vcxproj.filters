@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Resource Files\shaders">
+      <UniqueIdentifier>{54c6d3c7-0dd0-4cae-8337-90ed6c905a23}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ciallo.cpp">
@@ -101,5 +104,16 @@
     <ClInclude Include="EntityObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="shaders\articulatedLine.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\articulatedLine.geom">
+      <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\articulatedLine.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

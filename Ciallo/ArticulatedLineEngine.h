@@ -2,11 +2,12 @@
 
 class ArticulatedLineEngine
 {
+public:
 	GLuint VertShader;
 	GLuint GeomShader;
 	GLuint FragShader;
 	GLuint Program;
-public:
+
 	ArticulatedLineEngine() = default;
 	void Init();
 	void Destroy();

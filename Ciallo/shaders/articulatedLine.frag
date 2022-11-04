@@ -38,26 +38,26 @@ void main() {
         discard;
     }
     float A = fragColor.a;
-    // Airbrush begin. Can be discard.
-    // Sadly Shen Ciao already forget about some details in this implementation.
-    // And He just copy and paste old implementation. May Muse bless the poor boy.
-    float reverse_falloff_stroke = reverse_falloff(pLH.y, A);
+    // // -----Airbrush begin. Can be discard.
+    // // Sadly Shen Ciao already forget about some details in this implementation.
+    // // And He just copy and paste old implementation. May Muse bless the poor boy.
+    // float reverse_falloff_stroke = reverse_falloff(pLH.y, A);
 
-    float exceed1, exceed2;
-    exceed1 = exceed2 = 1.0;
+    // float exceed1, exceed2;
+    // exceed1 = exceed2 = 1.0;
     
-    if(d0LH < 1.0) {
-      exceed1 = pow(reverse_falloff(d0LH, A), 
-        sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-        pow(reverse_falloff_stroke, step(0.0, -pLH.x));
-    }
-    if(d1LH < 1.0) {
-      exceed2 = pow(reverse_falloff(d1LH, A), 
-        sign(lenL - pLH.x) * 1.0/2.0 * (1.0-abs(lenL-pLH.x))) * 
-        pow(reverse_falloff_stroke, step(0.0, pLH.x - lenL));
-    }
-    A = clamp(1 - reverse_falloff_stroke/exceed1/exceed2, 0.0, 1.0);
-    // Airbrush end. 
+    // if(d0LH < 1.0) {
+    //   exceed1 = pow(reverse_falloff(d0LH, A), 
+    //     sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
+    //     pow(reverse_falloff_stroke, step(0.0, -pLH.x));
+    // }
+    // if(d1LH < 1.0) {
+    //   exceed2 = pow(reverse_falloff(d1LH, A), 
+    //     sign(lenL - pLH.x) * 1.0/2.0 * (1.0-abs(lenL-pLH.x))) * 
+    //     pow(reverse_falloff_stroke, step(0.0, pLH.x - lenL));
+    // }
+    // A = clamp(1 - reverse_falloff_stroke/exceed1/exceed2, 0.0, 1.0);
+    // // -------Airbrush end. 
 
     outColor = vec4(fragColor.rgb, A);
 }

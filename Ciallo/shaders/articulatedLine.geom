@@ -12,7 +12,9 @@ layout(location = 1) out flat vec2 p0;
 layout(location = 2) out flat vec2 p1;
 layout(location = 3) out vec2 p;
 layout(location = 4) out float width;
-// TDDO: MVP
+
+layout(location = 0) uniform mat4 MVP;
+
 void main(){
     vec4 v01 = gl_in[1].gl_Position - gl_in[0].gl_Position;
     vec2 nv = normalize(v01.xy);
@@ -23,7 +25,7 @@ void main(){
     p0 = gl_in[0].gl_Position.xy;
     p1 = gl_in[1].gl_Position.xy;
     p = p0 + n*width - nv*width;
-    gl_Position = vec4(p, 0.0, 1.0);
+    gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = inColor[0];
     EmitVertex();
 
@@ -32,7 +34,7 @@ void main(){
     p0 = gl_in[0].gl_Position.xy;
     p1 = gl_in[1].gl_Position.xy;
     p = p0 - n*width - nv*width;
-    gl_Position = vec4(p, 0.0, 1.0);
+    gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = inColor[0];
     EmitVertex();
 
@@ -41,7 +43,7 @@ void main(){
     p0 = gl_in[0].gl_Position.xy;
     p1 = gl_in[1].gl_Position.xy;
     p = p1 + n*width + nv*width;
-    gl_Position = vec4(p, 0.0, 1.0);
+    gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = inColor[1];
     EmitVertex();
 
@@ -50,7 +52,7 @@ void main(){
     p0 = gl_in[0].gl_Position.xy;
     p1 = gl_in[1].gl_Position.xy;
     p = p1 - n*width + nv*width;
-    gl_Position = vec4(p, 0.0, 1.0);
+    gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = inColor[1];
     EmitVertex();
 

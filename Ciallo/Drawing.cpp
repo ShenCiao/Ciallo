@@ -49,5 +49,5 @@ void Drawing::DeleteRenderTarget()
 
 glm::mat4 Drawing::GetViewProjMatrix() const
 {
-	return glm::ortho(UpperLeft.x, LowerRight.x, LowerRight.y, UpperLeft.y);
+	return glm::ortho(UpperLeft.x, LowerRight.x, UpperLeft.y, LowerRight.y);
 }

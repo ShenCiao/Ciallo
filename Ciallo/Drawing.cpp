@@ -4,14 +4,21 @@
 #include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-std::pair<int, int> Drawing::GetSizeInPixel() const
+glm::ivec2 Drawing::GetSizeInPixel() const
 {
 	float width = (LowerRight.x - UpperLeft.x) * Dpi / 0.0254f;
 	float height = (LowerRight.y - UpperLeft.y) * Dpi / 0.0254f;
 	return {static_cast<int>(glm::round(width)), static_cast<int>(glm::round(height))};
 }
 
-glm::vec2 Drawing::GetSize() const
+glm::vec2 Drawing::GetSizeInPixelFloat() const
+{
+	float width = (LowerRight.x - UpperLeft.x) * Dpi / 0.0254f;
+	float height = (LowerRight.y - UpperLeft.y) * Dpi / 0.0254f;
+	return { width, height };
+}
+
+glm::vec2 Drawing::GetWorldSize() const
 {
 	return LowerRight - UpperLeft;
 }
@@ -24,7 +31,8 @@ void Drawing::GenRenderTarget()
 	glTextureParameteri(Texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
 	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
-	auto [width, height] = GetSizeInPixel();
+	int width = GetSizeInPixel().x;
+	int height = GetSizeInPixel().y;
 
 	glTextureStorage2D(Texture, 1, GL_RGBA8, width, height);
 

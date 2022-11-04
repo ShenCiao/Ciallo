@@ -14,6 +14,6 @@ public:
 	int image_width = 0;
 	int image_height = 0;
 
-	void Draw();
+	void Draw(glm::vec2*);
 	void LoadTestImage();
 };

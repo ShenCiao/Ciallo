@@ -10,8 +10,9 @@ public:
 	glm::vec2 LowerRight{};
 	float Dpi = 0.0f;
 
-	std::pair<int, int> GetSizeInPixel() const;
-	glm::vec2 GetSize() const;
+	glm::ivec2 GetSizeInPixel() const;
+	glm::vec2 GetSizeInPixelFloat() const;
+	glm::vec2 GetWorldSize() const;
 	void GenRenderTarget();
 	void DeleteRenderTarget();
 	glm::mat4 GetViewProjMatrix() const;

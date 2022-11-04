@@ -60,6 +60,12 @@
     <ClCompile Include="EntityObject.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="PaintTool.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ToolBox.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -102,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EntityObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PaintTool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ToolBox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

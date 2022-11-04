@@ -4,14 +4,27 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-void CanvasPanel::Draw()
+#include "Stroke.h"
+
+void CanvasPanel::Draw(glm::vec2* worldPos)
 {
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
 		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { .0f, .0f });
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	ImGui::Begin("Canvas Panel", nullptr, flags);
+
 	auto& io = ImGui::GetIO();
-	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->Texture), ImVec2(ActiveDrawing->GetSizeInPixel().first, ActiveDrawing->GetSizeInPixel().second));
+	auto panel = ImGui::GetCurrentWindow();
+
+	glm::vec2 mouseDrawingPixelPosition = ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
+	// Do remember to set the cursor to correct place.
+	*worldPos = mouseDrawingPixelPosition / ActiveDrawing->GetSizeInPixelFloat() *
+		ActiveDrawing->GetWorldSize();
+
+
+	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->Texture), ImVec2(
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
 	ImGui::End();
 	ImGui::PopStyleVar();
 	// bool notCloseWindow = true;
@@ -101,15 +114,16 @@ void CanvasPanel::LoadTestImage()
 	unsigned char* image_data = stbi_load("./images/myaamori.jpg", &image_width, &image_height, NULL, 4);
 	if (image_data == NULL)
 		throw std::runtime_error("Can not load image");
-	
+
 	glCreateTextures(GL_TEXTURE_2D, 1, &image_texture);
-	
+
 	// Setup filtering parameters for display
 	glTextureParameteri(image_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(image_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(image_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // This is required on WebGL for non power-of-two textures
+	glTextureParameteri(image_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	// This is required on WebGL for non power-of-two textures
 	glTextureParameteri(image_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-	
+
 	glTextureStorage2D(image_texture, 1, GL_RGBA8, image_width, image_height);
 	glTextureSubImage2D(image_texture, 0, 0, 0, image_width, image_height, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
 

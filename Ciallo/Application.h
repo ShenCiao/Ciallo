@@ -2,11 +2,13 @@
 
 #include "Project.h"
 #include "Window.h"
+#include "RenderingSystem.h"
 
 class Application
 {
 	std::unique_ptr<Project> ActiveProject;
 	std::unique_ptr<Window> Window;
+	std::unique_ptr<RenderingSystem> RenderingSystem;
 public:
 	Application();
 

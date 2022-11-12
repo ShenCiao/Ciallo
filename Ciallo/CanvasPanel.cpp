@@ -4,9 +4,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "Stroke.h"
+#include "Toolbox.h"
 
-void CanvasPanel::Draw(glm::vec2* worldPos)
+CanvasPanel::CanvasPanel()
+{
+	Toolbox = std::make_unique<class Toolbox>(this);
+}
+
+void CanvasPanel::DrawAndRunTool()
 {
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
 		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar;
@@ -15,16 +20,26 @@ void CanvasPanel::Draw(glm::vec2* worldPos)
 
 	auto& io = ImGui::GetIO();
 	auto panel = ImGui::GetCurrentWindow();
-
-	glm::vec2 mouseDrawingPixelPosition = ImGui::GetMousePos() - ImGui::GetCursorScreenPos();
-	// Do remember to set the cursor to correct place.
-	*worldPos = mouseDrawingPixelPosition / ActiveDrawing->GetSizeInPixelFloat() *
-		ActiveDrawing->GetWorldSize();
-
+	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
 
 	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->Texture), ImVec2(
-		             static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
-		             static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
+		static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
+		static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
+
+	glm::vec2 mousePositionOnDrawingInPixel = ImGui::GetMousePos() - drawingScreenOrigin;
+	// Do remember to set the cursor to correct place.
+	MousePosOnDrawing = mousePositionOnDrawingInPixel / (ActiveDrawing->GetSizeInPixelFloat()*Zoom) *
+		ActiveDrawing->GetWorldSize();
+
+	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
+	ImGui::InvisibleButton(std::format("CanvasInteraction").c_str(), panel->InnerRect.GetSize(),
+                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
+                       ImGuiButtonFlags_MouseButtonMiddle);
+
+	
+	Toolbox->ActiveTool->Run();
+
+	
 	ImGui::End();
 	ImGui::PopStyleVar();
 	// bool notCloseWindow = true;
@@ -107,25 +122,4 @@ void CanvasPanel::Draw(glm::vec2* worldPos)
 	//
 	// ImGui::End();
 	// ImGui::PopStyleVar();
-}
-
-void CanvasPanel::LoadTestImage()
-{
-	unsigned char* image_data = stbi_load("./images/myaamori.jpg", &image_width, &image_height, NULL, 4);
-	if (image_data == NULL)
-		throw std::runtime_error("Can not load image");
-
-	glCreateTextures(GL_TEXTURE_2D, 1, &image_texture);
-
-	// Setup filtering parameters for display
-	glTextureParameteri(image_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTextureParameteri(image_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(image_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	// This is required on WebGL for non power-of-two textures
-	glTextureParameteri(image_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
-	glTextureStorage2D(image_texture, 1, GL_RGBA8, image_width, image_height);
-	glTextureSubImage2D(image_texture, 0, 0, 0, image_width, image_height, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-
-	stbi_image_free(image_data);
 }

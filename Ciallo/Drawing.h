@@ -1,6 +1,8 @@
 ﻿#pragma once
 
-class Drawing : EntityObject
+#include "Stroke.h"
+
+class Drawing
 {
 public:
 	GLuint Texture = 0;
@@ -9,6 +11,8 @@ public:
 	glm::vec2 UpperLeft = { 0.0f, 0.0f };
 	glm::vec2 LowerRight{};
 	float Dpi = 0.0f;
+
+	std::vector<std::unique_ptr<Stroke>> Strokes;
 
 	glm::ivec2 GetSizeInPixel() const;
 	glm::vec2 GetSizeInPixelFloat() const;

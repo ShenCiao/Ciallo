@@ -12,6 +12,12 @@ Stroke::~Stroke()
 	glDeleteBuffers(1, &VertexArray);
 }
 
+void Stroke::OnChanged()
+{
+	UploadPositionData();
+	UploadWidthData();
+}
+
 void Stroke::GenBuffers()
 {
 	glCreateVertexArrays(1, &VertexArray);

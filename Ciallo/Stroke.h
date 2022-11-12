@@ -2,7 +2,7 @@
 
 class Brush;
 
-class Stroke : EntityObject
+class Stroke
 {
 public:
 	std::vector<Geom::Point> Position{};
@@ -19,12 +19,13 @@ public:
 	GLuint VertexArray = 0;
 
 	Stroke();
-	Stroke(const Stroke& other) = default;
-	Stroke(Stroke&& other) noexcept = default;
-	Stroke& operator=(const Stroke& other) = default;
-	Stroke& operator=(Stroke&& other) noexcept = default;
+	Stroke(const Stroke& other) = delete;
+	Stroke(Stroke&& other) = delete;
+	Stroke& operator=(const Stroke& other) = delete;
+	Stroke& operator=(Stroke&& other) noexcept = delete;
 	~Stroke();
 
+	void OnChanged();
 	void GenBuffers();
 	void UploadPositionData();
 	void UploadWidthData();

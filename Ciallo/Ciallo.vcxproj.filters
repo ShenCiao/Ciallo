@@ -51,9 +51,6 @@
     <ClCompile Include="Drawing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Project.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,8 +60,17 @@
     <ClCompile Include="PaintTool.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="ToolBox.cpp">
+    <ClCompile Include="Toolbox.cpp">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Tool.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderingSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CursorInteractionTracer.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -101,9 +107,6 @@
     <ClInclude Include="Drawing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Project.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -113,7 +116,16 @@
     <ClInclude Include="PaintTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ToolBox.h">
+    <ClInclude Include="Toolbox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CursorInteractionTracer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Tool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderingSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

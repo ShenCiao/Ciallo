@@ -88,11 +88,11 @@
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="EntityObject.cpp" />
+    <ClCompile Include="CursorInteractionTracer.cpp" />
     <ClCompile Include="PaintTool.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -101,27 +101,31 @@
     <ClCompile Include="Point.cpp" />
     <ClCompile Include="Polyline.cpp" />
     <ClCompile Include="Project.cpp" />
+    <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="Stroke.cpp" />
-    <ClCompile Include="ToolBox.cpp" />
+    <ClCompile Include="Tool.cpp" />
+    <ClCompile Include="Toolbox.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
-    <ClInclude Include="Camera.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="Drawing.h" />
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="GeometryPrimitives.h" />
+    <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Polyline.h" />
     <ClInclude Include="Project.h" />
+    <ClInclude Include="RenderingSystem.h" />
     <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />
-    <ClInclude Include="ToolBox.h" />
+    <ClInclude Include="Tool.h" />
+    <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

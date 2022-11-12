@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <chrono>
+namespace chrono = std::chrono;
 
 #include <optional>
 #include <vector>

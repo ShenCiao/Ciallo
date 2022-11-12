@@ -105,7 +105,6 @@
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="Stroke.cpp" />
     <ClCompile Include="Tool.cpp" />
-    <ClCompile Include="Toolbox.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -125,7 +124,6 @@
     <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />
     <ClInclude Include="Tool.h" />
-    <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>

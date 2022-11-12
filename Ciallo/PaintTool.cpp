@@ -13,7 +13,7 @@ void PaintTool::ClickOrDragStart()
 	s->Width = { 0.001f };
 	s->OnChanged();
 	Panel->ActiveDrawing->Strokes.push_back(std::move(s));
-	LastSample = LastSample.zero();
+	LastSample = chrono::duration<float, std::milli>::zero();
 }
 
 void PaintTool::Dragging()

@@ -4,11 +4,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
-#include "Toolbox.h"
-
 CanvasPanel::CanvasPanel()
 {
-	Toolbox = std::make_unique<class Toolbox>(this);
+	PaintTool = std::make_unique<class PaintTool>(this);
+	ActiveTool = PaintTool.get();
 }
 
 void CanvasPanel::DrawAndRunTool()
@@ -37,11 +36,12 @@ void CanvasPanel::DrawAndRunTool()
                        ImGuiButtonFlags_MouseButtonMiddle);
 
 	
-	Toolbox->ActiveTool->Run();
-
+	ActiveTool->Run();
+	
 	
 	ImGui::End();
 	ImGui::PopStyleVar();
+
 	// bool notCloseWindow = true;
 	// if(ActiveDrawing == entt::null)
 	// {

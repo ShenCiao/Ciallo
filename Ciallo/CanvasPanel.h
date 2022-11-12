@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Drawing.h"
-#include "Toolbox.h"
+#include "PaintTool.h"
 
 class CanvasPanel
 {
@@ -13,7 +13,8 @@ public:
 	glm::vec2 Scroll{0.0f, 0.0f};
 	glm::vec2 MousePosOnDrawing;
 
-	std::unique_ptr<Toolbox> Toolbox;
+	Tool* ActiveTool;
+	std::unique_ptr<PaintTool> PaintTool;
 
 	void DrawAndRunTool();
 };

@@ -7,8 +7,8 @@ class PaintTool : public Tool
 	chrono::duration<float, std::milli> LastSample{0.0f};
 	chrono::duration<float, std::milli> SampleInterval{ 5.f };
 public:
-	explicit PaintTool(CanvasPanel* panel)
-		: Tool(panel)
+	explicit PaintTool(CanvasPanel* canvas)
+		: Tool(canvas)
 	{
 	}
 

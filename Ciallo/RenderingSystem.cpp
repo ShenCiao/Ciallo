@@ -3,6 +3,11 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+void RenderingSystem::Init()
+{
+	ArticulatedLine = std::make_unique<ArticulatedLineEngine>();
+}
+
 void RenderingSystem::RenderDrawing(Drawing* drawing)
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, drawing->FrameBuffer);
@@ -14,14 +19,14 @@ void RenderingSystem::RenderDrawing(Drawing* drawing)
 
 	auto pixelSize = drawing->GetSizeInPixel();
 	glViewport(0, 0, pixelSize.x, pixelSize.y);
-	glUseProgram(ArticulatedLine.Program);
+	glUseProgram(ArticulatedLine->Program);
 	glm::mat4 mvp = drawing->GetViewProjMatrix();
 	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
 	glUniform4f(1, 0.5, 0.5, 0.5, 1);// color
 
 	for(auto& s : drawing->Strokes)
 	{
-		ArticulatedLine.DrawStroke(s.get());
+		ArticulatedLine->DrawStroke(s.get());
 	}
 
 	glUseProgram(0);

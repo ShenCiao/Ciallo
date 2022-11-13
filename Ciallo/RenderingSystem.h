@@ -1,15 +1,14 @@
 #pragma once
 
-#include <ranges>
-
 #include "ArticulatedLineEngine.h"
 #include "Drawing.h"
 
 class RenderingSystem
 {
 public:
-	ArticulatedLineEngine ArticulatedLine;
+	static inline std::unique_ptr<ArticulatedLineEngine> ArticulatedLine;
 
-	void RenderDrawing(Drawing* drawing);
+	static void Init();
+	static void RenderDrawing(Drawing* drawing);
 };
 

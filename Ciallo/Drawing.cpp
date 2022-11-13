@@ -6,7 +6,7 @@
 
 Drawing::Drawing()
 {
-	GenRenderTarget();
+	
 }
 
 Drawing::~Drawing()
@@ -42,16 +42,12 @@ void Drawing::GenRenderTarget()
 	// This is required on WebGL for non power-of-two textures
 	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
 
-	glCreateFramebuffers(1, &FrameBuffer);
-	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, Texture, 0);
-}
-
-void Drawing::AllocateRenderStorage()
-{
 	int width = GetSizeInPixel().x;
 	int height = GetSizeInPixel().y;
-
 	glTextureStorage2D(Texture, 1, GL_RGBA8, width, height);
+
+	glCreateFramebuffers(1, &FrameBuffer);
+	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, Texture, 0);
 
 	if (glCheckNamedFramebufferStatus(FrameBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{

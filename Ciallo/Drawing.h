@@ -25,7 +25,6 @@ public:
 	glm::vec2 GetSizeInPixelFloat() const;
 	glm::vec2 GetWorldSize() const;
 	void GenRenderTarget();
-	void AllocateRenderStorage();
 	void DeleteRenderTarget();
 	glm::mat4 GetViewProjMatrix() const;
 };

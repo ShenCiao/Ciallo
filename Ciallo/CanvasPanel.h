@@ -13,6 +13,7 @@ public:
 	float Zoom = 1.0f;
 	glm::vec2 Scroll{0.0f, 0.0f};
 	glm::vec2 MousePosOnDrawing;
+	glm::ivec2 MousePosOnDrawingInPixel;
 
 	Tool* ActiveTool;
 	std::unique_ptr<PaintTool> PaintTool;

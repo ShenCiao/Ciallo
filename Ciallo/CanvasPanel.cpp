@@ -26,9 +26,10 @@ void CanvasPanel::DrawAndRunTool()
 		static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
 		static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
 
-	glm::vec2 mousePositionOnDrawingInPixel = ImGui::GetMousePos() - drawingScreenOrigin;
+	glm::vec2 mousePosOnDrawingInPixel = ImGui::GetMousePos() - drawingScreenOrigin;
+	MousePosOnDrawingInPixel = { mousePosOnDrawingInPixel.x, mousePosOnDrawingInPixel.y };
 	// Do remember to set the cursor to correct place.
-	MousePosOnDrawing = mousePositionOnDrawingInPixel / (ActiveDrawing->GetSizeInPixelFloat()*Zoom) *
+	MousePosOnDrawing = mousePosOnDrawingInPixel / (ActiveDrawing->GetSizeInPixelFloat()*Zoom) *
 		ActiveDrawing->GetWorldSize();
 
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);

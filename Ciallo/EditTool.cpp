@@ -19,20 +19,37 @@ EditTool::~EditTool()
 
 void EditTool::ClickOrDragStart()
 {
-	SelectedStroke = Canvas->ActiveDrawing->Strokes.back().get();
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	int x = Canvas->MousePosOnDrawingInPixel.x;
+	int y = Canvas->MousePosOnDrawingInPixel.y;
+	glm::vec4 clickedColor;
+	glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, &clickedColor);
+	if (clickedColor == glm::vec4(1, 1, 1, 1))
+	{
+		SelectedStroke = nullptr;
+		return;
+	}
+	spdlog::info("r:{}, g:{}, b:{}, a:{}", clickedColor.r, clickedColor.g, clickedColor.b, clickedColor.a);
+	uint32_t index = ColorToIndex(clickedColor);
+	spdlog::info("index:{}", index);
+	SelectedStroke = Canvas->ActiveDrawing->Strokes[index].get();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	MousePrev = Canvas->MousePosOnDrawing;
 }
 
 void EditTool::Dragging()
 {
-	glm::vec2 delta = Canvas->MousePosOnDrawing - MousePrev;
-
-	for (auto& p : SelectedStroke->Position)
+	if(SelectedStroke)
 	{
-		p = {p.x() + delta.x, p.y() + delta.y};
+		glm::vec2 delta = Canvas->MousePosOnDrawing - MousePrev;
+
+		for (auto& p : SelectedStroke->Position)
+		{
+			p = { p.x() + delta.x, p.y() + delta.y };
+		}
+		SelectedStroke->OnChanged();
+		MousePrev = Canvas->MousePosOnDrawing;
 	}
-	SelectedStroke->OnChanged();
-	MousePrev = Canvas->MousePosOnDrawing;
 }
 
 void EditTool::Activate()
@@ -98,7 +115,6 @@ void EditTool::RenderTextureForSelection()
 	for (auto& s : drawing->Strokes)
 	{
 		glm::vec4 color = IndexToColor(index);
-		color.a = 1.0f;
 		glUniform4fv(1, 1, glm::value_ptr(color));
 
 		spdlog::info("Color = r:{}, g:{}, b:{}, a:{}", color.r, color.g, color.b, color.a);
@@ -112,7 +128,7 @@ void EditTool::RenderTextureForSelection()
 
 glm::vec4 EditTool::IndexToColor(uint32_t index)
 {
-	std::bitset<32> bits{ index };
+	std::bitset<32> bits{index};
 	glm::vec4 color;
 	for (int i = 0; i < 4; ++i)
 	{

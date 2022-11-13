@@ -10,7 +10,6 @@
 
 EditTool::EditTool(CanvasPanel* canvas): Tool(canvas)
 {
-	
 }
 
 EditTool::~EditTool()
@@ -30,7 +29,7 @@ void EditTool::Dragging()
 
 	for (auto& p : SelectedStroke->Position)
 	{
-		p = { p.x() + delta.x, p.y() + delta.y };
+		p = {p.x() + delta.x, p.y() + delta.y};
 	}
 	SelectedStroke->OnChanged();
 	MousePrev = Canvas->MousePosOnDrawing;
@@ -95,18 +94,41 @@ void EditTool::RenderTextureForSelection()
 	glm::mat4 mvp = drawing->GetViewProjMatrix();
 	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
 
+	int index = 0;
 	for (auto& s : drawing->Strokes)
 	{
-		glUniform4f(1, 0.3, 0.3, 0.3, 1);// color
+		glm::vec4 color = IndexToColor(index);
+		color.a = 1.0f;
+		glUniform4fv(1, 1, glm::value_ptr(color));
+
+		spdlog::info("Color = r:{}, g:{}, b:{}, a:{}", color.r, color.g, color.b, color.a);
 		RenderingSystem::ArticulatedLine->DrawStroke(s.get());
+		index += 1;
 	}
 
 	glUseProgram(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-// glm::vec4 EditTool::IndexToColor(uint32_t index)
-// {
-// 	std::bitset<32> bits{ index };
-// 	float r = std::bitset<8>(bits.to_string(), 32-8, 8).to_ulong()/255.f;
-// }
+glm::vec4 EditTool::IndexToColor(uint32_t index)
+{
+	std::bitset<32> bits{ index };
+	glm::vec4 color;
+	for (int i = 0; i < 4; ++i)
+	{
+		color[i] = std::bitset<8>(bits.to_string(), 32 - 8 * (i + 1), 8).to_ulong() / 255.f;
+	}
+	return color;
+}
+
+uint32_t EditTool::ColorToIndex(glm::vec4 color)
+{
+	std::string bits;
+	for (int i = 0; i < 4; ++i)
+	{
+		auto v = (uint32_t)glm::round(color[3 - i] * 255.f);
+		std::bitset<8> b(v);
+		bits += b.to_string();
+	}
+	return std::bitset<32>(bits).to_ulong();
+}

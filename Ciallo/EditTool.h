@@ -25,5 +25,6 @@ public:
 	void DestroyRenderTarget();
 	void RenderTextureForSelection();
 
-	// glm::vec4 IndexToColor(uint32_t index);
+	glm::vec4 IndexToColor(uint32_t index);
+	uint32_t ColorToIndex(glm::vec4 color);
 };

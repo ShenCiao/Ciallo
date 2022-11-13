@@ -13,6 +13,8 @@ public:
 	float Dpi = 0.0f;
 
 	std::vector<std::unique_ptr<Stroke>> Strokes;
+	Geom::Arrangement Arrangement{};
+	Geom::PointLocation PointLocation{Arrangement};
 
 	Drawing();
 	Drawing(const Drawing& other) = delete;

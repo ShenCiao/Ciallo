@@ -36,8 +36,8 @@ void ArticulatedLineEngine::DrawStroke(Stroke* stroke)
 
 		stroke->Position.push_back(paddedPos);
 		stroke->Width.push_back(w);
-		stroke->UploadPositionData();
-		stroke->UploadWidthData();
+		stroke->UpdatePositionBuffer();
+		stroke->UpdateWidthBuffer();
 
 		stroke->Position.pop_back();
 		stroke->Width.pop_back();

@@ -128,6 +128,9 @@
     <ClInclude Include="EditTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Arrangement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">

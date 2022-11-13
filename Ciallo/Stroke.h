@@ -18,6 +18,9 @@ public:
 	std::array<GLuint, 2> VertexBuffers = {0, 0};
 	GLuint VertexArray = 0;
 
+	Geom::Arrangement* Arrangement;
+	Geom::Curve_handle Handle;
+
 	Stroke();
 	Stroke(const Stroke& other) = delete;
 	Stroke(Stroke&& other) = delete;
@@ -27,6 +30,7 @@ public:
 
 	void OnChanged();
 	void GenBuffers();
-	void UploadPositionData();
-	void UploadWidthData();
+	void UpdatePositionBuffer();
+	void UpdateWidthBuffer();
+	void UpdateArrangement();
 };

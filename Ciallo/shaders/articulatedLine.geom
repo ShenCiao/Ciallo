@@ -4,7 +4,6 @@ layout(lines) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 layout(location = 0) in float[] inWidth;
-layout(location = 1) in vec4[] inColor;
 
 
 layout(location = 0) out vec4 fragColor;
@@ -14,6 +13,7 @@ layout(location = 3) out vec2 p;
 layout(location = 4) out float width;
 
 layout(location = 0) uniform mat4 MVP;
+layout(location = 1) uniform vec4 color;
 
 void main(){
     vec4 v01 = gl_in[1].gl_Position - gl_in[0].gl_Position;
@@ -26,7 +26,7 @@ void main(){
     p1 = gl_in[1].gl_Position.xy;
     p = p0 + n*width - nv*width;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
-    fragColor = inColor[0];
+    fragColor = color;
     EmitVertex();
 
     // Vertex at p0 right
@@ -35,7 +35,7 @@ void main(){
     p1 = gl_in[1].gl_Position.xy;
     p = p0 - n*width - nv*width;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
-    fragColor = inColor[0];
+    fragColor = color;
     EmitVertex();
 
     // Vertex at p1 left
@@ -44,7 +44,7 @@ void main(){
     p1 = gl_in[1].gl_Position.xy;
     p = p1 + n*width + nv*width;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
-    fragColor = inColor[1];
+    fragColor = color;
     EmitVertex();
 
     // Vertex at p1 right
@@ -53,7 +53,7 @@ void main(){
     p1 = gl_in[1].gl_Position.xy;
     p = p1 - n*width + nv*width;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
-    fragColor = inColor[1];
+    fragColor = color;
     EmitVertex();
 
     EndPrimitive();

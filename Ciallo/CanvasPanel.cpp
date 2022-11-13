@@ -8,6 +8,7 @@ CanvasPanel::CanvasPanel()
 {
 	PaintTool = std::make_unique<class PaintTool>(this);
 	ActiveTool = PaintTool.get();
+	EditTool = std::make_unique<class EditTool>(this);
 }
 
 void CanvasPanel::DrawAndRunTool()
@@ -37,10 +38,25 @@ void CanvasPanel::DrawAndRunTool()
 
 	
 	ActiveTool->Run();
-	
-	
+
 	ImGui::End();
 	ImGui::PopStyleVar();
+
+	ImGui::Begin("Toolbox");
+	if(ImGui::Button("Paint"))
+	{
+		ActiveTool->Deactivate();
+		ActiveTool = PaintTool.get();
+		ActiveTool->Activate();
+	}
+
+	if (ImGui::Button("Edit"))
+	{
+		ActiveTool->Deactivate();
+		ActiveTool = EditTool.get();
+		ActiveTool->Activate();
+	}
+	ImGui::End();
 
 	// bool notCloseWindow = true;
 	// if(ActiveDrawing == entt::null)

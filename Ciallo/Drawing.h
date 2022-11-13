@@ -14,10 +14,18 @@ public:
 
 	std::vector<std::unique_ptr<Stroke>> Strokes;
 
+	Drawing();
+	Drawing(const Drawing& other) = delete;
+	Drawing(Drawing&& other) noexcept = delete;
+	Drawing& operator=(const Drawing& other) = delete;
+	Drawing& operator=(Drawing&& other) noexcept = delete;
+	~Drawing();
+
 	glm::ivec2 GetSizeInPixel() const;
 	glm::vec2 GetSizeInPixelFloat() const;
 	glm::vec2 GetWorldSize() const;
 	void GenRenderTarget();
+	void AllocateRenderStorage();
 	void DeleteRenderTarget();
 	glm::mat4 GetViewProjMatrix() const;
 };

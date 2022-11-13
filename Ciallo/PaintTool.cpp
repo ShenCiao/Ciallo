@@ -8,11 +8,11 @@ void PaintTool::ClickOrDragStart()
 {
 	auto s = std::make_unique<Stroke>();
 
- 	glm::vec2 pos = Panel->MousePosOnDrawing;
+ 	glm::vec2 pos = Canvas->MousePosOnDrawing;
 	s->Position = { {pos.x, pos.y} };
 	s->Width = { 0.001f };
 	s->OnChanged();
-	Panel->ActiveDrawing->Strokes.push_back(std::move(s));
+	Canvas->ActiveDrawing->Strokes.push_back(std::move(s));
 	LastSample = chrono::duration<float, std::milli>::zero();
 }
 
@@ -20,9 +20,9 @@ void PaintTool::Dragging()
 {
 	if(DraggingDuration - LastSample > SampleInterval)
 	{
-		auto& s = Panel->ActiveDrawing->Strokes.back();
+		auto& s = Canvas->ActiveDrawing->Strokes.back();
 
-		glm::vec2 pos = Panel->MousePosOnDrawing;
+		glm::vec2 pos = Canvas->MousePosOnDrawing;
 		s->Position.emplace_back(pos.x, pos.y);
 		s->Width.emplace_back(0.001f);
 		s->OnChanged();

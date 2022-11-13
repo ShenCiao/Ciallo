@@ -44,7 +44,7 @@ void Application::GenDefaultProject()
 	drawing->UpperLeft = {0.0f, 0.0f};
 	drawing->LowerRight = {0.297f, 0.21f};
 	drawing->Dpi = 144.0f;
-	drawing->GenRenderTarget();
+	drawing->AllocateRenderStorage();
 	ActiveProject->MainDrawing = std::move(drawing);
 
 	ActiveProject->CanvasPanel = std::make_unique<CanvasPanel>();

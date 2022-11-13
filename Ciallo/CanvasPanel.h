@@ -2,6 +2,7 @@
 
 #include "Drawing.h"
 #include "PaintTool.h"
+#include "EditTool.h"
 
 class CanvasPanel
 {
@@ -15,6 +16,7 @@ public:
 
 	Tool* ActiveTool;
 	std::unique_ptr<PaintTool> PaintTool;
+	std::unique_ptr<EditTool> EditTool;
 
 	void DrawAndRunTool();
 };

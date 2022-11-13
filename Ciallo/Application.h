@@ -8,7 +8,7 @@ class Application
 {
 	std::unique_ptr<Project> ActiveProject;
 	std::unique_ptr<Window> Window;
-	std::unique_ptr<RenderingSystem> RenderingSystem;
+	inline static std::unique_ptr<RenderingSystem> RenderingSystem;
 public:
 	Application();
 

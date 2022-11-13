@@ -1,6 +1,6 @@
 ﻿#include "pch.hpp"
 #include "Tool.h"
 
-Tool::Tool(CanvasPanel* panel): Panel(panel)
+Tool::Tool(CanvasPanel* canvas): Canvas(canvas)
 {
 }

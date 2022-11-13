@@ -91,6 +91,7 @@
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="Drawing.cpp" />
+    <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
     <ClCompile Include="CursorInteractionTracer.cpp" />
     <ClCompile Include="PaintTool.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="ArticulatedLineEngine.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="Drawing.h" />
+    <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="GeometryPrimitives.h" />
     <ClInclude Include="CursorInteractionTracer.h" />

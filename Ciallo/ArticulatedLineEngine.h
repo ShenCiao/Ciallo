@@ -1,4 +1,5 @@
 #pragma once
+#include "Stroke.h"
 
 class ArticulatedLineEngine
 {
@@ -10,5 +11,6 @@ public:
 
 	ArticulatedLineEngine();
 	~ArticulatedLineEngine();
-};
 
+	void DrawStroke(Stroke* stroke);
+};

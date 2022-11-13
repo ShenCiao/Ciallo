@@ -69,6 +69,9 @@
     <ClCompile Include="PaintTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EditTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -120,6 +123,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="RenderingSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EditTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

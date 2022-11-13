@@ -8,8 +8,8 @@ protected:
 	chrono::time_point<chrono::steady_clock> StartDraggingTimePoint{};
 	chrono::duration<float, std::milli> DraggingDuration;
 public:
-	explicit Tool(CanvasPanel* panel);
-	CanvasPanel* Panel = nullptr;
+	explicit Tool(CanvasPanel* canvas);
+	CanvasPanel* Canvas = nullptr;
 
 	virtual void Activate()
 	{

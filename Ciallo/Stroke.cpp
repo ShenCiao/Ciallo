@@ -32,14 +32,14 @@ void Stroke::GenBuffers()
 	glVertexArrayAttribFormat(VertexArray, 1, 1, GL_FLOAT, GL_FALSE, 0);
 
 	GLintptr offsets[] = { 0, 0 };
-	int strides[] = { sizeof(Geom::Point), sizeof(float) };
+	int strides[] = { sizeof(glm::vec2), sizeof(float) };
 
 	glVertexArrayVertexBuffers(VertexArray, 0, VertexBuffers.size(), VertexBuffers.data(), offsets, strides);
 }
 
 void Stroke::UpdatePositionBuffer()
 {
-	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(Geom::Point), Position.data(), GL_DYNAMIC_DRAW);
+	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
 }
 
 void Stroke::UpdateWidthBuffer()
@@ -49,14 +49,34 @@ void Stroke::UpdateWidthBuffer()
 
 void Stroke::UpdateArrangement()
 {
+	if(Position.size() <= 1)
+	{
+		return;
+	}
 	static const Geom::Geom_traits traits;
 	static const Geom::Geom_traits::Construct_curve_2 curveConstruct =
 		traits.construct_curve_2_object();
-
+	
 	if(Handle != nullptr)
 	{
 		CGAL::remove_curve(*Arrangement, Handle);
 	}
-	Geom::Curve c = curveConstruct(Position);
+
+	std::vector<Geom::Geom_traits::Point_2> ps;
+	for(int i = 0; i < Position.size(); ++i)
+	{
+		if(i > 0 && Position[i] == Position[i - 1])
+		{
+			continue;
+		}
+
+		ps.emplace_back(Position[i].x, Position[i].y);
+	}
+	if(ps.size() <= 1)
+	{
+		return;
+	}
+	
+	Geom::Curve c = curveConstruct(ps);
 	Handle = CGAL::insert(*Arrangement, c);
 }

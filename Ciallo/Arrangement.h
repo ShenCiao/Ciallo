@@ -7,8 +7,8 @@
 
 namespace Geom
 {
-	using K = CGAL::Simple_cartesian<float>;
-	using Segment_traits = CGAL::Arr_segment_traits_2<K>;
+	using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+	using Segment_traits = CGAL::Arr_segment_traits_2<Kernel>;
 	using Geom_traits = CGAL::Arr_polyline_traits_2<Segment_traits>;
 
 	using Curve = Geom_traits::Curve_2;
@@ -19,7 +19,7 @@ namespace Geom
 
 	using Vertex_const_handle = Arrangement::Vertex_const_handle;
 	using Edge_const_handle = Arrangement::Halfedge_const_handle;
-	using Face_const_handle = Arrangement::Face_const_handle;
+	using Face_const_handle = Arrangement::Face_const_handle; 
 	using Halfedge_const_handle = Arrangement::Halfedge_const_handle;
 	using Curve_handle = Arrangement::Curve_handle;
 }

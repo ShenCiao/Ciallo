@@ -5,7 +5,7 @@ class Brush;
 class Stroke
 {
 public:
-	std::vector<Geom::Point> Position{};
+	std::vector<glm::vec2> Position{};
 	// This is supposed to be a Geom::Polyline class. But I'm not going to make extra unnecessary stuff for now.
 	std::vector<float> Width{};
 	Brush* Brush;

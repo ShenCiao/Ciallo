@@ -13,11 +13,6 @@
       "implot",
       "entt",
       "glm",
-      "boost-variant",
-      "boost-variant2",
-      "boost-math",
-      "boost-algorithm",
-      "boost-foreach",
-      "boost-property-map"
+      "cgal"
     ]
   }

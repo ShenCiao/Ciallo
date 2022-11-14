@@ -4,6 +4,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "arr_print.h"
+
 CanvasPanel::CanvasPanel()
 {
 	PaintTool = std::make_unique<class PaintTool>(this);
@@ -56,6 +58,11 @@ void CanvasPanel::DrawAndRunTool()
 		ActiveTool->Deactivate();
 		ActiveTool = EditTool.get();
 		ActiveTool->Activate();
+	}
+
+	if(ImGui::Button("Print Arrangement"))
+	{
+		print_arrangement(ActiveDrawing->Arrangement);
 	}
 	ImGui::End();
 

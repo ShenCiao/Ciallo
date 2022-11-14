@@ -29,9 +29,8 @@ void EditTool::ClickOrDragStart()
 		SelectedStroke = nullptr;
 		return;
 	}
-	spdlog::info("r:{}, g:{}, b:{}, a:{}", clickedColor.r, clickedColor.g, clickedColor.b, clickedColor.a);
+
 	uint32_t index = ColorToIndex(clickedColor);
-	spdlog::info("index:{}", index);
 	SelectedStroke = Canvas->ActiveDrawing->Strokes[index].get();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	MousePrev = Canvas->MousePosOnDrawing;
@@ -45,7 +44,7 @@ void EditTool::Dragging()
 
 		for (auto& p : SelectedStroke->Position)
 		{
-			p = { p.x() + delta.x, p.y() + delta.y };
+			p = { p.x + delta.x, p.y + delta.y };
 		}
 		SelectedStroke->OnChanged();
 		MousePrev = Canvas->MousePosOnDrawing;
@@ -117,7 +116,6 @@ void EditTool::RenderTextureForSelection()
 		glm::vec4 color = IndexToColor(index);
 		glUniform4fv(1, 1, glm::value_ptr(color));
 
-		spdlog::info("Color = r:{}, g:{}, b:{}, a:{}", color.r, color.g, color.b, color.a);
 		RenderingSystem::ArticulatedLine->DrawStroke(s.get());
 		index += 1;
 	}

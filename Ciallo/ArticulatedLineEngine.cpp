@@ -30,9 +30,9 @@ void ArticulatedLineEngine::DrawStroke(Stroke* stroke)
 	int count = stroke->Position.size();
 	if (count == 1)
 	{
-		Geom::Point p = stroke->Position[0];
+		glm::vec2 p = stroke->Position[0];
 		float w = stroke->Width[0];
-		Geom::Point paddedPos = { p.x() + 0.01f * w, p.y() };
+		glm::vec2 paddedPos = { p.x + 0.01f * w, p.y };
 
 		stroke->Position.push_back(paddedPos);
 		stroke->Width.push_back(w);

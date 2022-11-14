@@ -54,8 +54,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS
-;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;CGAL_NO_ASSERTIONS
+;CGAL_NO_PRECONDITIONS;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
@@ -73,8 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS
-;CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -103,8 +102,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Point.cpp" />
-    <ClCompile Include="Polyline.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
@@ -120,12 +117,9 @@
     <ClInclude Include="Drawing.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
-    <ClInclude Include="GeometryPrimitives.h" />
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
-    <ClInclude Include="Point.h" />
-    <ClInclude Include="Polyline.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="RenderingSystem.h" />
     <ClInclude Include="ShaderUtilities.h" />

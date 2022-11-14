@@ -29,6 +29,5 @@ struct std::formatter<entt::entity> {
     }
 };
 // -----------------------------------------------------------------------------
-#include "GeometryPrimitives.h"
 #include "Arrangement.h"
 #include "EntityObject.h"

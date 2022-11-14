@@ -19,7 +19,7 @@ public:
 	GLuint VertexArray = 0;
 
 	Geom::Arrangement* Arrangement;
-	Geom::Curve_handle Handle;
+	Geom::Curve_handle CurveHandle;
 
 	Stroke();
 	Stroke(const Stroke& other) = delete;
@@ -32,5 +32,4 @@ public:
 	void GenBuffers();
 	void UpdatePositionBuffer();
 	void UpdateWidthBuffer();
-	void UpdateArrangement();
 };

@@ -1,34 +1,34 @@
 ﻿#include "pch.hpp"
-#include "PaintTool.h"
+#include "FillTool.h"
 
 #include "Stroke.h"
 #include "CanvasPanel.h"
 
-void PaintTool::ClickOrDragStart()
+void FillTool::ClickOrDragStart()
 {
+	// Changed part: Width, Label, remove Arrangement
 	auto s = std::make_unique<Stroke>();
 
 	s->Position = { Canvas->MousePosOnDrawing };
-	s->Width = {0.001f};
+	s->Width = { 0.0003f };
 	s->OnChanged();
-	Canvas->ActiveDrawing->ArrangementSystem.InsertOrUpdate(s.get());
-	Canvas->ActiveDrawing->Strokes.push_back(std::move(s));
+	Canvas->ActiveDrawing->Labels.push_back(std::move(s));
 	LastSampleDuration = chrono::duration<float, std::milli>::zero();
 }
 
-void PaintTool::Dragging()
+void FillTool::Dragging()
 {
+	// Changed part: Width, Label, delta threshold, SampleInterval
 	glm::vec2 delta = glm::abs(glm::vec2(ImGui::GetMousePos() - LastSampleMousePos));
 
-	if (DraggingDuration - LastSampleDuration > SampleInterval && delta.x+delta.y >= 6.0f)
+	if (DraggingDuration - LastSampleDuration > SampleInterval && delta.x + delta.y >= 6.0f)
 	{
-		auto& s = Canvas->ActiveDrawing->Strokes.back();
+		auto& s = Canvas->ActiveDrawing->Labels.back();
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
 		s->Position.emplace_back(pos);
-		s->Width.emplace_back(0.001f);
+		s->Width.emplace_back(0.0003f);
 		s->OnChanged();
-		Canvas->ActiveDrawing->ArrangementSystem.InsertOrUpdate(s.get());
 
 		LastSampleMousePos = ImGui::GetMousePos();
 		LastSampleDuration = DraggingDuration;

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Stroke.h"
+#include "ArrangementSystem.h"
 
 class Drawing
 {
@@ -13,8 +14,8 @@ public:
 	float Dpi = 0.0f;
 
 	std::vector<std::unique_ptr<Stroke>> Strokes;
-	Geom::Arrangement Arrangement{};
-	Geom::PointLocation PointLocation{Arrangement};
+	ArrangementSystem ArrangementSystem;
+	std::vector<std::unique_ptr<Stroke>> Labels;
 
 	Drawing();
 	Drawing(const Drawing& other) = delete;

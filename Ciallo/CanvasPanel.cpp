@@ -11,6 +11,7 @@ CanvasPanel::CanvasPanel()
 	PaintTool = std::make_unique<class PaintTool>(this);
 	ActiveTool = PaintTool.get();
 	EditTool = std::make_unique<class EditTool>(this);
+	FillTool = std::make_unique<class FillTool>(this);
 }
 
 void CanvasPanel::DrawAndRunTool()
@@ -60,9 +61,29 @@ void CanvasPanel::DrawAndRunTool()
 		ActiveTool->Activate();
 	}
 
+	if(ImGui::Button("Vector Bucket Fill"))
+	{
+		ActiveTool->Deactivate();
+		ActiveTool = FillTool.get();
+		ActiveTool->Activate();
+	}
+
 	if(ImGui::Button("Print Arrangement"))
 	{
-		print_arrangement(ActiveDrawing->Arrangement);
+		print_arrangement(ActiveDrawing->ArrangementSystem.Arrangement);
+	}
+
+	if(ImGui::Button("Print Arrangement Size"))
+	{
+		print_arrangement_size(ActiveDrawing->ArrangementSystem.Arrangement);
+	}
+
+	if(ActiveTool == EditTool.get() && EditTool->SelectedStroke != nullptr)
+	{
+		if(ImGui::Button("Size"))
+		{
+			spdlog::info("size: {}", EditTool->SelectedStroke->Position.size());
+		}
 	}
 	ImGui::End();
 

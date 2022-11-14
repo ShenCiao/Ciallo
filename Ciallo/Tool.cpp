@@ -10,7 +10,7 @@ void Tool::Run()
 	if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
 	{
 		if (IsDragging) IsDragging = false;
-		StartDraggingTimePoint = std::chrono::high_resolution_clock::now();
+		StartDraggingTimePoint = chrono::high_resolution_clock::now();
 		ClickOrDragStart();
 		return;
 	}

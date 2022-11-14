@@ -16,7 +16,6 @@ void Stroke::OnChanged()
 {
 	UpdatePositionBuffer();
 	UpdateWidthBuffer();
-	UpdateArrangement();
 }
 
 void Stroke::GenBuffers()
@@ -45,38 +44,4 @@ void Stroke::UpdatePositionBuffer()
 void Stroke::UpdateWidthBuffer()
 {
 	glNamedBufferData(VertexBuffers[1], Width.size() * sizeof(float), Width.data(), GL_DYNAMIC_DRAW);
-}
-
-void Stroke::UpdateArrangement()
-{
-	if(Position.size() <= 1)
-	{
-		return;
-	}
-	static const Geom::Geom_traits traits;
-	static const Geom::Geom_traits::Construct_curve_2 curveConstruct =
-		traits.construct_curve_2_object();
-	
-	if(Handle != nullptr)
-	{
-		CGAL::remove_curve(*Arrangement, Handle);
-	}
-
-	std::vector<Geom::Geom_traits::Point_2> ps;
-	for(int i = 0; i < Position.size(); ++i)
-	{
-		if(i > 0 && Position[i] == Position[i - 1])
-		{
-			continue;
-		}
-
-		ps.emplace_back(Position[i].x, Position[i].y);
-	}
-	if(ps.size() <= 1)
-	{
-		return;
-	}
-	
-	Geom::Curve c = curveConstruct(ps);
-	Handle = CGAL::insert(*Arrangement, c);
 }

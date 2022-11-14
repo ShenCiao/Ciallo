@@ -5,10 +5,10 @@
 
 class EditTool : public Tool
 {
+public:
 	Stroke* SelectedStroke = nullptr;
 	glm::vec2 MousePrev{};
 
-public:
 	GLuint Texture = 0;
 	GLuint FrameBuffer = 0;
 

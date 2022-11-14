@@ -6,6 +6,7 @@
 void RenderingSystem::Init()
 {
 	ArticulatedLine = std::make_unique<ArticulatedLineEngine>();
+	Polygon = std::make_unique<PolygonEngine>();
 }
 
 void RenderingSystem::RenderDrawing(Drawing* drawing)

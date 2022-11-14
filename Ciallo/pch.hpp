@@ -29,5 +29,5 @@ struct std::formatter<entt::entity> {
     }
 };
 // -----------------------------------------------------------------------------
-#include "Arrangement.h"
 #include "EntityObject.h"
+#include "Arrangement.h"

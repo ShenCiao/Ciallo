@@ -29,6 +29,33 @@ void Application::Run()
 
 		RenderingSystem::RenderDrawing(ActiveProject->CanvasPanel->ActiveDrawing);
 
+		// --------------------------
+		auto polygon = ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.PointQuery(ActiveProject->CanvasPanel->MousePosOnDrawing);
+		glm::mat4 mvp = ActiveProject->CanvasPanel->ActiveDrawing->GetViewProjMatrix();
+		glUseProgram(RenderingSystem::Polygon->Program);
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
+		glUniform4f(1, 0, 0, 0, 0.3);
+		glEnable(GL_BLEND);
+		
+		GLuint vbo = 0, vao = 0;
+		glCreateBuffers(1, &vbo);
+		glNamedBufferData(vbo, polygon.size() * sizeof(glm::vec2), polygon.data(), GL_DYNAMIC_DRAW);
+		
+		
+		glCreateVertexArrays(1, &vao);
+		glEnableVertexArrayAttrib(vao, 0);
+		glVertexArrayAttribBinding(vao, 0, 0);
+		glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+		glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(glm::vec2));
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, ActiveProject->CanvasPanel->ActiveDrawing->FrameBuffer);
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLE_FAN, 0, polygon.size());
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		glDeleteBuffers(1, &vbo);
+		glDeleteVertexArrays(1, &vao);
+		// --------------------------
 		Window->EndFrame();
 	}
 }

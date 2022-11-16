@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Stroke.h"
-#include "ArrangementSystem.h"
+#include "ArrangementManager.h"
 
 class Drawing
 {
@@ -14,7 +14,7 @@ public:
 	float Dpi = 0.0f;
 
 	std::vector<std::unique_ptr<Stroke>> Strokes;
-	ArrangementSystem ArrangementSystem;
+	ArrangementManager ArrangementSystem;
 	std::vector<std::unique_ptr<Stroke>> Labels;
 
 	Drawing();

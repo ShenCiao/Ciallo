@@ -18,7 +18,6 @@ public:
 	std::array<GLuint, 2> VertexBuffers = {0, 0};
 	GLuint VertexArray = 0;
 
-	Geom::Arrangement* Arrangement;
 	Geom::Curve_handle CurveHandle;
 
 	Stroke();

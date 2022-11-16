@@ -91,7 +91,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="ArrangementSystem.cpp" />
+    <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
@@ -116,7 +116,7 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrangement.h" />
-    <ClInclude Include="ArrangementSystem.h" />
+    <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="Drawing.h" />

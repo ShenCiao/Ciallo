@@ -4,6 +4,7 @@
 #include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arrangement_with_history_2.h>
+#include <CGAL/partition_2.h>
 
 namespace Geom
 {
@@ -11,7 +12,8 @@ namespace Geom
 	using Segment_traits = CGAL::Arr_segment_traits_2<Kernel>;
 	using Geom_traits = CGAL::Arr_polyline_traits_2<Segment_traits>;
 
-	using Curve = Geom_traits::Curve_2;
+	using Point = Geom_traits::Point_2;
+	using Curve = Geom_traits::Curve_2; // Polyline
 	using X_monotone_Curve = Geom_traits::X_monotone_curve_2;
 
 	using Arrangement = CGAL::Arrangement_with_history_2<Geom_traits>;
@@ -22,4 +24,7 @@ namespace Geom
 	using Face_const_handle = Arrangement::Face_const_handle; 
 	using Halfedge_const_handle = Arrangement::Halfedge_const_handle;
 	using Curve_handle = Arrangement::Curve_handle;
+
+	using Partition_traits = CGAL::Partition_traits_2<Kernel>;
+	using Polygon = Partition_traits::Polygon_2;
 }

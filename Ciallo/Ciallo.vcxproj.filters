@@ -72,7 +72,7 @@
     <ClCompile Include="FillTool.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="ArrangementSystem.cpp">
+    <ClCompile Include="ArrangementManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,7 +131,7 @@
     <ClInclude Include="FillTool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArrangementSystem.h">
+    <ClInclude Include="ArrangementManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

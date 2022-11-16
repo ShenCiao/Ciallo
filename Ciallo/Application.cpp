@@ -32,7 +32,11 @@ void Application::Run()
 		auto start = chrono::high_resolution_clock::now();
 		auto polygons = ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.PointQuery(ActiveProject->CanvasPanel->MousePosOnDrawing);
 		chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
-		// spdlog::info("Time: {}ms", duration.count());
+
+		for(auto& [stroke, polys] : ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.QueryResultsContainer)
+		{
+			polygons.insert(polygons.end(), polys.begin(), polys.end());
+		}
 		for(auto& polygon : polygons)
 		{
 			

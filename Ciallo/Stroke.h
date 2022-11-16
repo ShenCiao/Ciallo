@@ -18,8 +18,6 @@ public:
 	std::array<GLuint, 2> VertexBuffers = {0, 0};
 	GLuint VertexArray = 0;
 
-	Geom::Curve_handle CurveHandle;
-
 	Stroke();
 	Stroke(const Stroke& other) = delete;
 	Stroke(Stroke&& other) = delete;

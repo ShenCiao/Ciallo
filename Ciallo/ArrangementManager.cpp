@@ -1,49 +1,120 @@
 ﻿#include "pch.hpp"
 #include "ArrangementManager.h"
 
+#include <algorithm>
+
 void ArrangementManager::Run()
 {
-	// Insertion and update
-	for(Stroke* stroke : InsertQueue)
+	// Insertion and update strokes
+	for (auto& [stroke, curve] : UpdateQueue)
 	{
-		auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
-		if (pos.size() <= 1)
-			return;
-		if (stroke->CurveHandle != nullptr)
+
+		if (HandleContainer.contains(stroke))
 		{
-			CGAL::remove_curve(Arrangement, stroke->CurveHandle);
+			CGAL::remove_curve(Arrangement, HandleContainer[stroke]);
+			if (curve.number_of_subcurves() == 0) // indicate remove
+			{
+				HandleContainer.erase(stroke);
+				continue;
+			}
 		}
 
-		std::vector<Geom::Geom_traits::Point_2> points;
-		for (int i = 0; i < pos.size(); ++i)
-		{
-			points.emplace_back(pos[i].x, pos[i].y);
-		}
-		stroke->CurveHandle = CGAL::insert(Arrangement, CurveConstructor(points));
+		HandleContainer[stroke] = CGAL::insert(Arrangement, curve);
 	}
-	InsertQueue.clear();
+	UpdateQueue.clear();
+
+	QueryResultsContainer.clear();
+	// Run query
+	for(auto& [stroke, monoCurves] : CachedQueryCurves)
+	{
+		std::vector<std::vector<glm::vec2>> polygons;
+		std::vector<Geom::Face_const_handle> allFaces;
+		for(auto& c : monoCurves)
+		{
+			auto resultFaces = ZoneQueryFace(c);
+			allFaces.insert(allFaces.end(), resultFaces.begin(), resultFaces.end());
+		}
+		std::set uniqueFaces(allFaces.begin(), allFaces.end());
+		for(auto face : uniqueFaces)
+		{
+			polygons.push_back(DeconstructPolygon(FaceToPolygon(face)[0]));
+		}
+		QueryResultsContainer[stroke] = polygons;
+	}
 }
 
-void ArrangementManager::InsertOrUpdate(Stroke* stroke)
+void ArrangementManager::AddOrUpdate(Stroke* stroke)
 {
-	InsertQueue.push_back(stroke);
+	auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
+	if (pos.size() <= 1)
+		return;
+	UpdateQueue[stroke] = CurveConstructor(VecToPoints(pos));
 }
 
 void ArrangementManager::Remove(Stroke* stroke)
 {
-	if (stroke->CurveHandle != nullptr)
-	{
-		CGAL::remove_curve(Arrangement, stroke->CurveHandle);
-	}
+	UpdateQueue[stroke] = Geom::Curve{};
+}
+
+void ArrangementManager::AddOrUpdateQuery(Stroke* stroke)
+{
+	auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
+	if (pos.size() <= 1)
+		return;
+	
+	CachedQueryCurves[stroke] = ConstructXMonotoneCurve(pos);
+}
+
+void ArrangementManager::RemoveQuery(Stroke* stroke)
+{
+	CachedQueryCurves.erase(stroke);
 }
 
 // return a vector of convex polygons
-std::vector<std::vector<glm::vec2>> ArrangementManager::PointQuery(glm::vec2 p)
+std::vector<std::vector<glm::vec2>> ArrangementManager::PointQuery(glm::vec2 p) const
 {
 	// TODO: deal with hole
-	
-	auto queryResult = PointLocation.locate({p.x, p.y});
+	Geom::PointLocation::Result_type queryResult = PointLocation.locate({p.x, p.y});
+	return GetConvexPolygonsFromQueryResult(queryResult);
+}
 
+// For test usage only
+std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const Geom::X_monotone_Curve& monoCurve)
+{
+	std::vector<Geom::PointLocation::Result_type> output(256);
+	auto beginIt = output.begin();
+	auto endIt = CGAL::zone(Arrangement, monoCurve, output.begin(), PointLocation);
+
+	std::vector<std::vector<glm::vec2>> result;
+	for(auto it = beginIt; it < endIt; ++it)
+	{
+		auto polygons = GetConvexPolygonsFromQueryResult(*it);
+		result.insert(result.end(), polygons.begin(), polygons.end());
+	}
+	return result;
+}
+
+std::vector<Geom::Face_const_handle> ArrangementManager::ZoneQueryFace(const Geom::X_monotone_Curve& monoCurve)
+{
+	std::vector<Geom::Face_const_handle> result;
+	std::vector<Geom::PointLocation::Result_type> output(256);
+	auto beginIt = output.begin();
+	auto endIt = CGAL::zone(Arrangement, monoCurve, beginIt, PointLocation);
+	for(auto it = beginIt; it < endIt; ++it)
+	{
+		if (auto faceHandlePtr = boost::get<Geom::Face_const_handle>(&*it))
+		{
+			if(!(*faceHandlePtr)->is_unbounded())
+				result.push_back(*faceHandlePtr);
+		}
+	}
+
+	return result;
+}
+
+std::vector<std::vector<glm::vec2>> ArrangementManager::GetConvexPolygonsFromQueryResult(
+	Geom::PointLocation::Result_type queryResult)
+{
 	if (auto faceHandlePtr = boost::get<Geom::Face_const_handle>(&queryResult))
 	{
 		Geom::Face_const_handle face = *faceHandlePtr;
@@ -57,23 +128,9 @@ std::vector<std::vector<glm::vec2>> ArrangementManager::PointQuery(glm::vec2 p)
 			std::vector<Geom::Polygon> simplePolygonWithHole = FaceToPolygon(face);
 			auto& outer = simplePolygonWithHole[0];
 
-			if (!outer.is_simple())
-			{
-				spdlog::info("not simple");
-			}
-			else
-			{
-				spdlog::info("simple");
-			}
-
-			if (outer.is_clockwise_oriented())
-				spdlog::info("Clockwise");
-			if (outer.is_counterclockwise_oriented())
-				spdlog::info("Counterclockwise");
-
 			std::list<Geom::Polygon> partitionResult;
 			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
-			                                std::back_inserter(partitionResult));
+				std::back_inserter(partitionResult));
 
 			std::vector<std::vector<glm::vec2>> result;
 			for (auto& poly : partitionResult)
@@ -89,14 +146,17 @@ std::vector<std::vector<glm::vec2>> ArrangementManager::PointQuery(glm::vec2 p)
 	}
 }
 
-std::vector<std::vector<glm::vec2>> ArrangementManager::PolylineQuery(const std::vector<glm::vec2>& polyline)
+std::vector<Geom::Point> ArrangementManager::VecToPoints(const std::vector<glm::vec2>& vec)
 {
-	if (polyline.size() == 0)
-		return {};
-	if (polyline.size() == 1)
-		return PointQuery(polyline[0]);
+	std::vector<Geom::Point> points;
+	for (auto& p : vec)
+	{
+		points.emplace_back(p.x, p.y);
+	}
+	return points;
 }
 
+// return: index 0 is the boundary, others are holes
 std::vector<Geom::Polygon> ArrangementManager::FaceToPolygon(Geom::Face_const_handle face)
 {
 	std::vector<Geom::Polygon> result(1);
@@ -208,11 +268,11 @@ std::vector<Geom::X_monotone_Curve> ArrangementManager::ConstructXMonotoneCurve(
 		}
 	};
 
-	std::vector<int> indices;
+	std::vector<size_t> indices;
 	auto cachedDirection = Overlap;
-	for (int i = 0; i < polyline.size(); ++i)
+	for (size_t i = 0; i < polyline.size(); ++i)
 	{
-		if(i+1 == polyline.size())
+		if (i + 1 == polyline.size())
 		{
 			indices.push_back(i);
 			continue;
@@ -226,30 +286,22 @@ std::vector<Geom::X_monotone_Curve> ArrangementManager::ConstructXMonotoneCurve(
 	}
 
 	std::vector<Geom::Point> points(polyline.size());
-	for(int i = 0; i < polyline.size(); ++i)
+	for (int i = 0; i < polyline.size(); ++i)
 	{
-		points[i] = { polyline[i].x, polyline[i].y };
+		points[i] = {polyline[i].x, polyline[i].y};
 	}
 
 	std::vector<Geom::X_monotone_Curve> result;
-	for(int i = 0; i < indices.size() - 1; ++i)
+	for (int i = 0; i < indices.size() - 1; ++i)
 	{
 		result.push_back(XMonoConstructor(points.begin() + indices[i], points.begin() + indices[i + 1] + 1));
 	}
 	return result;
 }
 
-std::vector<glm::vec2> ArrangementManager::RemoveConsecutiveOverlappingPoint(const std::vector<glm::vec2>& polyline)
+std::vector<glm::vec2> ArrangementManager::RemoveConsecutiveOverlappingPoint(std::vector<glm::vec2> polyline)
 {
-	std::vector<glm::vec2> result;
-	for (int i = 0; i < polyline.size(); ++i)
-	{
-		if (i > 0 && polyline[i] == polyline[i - 1])
-		{
-			continue;
-		}
-
-		result.emplace_back(polyline[i].x, polyline[i].y);
-	}
-	return result;
+	auto endIt = std::unique(polyline.begin(), polyline.end());
+	polyline.resize(std::distance(polyline.begin(), endIt));
+	return polyline;
 }

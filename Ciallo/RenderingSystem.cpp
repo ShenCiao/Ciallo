@@ -30,6 +30,11 @@ void RenderingSystem::RenderDrawing(Drawing* drawing)
 		ArticulatedLine->DrawStroke(s.get());
 	}
 
+	for(auto& s : drawing->Labels)
+	{
+		ArticulatedLine->DrawStroke(s.get());
+	}
+
 	glUseProgram(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

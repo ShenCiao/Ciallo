@@ -69,10 +69,10 @@
     <ClCompile Include="PolygonEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FillTool.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="ArrangementManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FillTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

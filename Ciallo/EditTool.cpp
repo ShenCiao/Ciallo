@@ -47,7 +47,7 @@ void EditTool::Dragging()
 			p = { p.x + delta.x, p.y + delta.y };
 		}
 		SelectedStroke->OnChanged();
-		Canvas->ActiveDrawing->ArrangementSystem.InsertOrUpdate(SelectedStroke);
+		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(SelectedStroke);
 		MousePrev = Canvas->MousePosOnDrawing;
 	}
 }

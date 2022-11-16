@@ -11,7 +11,7 @@ void PaintTool::ClickOrDragStart()
 	s->Position = { Canvas->MousePosOnDrawing };
 	s->Width = {0.001f};
 	s->OnChanged();
-	Canvas->ActiveDrawing->ArrangementSystem.InsertOrUpdate(s.get());
+	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());
 	Canvas->ActiveDrawing->Strokes.push_back(std::move(s));
 	LastSampleDuration = chrono::duration<float, std::milli>::zero();
 }
@@ -28,7 +28,7 @@ void PaintTool::Dragging()
 		s->Position.emplace_back(pos);
 		s->Width.emplace_back(0.001f);
 		s->OnChanged();
-		Canvas->ActiveDrawing->ArrangementSystem.InsertOrUpdate(s.get());
+		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());
 
 		LastSampleMousePos = ImGui::GetMousePos();
 		LastSampleDuration = DraggingDuration;

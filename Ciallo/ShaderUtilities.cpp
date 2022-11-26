@@ -1,6 +1,8 @@
 #include "pch.hpp"
 #include "ShaderUtilities.h"
 
+#include <fstream>
+
 GLuint ShaderUtilities::CreateFromFile(const std::filesystem::path& filePath, GLenum type)
 {
 	std::string code = LoadCodeFromFile(filePath);

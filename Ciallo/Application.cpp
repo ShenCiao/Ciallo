@@ -4,10 +4,11 @@
 #include "CanvasPanel.h"
 #include "Drawing.h"
 #include "Project.h"
+#include "RenderingSystem.h"
+#include "CubicBezier.h"
 
 #include <implot.h>
 #include <glm/gtc/type_ptr.hpp>
-#include "RenderingSystem.h"
 
 Application::Application()
 {
@@ -32,6 +33,7 @@ void Application::Run()
 		auto start = chrono::high_resolution_clock::now();
 		auto polygons = ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.PointQuery(ActiveProject->CanvasPanel->MousePosOnDrawing);
 		chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
+		spdlog::info("time: {}ms", duration.count());
 
 		for(auto& [stroke, polys] : ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.QueryResultsContainer)
 		{

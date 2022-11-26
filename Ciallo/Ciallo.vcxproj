@@ -54,8 +54,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;CGAL_NO_ASSERTIONS
-;CGAL_NO_PRECONDITIONS;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
@@ -93,8 +92,10 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
+    <ClCompile Include="BezierSpline.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
+    <ClCompile Include="CubicBezier.cpp" />
     <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
@@ -118,7 +119,9 @@
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
+    <ClInclude Include="BezierSpline.h" />
     <ClInclude Include="CanvasPanel.h" />
+    <ClInclude Include="CubicBezier.h" />
     <ClInclude Include="Drawing.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />

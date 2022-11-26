@@ -75,6 +75,12 @@
     <ClCompile Include="FillTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CubicBezier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BezierSpline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -132,6 +138,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ArrangementManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CubicBezier.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BezierSpline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

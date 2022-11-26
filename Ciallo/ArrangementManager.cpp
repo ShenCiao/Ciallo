@@ -8,18 +8,18 @@ void ArrangementManager::Run()
 	// Insertion and update strokes
 	for (auto& [stroke, curve] : UpdateQueue)
 	{
-
-		if (HandleContainer.contains(stroke))
+		if (CurveHandleContainer.contains(stroke))
 		{
-			CGAL::remove_curve(Arrangement, HandleContainer[stroke]);
+			// Warning: this function has been modified to fit our usage!
+			CGAL::remove_curve(Arrangement, CurveHandleContainer[stroke]);
 			if (curve.number_of_subcurves() == 0) // indicate remove
 			{
-				HandleContainer.erase(stroke);
+				CurveHandleContainer.erase(stroke);
 				continue;
 			}
 		}
-
-		HandleContainer[stroke] = CGAL::insert(Arrangement, curve);
+		
+		CurveHandleContainer[stroke] = CGAL::insert(Arrangement, curve);
 	}
 	UpdateQueue.clear();
 
@@ -27,7 +27,7 @@ void ArrangementManager::Run()
 	// Run query
 	for(auto& [stroke, monoCurves] : CachedQueryCurves)
 	{
-		std::vector<std::vector<glm::vec2>> polygons;
+		std::vector<std::vector<glm::vec2>> vecPolygon;
 		std::vector<Geom::Face_const_handle> allFaces;
 		for(auto& c : monoCurves)
 		{
@@ -37,9 +37,16 @@ void ArrangementManager::Run()
 		std::set uniqueFaces(allFaces.begin(), allFaces.end());
 		for(auto face : uniqueFaces)
 		{
-			polygons.push_back(DeconstructPolygon(FaceToPolygon(face)[0]));
+			Geom::Polygon outer = FaceToPolygon(face)[0];
+			std::list<Geom::Polygon> partitionResult;
+			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
+				std::back_inserter(partitionResult));
+			for(auto& p : partitionResult)
+			{
+				vecPolygon.push_back(PolygonToVec(p));
+			}
 		}
-		QueryResultsContainer[stroke] = polygons;
+		QueryResultsContainer[stroke] = vecPolygon;
 	}
 }
 
@@ -135,7 +142,7 @@ std::vector<std::vector<glm::vec2>> ArrangementManager::GetConvexPolygonsFromQue
 			std::vector<std::vector<glm::vec2>> result;
 			for (auto& poly : partitionResult)
 			{
-				result.push_back(DeconstructPolygon(poly));
+				result.push_back(PolygonToVec(poly));
 			}
 			return result;
 		}
@@ -220,12 +227,12 @@ std::vector<Geom::Polygon> ArrangementManager::FaceToPolygon(Geom::Face_const_ha
 	return result;
 }
 
-std::vector<glm::vec2> ArrangementManager::DeconstructPolygon(const Geom::Polygon& polygon)
+std::vector<glm::vec2> ArrangementManager::PolygonToVec(const Geom::Polygon& polygon)
 {
 	std::vector<glm::vec2> result;
 	for (auto it = polygon.begin(); it != polygon.end(); ++it)
 	{
-		result.emplace_back(it->x(), it->y());
+		result.push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 	}
 	return result;
 }

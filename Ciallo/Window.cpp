@@ -75,7 +75,7 @@ void Window::BeginFrame() const
 void Window::EndFrame() const
 {
 	const ImVec4 clearColor{ .0f, .0f, 0.0f, 1.00f };
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui::Render();

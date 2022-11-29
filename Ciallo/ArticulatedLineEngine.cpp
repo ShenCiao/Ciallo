@@ -25,7 +25,7 @@ ArticulatedLineEngine::~ArticulatedLineEngine()
 	glDeleteProgram(Program);
 }
 
-void ArticulatedLineEngine::DrawStroke(Stroke* stroke)
+void ArticulatedLineEngine::DrawStroke(Stroke* stroke) const
 {
 	int count = stroke->Position.size();
 	if (count == 1)

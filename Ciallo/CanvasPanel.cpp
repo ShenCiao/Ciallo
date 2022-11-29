@@ -25,7 +25,7 @@ void CanvasPanel::DrawAndRunTool()
 	auto panel = ImGui::GetCurrentWindow();
 	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
 
-	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->Texture), ImVec2(
+	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->ColorTexture), ImVec2(
 		static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
 		static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
 

@@ -6,7 +6,8 @@
 #include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/partition_2.h>
 
-namespace Geom
+
+namespace CGAL
 {
 	using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
 	using Segment_traits = CGAL::Arr_segment_traits_2<Kernel>;

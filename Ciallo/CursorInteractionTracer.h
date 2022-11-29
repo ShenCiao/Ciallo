@@ -1,5 +1,5 @@
 ﻿#pragma once
-namespace Geom
+namespace CGAL
 {
 	enum class CursorInteractionTracerStrategy
 	{

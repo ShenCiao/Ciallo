@@ -35,19 +35,29 @@ glm::vec2 Drawing::GetWorldSize() const
 
 void Drawing::GenRenderTarget()
 {
-	glCreateTextures(GL_TEXTURE_2D, 1, &Texture);
-	glTextureParameteri(Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTextureParameteri(Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	// This is required on WebGL for non power-of-two textures
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // Same
-
 	int width = GetSizeInPixel().x;
 	int height = GetSizeInPixel().y;
-	glTextureStorage2D(Texture, 1, GL_RGBA8, width, height);
+	// color buffer
+	glCreateTextures(GL_TEXTURE_2D, 1, &ColorTexture);
+	glTextureParameteri(ColorTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(ColorTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(ColorTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(ColorTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTextureStorage2D(ColorTexture, 1, GL_RGBA8, width, height);
+
+	// stencil and depth
+	glCreateTextures(GL_TEXTURE_2D, 1, &DepthStencilTexture);
+	glTextureParameteri(DepthStencilTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(DepthStencilTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(DepthStencilTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(DepthStencilTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTextureStorage2D(DepthStencilTexture, 1, GL_DEPTH24_STENCIL8, width, height);
 
 	glCreateFramebuffers(1, &FrameBuffer);
-	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, Texture, 0);
+	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, ColorTexture, 0);
+	glNamedFramebufferTexture(FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, DepthStencilTexture, 0);
 
 	if (glCheckNamedFramebufferStatus(FrameBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
@@ -57,7 +67,7 @@ void Drawing::GenRenderTarget()
 
 void Drawing::DeleteRenderTarget()
 {
-	glDeleteTextures(1, &Texture);
+	glDeleteTextures(1, &ColorTexture);
 	glDeleteFramebuffers(1, &FrameBuffer);
 }
 

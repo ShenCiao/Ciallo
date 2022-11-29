@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Polyline.h"
+
 class PolygonEngine
 {
 public:
@@ -9,4 +11,6 @@ public:
 
 	PolygonEngine();
 	~PolygonEngine();
+
+	static void DrawPolygon(std::vector<Geom::Polyline> polygonWithHoles);
 };

@@ -12,5 +12,5 @@ public:
 	ArticulatedLineEngine();
 	~ArticulatedLineEngine();
 
-	void DrawStroke(Stroke* stroke);
+	void DrawStroke(Stroke* stroke) const;
 };

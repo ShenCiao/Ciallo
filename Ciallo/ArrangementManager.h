@@ -1,19 +1,21 @@
 ﻿#pragma once
 
 #include "Stroke.h"
+#include "Polyline.h"
 
 class ArrangementManager
 {
 	//TODO: make insertion and query asynchronous.
 public:
-	Geom::Arrangement Arrangement{};
-	Geom::PointLocation PointLocation{Arrangement};
-	std::unordered_map<Stroke*, Geom::Curve_handle> CurveHandleContainer{};
-	std::unordered_map<Stroke*, std::vector<Geom::X_monotone_Curve>> CachedQueryCurves{};
-	std::unordered_map<Stroke*, std::vector<std::vector<glm::vec2>>> QueryResultsContainer{};
+	CGAL::Arrangement Arrangement{};
+	CGAL::PointLocation PointLocation{Arrangement};
+	std::unordered_map<Stroke*, CGAL::Curve_handle> CurveHandleContainer{};
+	std::unordered_map<Stroke*, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};
+	// One stroke may cross multiple polygons with holes. First element of a vector is the polygon, others are holes.
+	std::unordered_map<Stroke*, std::vector<std::vector<Geom::Polyline>>> QueryResultsContainer{};
 	
 
-	std::map<Stroke*, Geom::Curve> UpdateQueue{};
+	std::map<Stroke*, CGAL::Curve> UpdateQueue{};
 
 	void Run();
 
@@ -23,18 +25,20 @@ public:
 	void AddOrUpdateQuery(Stroke* stroke);
 	void RemoveQuery(Stroke* stroke);
 
-	std::vector<std::vector<glm::vec2>> PointQuery(glm::vec2 p) const;
-	std::vector<std::vector<glm::vec2>> ZoneQuery(const Geom::X_monotone_Curve& monoCurve);
-	std::vector<Geom::Face_const_handle> ZoneQueryFace(const Geom::X_monotone_Curve& monoCurve);
+	std::vector<Geom::Polyline> PointQuery(glm::vec2 p) const;
+	std::vector<std::vector<glm::vec2>> ZoneQuery(const CGAL::X_monotone_Curve& monoCurve);
+	std::vector<CGAL::Face_const_handle> ZoneQueryFace(const CGAL::X_monotone_Curve& monoCurve);
 
-	static std::vector<std::vector<glm::vec2>> GetConvexPolygonsFromQueryResult(Geom::PointLocation::Result_type queryResult);
-	static std::vector<Geom::Point> VecToPoints(const std::vector<glm::vec2>& vec);
-	static std::vector<Geom::Polygon> FaceToPolygon(Geom::Face_const_handle face);
-	static std::vector<glm::vec2> PolygonToVec(const Geom::Polygon& polygon);
-	static std::vector<Geom::X_monotone_Curve> ConstructXMonotoneCurve(const std::vector<glm::vec2>& polyline);
+	static std::vector<Geom::Polyline> GetPolygonWithHolesFromQueryResult(const CGAL::PointLocation::Result_type& queryResult);
+	static std::vector<Geom::Polyline> GetConvexPolygonsFromQueryResult(const CGAL::PointLocation::Result_type& queryResult);
+	static std::vector<CGAL::Point> VecToPoints(const std::vector<glm::vec2>& vec);
+	static std::vector<CGAL::Polygon> FaceToPolygon(CGAL::Face_const_handle face);
+	static std::vector<Geom::Polyline> FaceToVec(CGAL::Face_const_handle face);
+	static Geom::Polyline PolygonToVec(const CGAL::Polygon& polygon);
+	static std::vector<CGAL::X_monotone_Curve> ConstructXMonotoneCurve(const std::vector<glm::vec2>& polyline);
 	static std::vector<glm::vec2> RemoveConsecutiveOverlappingPoint(std::vector<glm::vec2> polyline);
-	inline static const Geom::Geom_traits::Construct_curve_2 CurveConstructor =
-		Geom::Geom_traits{}.construct_curve_2_object();
-	inline static const Geom::Geom_traits::Construct_x_monotone_curve_2 XMonoConstructor =
-		Geom::Geom_traits{}.construct_x_monotone_curve_2_object();
+	inline static const CGAL::Geom_traits::Construct_curve_2 CurveConstructor =
+		CGAL::Geom_traits{}.construct_curve_2_object();
+	inline static const CGAL::Geom_traits::Construct_x_monotone_curve_2 XMonoConstructor =
+		CGAL::Geom_traits{}.construct_x_monotone_curve_2_object();
 };

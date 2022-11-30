@@ -20,6 +20,7 @@ public:
 	void Activate() override;
 	void DragEnd() override;
 	void Deactivate() override;
+	void DrawProperties() override;
 
 	void GenRenderTargetFromActiveDrawing();
 	void DestroyRenderTarget();

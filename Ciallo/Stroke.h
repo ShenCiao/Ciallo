@@ -5,17 +5,19 @@ class Brush;
 class Stroke
 {
 public:
-	std::vector<glm::vec2> Position{};
-	// This is supposed to be a Geom::Polyline class. But I'm not going to make extra unnecessary stuff for now.
+	Geom::Polyline Position{};
 	std::vector<float> Width{};
 	Brush* Brush;
 
+	// Bad design but works!
+	glm::vec4 PolygonColor = {0.0f, 0.0f, 0.0f, 1.0f/3.0f};
 	/*
 	 * Index: Attribute
 	 * 0: position
 	 * 1: width
+	 * 2: distance to the first vertex(prefix sum result)
 	 */
-	std::array<GLuint, 2> VertexBuffers = {0, 0};
+	std::array<GLuint, 3> VertexBuffers{};
 	GLuint VertexArray = 0;
 
 	Stroke();
@@ -29,4 +31,6 @@ public:
 	void GenBuffers();
 	void UpdatePositionBuffer();
 	void UpdateWidthBuffer();
+	void UpdateDistanceBuffer();
+	void Draw();
 };

@@ -32,6 +32,10 @@ public:
 	{
 	}
 
+	virtual void DrawProperties()
+	{
+	}
+
 	// Run under the invisible button of canvas, default behavior
 	virtual void Run();
 };

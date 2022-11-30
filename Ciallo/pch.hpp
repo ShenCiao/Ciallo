@@ -12,6 +12,7 @@ namespace chrono = std::chrono;
 
 #include <gl/glew.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <spdlog/spdlog.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -29,5 +30,5 @@ struct std::formatter<entt::entity> {
     }
 };
 // -----------------------------------------------------------------------------
-#include "EntityObject.h"
 #include "Arrangement.h"
+#include "Polyline.h"

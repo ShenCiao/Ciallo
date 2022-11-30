@@ -46,7 +46,7 @@ void CanvasPanel::DrawAndRunTool()
 	ImGui::End();
 	ImGui::PopStyleVar();
 
-	ImGui::Begin("Toolbox");
+	ImGui::Begin("Toolbox" );
 	if(ImGui::Button("Paint"))
 	{
 		ActiveTool->Deactivate();
@@ -78,13 +78,8 @@ void CanvasPanel::DrawAndRunTool()
 		print_arrangement_size(ActiveDrawing->ArrangementSystem.Arrangement);
 	}
 
-	if(ActiveTool == EditTool.get() && EditTool->SelectedStroke != nullptr)
-	{
-		if(ImGui::Button("Size"))
-		{
-			spdlog::info("size: {}", EditTool->SelectedStroke->Position.size());
-		}
-	}
+	ActiveTool->DrawProperties();
+	
 	ImGui::End();
 
 	// bool notCloseWindow = true;

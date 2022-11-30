@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Stroke.h"
-#include "Polyline.h"
+#include "ColorFace.h"
 
 class ArrangementManager
 {
@@ -11,8 +11,8 @@ public:
 	CGAL::PointLocation PointLocation{Arrangement};
 	std::unordered_map<Stroke*, CGAL::Curve_handle> CurveHandleContainer{};
 	std::unordered_map<Stroke*, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};
-	// One stroke may cross multiple polygons with holes. First element of a vector is the polygon, others are holes.
-	std::unordered_map<Stroke*, std::vector<std::vector<Geom::Polyline>>> QueryResultsContainer{};
+	// One stroke may cross multiple polygons with holes.
+	std::unordered_map<Stroke*, std::vector<ColorFace>> QueryResultsContainer{};
 	
 
 	std::map<Stroke*, CGAL::Curve> UpdateQueue{};

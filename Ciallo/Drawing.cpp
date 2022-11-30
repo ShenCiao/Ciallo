@@ -4,6 +4,8 @@
 #include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "RenderingSystem.h"
+
 Drawing::Drawing()
 {
 	
@@ -74,4 +76,57 @@ void Drawing::DeleteRenderTarget()
 glm::mat4 Drawing::GetViewProjMatrix() const
 {
 	return glm::ortho(UpperLeft.x, LowerRight.x, UpperLeft.y, LowerRight.y);
+}
+
+void Drawing::Draw()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glClearColor(1, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	auto pixelSize = GetSizeInPixel();
+	glViewport(0, 0, pixelSize.x, pixelSize.y);
+	glUseProgram(RenderingSystem::ArticulatedLine->Program);
+	glm::mat4 mvp = GetViewProjMatrix();
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
+	glUniform4f(1, 0.5, 0.5, 0.5, 1);// color
+
+	for (auto& s : Strokes)
+	{
+		s->Draw();
+	}
+
+	for (auto& s : Labels)
+	{
+		s->Draw();
+	}
+
+	glUseProgram(0);
+
+	// Filled regions
+	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glEnable(GL_BLEND);
+	glEnable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
+	glUseProgram(RenderingSystem::Polygon->Program);
+	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
+	glUniform4f(1, 0.f, 0.f, 0.f, 0.3f); // color
+
+
+	for (auto& [stroke, faces] : ArrangementSystem.QueryResultsContainer)
+	{
+		glUniform4fv(1, 1, glm::value_ptr(stroke->PolygonColor));
+		for (ColorFace& face : faces)
+		{
+			face.GenUploadBuffers();
+			face.Draw();
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

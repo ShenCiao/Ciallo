@@ -11,6 +11,7 @@ void FillTool::ClickOrDragStart()
 
 	s->Position = { Canvas->MousePosOnDrawing };
 	s->Width = { 0.0003f };
+	s->PolygonColor = PolygonColor;
 	s->OnChanged();
 	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
 	Canvas->ActiveDrawing->Labels.push_back(std::move(s));
@@ -27,11 +28,16 @@ void FillTool::Dragging()
 		auto& s = Canvas->ActiveDrawing->Labels.back();
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
-		s->Position.emplace_back(pos);
+		s->Position.push_back(pos);
 		s->Width.emplace_back(0.0003f);
 		s->OnChanged();
 		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
 		LastSampleMousePos = ImGui::GetMousePos();
 		LastSampleDuration = DraggingDuration;
 	}
+}
+
+void FillTool::DrawProperties()
+{
+	ImGui::ColorEdit4("Polygon Color", glm::value_ptr(PolygonColor));
 }

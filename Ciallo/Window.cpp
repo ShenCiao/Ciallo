@@ -112,7 +112,7 @@ void Window::GlDebugCallback(GLenum source, GLenum type, GLuint id, GLenum sever
 		break;
 	case GL_DEBUG_SEVERITY_LOW:
 	case GL_DEBUG_SEVERITY_NOTIFICATION:
-		spdlog::info("GL callback: Type = {}, Message = {}", errorType2String[type], message);
+		// spdlog::info("GL callback: Type = {}, Message = {}", errorType2String[type], message);
 		break;
 	default:
 		break;

@@ -1,0 +1,41 @@
+#version 460
+
+layout(local_size_x = 1024) in;
+
+layout(std430, binding = 0) readonly buffer Input{
+    vec2[] input;
+};
+
+layout(std430,binding = 1) writeonly buffer Output{
+    float[] output;
+};
+
+shared float[gl_WorkGroupSize.x * 2] segmentLengths;
+
+void main(){
+    uint id = gl_LocalInvocationID.x;
+    vec2 p0 = input[id];
+    vec2 p1 = id == 0 ? p0:input[id - 1];
+    // length of each segment
+    float curLength = distance(p0, p1);
+    segmentLengths[id] = curLength;
+
+    barrier();
+	memoryBarrierShared();
+
+    // Prefix sum on segment length
+    const uint n_steps = uint(log2(gl_WorkGroupSize.x)) + 1;
+
+    for(uint s = 0; s < n_steps; s++){
+        uint mask = (1 << s) - 1;
+		uint rd_id = ((id >> s) << (s + 1)) + mask;
+		uint wr_id = rd_id + 1 + (id & mask);
+		
+		segmentLengths[wr_id] += segmentLengths[rd_id];
+		
+		barrier();
+		memoryBarrierShared();
+    }
+    // Prefix sum done! For now segmentLengths is the distance from the starting point of polyline
+    output[id] = segmentLengths[id];
+}

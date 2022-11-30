@@ -27,10 +27,11 @@ void ArrangementManager::Run()
 	// Run query
 	for(auto& [stroke, monoCurves] : CachedQueryCurves)
 	{
-		std::vector<std::vector<Geom::Polyline>> vecPolygons;
+		std::vector<ColorFace> vecPolygons;
 		std::vector<CGAL::Face_const_handle> allFaces;
 		for(auto& c : monoCurves)
 		{
+			
 			auto resultFaces = ZoneQueryFace(c);
 			allFaces.insert(allFaces.end(), resultFaces.begin(), resultFaces.end());
 		}
@@ -38,9 +39,9 @@ void ArrangementManager::Run()
 		for (const auto& face : uniqueFaces)
 		{
 			std::vector<Geom::Polyline> polygonWithHoles = FaceToVec(face);
-			vecPolygons.push_back(polygonWithHoles);
+			vecPolygons.emplace_back(polygonWithHoles);
 		}
-		QueryResultsContainer[stroke] = vecPolygons;
+		QueryResultsContainer[stroke] = std::move(vecPolygons);
 	}
 }
 
@@ -279,7 +280,7 @@ Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Polygon& polygon)
 	Geom::Polyline result;
 	for (auto it = polygon.begin(); it != polygon.end(); ++it)
 	{
-		result.PushBack({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
+		result.push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 	}
 	return result;
 }

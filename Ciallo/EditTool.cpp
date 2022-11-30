@@ -68,6 +68,17 @@ void EditTool::Deactivate()
 	DestroyRenderTarget();
 }
 
+void EditTool::DrawProperties()
+{
+	if(SelectedStroke != nullptr)
+	{
+		if (ImGui::Button("Size"))
+		{
+			spdlog::info("size: {}", SelectedStroke->Position.size());
+		}
+	}
+}
+
 void EditTool::GenRenderTargetFromActiveDrawing()
 {
 	// Create textures used for selection

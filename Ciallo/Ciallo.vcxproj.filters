@@ -84,6 +84,12 @@
     <ClCompile Include="Polyline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ColorFace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PrefixSumPosition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -152,6 +158,12 @@
     <ClInclude Include="Polyline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ColorFace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PrefixSumPosition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">
@@ -163,5 +175,16 @@
     <CopyFileToFolders Include="shaders\articulatedLine.vert">
       <Filter>Resource Files\shaders</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\polygon.frag">
+      <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\polygon.vert">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
+    <None Include="shaders\prefixSumPosition.comp">
+      <Filter>Resource Files\shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

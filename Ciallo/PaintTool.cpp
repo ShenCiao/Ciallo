@@ -25,7 +25,7 @@ void PaintTool::Dragging()
 		auto& s = Canvas->ActiveDrawing->Strokes.back();
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
-		s->Position.emplace_back(pos);
+		s->Position.push_back(pos);
 		s->Width.emplace_back(0.001f);
 		s->OnChanged();
 		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());

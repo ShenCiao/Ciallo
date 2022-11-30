@@ -31,4 +31,6 @@ public:
 	void GenRenderTarget();
 	void DeleteRenderTarget();
 	glm::mat4 GetViewProjMatrix() const;
+
+	void Draw();
 };

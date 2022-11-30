@@ -106,8 +106,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="ColorFace.cpp" />
     <ClCompile Include="PolygonEngine.cpp" />
     <ClCompile Include="Polyline.cpp" />
+    <ClCompile Include="PrefixSumPosition.cpp" />
     <ClCompile Include="Project.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
@@ -130,8 +132,10 @@
     <ClInclude Include="FillTool.h" />
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
+    <ClInclude Include="ColorFace.h" />
     <ClInclude Include="PolygonEngine.h" />
     <ClInclude Include="Polyline.h" />
+    <ClInclude Include="PrefixSumPosition.h" />
     <ClInclude Include="Project.h" />
     <ClInclude Include="RenderingSystem.h" />
     <ClInclude Include="ShaderUtilities.h" />
@@ -149,6 +153,20 @@
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="shaders\articulatedLine.vert">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="shaders\polygon.frag">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\polygon.vert">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\prefixSumPosition.comp">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
     </CopyFileToFolders>

@@ -164,6 +164,9 @@
     <ClInclude Include="PrefixSumPosition.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Visiblity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">
@@ -178,13 +181,7 @@
     <CopyFileToFolders Include="shaders\polygon.frag">
       <Filter>Resource Files\shaders</Filter>
     </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\polygon.vert">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
-    <None Include="shaders\prefixSumPosition.comp">
-      <Filter>Resource Files\shaders</Filter>
-    </None>
+    <CopyFileToFolders Include="shaders\polygon.vert" />
+    <CopyFileToFolders Include="shaders\prefixSumPosition.comp" />
   </ItemGroup>
 </Project>

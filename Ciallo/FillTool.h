@@ -1,11 +1,15 @@
 ﻿#pragma once
 
+#include "Stroke.h"
+
 #include "Tool.h"
 
 class FillTool : public Tool
 {
 	chrono::duration<float, std::milli> LastSampleDuration{ 0.0f };
 	chrono::duration<float, std::milli> SampleInterval{ 25.f };
+
+	std::unique_ptr<Stroke> Rim;
 
 	glm::vec2 LastSampleMousePos{};
 
@@ -16,7 +20,13 @@ public:
 	{
 	}
 
+	void PadRim();
+	void RemoveRim();
+
 	void ClickOrDragStart() override;
 	void Dragging() override;
+	void Activate() override;
+	void Deactivate() override;
 	void DrawProperties() override;
+	void Hovering() override;
 };

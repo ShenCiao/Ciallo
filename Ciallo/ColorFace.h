@@ -17,6 +17,7 @@ public:
 	~ColorFace();
 
 	void Draw();
+	void DrawRim();
 	void GenUploadBuffers();
 	void DeleteBuffers();
 };

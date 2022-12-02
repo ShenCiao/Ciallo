@@ -27,6 +27,8 @@ void Application::Run()
 		ActiveProject->CanvasPanel->DrawAndRunTool();
 		ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.Run();
 		ActiveProject->CanvasPanel->ActiveDrawing->Draw();
+
+		
 		Window->EndFrame();
 	}
 }
@@ -44,4 +46,5 @@ void Application::GenDefaultProject()
 
 	ActiveProject->CanvasPanel = std::make_unique<CanvasPanel>();
 	ActiveProject->CanvasPanel->ActiveDrawing = ActiveProject->MainDrawing.get();
+	ActiveProject->CanvasPanel->GenOverlayBuffers();
 }

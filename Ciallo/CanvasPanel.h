@@ -9,6 +9,7 @@ class CanvasPanel
 {
 public:
 	CanvasPanel();
+	~CanvasPanel();
 	Drawing* ActiveDrawing = nullptr;
 	float DrawingRotation = 0.0f;
 	float Zoom = 1.0f;
@@ -16,10 +17,22 @@ public:
 	glm::vec2 MousePosOnDrawing;
 	glm::ivec2 MousePosOnDrawingInPixel;
 
+	/*
+	 * Bad design to have a dedicate overlay buffer.
+	 * It supposes to have several layers (which prevent users to edit) on the top to draw overlay on.
+	 * Change it when reworking.
+	 */
+	GLuint OverlayColorTexture = 0;
+	GLuint OverlayDepthStencilTexture = 0;
+	GLuint OverlayFrameBuffer = 0;
+
+
 	Tool* ActiveTool;
 	std::unique_ptr<PaintTool> PaintTool;
 	std::unique_ptr<EditTool> EditTool;
 	std::unique_ptr<FillTool> FillTool;
 
+	void GenOverlayBuffers();
+	void DeleteOverlayBuffers();
 	void DrawAndRunTool();
 };

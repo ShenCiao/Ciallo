@@ -18,20 +18,25 @@ void ArrangementManager::Run()
 				continue;
 			}
 		}
-		
+
 		CurveHandleContainer[stroke] = CGAL::insert(Arrangement, curve);
 	}
+
+	if(UpdateQueue.size() != 0 && Visibility.is_attached())
+	{
+		Visibility.init_cdt();
+	}
+
 	UpdateQueue.clear();
 
 	QueryResultsContainer.clear();
 	// Run query
-	for(auto& [stroke, monoCurves] : CachedQueryCurves)
+	for (auto& [stroke, monoCurves] : CachedQueryCurves)
 	{
 		std::vector<ColorFace> vecPolygons;
 		std::vector<CGAL::Face_const_handle> allFaces;
-		for(auto& c : monoCurves)
+		for (auto& c : monoCurves)
 		{
-			
 			auto resultFaces = ZoneQueryFace(c);
 			allFaces.insert(allFaces.end(), resultFaces.begin(), resultFaces.end());
 		}
@@ -63,7 +68,7 @@ void ArrangementManager::AddOrUpdateQuery(Stroke* stroke)
 	auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
 	if (pos.size() <= 1)
 		return;
-	
+
 	CachedQueryCurves[stroke] = ConstructXMonotoneCurve(pos);
 }
 
@@ -72,11 +77,42 @@ void ArrangementManager::RemoveQuery(Stroke* stroke)
 	CachedQueryCurves.erase(stroke);
 }
 
+Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const
+{
+	CGAL::PointLocation::Result_type queryResult = PointLocation.locate({p.x, p.y});
+	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
+	{
+		CGAL::Face_const_handle face = *faceHandlePtr;
+		if (face->is_unbounded())
+			return {};
+
+		CGAL::VisOutputArr arr;
+		CGAL::VisOutputArr::Face_const_handle output = Visibility.compute_visibility_in_bounded_face({p.x, p.y}, arr);
+
+		auto start = output->outer_ccb();
+		auto curr = start;
+		Geom::Polyline result;
+		do
+		{
+			result.push_back(CGAL::to_double(curr->source()->point().x()), CGAL::to_double(curr->source()->point().y()));
+		} while (++curr != start);
+		return result;
+	}
+	return {};
+}
+
 // return a vector of convex polygons
 std::vector<Geom::Polyline> ArrangementManager::PointQuery(glm::vec2 p) const
 {
 	CGAL::PointLocation::Result_type queryResult = PointLocation.locate({p.x, p.y});
-	return GetPolygonWithHolesFromQueryResult(queryResult);
+	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
+	{
+		CGAL::Face_const_handle face = *faceHandlePtr;
+		if (face->is_unbounded())
+			return {};
+		return FaceToVec(face);
+	}
+	return {};
 }
 
 // For test usage only
@@ -87,7 +123,7 @@ std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_
 	auto endIt = CGAL::zone(Arrangement, monoCurve, output.begin(), PointLocation);
 
 	std::vector<std::vector<glm::vec2>> result;
-	for(auto it = beginIt; it < endIt; ++it)
+	for (auto it = beginIt; it < endIt; ++it)
 	{
 		auto polygons = GetConvexPolygonsFromQueryResult(*it);
 		result.insert(result.end(), polygons.begin(), polygons.end());
@@ -102,30 +138,16 @@ std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGA
 	std::vector<CGAL::PointLocation::Result_type> output(256);
 	auto beginIt = output.begin();
 	auto endIt = CGAL::zone(Arrangement, monoCurve, beginIt, PointLocation);
-	for(auto it = beginIt; it < endIt; ++it)
+	for (auto it = beginIt; it < endIt; ++it)
 	{
 		if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&*it))
 		{
-			if(!(*faceHandlePtr)->is_unbounded())
+			if (!(*faceHandlePtr)->is_unbounded())
 				result.push_back(*faceHandlePtr);
 		}
 	}
 
 	return result;
-}
-
-std::vector<Geom::Polyline> ArrangementManager::GetPolygonWithHolesFromQueryResult(
-	const CGAL::PointLocation::Result_type& queryResult)
-{
-	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
-	{
-		CGAL::Face_const_handle face = *faceHandlePtr;
-		if (face->is_unbounded())
-			return {};
-		return FaceToVec(face);
-	}
-
-	return {};
 }
 
 std::vector<Geom::Polyline> ArrangementManager::GetConvexPolygonsFromQueryResult(
@@ -147,7 +169,7 @@ std::vector<Geom::Polyline> ArrangementManager::GetConvexPolygonsFromQueryResult
 
 			std::list<CGAL::Polygon> partitionResult;
 			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
-				std::back_inserter(partitionResult));
+			                                std::back_inserter(partitionResult));
 
 			std::vector<Geom::Polyline> result;
 			for (auto& poly : partitionResult)
@@ -187,13 +209,13 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 
 	std::vector<CGAL::Arrangement::Ccb_halfedge_const_circulator> starters;
 	starters.push_back(face->outer_ccb());
-	for(auto hole = face->holes_begin(); hole != face->holes_end(); ++hole)
+	for (auto hole = face->holes_begin(); hole != face->holes_end(); ++hole)
 	{
 		starters.push_back(*hole);
 	}
 
 
-	for(auto start : starters)
+	for (auto start : starters)
 	{
 		auto curr = start;
 		bool palindromic = false;
@@ -224,7 +246,8 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 					handles.push_back(curr);
 				}
 			}
-		} while (++curr != start);
+		}
+		while (++curr != start);
 
 		if (!handles.empty())
 			result.emplace_back();
@@ -268,7 +291,7 @@ std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handl
 	std::vector<Geom::Polyline> result;
 	std::vector<CGAL::Polygon> polygonWithHoles = FaceToPolygon(face);
 
-	for(auto& polygon : polygonWithHoles)
+	for (auto& polygon : polygonWithHoles)
 	{
 		result.push_back(PolygonToVec(polygon));
 	}

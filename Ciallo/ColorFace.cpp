@@ -47,6 +47,13 @@ void ColorFace::Draw()
 	glDrawArrays(GL_TRIANGLE_FAN, 0, PolygonWithHoles[0].size());
 }
 
+void ColorFace::DrawRim()
+{
+	int count = PolygonWithHoles[0].size();
+	glBindVertexArray(VertexArray);
+	glDrawArrays(GL_LINE_LOOP, 0, count);
+}
+
 void ColorFace::GenUploadBuffers()
 {
 	DeleteBuffers();

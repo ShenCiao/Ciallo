@@ -130,6 +130,7 @@
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="Visiblity.h" />
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="ColorFace.h" />

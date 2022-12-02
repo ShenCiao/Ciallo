@@ -1,4 +1,5 @@
 #pragma once
+#include <fmt/format.h>
 
 namespace Geom
 {
@@ -23,5 +24,23 @@ namespace Geom
 		auto end() { return Points.end(); }
 	};
 }
+
+template<>
+struct fmt::formatter<glm::vec2> : fmt::formatter<std::string>
+{
+	auto format(glm::vec2 point, fmt::format_context& ctx) -> decltype(ctx.out())
+	{
+		return fmt::format_to(ctx.out(), "({}, {})", point.x, point.y);
+	}
+};
+
+template<>
+struct fmt::formatter<Geom::Polyline> : fmt::formatter<std::string>
+{
+	auto format(const Geom::Polyline& line, fmt::format_context& ctx) -> decltype(ctx.out())
+	{
+		return fmt::format_to(ctx.out(), "End point: {}", line.Points.back());
+	}
+};
 
 

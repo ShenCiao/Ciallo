@@ -70,7 +70,11 @@ void Drawing::GenRenderTarget()
 void Drawing::DeleteRenderTarget()
 {
 	glDeleteTextures(1, &ColorTexture);
+	glDeleteTextures(1, &DepthStencilTexture);
 	glDeleteFramebuffers(1, &FrameBuffer);
+	ColorTexture = 0;
+	DepthStencilTexture = 0;
+	FrameBuffer = 0;
 }
 
 glm::mat4 Drawing::GetViewProjMatrix() const

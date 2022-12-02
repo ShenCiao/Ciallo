@@ -3,19 +3,19 @@
 layout(local_size_x = 1024) in;
 
 layout(std430, binding = 0) readonly buffer Input{
-    vec2[] input;
+    vec2[] posInput;
 };
 
 layout(std430,binding = 1) writeonly buffer Output{
-    float[] output;
+    float[] lengthOutput;
 };
 
 shared float[gl_WorkGroupSize.x * 2] segmentLengths;
 
 void main(){
     uint id = gl_LocalInvocationID.x;
-    vec2 p0 = input[id];
-    vec2 p1 = id == 0 ? p0:input[id - 1];
+    vec2 p0 = posInput[id];
+    vec2 p1 = id == 0 ? p0:posInput[id - 1];
     // length of each segment
     float curLength = distance(p0, p1);
     segmentLengths[id] = curLength;
@@ -37,5 +37,5 @@ void main(){
 		memoryBarrierShared();
     }
     // Prefix sum done! For now segmentLengths is the distance from the starting point of polyline
-    output[id] = segmentLengths[id];
+    lengthOutput[id] = segmentLengths[id];
 }

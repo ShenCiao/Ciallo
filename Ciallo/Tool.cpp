@@ -23,11 +23,17 @@ void Tool::Run()
 		return;
 	}
 
-	if(IsDragging && !ImGui::IsMouseDragging(0))
+	if (IsDragging && !ImGui::IsMouseDragging(0))
 	{
 		IsDragging = false;
 		DragEnd();
 		DraggingDuration = chrono::duration<float, std::milli>::zero();
+		return;
+	}
+
+	if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0))
+	{
+		Hovering();
 		return;
 	}
 }

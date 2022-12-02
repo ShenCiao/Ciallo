@@ -14,6 +14,55 @@ CanvasPanel::CanvasPanel()
 	FillTool = std::make_unique<class FillTool>(this);
 }
 
+CanvasPanel::~CanvasPanel()
+{
+	DeleteOverlayBuffers();
+}
+
+void CanvasPanel::GenOverlayBuffers()
+{
+	DeleteOverlayBuffers();
+	int width = ActiveDrawing->GetSizeInPixel().x;
+	int height = ActiveDrawing->GetSizeInPixel().y;
+	// color buffer
+	
+	glCreateTextures(GL_TEXTURE_2D, 1, &OverlayColorTexture);
+	glTextureParameteri(OverlayColorTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(OverlayColorTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(OverlayColorTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(OverlayColorTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTextureStorage2D(OverlayColorTexture, 1, GL_RGBA8, width, height);
+
+	// stencil and depth
+	glCreateTextures(GL_TEXTURE_2D, 1, &OverlayDepthStencilTexture);
+	glTextureParameteri(OverlayDepthStencilTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTextureParameteri(OverlayDepthStencilTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTextureParameteri(OverlayDepthStencilTexture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(OverlayDepthStencilTexture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glTextureStorage2D(OverlayDepthStencilTexture, 1, GL_DEPTH24_STENCIL8, width, height);
+
+	glCreateFramebuffers(1, &OverlayFrameBuffer);
+	glNamedFramebufferTexture(OverlayFrameBuffer, GL_COLOR_ATTACHMENT0, OverlayColorTexture, 0);
+	glNamedFramebufferTexture(OverlayFrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, OverlayDepthStencilTexture, 0);
+
+	if (glCheckNamedFramebufferStatus(OverlayFrameBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	{
+		throw std::runtime_error("Framebuffer incomplete");
+	}
+}
+
+void CanvasPanel::DeleteOverlayBuffers()
+{
+	glDeleteTextures(1, &OverlayColorTexture);
+	glDeleteTextures(1, &OverlayDepthStencilTexture);
+	glDeleteFramebuffers(1, &OverlayFrameBuffer);
+	OverlayColorTexture = 0;
+	OverlayDepthStencilTexture = 0;
+	OverlayFrameBuffer = 0;
+}
+
 void CanvasPanel::DrawAndRunTool()
 {
 	const ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
@@ -26,28 +75,32 @@ void CanvasPanel::DrawAndRunTool()
 	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
 
 	ImGui::Image(reinterpret_cast<ImTextureID>(ActiveDrawing->ColorTexture), ImVec2(
-		static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
-		static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
+	ImGui::SetCursorScreenPos(drawingScreenOrigin);
+	ImGui::Image(reinterpret_cast<ImTextureID>(OverlayColorTexture), ImVec2(
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().x),
+		             static_cast<float>(ActiveDrawing->GetSizeInPixel().y)));
 
 	glm::vec2 mousePosOnDrawingInPixel = ImGui::GetMousePos() - drawingScreenOrigin;
-	MousePosOnDrawingInPixel = { mousePosOnDrawingInPixel.x, mousePosOnDrawingInPixel.y };
+	MousePosOnDrawingInPixel = {mousePosOnDrawingInPixel.x, mousePosOnDrawingInPixel.y};
 	// Do remember to set the cursor to correct place.
-	MousePosOnDrawing = mousePosOnDrawingInPixel / (ActiveDrawing->GetSizeInPixelFloat()*Zoom) *
+	MousePosOnDrawing = mousePosOnDrawingInPixel / (ActiveDrawing->GetSizeInPixelFloat() * Zoom) *
 		ActiveDrawing->GetWorldSize();
 
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
 	ImGui::InvisibleButton(std::format("CanvasInteraction").c_str(), panel->InnerRect.GetSize(),
-                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
-                       ImGuiButtonFlags_MouseButtonMiddle);
+	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
+	                       ImGuiButtonFlags_MouseButtonMiddle);
 
-	
+
 	ActiveTool->Run();
 
 	ImGui::End();
 	ImGui::PopStyleVar();
 
-	ImGui::Begin("Toolbox" );
-	if(ImGui::Button("Paint"))
+	ImGui::Begin("Toolbox");
+	if (ImGui::Button("Paint"))
 	{
 		ActiveTool->Deactivate();
 		ActiveTool = PaintTool.get();
@@ -61,25 +114,25 @@ void CanvasPanel::DrawAndRunTool()
 		ActiveTool->Activate();
 	}
 
-	if(ImGui::Button("Vector Bucket Fill"))
+	if (ImGui::Button("Vector Bucket Fill"))
 	{
 		ActiveTool->Deactivate();
 		ActiveTool = FillTool.get();
 		ActiveTool->Activate();
 	}
 
-	if(ImGui::Button("Print Arrangement"))
+	if (ImGui::Button("Print Arrangement"))
 	{
 		print_arrangement(ActiveDrawing->ArrangementSystem.Arrangement);
 	}
 
-	if(ImGui::Button("Print Arrangement Size"))
+	if (ImGui::Button("Print Arrangement Size"))
 	{
 		print_arrangement_size(ActiveDrawing->ArrangementSystem.Arrangement);
 	}
 
 	ActiveTool->DrawProperties();
-	
+
 	ImGui::End();
 
 	// bool notCloseWindow = true;

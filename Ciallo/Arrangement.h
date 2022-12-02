@@ -5,6 +5,7 @@
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/partition_2.h>
+#include "Visiblity.h"
 
 
 namespace CGAL
@@ -19,6 +20,9 @@ namespace CGAL
 
 	using Arrangement = CGAL::Arrangement_with_history_2<Geom_traits>;
 	using PointLocation = CGAL::Arr_walk_along_line_point_location<Arrangement>;
+	// This is a custom version of Triangular_expansion_visibility
+	using Visibility = CGAL::Triangular_expansion_visibility_2<Arrangement, CGAL::Tag_true>;
+	using VisOutputArr = CGAL::Arrangement_2<Segment_traits>; // Arrangement class used for output the vis result.
 
 	using Vertex_const_handle = Arrangement::Vertex_const_handle;
 	using Edge_const_handle = Arrangement::Halfedge_const_handle;

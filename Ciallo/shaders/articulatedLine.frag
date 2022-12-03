@@ -5,6 +5,7 @@ layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
 layout(location = 4) in float width;
+layout(location = 5) in flat float[2] summedLength;
 
 layout(location = 0) out vec4 outColor;
 
@@ -31,13 +32,41 @@ void main() {
     float d0LH = distance(pLH, p0LH);
     float d1LH = distance(pLH, p1LH);
 
-    if((pLH.x < 0 && d0LH > 1.0)){
-        discard;
+    // // Vanilla begin
+    // if((pLH.x < 0 && d0LH > 1.0)){
+    //     discard;
+    // }
+    // if((pLH.x > p1LH.x && d1LH > 1.0)){
+    //     discard;
+    // }
+    // float A = fragColor.a;
+
+    // Stamp begin
+    float px = dot(p-p0, L);
+    float len = summedLength[1] - summedLength[0];
+    float stampDist = 1/200.0;
+    float stampStarting = mod(stampDist - mod(summedLength[0], stampDist), stampDist);
+
+    if(stampStarting > len) discard; // There are no stamps in this segment.
+
+    float innerStampStarting;
+    if(px-width <= stampStarting){
+        innerStampStarting = stampStarting;
     }
-    if((pLH.x > p1LH.x && d1LH > 1.0)){
-        discard;
+    else{
+        innerStampStarting = stampStarting + stampDist * (1.0+floor((px-width-stampStarting)/stampDist));
     }
-    float A = fragColor.a;
+    float innerStampEnding = (px+width < len) ? px+width:len;
+    if(innerStampStarting > innerStampEnding) discard; // There are no stamps in this rect.
+
+    float currStamp = innerStampStarting;
+    do{
+        // Sample on stamp and manually blend color
+        outColor = fragColor;
+        currStamp += stampDist;
+    }while(currStamp < innerStampEnding);
+
+
     // // -----Airbrush begin. Can be discard.
     // // Sadly Shen Ciao already forget about some details in this implementation.
     // // And He just copy and paste old implementation. May Muse bless the poor boy.
@@ -59,5 +88,5 @@ void main() {
     // A = clamp(1 - reverse_falloff_stroke/exceed1/exceed2, 0.0, 1.0);
     // // -------Airbrush end. 
 
-    outColor = vec4(fragColor.rgb, A);
+    // outColor = vec4(fragColor.rgb, A);
 }

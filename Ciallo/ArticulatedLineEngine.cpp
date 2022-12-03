@@ -24,26 +24,3 @@ ArticulatedLineEngine::~ArticulatedLineEngine()
 {
 	glDeleteProgram(Program);
 }
-
-void ArticulatedLineEngine::DrawStroke(Stroke* stroke) const
-{
-	int count = stroke->Position.size();
-	if (count == 1)
-	{
-		glm::vec2 p = stroke->Position[0];
-		float w = stroke->Width[0];
-		glm::vec2 paddedPos = { p.x + 0.01f * w, p.y };
-
-		stroke->Position.push_back(paddedPos);
-		stroke->Width.push_back(w);
-		stroke->UpdatePositionBuffer();
-		stroke->UpdateWidthBuffer();
-
-		stroke->Position.pop_back();
-		stroke->Width.pop_back();
-
-		count += 1;
-	}
-	glBindVertexArray(stroke->VertexArray);
-	glDrawArrays(GL_LINE_STRIP, 0, count);
-}

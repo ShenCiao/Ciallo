@@ -32,9 +32,12 @@ void Stroke::GenBuffers()
 	glEnableVertexArrayAttrib(VertexArray, 1);
 	glVertexArrayAttribBinding(VertexArray, 1, 1);
 	glVertexArrayAttribFormat(VertexArray, 1, 1, GL_FLOAT, GL_FALSE, 0);
+	glEnableVertexArrayAttrib(VertexArray, 2);
+	glVertexArrayAttribBinding(VertexArray, 2, 2);
+	glVertexArrayAttribFormat(VertexArray, 2, 1, GL_FLOAT, GL_FALSE, 0);
 
-	GLintptr offsets[] = { 0, 0 };
-	int strides[] = { sizeof(glm::vec2), sizeof(float) };
+	GLintptr offsets[] = { 0, 0, 0};
+	int strides[] = { sizeof(glm::vec2), sizeof(float), sizeof(float) };
 
 	glVertexArrayVertexBuffers(VertexArray, 0, VertexBuffers.size(), VertexBuffers.data(), offsets, strides);
 }
@@ -70,14 +73,14 @@ void Stroke::Draw()
 
 		Position.push_back(paddedPos);
 		Width.push_back(w);
-		UpdatePositionBuffer();
-		UpdateWidthBuffer();
+		OnChanged();
 
 		Position.pop_back();
 		Width.pop_back();
 
 		count = 2;
 	}
+	glUseProgram(RenderingSystem::ArticulatedLine->Program);
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }

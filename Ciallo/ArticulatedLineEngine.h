@@ -1,14 +1,21 @@
 #pragma once
-#include "Stroke.h"
 
 class ArticulatedLineEngine
 {
 public:
-	GLuint VertShader;
-	GLuint GeomShader;
-	GLuint FragShader;
-	GLuint Program;
+	enum class Type
+	{
+		Vanilla = 0,
+		Stamp = 1 << 0,
+		Airbrush = 1 << 1,
+		UniformWidth = 1 << 2,
+		_entt_enum_as_bitmask
+	};
+
+	std::unordered_map<Type, GLuint> Programs;
 
 	ArticulatedLineEngine();
 	~ArticulatedLineEngine();
+
+	GLuint Program(Type type = Type::Vanilla);
 };

@@ -36,6 +36,7 @@ Window::Window()
 		glDebugMessageCallback(GlDebugCallback, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	}
+	glEnable(GL_BLEND);
 
 	ImGui::CreateContext();
 	ImPlot::CreateContext();

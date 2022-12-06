@@ -90,6 +90,9 @@
     <ClCompile Include="PrefixSumPosition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -167,6 +170,9 @@
     <ClInclude Include="Visiblity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">
@@ -186,6 +192,9 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="shaders\prefixSumPosition.comp">
       <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\stamp1.png">
+      <Filter>Resource Files</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>

@@ -119,7 +119,7 @@ void FillTool::Hovering()
 		s.Position = polygon;
 		s.Width = std::vector<float>(polygon.size(), 0.001f);
 		s.OnChanged();
-		glUseProgram(RenderingSystem::ArticulatedLine->Program);
+		glUseProgram(RenderingSystem::ArticulatedLine->Program());
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
 		glUniform4f(1, 0.9f, 0.15f, 0.3f, 0.5f); // color
 		glBindVertexArray(s.VertexArray);

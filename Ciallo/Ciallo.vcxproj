@@ -114,6 +114,7 @@
     <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="Stroke.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Tool.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -130,6 +131,7 @@
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Visiblity.h" />
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
@@ -176,6 +178,12 @@
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="images\stamp1.png">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

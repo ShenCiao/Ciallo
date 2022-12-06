@@ -1,9 +1,6 @@
 ﻿#include "pch.hpp"
 #include "CanvasPanel.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include "arr_print.h"
 
 CanvasPanel::CanvasPanel()

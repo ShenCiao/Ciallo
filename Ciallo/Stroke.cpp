@@ -73,14 +73,15 @@ void Stroke::Draw()
 
 		Position.push_back(paddedPos);
 		Width.push_back(w);
-		OnChanged();
+		UpdatePositionBuffer();
+		UpdateWidthBuffer();
 
 		Position.pop_back();
 		Width.pop_back();
 
 		count = 2;
 	}
-	glUseProgram(RenderingSystem::ArticulatedLine->Program);
+	
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }

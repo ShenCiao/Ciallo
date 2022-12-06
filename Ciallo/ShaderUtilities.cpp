@@ -3,9 +3,10 @@
 
 #include <fstream>
 
-GLuint ShaderUtilities::CreateFromFile(const std::filesystem::path& filePath, GLenum type)
+GLuint ShaderUtilities::CreateFromFile(const std::filesystem::path& filePath, GLenum type, const std::string& macro)
 {
 	std::string code = LoadCodeFromFile(filePath);
+	code.insert(13, macro); // insert after version 460
 	return CreateCompiled(code, type);
 }
 

@@ -118,7 +118,7 @@ void EditTool::RenderTextureForSelection()
 	Drawing* drawing = Canvas->ActiveDrawing;
 	auto pixelSize = drawing->GetSizeInPixel();
 	glViewport(0, 0, pixelSize.x, pixelSize.y);
-	glUseProgram(RenderingSystem::ArticulatedLine->Program);
+	glUseProgram(RenderingSystem::ArticulatedLine->Program());
 	glm::mat4 mvp = drawing->GetViewProjMatrix();
 	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
 

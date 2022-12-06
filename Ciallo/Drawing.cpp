@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "RenderingSystem.h"
+#include "TextureManager.h"
 
 Drawing::Drawing()
 {
@@ -95,7 +96,8 @@ void Drawing::Draw()
 
 	auto pixelSize = GetSizeInPixel();
 	glViewport(0, 0, pixelSize.x, pixelSize.y);
-	glUseProgram(RenderingSystem::ArticulatedLine->Program);
+	glUseProgram(RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp));
+	glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[0]);
 	glm::mat4 mvp = GetViewProjMatrix();
 	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
 	glUniform4f(1, 0.5, 0.5, 0.5, 1);// color

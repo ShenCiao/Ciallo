@@ -6,6 +6,7 @@
 #include "Project.h"
 #include "RenderingSystem.h"
 #include "CubicBezier.h"
+#include "TextureManager.h"
 
 #include <implot.h>
 
@@ -14,6 +15,7 @@ Application::Application()
 	// Window has opengl context. First init;
 	Window = std::make_unique<class Window>();
 	RenderingSystem::Init();
+	TextureManager::LoadTextures();
 }
 
 void Application::Run()
@@ -27,7 +29,7 @@ void Application::Run()
 		ActiveProject->CanvasPanel->DrawAndRunTool();
 		ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.Run();
 		ActiveProject->CanvasPanel->ActiveDrawing->Draw();
-
+		
 		
 		Window->EndFrame();
 	}

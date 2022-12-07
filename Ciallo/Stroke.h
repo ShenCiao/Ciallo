@@ -6,7 +6,7 @@ class Stroke
 {
 public:
 	Geom::Polyline Position{};
-	std::vector<float> Width{};
+	std::vector<float> Thickness{};
 	Brush* Brush;
 
 	// Bad design but works!
@@ -30,7 +30,7 @@ public:
 	void OnChanged();
 	void GenBuffers();
 	void UpdatePositionBuffer();
-	void UpdateWidthBuffer();
+	void UpdateThicknessBuffer();
 	void UpdateDistanceBuffer();
-	void Draw();
+	void DrawCall();
 };

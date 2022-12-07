@@ -29,5 +29,5 @@ void PolygonEngine::DrawPolygon(std::vector<Geom::Polyline> polygonWithHoles)
 
 	ColorFace region{ polygonWithHoles };
 	region.GenUploadBuffers();
-	region.Draw();
+	region.DrawCall();
 }

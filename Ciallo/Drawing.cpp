@@ -4,6 +4,7 @@
 #include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Brush.h"
 #include "RenderingSystem.h"
 #include "TextureManager.h"
 
@@ -58,11 +59,11 @@ void Drawing::GenRenderTarget()
 
 	glTextureStorage2D(DepthStencilTexture, 1, GL_DEPTH24_STENCIL8, width, height);
 
-	glCreateFramebuffers(1, &FrameBuffer);
-	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, ColorTexture, 0);
-	glNamedFramebufferTexture(FrameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, DepthStencilTexture, 0);
-
-	if (glCheckNamedFramebufferStatus(FrameBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+	glCreateFramebuffers(1, &Framebuffer);
+	glNamedFramebufferTexture(Framebuffer, GL_COLOR_ATTACHMENT0, ColorTexture, 0);
+	glNamedFramebufferTexture(Framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, DepthStencilTexture, 0);
+	
+	if (glCheckNamedFramebufferStatus(Framebuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 	{
 		throw std::runtime_error("Framebuffer incomplete");
 	}
@@ -72,10 +73,10 @@ void Drawing::DeleteRenderTarget()
 {
 	glDeleteTextures(1, &ColorTexture);
 	glDeleteTextures(1, &DepthStencilTexture);
-	glDeleteFramebuffers(1, &FrameBuffer);
+	glDeleteFramebuffers(1, &Framebuffer);
 	ColorTexture = 0;
 	DepthStencilTexture = 0;
-	FrameBuffer = 0;
+	Framebuffer = 0;
 }
 
 glm::mat4 Drawing::GetViewProjMatrix() const
@@ -85,7 +86,7 @@ glm::mat4 Drawing::GetViewProjMatrix() const
 
 void Drawing::Draw()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer);
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
@@ -96,26 +97,26 @@ void Drawing::Draw()
 
 	auto pixelSize = GetSizeInPixel();
 	glViewport(0, 0, pixelSize.x, pixelSize.y);
-	glUseProgram(RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp));
-	glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[0]);
 	glm::mat4 mvp = GetViewProjMatrix();
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
-	glUniform4f(1, 0.5, 0.5, 0.5, 1);// color
 
 	for (auto& s : Strokes)
 	{
-		s->Draw();
+		s->Brush->Use();
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
+		s->DrawCall();
 	}
 
 	for (auto& s : Labels)
 	{
-		s->Draw();
+		s->Brush->Use();
+		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
+		s->DrawCall();
 	}
 
 	glUseProgram(0);
 
 	// Filled regions
-	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer);
 	glEnable(GL_BLEND);
 	glEnable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
@@ -130,7 +131,7 @@ void Drawing::Draw()
 		for (ColorFace& face : faces)
 		{
 			face.GenUploadBuffers();
-			face.Draw();
+			face.DrawCall();
 		}
 	}
 

@@ -128,7 +128,7 @@ void EditTool::RenderTextureForSelection()
 		glm::vec4 color = IndexToColor(index);
 		glUniform4fv(1, 1, glm::value_ptr(color));
 
-		s->Draw();
+		s->DrawCall();
 		index += 1;
 	}
 

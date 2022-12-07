@@ -128,6 +128,11 @@ void CanvasPanel::DrawAndRunTool()
 		print_arrangement_size(ActiveDrawing->ArrangementSystem.Arrangement);
 	}
 
+	if(ImGui::Button("Show Brushes"))
+	{
+		ImGui::OpenPopup("Brushes");
+	}
+
 	ActiveTool->DrawProperties();
 
 	ImGui::End();

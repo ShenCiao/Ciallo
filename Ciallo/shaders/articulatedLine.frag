@@ -9,7 +9,9 @@ layout(location = 5) in flat float[2] summedLength;
 
 layout(location = 0) out vec4 outColor;
 
+#ifdef STAMP
 layout(location=3, binding = 0) uniform sampler2D stamp;
+#endif
 
 // For airbrush. Arbritry alpha falloff function. Will be user editable with bezier curve mapping
 float falloff_modulate(float h, float hardfac) {
@@ -48,7 +50,7 @@ void main() {
 #endif
 
 #ifdef STAMP
-    float stampDist = 1/1000.0;
+    float stampDist = 1/200.0;
     float stampStarting = mod(stampDist - mod(summedLength[0], stampDist), stampDist);
 
     if(stampStarting > len) discard; // There are no stamps in this segment.
@@ -65,7 +67,10 @@ void main() {
 
     float currStamp = innerStampStarting;
     float A = 0;
+    int san_i = 0, MAX_i = 64; // sanity check to avoid infinite loop
     do{
+        san_i += 1;
+        if(san_i > MAX_i) break;
         // Sample on stamp and manually blend alpha
         vec2 uv = ((vec2(pLH.x, pLH.y) - vec2(currStamp, 0))/width + vec2(1.0, 1.0))/2.0;
         vec4 color = texture(stamp, uv);

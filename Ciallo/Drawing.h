@@ -8,7 +8,7 @@ class Drawing
 public:
 	GLuint ColorTexture = 0;
 	GLuint DepthStencilTexture = 0;
-	GLuint FrameBuffer = 0;
+	GLuint Framebuffer = 0;
 
 	glm::vec2 UpperLeft = { 0.0f, 0.0f };
 	glm::vec2 LowerRight{};

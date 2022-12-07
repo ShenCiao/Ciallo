@@ -28,11 +28,11 @@ void FillTool::RemoveRim()
 
 void FillTool::ClickOrDragStart()
 {
-	// Changed part: Width, Label, remove Arrangement
+	// Changed part: Thickness, Label, remove Arrangement
 	auto s = std::make_unique<Stroke>();
 
 	s->Position = {Canvas->MousePosOnDrawing};
-	s->Width = {0.0003f};
+	s->Thickness = {0.0003f};
 	s->PolygonColor = PolygonColor;
 	s->OnChanged();
 	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
@@ -42,7 +42,7 @@ void FillTool::ClickOrDragStart()
 
 void FillTool::Dragging()
 {
-	// Changed part: Width, Label, delta threshold, SampleInterval
+	// Changed part: Thickness, Label, delta threshold, SampleInterval
 	glm::vec2 delta = glm::abs(glm::vec2(ImGui::GetMousePos() - LastSampleMousePos));
 
 	if (DraggingDuration - LastSampleDuration > SampleInterval && delta.x + delta.y >= 6.0f)
@@ -51,7 +51,7 @@ void FillTool::Dragging()
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
 		s->Position.push_back(pos);
-		s->Width.emplace_back(0.0003f);
+		s->Thickness.emplace_back(0.0003f);
 		s->OnChanged();
 		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
 		LastSampleMousePos = ImGui::GetMousePos();
@@ -111,13 +111,13 @@ void FillTool::Hovering()
 		glUniform4fv(1, 1, glm::value_ptr(PolygonColor)); // color
 		ColorFace face{ {polygon} };
 		face.GenUploadBuffers();
-		face.Draw();
+		face.DrawCall();
 
 		glDisable(GL_STENCIL_TEST);
 
 		Stroke s{};
 		s.Position = polygon;
-		s.Width = std::vector<float>(polygon.size(), 0.001f);
+		s.Thickness = std::vector<float>(polygon.size(), 0.001f);
 		s.OnChanged();
 		glUseProgram(RenderingSystem::ArticulatedLine->Program());
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
@@ -152,7 +152,7 @@ void FillTool::Hovering()
 			glUniform4fv(1, 1, glm::value_ptr(PolygonColor)); // color
 			ColorFace face{ polygon };
 			face.GenUploadBuffers();
-			face.Draw();
+			face.DrawCall();
 
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_ALPHA);

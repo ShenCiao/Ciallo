@@ -28,7 +28,7 @@ ColorFace::~ColorFace()
 	DeleteBuffers();
 }
 
-void ColorFace::Draw()
+void ColorFace::DrawCall()
 {
 	glClear(GL_STENCIL_BUFFER_BIT);
 	glStencilMask(1);

@@ -18,7 +18,7 @@ ArticulatedLineEngine::ArticulatedLineEngine()
 	std::string airbrushCode = fragCode;
 	airbrushCode.insert(13, "#define AIRBRUSH");
 	GLuint airbrush = ShaderUtilities::CreateCompiled(airbrushCode, GL_FRAGMENT_SHADER);
-
+	
 	GLuint program;
 	program = glCreateProgram();
 	glAttachShader(program, vertShader);

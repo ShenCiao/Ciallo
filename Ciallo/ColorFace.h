@@ -16,7 +16,7 @@ public:
 	ColorFace& operator=(ColorFace&& other) noexcept;
 	~ColorFace();
 
-	void Draw();
+	void DrawCall();
 	void DrawRim();
 	void GenUploadBuffers();
 	void DeleteBuffers();

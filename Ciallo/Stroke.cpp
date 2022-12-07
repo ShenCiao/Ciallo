@@ -17,7 +17,7 @@ Stroke::~Stroke()
 void Stroke::OnChanged()
 {
 	UpdatePositionBuffer();
-	UpdateWidthBuffer();
+	UpdateThicknessBuffer();
 	UpdateDistanceBuffer();
 }
 
@@ -47,9 +47,9 @@ void Stroke::UpdatePositionBuffer()
 	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
 }
 
-void Stroke::UpdateWidthBuffer()
+void Stroke::UpdateThicknessBuffer()
 {
-	glNamedBufferData(VertexBuffers[1], Width.size() * sizeof(float), Width.data(), GL_DYNAMIC_DRAW);
+	glNamedBufferData(VertexBuffers[1], Thickness.size() * sizeof(float), Thickness.data(), GL_DYNAMIC_DRAW);
 }
 
 // Using position buffer, be careful about the calling order.
@@ -62,22 +62,22 @@ void Stroke::UpdateDistanceBuffer()
 	glDispatchCompute(1, 1, 1);
 }
 
-void Stroke::Draw()
+void Stroke::DrawCall()
 {
 	int count = Position.size();
 	if (count == 1)
 	{
 		glm::vec2 p = Position[0];
-		float w = Width[0];
+		float w = Thickness[0];
 		glm::vec2 paddedPos = { p.x + 0.01f * w, p.y };
 
 		Position.push_back(paddedPos);
-		Width.push_back(w);
+		Thickness.push_back(w);
 		UpdatePositionBuffer();
-		UpdateWidthBuffer();
+		UpdateThicknessBuffer();
 
 		Position.pop_back();
-		Width.pop_back();
+		Thickness.pop_back();
 
 		count = 2;
 	}

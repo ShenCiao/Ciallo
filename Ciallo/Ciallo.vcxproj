@@ -93,6 +93,8 @@
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
     <ClCompile Include="BezierSpline.cpp" />
+    <ClCompile Include="Brush.cpp" />
+    <ClCompile Include="BrushManager.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
@@ -111,6 +113,7 @@
     <ClCompile Include="Polyline.cpp" />
     <ClCompile Include="PrefixSumPosition.cpp" />
     <ClCompile Include="Project.cpp" />
+    <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="Stroke.cpp" />
@@ -124,6 +127,8 @@
     <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
     <ClInclude Include="BezierSpline.h" />
+    <ClInclude Include="Brush.h" />
+    <ClInclude Include="BrushManager.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="CubicBezier.h" />
     <ClInclude Include="Drawing.h" />
@@ -131,6 +136,7 @@
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="RenderableTexture.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Visiblity.h" />
     <ClInclude Include="PaintTool.h" />

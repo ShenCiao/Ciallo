@@ -32,7 +32,7 @@ void FillTool::ClickOrDragStart()
 	auto s = std::make_unique<Stroke>();
 
 	s->Position = {Canvas->MousePosOnDrawing};
-	s->Thickness = {0.0003f};
+	s->ThicknessOffset = {0.0003f};
 	s->PolygonColor = PolygonColor;
 	s->OnChanged();
 	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
@@ -51,7 +51,7 @@ void FillTool::Dragging()
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
 		s->Position.push_back(pos);
-		s->Thickness.emplace_back(0.0003f);
+		s->ThicknessOffset.emplace_back(0.0003f);
 		s->OnChanged();
 		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
 		LastSampleMousePos = ImGui::GetMousePos();
@@ -117,7 +117,7 @@ void FillTool::Hovering()
 
 		Stroke s{};
 		s.Position = polygon;
-		s.Thickness = std::vector<float>(polygon.size(), 0.001f);
+		s.ThicknessOffset = std::vector<float>(polygon.size(), 0.001f);
 		s.OnChanged();
 		glUseProgram(RenderingSystem::ArticulatedLine->Program());
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp

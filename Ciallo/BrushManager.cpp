@@ -12,18 +12,20 @@ void BrushManager::RenderPreview()
 	auto pi = glm::pi<float>();
 	const int segments = 128;
 	Geom::Polyline position;
-	std::vector<float> thickness;
+	float thickness = 0.33f;
+	std::vector<float> thicknessOffset;
 	for (int i = 0; i <= segments; ++i)
 	{
 		float a = static_cast<float>(i) / segments;
 		float x = glm::mix(-pi, pi, a);
-		float y = 0.25f * glm::sin(x);
-		float t = glm::mix(0.33f, 0.0f, glm::abs(2.0f * a - 1.0f));
+		float y = 0.5f * glm::sin(x);
+		float t = glm::mix(0.0f, -thickness, glm::abs(2.0f * a - 1.0f));
 		position.push_back(x, y);
-		thickness.push_back(t);
+		thicknessOffset.push_back(t);
 	}
 	s.Position = position;
 	s.Thickness = thickness;
+	s.ThicknessOffset = thicknessOffset;
 	s.OnChanged();
 
 	int width = static_cast<int>(1024 * 2 * gr);
@@ -33,15 +35,16 @@ void BrushManager::RenderPreview()
 	glEnable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
-	glViewport(0, 0, width, height);
 	for (auto& b : Brushes)
 	{
+		s.Brush = b.get();
 		b->PreviewTexture = RenderableTexture(width, height, 0);
 		b->PreviewTexture.BindFramebuffer();
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		b->Use();
 		glUniformMatrix4fv(0, 1, false, glm::value_ptr(mvp));
+		s.SetUniforms();
 		s.DrawCall();
 		b->PreviewTexture.CopyMS();
 	}

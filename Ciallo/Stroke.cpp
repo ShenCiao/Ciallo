@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "Stroke.h"
 
+#include "Brush.h"
 #include "RenderingSystem.h"
 
 Stroke::Stroke()
@@ -17,7 +18,7 @@ Stroke::~Stroke()
 void Stroke::OnChanged()
 {
 	UpdatePositionBuffer();
-	UpdateThicknessBuffer();
+	UpdateThicknessOffsetBuffer();
 	UpdateDistanceBuffer();
 }
 
@@ -47,9 +48,16 @@ void Stroke::UpdatePositionBuffer()
 	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
 }
 
-void Stroke::UpdateThicknessBuffer()
+void Stroke::UpdateThicknessOffsetBuffer()
 {
-	glNamedBufferData(VertexBuffers[1], Thickness.size() * sizeof(float), Thickness.data(), GL_DYNAMIC_DRAW);
+	if(ThicknessOffset.size() <= 1)
+	{
+		float v = ThicknessOffset.empty() ? 0.0f : ThicknessOffset.at(0);
+		std::vector<float> values(Position.size(), v);
+		glNamedBufferData(VertexBuffers[1], values.size() * sizeof(float), values.data(), GL_DYNAMIC_DRAW);
+		return;
+	}
+	glNamedBufferData(VertexBuffers[1], ThicknessOffset.size() * sizeof(float), ThicknessOffset.data(), GL_DYNAMIC_DRAW);
 }
 
 // Using position buffer, be careful about the calling order.
@@ -62,26 +70,49 @@ void Stroke::UpdateDistanceBuffer()
 	glDispatchCompute(1, 1, 1);
 }
 
+void Stroke::Draw()
+{
+	Brush->Use();
+	SetUniforms();
+	DrawCall();
+}
+
 void Stroke::DrawCall()
 {
 	int count = Position.size();
 	if (count == 1)
 	{
 		glm::vec2 p = Position[0];
-		float w = Thickness[0];
-		glm::vec2 paddedPos = { p.x + 0.01f * w, p.y };
+		float offset = 0.0f;
+		if (!ThicknessOffset.empty()) offset = ThicknessOffset[0];
 
+		glm::vec2 paddedPos = { p.x + 0.01f * (Thickness+offset), p.y };
 		Position.push_back(paddedPos);
-		Thickness.push_back(w);
+
 		UpdatePositionBuffer();
-		UpdateThicknessBuffer();
+		UpdateThicknessOffsetBuffer();
 
 		Position.pop_back();
-		Thickness.pop_back();
 
 		count = 2;
 	}
 	
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
+}
+
+void Stroke::SetUniforms()
+{
+	glUniform1f(2, Thickness);
+	
+	if (Brush)
+	{
+		glUniform4fv(1, 1, glm::value_ptr(Brush->Color));
+		glBindTexture(Brush->TextureTarget, Brush->Stamp);
+		if (Brush->StampIntervalRatio) glUniform1f(4, *Brush->StampIntervalRatio * Thickness);
+	}
+	if (Color)
+	{
+		glUniform4fv(1, 1, glm::value_ptr(*Color));
+	}
 }

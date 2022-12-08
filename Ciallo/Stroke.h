@@ -6,15 +6,18 @@ class Stroke
 {
 public:
 	Geom::Polyline Position{};
-	std::vector<float> Thickness{};
+	float Thickness = 0.0f;
+	std::vector<float> ThicknessOffset{}; // empty is allowed, values in shader are zero
+	std::optional<glm::vec4> Color; // if no color in stroke, get color from brush when rendering
 	Brush* Brush;
 
 	// Bad design but works!
 	glm::vec4 PolygonColor = {0.0f, 0.0f, 0.0f, 1.0f/3.0f};
+
 	/*
 	 * Index: Attribute
 	 * 0: position
-	 * 1: width
+	 * 1: thickness offset
 	 * 2: distance to the first vertex(prefix sum result)
 	 */
 	std::array<GLuint, 3> VertexBuffers{};
@@ -30,7 +33,9 @@ public:
 	void OnChanged();
 	void GenBuffers();
 	void UpdatePositionBuffer();
-	void UpdateThicknessBuffer();
+	void UpdateThicknessOffsetBuffer();
 	void UpdateDistanceBuffer();
+	void Draw();
 	void DrawCall();
+	void SetUniforms();
 };

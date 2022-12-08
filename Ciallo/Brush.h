@@ -9,8 +9,8 @@ public:
 	GLuint Program;
 	GLenum TextureTarget = GL_TEXTURE_2D;
 	GLuint Stamp = 0; // Stamp or gradient in airbrush
+	std::optional<float> StampIntervalRatio;
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
-	std::optional<float> UniformThickness;
 
 	RenderableTexture PreviewTexture;
 	
@@ -18,9 +18,5 @@ public:
 	void Use()
 	{
 		glUseProgram(Program);
-		glBindTexture(TextureTarget, Stamp);
-		glUniform4fv(1, 1, glm::value_ptr(Color)); // color
-		if (UniformThickness)
-			glUniform1f(2, *UniformThickness);
 	}
 };

@@ -65,7 +65,7 @@ void Application::GenDefaultProject()
 	brushes[2]->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brushes[2]->Color = { 0.0f, 0.0f, 0.0f, 1.0f };
 	brushes[2]->Stamp = TextureManager::Textures[1];
-	brushes[2]->StampIntervalRatio = 1.0f / 2.5f;
+	brushes[2]->StampIntervalRatio = 1.0f / 6.0f;
 
 	brushManager->RenderPreview();
 	ActiveProject->BrushManager = std::move(brushManager);

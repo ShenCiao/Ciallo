@@ -24,6 +24,10 @@ float reverse_falloff(float v, float A) {
     return 1.0 - A * falloff_modulate(v, 0.98);
 }
 
+mat2 rotate(float angle){
+    return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+}
+
 // Noise
 float random (in vec2 st) {
     return fract(sin(dot(st.xy,
@@ -92,33 +96,43 @@ void main() {
 #endif
 
 #ifdef STAMP
+    // stamp starting point and index on this segment
     float stampStarting = mod(stampInterval - mod(summedLength[0], stampInterval), stampInterval);
+    float stampStartingIndex = ceil(summedLength[0]/stampInterval);
 
     if(stampStarting > len) discard; // There are no stamps in this segment.
 
-    float innerStampStarting;
+    // first stamp can be reached by this pixel.
+    float innerStampStarting, innerStampStartingIndex;
     if(pLH.x-halfThickness <= stampStarting){
         innerStampStarting = stampStarting;
+        innerStampStartingIndex = stampStartingIndex;
     }
     else{
-        innerStampStarting = stampStarting + stampInterval * (1.0+floor((pLH.x-halfThickness-stampStarting)/stampInterval));
+        float n = 1.0+floor((pLH.x-halfThickness-stampStarting)/stampInterval);
+        innerStampStarting = stampStarting + stampInterval * n;
+        innerStampStartingIndex = stampStartingIndex + n;
     }
     float innerStampEnding = (pLH.x+halfThickness < len) ? pLH.x+halfThickness:len;
     if(innerStampStarting > innerStampEnding) discard; // There are no stamps in this rect.
 
-    float currStamp = innerStampStarting;
+    float currStamp = innerStampStarting, currStampIndex = innerStampStartingIndex;
     float A = 0;
     int san_i = 0, MAX_i = 32; // sanity check to avoid infinite loop
     do{
         san_i += 1;
         if(san_i > MAX_i) break;
         // Sample on stamp and manually blend alpha
-        vec2 uv = ((vec2(pLH.x, pLH.y) - vec2(currStamp, 0))/halfThickness + vec2(1.0, 1.0))/2.0;
+        float angle = radians(360*fract(sin(currStampIndex)*1.0));
+        vec2 vStamp = pLH - vec2(currStamp, 0);
+        vStamp *= rotate(angle);
+        vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
+
         vec4 color = texture(stamp, uv);
-        float alpha = color.a * fbm(uv*20.0);
+        float alpha = clamp(color.a - 1.7*fbm((uv+currStampIndex)*50.0), 0.0, 1.0);
         A = A * (1.0-alpha) + alpha;
-        
         currStamp += stampInterval;
+        currStampIndex += 1.0;
     }while(currStamp < innerStampEnding);
     if(A < 1e-4){
         discard;

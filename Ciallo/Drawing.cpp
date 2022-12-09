@@ -93,7 +93,7 @@ void Drawing::Draw()
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 	auto pixelSize = GetSizeInPixel();
 	glViewport(0, 0, pixelSize.x, pixelSize.y);

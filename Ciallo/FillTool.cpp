@@ -30,9 +30,9 @@ void FillTool::ClickOrDragStart()
 {
 	// Changed part: Thickness, Label, remove Arrangement
 	auto s = std::make_unique<Stroke>();
-
+	s->Brush = ActiveBrush;
 	s->Position = {Canvas->MousePosOnDrawing};
-	s->ThicknessOffset = {0.0003f};
+	s->Thickness = 0.0003f;
 	s->PolygonColor = PolygonColor;
 	s->OnChanged();
 	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
@@ -51,7 +51,6 @@ void FillTool::Dragging()
 
 		glm::vec2 pos = Canvas->MousePosOnDrawing;
 		s->Position.push_back(pos);
-		s->ThicknessOffset.emplace_back(0.0003f);
 		s->OnChanged();
 		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdateQuery(s.get());
 		LastSampleMousePos = ImGui::GetMousePos();
@@ -76,7 +75,7 @@ void FillTool::Deactivate()
 
 void FillTool::DrawProperties()
 {
-	ImGui::ColorEdit4("Polygon Color", glm::value_ptr(PolygonColor));
+	ImGui::ColorPicker4("Polygon Color", glm::value_ptr(PolygonColor));
 }
 
 void FillTool::Hovering()

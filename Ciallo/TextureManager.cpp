@@ -8,7 +8,7 @@
 void TextureManager::LoadTextures()
 {
 	stbi_set_flip_vertically_on_load(true);
-	std::vector<std::string> fileNames{ "stamp1.png" };
+	std::vector<std::string> fileNames{ "stamp1.png", "stamp2.png"};
 	std::filesystem::path root{ "./images" };
 	for(auto& file: fileNames)
 	{

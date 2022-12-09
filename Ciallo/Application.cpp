@@ -49,14 +49,23 @@ void Application::GenDefaultProject()
 	auto brushManager = std::make_unique<BrushManager>();
 	auto& brushes = brushManager->Brushes;
 	brushes.push_back(std::make_unique<Brush>());
+	brushes[0]->Name = "Vanilla";
 	brushes[0]->Program = RenderingSystem::ArticulatedLine->Program();
 	brushes[0]->Color = {0.5f, 0.5f, 0.5f, 1.0f};
 
 	brushes.push_back(std::make_unique<Brush>());
+	brushes[1]->Name = "Stamp1";
 	brushes[1]->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brushes[1]->Color = {0.5f, 0.5f, 0.5f, 1.0f};
 	brushes[1]->Stamp = TextureManager::Textures[0];
 	brushes[1]->StampIntervalRatio = 1.0f / 5;
+
+	brushes.push_back(std::make_unique<Brush>());
+	brushes[2]->Name = "Stamp2";
+	brushes[2]->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brushes[2]->Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	brushes[2]->Stamp = TextureManager::Textures[1];
+	brushes[2]->StampIntervalRatio = 1.0f / 2.5f;
 
 	brushManager->RenderPreview();
 	ActiveProject->BrushManager = std::move(brushManager);
@@ -64,5 +73,5 @@ void Application::GenDefaultProject()
 	ActiveProject->CanvasPanel = std::make_unique<CanvasPanel>();
 	ActiveProject->CanvasPanel->ActiveDrawing = ActiveProject->MainDrawing.get();
 	ActiveProject->CanvasPanel->GenOverlayBuffers();
-	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[1].get();
+	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[2].get();
 }

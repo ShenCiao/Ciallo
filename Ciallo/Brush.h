@@ -12,6 +12,7 @@ public:
 	std::optional<float> StampIntervalRatio;
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
 
+	std::string Name;
 	RenderableTexture PreviewTexture;
 	
 

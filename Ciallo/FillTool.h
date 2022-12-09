@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Stroke.h"
-
+#include "Brush.h"
 #include "Tool.h"
 
 class FillTool : public Tool
@@ -10,6 +10,7 @@ class FillTool : public Tool
 	chrono::duration<float, std::milli> SampleInterval{ 25.f };
 
 	std::unique_ptr<Stroke> Rim;
+	Brush* ActiveBrush;
 
 	glm::vec2 LastSampleMousePos{};
 

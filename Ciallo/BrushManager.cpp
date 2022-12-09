@@ -3,11 +3,8 @@
 
 #include <glm/gtc/constants.hpp>
 
-#include "Stroke.h"
-
 void BrushManager::RenderPreview()
 {
-	Stroke s;
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
 	const int segments = 128;
@@ -18,7 +15,7 @@ void BrushManager::RenderPreview()
 	{
 		float a = static_cast<float>(i) / segments;
 		float x = glm::mix(-pi, pi, a);
-		float y = 0.5f * glm::sin(x);
+		float y = 1.0f/gr * glm::sin(x);
 		float t = glm::mix(0.0f, -thickness, glm::abs(2.0f * a - 1.0f));
 		position.push_back(x, y);
 		thicknessOffset.push_back(t);
@@ -33,6 +30,7 @@ void BrushManager::RenderPreview()
 	glm::mat4 mvp = glm::ortho(-2.0f * gr, 2.0f * gr, -1.0f, 1.0f);
 
 	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
 	for (auto& b : Brushes)

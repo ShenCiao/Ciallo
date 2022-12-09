@@ -22,6 +22,7 @@ namespace Geom
 		size_t size() const;
 		auto begin() { return Points.begin(); }
 		auto end() { return Points.end(); }
+		void resize(size_t size);
 	};
 }
 

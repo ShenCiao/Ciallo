@@ -42,5 +42,10 @@ namespace Geom
 	{
 		return Points.size();
 	}
+
+	void Polyline::resize(size_t size)
+	{
+		Points.resize(size);
+	}
 }
 

@@ -1,18 +1,21 @@
 ﻿#pragma once
 
+#include "Polyline.h"
+
+// Fake bezier curve built with polyline.
 class CubicBezier
 {
-	static constexpr int SEG_N = 256; // number of segments.
-	std::array<glm::vec2, 4> Points;
-	std::array<glm::vec2, SEG_N + 1> LookUpTable; // Need a polyline class here
+	int SegmentCount = 64; 
+	std::array<glm::vec2, 4> ControlPoints;
+	Geom::Polyline LookUpTable;
 public:
-	CubicBezier(const std::array<glm::vec2, 4>& points);
+	CubicBezier(const std::array<glm::vec2, 4>& points, int segmentCount = 64);
 	void EvalLUT();
-	glm::vec2 operator()(float t) const;
+	glm::vec2 operator()(float t);
 	std::array<CubicBezier, 2> Split(float t) const;
-	float DerivativeT(float t, int axis = 0) const;
-	float FindT(float given, int axis = 0) const;
-	float FindNearestT(glm::vec2 p) const;
+	float DerivativeT(float t, int axis = 0);
+	float FindT(float given, int axis = 0);
+	glm::vec2 FindNearestPoint(glm::vec2 p);
 
 	friend std::ostream& operator<<(std::ostream& os, const CubicBezier& curve);
 };

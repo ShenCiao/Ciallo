@@ -4,21 +4,22 @@
 #include <boost/math/tools/roots.hpp>
 #include <glm/gtx/exterior_product.hpp>
 
-CubicBezier::CubicBezier(const std::array<glm::vec2, 4>& points): Points(points)
+CubicBezier::CubicBezier(const std::array<glm::vec2, 4>& points, int segmentCount): ControlPoints(points),
+	SegmentCount(segmentCount)
 {
 	EvalLUT();
 }
 
-glm::vec2 CubicBezier::operator()(float t) const
+glm::vec2 CubicBezier::operator()(float t)
 {
-	int i = glm::floor(t * SEG_N);
-	if (i == SEG_N)
+	int i = static_cast<int>(glm::floor(t * SegmentCount));
+	if (i == SegmentCount)
 	{
 		return LookUpTable[i];
 	}
 	else
 	{
-		return glm::mix(LookUpTable[i], LookUpTable[i + 1], glm::mod(t * SEG_N, 1.0f));
+		return glm::mix(LookUpTable[i], LookUpTable[i + 1], glm::mod(t * SegmentCount, 1.0f));
 	}
 }
 
@@ -27,52 +28,53 @@ std::array<CubicBezier, 2> CubicBezier::Split(float t) const
 	// assumed origin curve is in left to right order
 	std::array<glm::vec2, 4> left{}, right{};
 
-	left[0] = Points[0];
-	left[1] = t * Points[1] - (t - 1) * Points[0];
-	left[2] = t * t * Points[2] - 2.0f * t * (t - 1) * Points[1] + (t - 1) * (t - 1) * Points[0];
+	left[0] = ControlPoints[0];
+	left[1] = t * ControlPoints[1] - (t - 1) * ControlPoints[0];
+	left[2] = t * t * ControlPoints[2] - 2.0f * t * (t - 1) * ControlPoints[1] + (t - 1) * (t - 1) * ControlPoints[0];
 	left[3] =
-		glm::pow(t, 3.0f) * Points[3] -
-		3.0f * t * t * (t - 1) * Points[2] +
-		3.0f * t * (t - 1) * (t - 1) * Points[1] -
-		glm::pow(t - 1, 3.0f) * Points[0];
+		glm::pow(t, 3.0f) * ControlPoints[3] -
+		3.0f * t * t * (t - 1) * ControlPoints[2] +
+		3.0f * t * (t - 1) * (t - 1) * ControlPoints[1] -
+		glm::pow(t - 1, 3.0f) * ControlPoints[0];
 
 
 	right[0] =
-		glm::pow(t, 3.0f) * Points[3] -
-		3.0f * t * t * (t - 1) * Points[2] +
-		3.0f * t * (t - 1) * (t - 1) * Points[1] -
-		glm::pow(t - 1, 3.0f) * Points[0];
-	right[1] = t * t * Points[3] - 2.0f * t * (t - 1) * Points[2] + (t - 1) * (t - 1) * Points[1];
-	right[2] = t * Points[3] - (t - 1) * Points[2];
-	right[3] = Points[3];
+		glm::pow(t, 3.0f) * ControlPoints[3] -
+		3.0f * t * t * (t - 1) * ControlPoints[2] +
+		3.0f * t * (t - 1) * (t - 1) * ControlPoints[1] -
+		glm::pow(t - 1, 3.0f) * ControlPoints[0];
+	right[1] = t * t * ControlPoints[3] - 2.0f * t * (t - 1) * ControlPoints[2] + (t - 1) * (t - 1) * ControlPoints[1];
+	right[2] = t * ControlPoints[3] - (t - 1) * ControlPoints[2];
+	right[3] = ControlPoints[3];
 
 	return {CubicBezier{left}, CubicBezier{right}};
 }
 
-float CubicBezier::DerivativeT(float t, int axis) const
+float CubicBezier::DerivativeT(float t, int axis)
 {
-	int i = glm::floor(t * SEG_N);
-	if (i == SEG_N)
+	int i = static_cast<int>(glm::floor(t * SegmentCount));
+	if (i == SegmentCount)
 	{
-		return DerivativeT((SEG_N - 1) * 1.0f / SEG_N, axis);
+		return DerivativeT((SegmentCount - 1) * 1.0f / SegmentCount, axis);
 	}
 	else
 	{
-		return (LookUpTable[i + 1] - LookUpTable[i])[axis] / (1.0f / SEG_N);
+		return (LookUpTable[i + 1] - LookUpTable[i])[axis] / (1.0f / SegmentCount);
 	}
 }
 
 void CubicBezier::EvalLUT()
 {
 	// Implement Casteljau's algorithm for better performance when needed.
-	for (int i = 0; i <= SEG_N; ++i)
+	LookUpTable.resize(SegmentCount+1);
+	for (int i = 0; i <= SegmentCount; ++i)
 	{
-		float t = static_cast<float>(i) / static_cast<float>(SEG_N);
+		float t = static_cast<float>(i) / static_cast<float>(SegmentCount);
 		LookUpTable[i] =
-			Points[0] * glm::pow(1 - t, 3.0f) +
-			3.0f * Points[1] * (1 - t) * (1 - t) * t +
-			3.0f * Points[2] * (1 - t) * t * t +
-			Points[3] * glm::pow(t, 3.0f);
+			ControlPoints[0] * glm::pow(1 - t, 3.0f) +
+			3.0f * ControlPoints[1] * (1 - t) * (1 - t) * t +
+			3.0f * ControlPoints[2] * (1 - t) * t * t +
+			ControlPoints[3] * glm::pow(t, 3.0f);
 	}
 }
 
@@ -83,7 +85,7 @@ void CubicBezier::EvalLUT()
 * \param axis X or Y axis to query.
 * \return T value if t is found, else the min value of float.
 */
-float CubicBezier::FindT(float given, int axis) const
+float CubicBezier::FindT(float given, int axis)
 {
 	using boost::math::tools::newton_raphson_iterate;
 
@@ -106,42 +108,65 @@ float CubicBezier::FindT(float given, int axis) const
 /**
  * \return t value of nearest point.
  */
-float CubicBezier::FindNearestT(glm::vec2 p) const
+glm::vec2 CubicBezier::FindNearestPoint(glm::vec2 p)
 {
 	auto it = std::max_element(LookUpTable.begin(), LookUpTable.end(), [p](glm::vec2 a, glm::vec2 b)
 	{
 		return glm::distance(a, p) < glm::distance(b, p);
 	});
-	int i = std::distance(it, LookUpTable.begin());
-	if (i == SEG_N)
-	{
-		float dotProduct = glm::dot(LookUpTable[SEG_N] - LookUpTable[SEG_N - 1], p - LookUpTable[SEG_N]);
-		if (dotProduct >= 0) return 1.0f;
+	int i = static_cast<int>(std::distance(it, LookUpTable.begin()));
 
-		float ratio = 1.0f - glm::abs(dotProduct) / glm::distance(LookUpTable[SEG_N], LookUpTable[SEG_N - 1]);
-		return (SEG_N - 1 + ratio) / SEG_N;
-	}
+	// left to right assumed
+	float lDist, rDist; // distance to segments
+	glm::vec2 lNear, rNear; // nearest point on segments
+
 	if (i == 0)
 	{
-		float dotProduct = glm::dot(LookUpTable[1] - LookUpTable[0], p - LookUpTable[0]);
-		if (dotProduct <= 0) return 0.0f;
-
-		float ratio = 1 - glm::abs(dotProduct) / glm::distance(LookUpTable[0], LookUpTable[1]);
-		return ratio / SEG_N;
+		lDist = std::numeric_limits<float>::max();
+		lNear = glm::vec2(0.0f, 0.0f);
+	}
+	else
+	{
+		glm::vec2 n = glm::normalize(LookUpTable[i - 1] - LookUpTable[i]);
+		if (float d = glm::dot(n, p - LookUpTable[i]); d <= 0)
+		{
+			lDist = glm::distance(p, LookUpTable[i]);
+			lNear = LookUpTable[i];
+		}
+		else
+		{
+			lDist = glm::abs(glm::cross(n, p - LookUpTable[i]));
+			lNear = d * n + LookUpTable[i];
+		}
 	}
 
-	glm::vec2 start = LookUpTable[i];
-	glm::vec2 after = LookUpTable[i + 1];
-	glm::vec2 before = LookUpTable[i - 1];
-	float d_after = glm::abs(glm::cross(p - start, start - after)) / glm::distance(start, after);
-	float d_before = glm::abs(glm::cross(p - start, start - before)) / glm::distance(start, before);
+	if (i == SegmentCount)
+	{
+		rDist = std::numeric_limits<float>::max();
+		rNear = glm::vec2(0.0f, 0.0f);
+	}
+	else
+	{
+		glm::vec2 n = glm::normalize(LookUpTable[i + 1] - LookUpTable[i]);
+		if (float d = glm::dot(n, p - LookUpTable[i]); d <= 0)
+		{
+			rDist = glm::distance(p, LookUpTable[i]);
+			rNear = LookUpTable[i];
+		}
+		else
+		{
+			rDist = glm::abs(glm::cross(n, p - LookUpTable[i]));
+			rNear = d * n + LookUpTable[i];
+		}
+	}
+	return lDist < rDist ? lNear : rNear;
 }
 
 std::ostream& operator<<(std::ostream& os, const CubicBezier& curve)
 {
 	for (int i = 0; i < 4; ++i)
 	{
-		os << "(" << curve.Points[i].x << " " << curve.Points[i].y << ")  ";
+		os << "(" << curve.ControlPoints[i].x << " " << curve.ControlPoints[i].y << ")  ";
 	}
 	return os;
 }

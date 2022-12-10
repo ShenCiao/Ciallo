@@ -4,8 +4,9 @@
 #include <boost/math/tools/roots.hpp>
 #include <glm/gtx/exterior_product.hpp>
 
-CubicBezier::CubicBezier(const std::array<glm::vec2, 4>& points, int segmentCount): ControlPoints(points),
-	SegmentCount(segmentCount)
+CubicBezier::CubicBezier(glm::mat4x2 points, int segmentCount):
+	SegmentCount(segmentCount),
+	ControlPoints(points)
 {
 	EvalLUT();
 }
@@ -26,8 +27,8 @@ glm::vec2 CubicBezier::operator()(float t)
 std::array<CubicBezier, 2> CubicBezier::Split(float t) const
 {
 	// assumed origin curve is in left to right order
-	std::array<glm::vec2, 4> left{}, right{};
-
+	glm::mat4x2 left{}, right{};
+	
 	left[0] = ControlPoints[0];
 	left[1] = t * ControlPoints[1] - (t - 1) * ControlPoints[0];
 	left[2] = t * t * ControlPoints[2] - 2.0f * t * (t - 1) * ControlPoints[1] + (t - 1) * (t - 1) * ControlPoints[0];

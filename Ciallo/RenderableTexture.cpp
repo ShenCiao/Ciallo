@@ -1,9 +1,10 @@
 #include "pch.hpp"
 #include "RenderableTexture.h"
 
-RenderableTexture::RenderableTexture(int width, int height, int multiSample): Width(width),
-                                                                              Height(height),
-                                                                              MultiSample(multiSample)
+RenderableTexture::RenderableTexture(int width, int height, int multiSample):
+	Width(width),
+	Height(height),
+	MultiSample(multiSample)
 {
 	GenBuffers();
 }
@@ -63,7 +64,7 @@ void RenderableTexture::GenBuffers()
 		throw std::runtime_error("Framebuffer incomplete!");
 	}
 
-	if(!MultiSample)
+	if (!MultiSample)
 	{
 		MSFramebuffer = Framebuffer;
 		MSColorTexture = ColorTexture;
@@ -104,7 +105,7 @@ void RenderableTexture::DelBuffers()
 // Warning: changing bound framebuffer
 void RenderableTexture::CopyMS()
 {
-	if(MultiSample == 0)
+	if (MultiSample == 0)
 	{
 		return;
 	}

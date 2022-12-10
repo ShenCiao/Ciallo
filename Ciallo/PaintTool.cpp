@@ -11,7 +11,7 @@ void PaintTool::ClickOrDragStart()
 
 	s->Position = { Canvas->MousePosOnDrawing };
 	s->Brush = ActiveBrush;
-	s->Thickness = 0.01f;
+	s->Thickness = 0.001f;
 	s->OnChanged();
 	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());
 	Canvas->ActiveDrawing->Strokes.push_back(std::move(s));

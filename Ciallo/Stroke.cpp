@@ -107,9 +107,7 @@ void Stroke::SetUniforms()
 	
 	if (Brush)
 	{
-		glUniform4fv(1, 1, glm::value_ptr(Brush->Color));
-		glBindTexture(Brush->TextureTarget, Brush->Stamp);
-		if (Brush->StampIntervalRatio) glUniform1f(4, *Brush->StampIntervalRatio * Thickness);
+		Brush->SetUniform();
 	}
 	if (Color)
 	{

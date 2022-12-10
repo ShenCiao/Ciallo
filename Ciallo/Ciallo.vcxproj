@@ -89,6 +89,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AirBrush.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
@@ -116,12 +117,14 @@
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
+    <ClCompile Include="StampBrush.cpp" />
     <ClCompile Include="Stroke.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Tool.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AirBrush.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
@@ -137,6 +140,7 @@
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
     <ClInclude Include="RenderableTexture.h" />
+    <ClInclude Include="StampBrush.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Visiblity.h" />
     <ClInclude Include="PaintTool.h" />

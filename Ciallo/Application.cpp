@@ -5,8 +5,10 @@
 #include "Drawing.h"
 #include "Project.h"
 #include "RenderingSystem.h"
-#include "CubicBezier.h"
+#include "StampBrush.h"
+#include "AirBrush.h"
 #include "TextureManager.h"
+
 
 #include <implot.h>
 
@@ -48,24 +50,36 @@ void Application::GenDefaultProject()
 
 	auto brushManager = std::make_unique<BrushManager>();
 	auto& brushes = brushManager->Brushes;
-	brushes.push_back(std::make_unique<Brush>());
-	brushes[0]->Name = "Vanilla";
-	brushes[0]->Program = RenderingSystem::ArticulatedLine->Program();
-	brushes[0]->Color = {0.5f, 0.5f, 0.5f, 1.0f};
 
-	brushes.push_back(std::make_unique<Brush>());
-	brushes[1]->Name = "Stamp1";
-	brushes[1]->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
-	brushes[1]->Color = {0.5f, 0.5f, 0.5f, 1.0f};
-	brushes[1]->Stamp = TextureManager::Textures[0];
-	brushes[1]->StampIntervalRatio = 1.0f / 5;
+	auto brush0 = std::make_unique<Brush>();
+	brush0->Name = "Vanilla";
+	brush0->Program = RenderingSystem::ArticulatedLine->Program();
+	brush0->Color = {0.5f, 0.5f, 0.5f, 1.0f};
+	brushes.push_back(std::move(brush0));
 
-	brushes.push_back(std::make_unique<Brush>());
-	brushes[2]->Name = "Stamp2";
-	brushes[2]->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
-	brushes[2]->Color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	brushes[2]->Stamp = TextureManager::Textures[1];
-	brushes[2]->StampIntervalRatio = 1.0f / 6.0f;
+	auto brush1 = std::make_unique<StampBrush>();
+	brush1->Name = "Stamp1";
+	brush1->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush1->Color = {0.5f, 0.5f, 0.5f, 1.0f};
+	brush1->Stamp = TextureManager::Textures[0];
+	brush1->StampIntervalRatio = 1.0f / 5;
+	brushes.push_back(std::move(brush1));
+
+	auto brush2 = std::make_unique<StampBrush>();
+	brush2->Name = "Stamp2";
+	brush2->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush2->Color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	brush2->Stamp = TextureManager::Textures[1];
+	brush2->StampIntervalRatio = 1.0f / 5.0f;
+	brushes.push_back(std::move(brush2));
+
+	auto brush3 = std::make_unique<AirBrush>();
+	brush3->Name = "Airbrush";
+	brush3->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Airbrush);
+	brush3->Color = { 0.0f, 0.0f, 0.0f, 0.9f };
+	brush3->Curve = glm::mat4x2{ {0.0f, 1.0f}, {0.2f, 1.0f}, {0.5f, 0.0f}, {1.0f, 0.0f} };
+	brush3->UpdateGradient();
+	brushes.push_back(std::move(brush3));
 
 	brushManager->RenderPreview();
 	ActiveProject->BrushManager = std::move(brushManager);
@@ -73,5 +87,5 @@ void Application::GenDefaultProject()
 	ActiveProject->CanvasPanel = std::make_unique<CanvasPanel>();
 	ActiveProject->CanvasPanel->ActiveDrawing = ActiveProject->MainDrawing.get();
 	ActiveProject->CanvasPanel->GenOverlayBuffers();
-	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[2].get();
+	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[3].get();
 }

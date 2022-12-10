@@ -9,20 +9,19 @@ layout(location = 5) in flat float[2] summedLength;
 
 layout(location = 0) out vec4 outColor;
 
+// #define STAMP
+// #define AIRBRUSH
+
 #ifdef STAMP
+layout(location = 2) uniform float uniThickness;
 layout(location = 3, binding = 0) uniform sampler2D stamp;
-layout(location = 4) uniform float stampInterval = 0.03;
+layout(location = 4) uniform float stampIntervalRatio;
 #endif
 
-// For airbrush. Arbritry alpha falloff function. Will be user editable with bezier curve mapping
-float falloff_modulate(float h, float hardfac) {
-  /* Modulate the falloff profile */
-  float mod_val = pow(1.0 - abs(h), mix(0.01, 10.0, 1.0 - hardfac));
-  return smoothstep(0.0, 1.0, mod_val);
-}
-float reverse_falloff(float v, float A) {
-    return 1.0 - A * falloff_modulate(v, 0.98);
-}
+#ifdef AIRBRUSH
+layout(location = 3, binding = 0) uniform sampler1D gradientSampler;
+float sampleGraident(float distance){ return texture(gradientSampler, distance).r; }
+#endif
 
 mat2 rotate(float angle){
     return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
@@ -97,6 +96,7 @@ void main() {
 
 #ifdef STAMP
     // stamp starting point and index on this segment
+    float stampInterval = stampIntervalRatio * uniThickness;
     float stampStarting = mod(stampInterval - mod(summedLength[0], stampInterval), stampInterval);
     float stampStartingIndex = ceil(summedLength[0]/stampInterval);
 
@@ -151,22 +151,27 @@ void main() {
         discard;
     }
 
-    float reverse_falloff_stroke = reverse_falloff(pLH.y, A);
+    pLH = pLH / halfThickness;
+    d0 /= halfThickness;
+    d1 /= halfThickness;
+    len /= halfThickness;
 
-    float exceed1, exceed2;
-    exceed1 = exceed2 = 1.0;
+    float reversedGradSroke = 1.0-A*sampleGraident(pLH.y);
+
+    float exceed0, exceed1;
+    exceed0 = exceed1 = 1.0;
     
     if(d0 < 1.0) {
-      exceed1 = pow(reverse_falloff(d0, A), 
+      exceed0 = pow(1.0-A*sampleGraident(d0), 
         sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-        pow(reverse_falloff_stroke, step(0.0, -pLH.x));
+        pow(reversedGradSroke, step(0.0, -pLH.x));
     }
     if(d1 < 1.0) {
-      exceed2 = pow(reverse_falloff(d1, A), 
+      exceed1 = pow(1.0-A*sampleGraident(d1), 
         sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
-        pow(reverse_falloff_stroke, step(0.0, pLH.x - len));
+        pow(reversedGradSroke, step(0.0, pLH.x - len));
     }
-    A = clamp(1 - reverse_falloff_stroke/exceed1/exceed2, 0.0, 1.0);
+    A = clamp(1.0 - reversedGradSroke/exceed0/exceed1, 0.0, 1.0-1e-5);
     outColor = vec4(fragColor.rgb, A);
     return;
 #endif

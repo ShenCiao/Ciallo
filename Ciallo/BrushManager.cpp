@@ -2,6 +2,7 @@
 #include "BrushManager.h"
 
 #include <glm/gtc/constants.hpp>
+#include "TextureManager.h"
 
 void BrushManager::RenderPreview()
 {
@@ -15,7 +16,7 @@ void BrushManager::RenderPreview()
 	{
 		float a = static_cast<float>(i) / segments;
 		float x = glm::mix(-pi, pi, a);
-		float y = 1.0f/gr * glm::sin(x);
+		float y = 1.0f / gr * glm::sin(x);
 		float t = glm::mix(0.0f, -thickness, glm::abs(2.0f * a - 1.0f));
 		position.push_back(x, y);
 		thicknessOffset.push_back(t);
@@ -38,7 +39,7 @@ void BrushManager::RenderPreview()
 		s.Brush = b.get();
 		b->PreviewTexture = RenderableTexture(width, height, 0);
 		b->PreviewTexture.BindFramebuffer();
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		b->Use();
 		glUniformMatrix4fv(0, 1, false, glm::value_ptr(mvp));
@@ -55,8 +56,17 @@ void BrushManager::Draw()
 	{
 		for (auto& b : Brushes)
 			ImGui::Image(reinterpret_cast<ImTextureID>(b->PreviewTexture.ColorTexture),
-				{ 256 * 2* glm::golden_ratio<float>(), 256 });
+			             {256 * 2 * glm::golden_ratio<float>(), 256});
 		ImGui::EndPopup();
 	}
 	ImGui::End();
+}
+
+void BrushManager::OutputPreview()
+{
+	for(auto& b : Brushes)
+	{
+		std::string prefix = "brush_";
+		TextureManager::SaveTexture(b->PreviewTexture.ColorTexture, prefix + b->Name);
+	}
 }

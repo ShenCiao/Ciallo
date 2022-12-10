@@ -54,7 +54,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h";_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;IMGUI_USER_CONFIG="ciallo_imgui_config.h";_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\dev\Ciallo\Ciallo\3rdPartyInclude</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>

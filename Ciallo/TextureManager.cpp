@@ -3,6 +3,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb_image_write.h>
 #include <filesystem>
 
 void TextureManager::LoadTextures()
@@ -25,4 +27,16 @@ void TextureManager::LoadTextures()
 		glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		Textures.push_back(tex);
 	}
+}
+
+void TextureManager::SaveTexture(GLuint dsa2DTexture, std::string name)
+{
+	int width, height;
+	glGetTextureLevelParameteriv(dsa2DTexture, 0, GL_TEXTURE_WIDTH, &width);
+	glGetTextureLevelParameteriv(dsa2DTexture, 0, GL_TEXTURE_HEIGHT, &height);
+	std::vector<char> imageData(width*height*4);
+	glGetTextureImage(dsa2DTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData.size(), imageData.data());
+	std::filesystem::path root{ "./images/output" };
+	name.append(".png");
+	stbi_write_png((root/name).string().c_str(), width, height, 4, imageData.data(), 0);
 }

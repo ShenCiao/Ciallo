@@ -99,6 +99,7 @@
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
+    <ClCompile Include="DotEngine.cpp" />
     <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
@@ -134,6 +135,7 @@
     <ClInclude Include="BrushManager.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="CubicBezier.h" />
+    <ClInclude Include="DotEngine.h" />
     <ClInclude Include="Drawing.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />

@@ -43,7 +43,8 @@ void BrushManager::RenderPreview()
 		glClear(GL_COLOR_BUFFER_BIT);
 		b->Use();
 		glUniformMatrix4fv(0, 1, false, glm::value_ptr(mvp));
-		s.SetUniforms();
+		b->SetUniform();
+		s.SetUniform();
 		s.DrawCall();
 		b->PreviewTexture.CopyMS();
 	}

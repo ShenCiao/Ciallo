@@ -1,25 +1,18 @@
 ﻿#include "pch.hpp"
 #include "EditTool.h"
 
-#include <glm/gtc/type_ptr.hpp>
 #include <bitset>
 
 #include "CanvasPanel.h"
-#include "RenderingSystem.h"
 
 
 EditTool::EditTool(CanvasPanel* canvas): Tool(canvas)
 {
 }
 
-EditTool::~EditTool()
-{
-	DestroyRenderTarget();
-}
-
 void EditTool::ClickOrDragStart()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
+	SelectionTexture.BindFramebuffer();
 	int x = Canvas->MousePosOnDrawingInPixel.x;
 	int y = Canvas->MousePosOnDrawingInPixel.y;
 	glm::vec4 clickedColor;
@@ -54,7 +47,7 @@ void EditTool::Dragging()
 
 void EditTool::Activate()
 {
-	GenRenderTargetFromActiveDrawing();
+	GenSelectionTexture();
 	RenderTextureForSelection();
 }
 
@@ -65,7 +58,7 @@ void EditTool::DragEnd()
 
 void EditTool::Deactivate()
 {
-	DestroyRenderTarget();
+	
 }
 
 void EditTool::DrawProperties()
@@ -79,60 +72,27 @@ void EditTool::DrawProperties()
 	}
 }
 
-void EditTool::GenRenderTargetFromActiveDrawing()
+void EditTool::GenSelectionTexture()
 {
 	// Create textures used for selection
-	glCreateTextures(GL_TEXTURE_2D, 1, &Texture);
-	glTextureParameteri(Texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTextureParameteri(Texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-
-	glTextureParameteri(Texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	Drawing* drawing = Canvas->ActiveDrawing;
-	glTextureStorage2D(Texture, 1, GL_RGBA8, drawing->GetSizeInPixel().x, drawing->GetSizeInPixel().y);
-
-	glCreateFramebuffers(1, &FrameBuffer);
-	glNamedFramebufferTexture(FrameBuffer, GL_COLOR_ATTACHMENT0, Texture, 0);
-
-	if (glCheckNamedFramebufferStatus(FrameBuffer, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-	{
-		throw std::runtime_error("Framebuffer incomplete");
-	}
+	glm::ivec2 size = Canvas->ActiveDrawing->GetSizeInPixel();
+	SelectionTexture = RenderableTexture(size.x, size.y);
 }
-
-void EditTool::DestroyRenderTarget()
-{
-	glDeleteTextures(1, &Texture);
-	glDeleteFramebuffers(1, &FrameBuffer);
-}
-
 void EditTool::RenderTextureForSelection()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, FrameBuffer);
-	glClearColor(1, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glDisable(GL_CULL_FACE);
-	glDisable(GL_BLEND);
-
 	Drawing* drawing = Canvas->ActiveDrawing;
-	auto pixelSize = drawing->GetSizeInPixel();
-	glViewport(0, 0, pixelSize.x, pixelSize.y);
-	glUseProgram(RenderingSystem::ArticulatedLine->Program());
-	glm::mat4 mvp = drawing->GetViewProjMatrix();
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
-
+	SelectionTexture.BindFramebuffer();
 	int index = 0;
 	for (auto& s : drawing->Strokes)
 	{
+		VanillaBrush->Use();
+		VanillaBrush->SetUniform();
+		s->SetUniform();
 		glm::vec4 color = IndexToColor(index);
 		glUniform4fv(1, 1, glm::value_ptr(color));
-
 		s->DrawCall();
 		index += 1;
 	}
-
-	glUseProgram(0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

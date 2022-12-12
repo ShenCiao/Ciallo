@@ -73,7 +73,8 @@ void Stroke::UpdateDistanceBuffer()
 void Stroke::Draw()
 {
 	Brush->Use();
-	SetUniforms();
+	Brush->SetUniform();
+	SetUniform();
 	DrawCall();
 }
 
@@ -101,14 +102,9 @@ void Stroke::DrawCall()
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }
 
-void Stroke::SetUniforms()
+void Stroke::SetUniform()
 {
 	glUniform1f(2, Thickness);
-	
-	if (Brush)
-	{
-		Brush->SetUniform();
-	}
 	if (Color)
 	{
 		glUniform4fv(1, 1, glm::value_ptr(*Color));

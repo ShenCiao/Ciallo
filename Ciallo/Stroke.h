@@ -37,5 +37,5 @@ public:
 	void UpdateDistanceBuffer();
 	void Draw();
 	void DrawCall();
-	void SetUniforms();
+	void SetUniform();
 };

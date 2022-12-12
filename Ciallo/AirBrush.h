@@ -8,7 +8,7 @@ class AirBrush : public Brush
 public:
 	constexpr static int SampleCount = 32;
 	GLuint Gradient = 0;
-	CubicBezier Curve;
+	Geom::CubicBezier Curve;
 
 	AirBrush();
 	AirBrush(const AirBrush& other) = delete;

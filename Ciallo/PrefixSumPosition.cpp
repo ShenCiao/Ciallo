@@ -1,6 +1,8 @@
 #include "pch.hpp"
 #include "PrefixSumPosition.h"
 
+#include "ShaderUtilities.h"
+
 PrefixSumPosition::PrefixSumPosition()
 {
 	std::filesystem::path root = "./shaders";

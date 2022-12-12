@@ -62,7 +62,7 @@ void Application::GenDefaultProject()
 	brush1->Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush1->Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	brush1->Stamp = TextureManager::Textures[0];
-	brush1->StampIntervalRatio = 1.0f / 5;
+	brush1->StampIntervalRatio = 1.0f / 5.0f;
 	brushes.push_back(std::move(brush1));
 
 	auto brush2 = std::make_unique<StampBrush>();
@@ -82,7 +82,6 @@ void Application::GenDefaultProject()
 	brushes.push_back(std::move(brush3));
 
 	brushManager->RenderPreview();
-	brushManager->OutputPreview();
 	ActiveProject->BrushManager = std::move(brushManager);
 
 	ActiveProject->CanvasPanel = std::make_unique<CanvasPanel>();

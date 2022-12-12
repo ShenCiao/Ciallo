@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Stroke.h"
-#include "Brush.h"
 #include "Tool.h"
 
 class FillTool : public Tool

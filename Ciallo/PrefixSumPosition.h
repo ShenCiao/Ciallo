@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ShaderUtilities.h"
-
 class PrefixSumPosition
 {
 public:

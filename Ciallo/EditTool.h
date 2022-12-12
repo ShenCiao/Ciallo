@@ -2,18 +2,18 @@
 
 #include "Tool.h"
 #include "Stroke.h"
+#include "RenderableTexture.h"
 
 class EditTool : public Tool
 {
 public:
+	Brush* VanillaBrush; // warning: this field is uninited!!!
 	Stroke* SelectedStroke = nullptr;
 	glm::vec2 MousePrev{};
 
-	GLuint Texture = 0;
-	GLuint FrameBuffer = 0;
+	RenderableTexture SelectionTexture;
 
 	explicit EditTool(CanvasPanel* canvas);
-	~EditTool();
 
 	void ClickOrDragStart() override;
 	void Dragging() override;
@@ -22,8 +22,7 @@ public:
 	void Deactivate() override;
 	void DrawProperties() override;
 
-	void GenRenderTargetFromActiveDrawing();
-	void DestroyRenderTarget();
+	void GenSelectionTexture();
 	void RenderTextureForSelection();
 
 	glm::vec4 IndexToColor(uint32_t index);

@@ -103,7 +103,8 @@ void Drawing::Draw()
 	{
 		s->Brush->Use();
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
-		s->SetUniforms();
+		s->Brush->SetUniform();
+		s->SetUniform();
 		s->DrawCall();
 	}
 
@@ -111,7 +112,8 @@ void Drawing::Draw()
 	{
 		s->Brush->Use();
 		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
-		s->SetUniforms();
+		s->Brush->SetUniform();
+		s->SetUniform();
 		s->DrawCall();
 	}
 

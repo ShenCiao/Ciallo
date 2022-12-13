@@ -21,3 +21,4 @@ namespace chrono = std::chrono;
 // -----------------------------------------------------------------------------
 #include "Arrangement.h"
 #include "Polyline.h"
+#include "Registry.h"

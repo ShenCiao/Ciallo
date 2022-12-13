@@ -8,6 +8,7 @@
 #include "StampBrush.h"
 #include "AirBrush.h"
 #include "TextureManager.h"
+#include "LayerManager.h"
 
 
 #include <implot.h>
@@ -23,6 +24,7 @@ Application::Application()
 void Application::Run()
 {
 	GenDefaultProject();
+	
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
@@ -32,7 +34,10 @@ void Application::Run()
 		ActiveProject->CanvasPanel->ActiveDrawing->ArrangementSystem.Run();
 		ActiveProject->CanvasPanel->ActiveDrawing->Draw();
 		ActiveProject->BrushManager->Draw();
-
+		// -----------------------------------------------------------
+		auto lm = R.ctx().get<LayerManager>();
+		lm.Draw();
+		// -----------------------------------------------------------
 		Window->EndFrame();
 	}
 }
@@ -40,6 +45,7 @@ void Application::Run()
 void Application::GenDefaultProject()
 {
 	ActiveProject = std::make_unique<Project>();
+	ActiveProject->MainRegistry = &R;
 
 	auto drawing = std::make_unique<Drawing>();
 	drawing->UpperLeft = {0.0f, 0.0f};
@@ -88,4 +94,8 @@ void Application::GenDefaultProject()
 	ActiveProject->CanvasPanel->ActiveDrawing = ActiveProject->MainDrawing.get();
 	ActiveProject->CanvasPanel->GenOverlayBuffers();
 	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[3].get();
+
+	auto& lm = R.ctx().emplace<LayerManager>();
+	lm.AddBack();
+	
 }

@@ -35,7 +35,7 @@ void Application::Run()
 		ActiveProject->CanvasPanel->ActiveDrawing->Draw();
 		ActiveProject->BrushManager->Draw();
 		// -----------------------------------------------------------
-		auto lm = R.ctx().get<LayerManager>();
+		auto& lm = R.ctx().get<LayerManager>();
 		lm.Draw();
 		// -----------------------------------------------------------
 		Window->EndFrame();
@@ -96,6 +96,4 @@ void Application::GenDefaultProject()
 	ActiveProject->CanvasPanel->PaintTool->ActiveBrush = ActiveProject->BrushManager->Brushes[3].get();
 
 	auto& lm = R.ctx().emplace<LayerManager>();
-	lm.AddBack();
-	
 }

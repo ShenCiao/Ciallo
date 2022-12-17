@@ -17,6 +17,7 @@ namespace chrono = std::chrono;
 #include <fmt/ranges.h>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 #include <entt/entt.hpp>
 // -----------------------------------------------------------------------------
 #include "Arrangement.h"

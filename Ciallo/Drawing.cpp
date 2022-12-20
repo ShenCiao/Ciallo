@@ -1,12 +1,9 @@
 ﻿#include "pch.hpp"
 #include "Drawing.h"
 
-#include <stb_image.h>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Brush.h"
 #include "RenderingSystem.h"
-#include "TextureManager.h"
 
 Drawing::Drawing()
 {
@@ -101,43 +98,43 @@ void Drawing::Draw()
 
 	for (auto& s : Strokes)
 	{
-		s->Brush->Use();
-		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
-		s->Brush->SetUniform();
-		s->SetUniform();
-		s->DrawCall();
+		// s->Brush->Use();
+		// glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
+		// s->Brush->SetUniform();
+		// s->SetUniform();
+		// s->DrawCall();
 	}
 
 	for (auto& s : Labels)
 	{
-		s->Brush->Use();
-		glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
-		s->Brush->SetUniform();
-		s->SetUniform();
-		s->DrawCall();
+		// s->Brush->Use();
+		// glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp));
+		// s->Brush->SetUniform();
+		// s->SetUniform();
+		// s->DrawCall();
 	}
 
 	glUseProgram(0);
 
-	// Filled regions
-	glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer);
-	glEnable(GL_BLEND);
-	glEnable(GL_STENCIL_TEST);
-	glDisable(GL_DEPTH_TEST);
-	glUseProgram(RenderingSystem::Polygon->Program);
-	glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
-	glUniform4f(1, 0.f, 0.f, 0.f, 0.3f); // color
-
-
-	for (auto& [stroke, faces] : ArrangementSystem.QueryResultsContainer)
-	{
-		glUniform4fv(1, 1, glm::value_ptr(stroke->PolygonColor));
-		for (ColorFace& face : faces)
-		{
-			face.GenUploadBuffers();
-			face.DrawCall();
-		}
-	}
+	// // Filled regions
+	// glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer);
+	// glEnable(GL_BLEND);
+	// glEnable(GL_STENCIL_TEST);
+	// glDisable(GL_DEPTH_TEST);
+	// glUseProgram(RenderingSystem::Polygon->Program);
+	// glUniformMatrix4fv(0, 1, GL_FALSE, glm::value_ptr(mvp)); // mvp
+	// glUniform4f(1, 0.f, 0.f, 0.f, 0.3f); // color
+	//
+	//
+	// for (auto& [stroke, faces] : ArrangementSystem.QueryResultsContainer)
+	// {
+	// 	glUniform4fv(1, 1, glm::value_ptr(stroke->PolygonColor));
+	// 	for (ColorFace& face : faces)
+	// 	{
+	// 		face.GenUploadBuffers();
+	// 		face.DrawCall();
+	// 	}
+	// }
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

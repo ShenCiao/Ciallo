@@ -4,7 +4,7 @@
 #include "Layer.h"
 #include <algorithm>
 
-void LayerManager::Draw()
+void LayerManager::DrawUI()
 {
 	ImGui::Begin("LayerManager", nullptr, ImGuiWindowFlags_MenuBar);
 	float framePad = 25.f;

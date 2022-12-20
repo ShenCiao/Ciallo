@@ -102,10 +102,10 @@
     <ClCompile Include="RenderableTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="StampBrush.cpp">
+    <ClCompile Include="StampBrushData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AirBrush.cpp">
+    <ClCompile Include="AirBrushData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DotEngine.cpp">
@@ -118,6 +118,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Layer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Viewport.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -209,10 +212,10 @@
     <ClInclude Include="RenderableTexture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="StampBrush.h">
+    <ClInclude Include="StampBrushData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AirBrush.h">
+    <ClInclude Include="AirBrushData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DotEngine.h">
@@ -225,6 +228,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LayerManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Viewport.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

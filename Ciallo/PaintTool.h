@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "Brush.h"
 #include "Tool.h"
 
 class PaintTool : public Tool
@@ -11,7 +10,7 @@ public:
 
 	glm::vec2 LastSampleMousePos{};
 
-	Brush* ActiveBrush;
+	entt::entity ActiveBrush = entt::null;
 
 	explicit PaintTool(CanvasPanel* canvas)
 		: Tool(canvas)

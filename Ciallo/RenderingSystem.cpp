@@ -1,6 +1,7 @@
 #include "pch.hpp"
 #include "RenderingSystem.h"
 
+
 void RenderingSystem::Init()
 {
 	ArticulatedLine = std::make_unique<ArticulatedLineEngine>();

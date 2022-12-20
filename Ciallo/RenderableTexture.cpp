@@ -28,7 +28,7 @@ RenderableTexture& RenderableTexture::operator=(RenderableTexture&& other) noexc
 	ColorTexture = other.ColorTexture;
 	DepthStencilTexture = other.DepthStencilTexture;
 
-	other.ZeroizeBuffers();
+	other.ZeroizeIdentifiers();
 	return *this;
 }
 
@@ -99,7 +99,7 @@ void RenderableTexture::DelBuffers()
 	glDeleteTextures(1, &MSColorTexture);
 	glDeleteTextures(1, &MSDepthStencilTexture);
 	glDeleteFramebuffers(1, &MSFramebuffer);
-	ZeroizeBuffers();
+	ZeroizeIdentifiers();
 }
 
 // Warning: changing bound framebuffer
@@ -120,7 +120,7 @@ void RenderableTexture::BindFramebuffer()
 	glViewport(0, 0, Width, Height);
 }
 
-void RenderableTexture::ZeroizeBuffers()
+void RenderableTexture::ZeroizeIdentifiers()
 {
 	ColorTexture = 0;
 	DepthStencilTexture = 0;

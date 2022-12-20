@@ -3,8 +3,18 @@
 
 #include <glm/gtc/constants.hpp>
 #include "TextureManager.h"
+#include "Brush.h"
+#include "Viewport.h"
 
-void BrushManager::RenderPreview()
+BrushManager::BrushManager()
+{
+	GenPreviewStroke();
+	auto gr = glm::golden_ratio<float>();
+	PreviewPort = {{-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f}};
+	PreviewPort.GenMVPBuffer();
+}
+
+void BrushManager::GenPreviewStroke()
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
@@ -21,33 +31,47 @@ void BrushManager::RenderPreview()
 		position.push_back(x, y);
 		thicknessOffset.push_back(t);
 	}
-	s.Position = position;
-	s.Thickness = thickness;
-	s.ThicknessOffset = thicknessOffset;
-	s.OnChanged();
+	PreviewStroke.Position = position;
+	PreviewStroke.Thickness = thickness;
+	PreviewStroke.ThicknessOffset = thicknessOffset;
+	PreviewStroke.OnChanged();
+}
 
-	int width = static_cast<int>(1024 * 2 * gr);
-	int height = 1024;
-	glm::mat4 mvp = glm::ortho(-2.0f * gr, 2.0f * gr, -1.0f, 1.0f);
+void BrushManager::RenderAllPreview()
+{
+	SetContext();
+	for (entt::entity brushE : Brushes)
+	{
+		RenderPreview(brushE);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
 
+void BrushManager::SetContext() const
+{
+	PreviewPort.BindMVPBuffer();
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
-	for (auto& b : Brushes)
-	{
-		s.Brush = b.get();
-		b->PreviewTexture = RenderableTexture(width, height, 0);
-		b->PreviewTexture.BindFramebuffer();
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		b->Use();
-		glUniformMatrix4fv(0, 1, false, glm::value_ptr(mvp));
-		b->SetUniform();
-		s.SetUniform();
-		s.DrawCall();
-		b->PreviewTexture.CopyMS();
-	}
+}
+
+void BrushManager::RenderPreview(entt::entity brushE)
+{
+	auto gr = glm::golden_ratio<float>();
+	const int height = 1024, width = static_cast<int>(height * 2 * gr);
+	PreviewStroke.Brush = brushE;
+
+	auto& brush = R.get<Brush>(brushE);
+	brush.PreviewTexture = RenderableTexture(width, height, 0);
+	brush.PreviewTexture.BindFramebuffer();
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	brush.Use();
+	brush.SetUniform();
+	PreviewStroke.SetUniform();
+	PreviewStroke.DrawCall();
+	brush.PreviewTexture.CopyMS();
 }
 
 void BrushManager::Draw()
@@ -55,9 +79,13 @@ void BrushManager::Draw()
 	ImGui::Begin("Toolbox");
 	if (ImGui::BeginPopup("Brushes"))
 	{
-		for (auto& b : Brushes)
-			ImGui::Image(reinterpret_cast<ImTextureID>(b->PreviewTexture.ColorTexture),
-			             {256 * 2 * glm::golden_ratio<float>(), 256});
+		for (entt::entity bE : Brushes)
+		{
+			auto& brush = R.get<Brush>(bE);
+			ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
+				{ 256 * 2 * glm::golden_ratio<float>(), 256 });
+		}
+			
 		ImGui::EndPopup();
 	}
 	ImGui::End();
@@ -65,9 +93,10 @@ void BrushManager::Draw()
 
 void BrushManager::OutputPreview()
 {
-	for(auto& b : Brushes)
+	for(auto& bE : Brushes)
 	{
+		auto& brush = R.get<Brush>(bE);
 		std::string prefix = "brush_";
-		TextureManager::SaveTexture(b->PreviewTexture.ColorTexture, prefix + b->Name);
+		TextureManager::SaveTexture(brush.PreviewTexture.ColorTexture, prefix + brush.Name);
 	}
 }

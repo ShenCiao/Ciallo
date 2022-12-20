@@ -30,7 +30,7 @@ void FillTool::ClickOrDragStart()
 {
 	// Changed part: Thickness, Label, remove Arrangement
 	auto s = std::make_unique<Stroke>();
-	s->Brush = ActiveBrush;
+	// s->Brush = ActiveBrush;
 	s->Position = {Canvas->MousePosOnDrawing};
 	s->Thickness = 0.0003f;
 	s->PolygonColor = PolygonColor;

@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "Stroke.h"
 
-#include "Brush.h"
 #include "RenderingSystem.h"
 
 Stroke::Stroke()
@@ -70,14 +69,6 @@ void Stroke::UpdateDistanceBuffer()
 	glDispatchCompute(1, 1, 1);
 }
 
-void Stroke::Draw()
-{
-	Brush->Use();
-	Brush->SetUniform();
-	SetUniform();
-	DrawCall();
-}
-
 void Stroke::DrawCall()
 {
 	int count = Position.size();
@@ -105,8 +96,5 @@ void Stroke::DrawCall()
 void Stroke::SetUniform()
 {
 	glUniform1f(2, Thickness);
-	if (Color)
-	{
-		glUniform4fv(1, 1, glm::value_ptr(*Color));
-	}
+	glUniform4fv(1, 1, glm::value_ptr(Color));
 }

@@ -1,16 +1,34 @@
 #include "pch.hpp"
-#include "AirBrush.h"
+#include "AirBrushData.h"
 
-AirBrush::AirBrush()
+AirBrushData::AirBrushData()
 {
 }
 
-AirBrush::~AirBrush()
+AirBrushData::AirBrushData(const AirBrushData& other): Curve(other.Curve)
+{
+	UpdateGradient();
+}
+
+AirBrushData::AirBrushData(AirBrushData&& other) noexcept: Gradient(other.Gradient),
+                                               Curve(std::move(other.Curve))
+{
+	other.Gradient = 0;
+}
+
+AirBrushData& AirBrushData::operator=(AirBrushData other)
+{
+	using std::swap;
+	swap(*this, other);
+	return *this;
+}
+
+AirBrushData::~AirBrushData()
 {
 	glDeleteTextures(1, &Gradient);
 }
 
-void AirBrush::UpdateGradient()
+void AirBrushData::UpdateGradient()
 {
 	glDeleteTextures(1, &Gradient);
 	glCreateTextures(GL_TEXTURE_1D, 1, &Gradient);
@@ -25,15 +43,14 @@ void AirBrush::UpdateGradient()
 	{
 		float x = static_cast<float>(i) / (SampleCount - 1);
 		float t = Curve.FindT(x);
-		if (t == std::numeric_limits<float>::min()) 
+		if (t == std::numeric_limits<float>::min())
 			throw std::runtime_error("Fail to find y value");
 		values[i] = Curve(t).y;
 	}
 	glTextureSubImage1D(Gradient, 0, 0, SampleCount, GL_RED, GL_FLOAT, values.data());
 }
 
-void AirBrush::SetUniform()
+void AirBrushData::SetUniform()
 {
-	Brush::SetUniform();
 	glBindTexture(GL_TEXTURE_1D, Gradient);
 }

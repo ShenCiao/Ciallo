@@ -85,8 +85,8 @@ void EditTool::RenderTextureForSelection()
 	int index = 0;
 	for (auto& s : drawing->Strokes)
 	{
-		VanillaBrush->Use();
-		VanillaBrush->SetUniform();
+		// VanillaBrush->Use();
+		// VanillaBrush->SetUniform();
 		s->SetUniform();
 		glm::vec4 color = IndexToColor(index);
 		glUniform4fv(1, 1, glm::value_ptr(color));

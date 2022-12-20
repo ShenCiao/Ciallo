@@ -7,7 +7,7 @@
 class EditTool : public Tool
 {
 public:
-	Brush* VanillaBrush; // warning: this field is uninited!!!
+	entt::entity VanillaBrush; // warning: this field is uninited!!!
 	Stroke* SelectedStroke = nullptr;
 	glm::vec2 MousePrev{};
 

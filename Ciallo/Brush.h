@@ -1,18 +1,21 @@
 #pragma once
 
 #include "RenderableTexture.h"
+#include "AirBrushData.h"
+#include "StampBrushData.h"
 
 class Brush
 {
 public:
-	virtual ~Brush() = default;
-	// Opengl objects are owned by other managers;
-	GLuint Program;
-	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
-
+	// Program are owned by other managers;
+	GLuint Program = 0;
+	
 	std::string Name;
-	RenderableTexture PreviewTexture;
+	RenderableTexture PreviewTexture{};
 
-	virtual void SetUniform();
+	std::unique_ptr<AirBrushData> AirBrush{};
+	std::unique_ptr<StampBrushData> Stamp{};
+
+	void SetUniform();
 	void Use();
 };

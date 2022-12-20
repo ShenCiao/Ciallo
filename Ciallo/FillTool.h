@@ -9,7 +9,7 @@ class FillTool : public Tool
 	chrono::duration<float, std::milli> SampleInterval{ 25.f };
 
 	std::unique_ptr<Stroke> Rim;
-	Brush* ActiveBrush;
+	entt::entity ActiveBrush;
 
 	glm::vec2 LastSampleMousePos{};
 

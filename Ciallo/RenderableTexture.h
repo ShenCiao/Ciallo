@@ -28,6 +28,6 @@ public:
 	void CopyMS();
 	void BindFramebuffer();
 private:
-	void ZeroizeBuffers();
+	void ZeroizeIdentifiers();
 };
 

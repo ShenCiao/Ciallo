@@ -3,7 +3,16 @@
 
 void Brush::SetUniform()
 {
-	glUniform4fv(1, 1, glm::value_ptr(Color));
+	if (AirBrush)
+	{
+		AirBrush->SetUniform();
+		return;
+	}
+	if (Stamp)
+	{
+		Stamp->SetUniform();
+		return;
+	}
 }
 
 void Brush::Use()

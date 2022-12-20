@@ -1,15 +1,21 @@
 #pragma once
 
-#include "Brush.h"
 #include "Stroke.h"
+#include "Viewport.h"
 
 class BrushManager
 {
 public:
-	std::vector<std::unique_ptr<Brush>> Brushes{};
-	Stroke s;
+	std::vector<entt::entity> Brushes;
+	Stroke PreviewStroke;
+	Viewport PreviewPort;
 
-	void RenderPreview();
+	BrushManager();
+
+	void GenPreviewStroke();
+	void RenderAllPreview();
+	void SetContext() const;
+	void RenderPreview(entt::entity brushE);
 	void Draw();
 	void OutputPreview();
 };

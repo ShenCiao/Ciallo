@@ -13,9 +13,7 @@ layout(location = 3) out vec2 p;
 layout(location = 4) out float halfThickness;
 layout(location = 5) out flat float[2] summedLength;
 
-layout(std140, binding=0) uniform _MVP{
-    mat4 MVP;
-};
+layout(std140, binding=0) uniform _MVP{ mat4 MVP; };
 layout(location = 1) uniform vec4 color = vec4(0.9, 0.0, 0.0, 1.0); // Red to warn if value is not set
 layout(location = 2) uniform float uniThickness;
 

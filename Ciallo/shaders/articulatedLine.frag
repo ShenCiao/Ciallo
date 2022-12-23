@@ -27,7 +27,7 @@ mat2 rotate(float angle){
     return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 }
 
-// Noise
+// Noise helper functions ------------------
 float random (in vec2 st) {
     return fract(sin(dot(st.xy,
                          vec2(12.9898,78.233)))*
@@ -66,7 +66,7 @@ float fbm (in vec2 st) {
     }
     return value;
 }
-// Noise end
+// Noise end ------------------
 
 void main() {
     

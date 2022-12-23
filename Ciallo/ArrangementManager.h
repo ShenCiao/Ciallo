@@ -9,7 +9,7 @@ class ArrangementManager
 public:
 	CGAL::Arrangement Arrangement{};
 	CGAL::PointLocation PointLocation{Arrangement};
-	CGAL::Visibility Visibility{}; // attach arrangement when needed
+	CGAL::Visibility Visibility{}; // attach to arrangement only when needed
 
 	std::unordered_map<Stroke*, CGAL::Curve_handle> CurveHandleContainer{};
 	std::unordered_map<Stroke*, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};

@@ -120,6 +120,11 @@ void RenderableTexture::BindFramebuffer()
 	glViewport(0, 0, Width, Height);
 }
 
+glm::vec2 RenderableTexture::Size() const
+{
+	return {static_cast<float>(Width), static_cast<float>(Height)};
+}
+
 void RenderableTexture::ZeroizeIdentifiers()
 {
 	ColorTexture = 0;

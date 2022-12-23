@@ -27,6 +27,7 @@ public:
 	void DelBuffers();
 	void CopyMS();
 	void BindFramebuffer();
+	glm::vec2 Size() const;
 private:
 	void ZeroizeIdentifiers();
 };

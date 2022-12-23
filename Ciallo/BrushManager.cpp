@@ -11,7 +11,7 @@ BrushManager::BrushManager()
 	GenPreviewStroke();
 	auto gr = glm::golden_ratio<float>();
 	PreviewPort = {{-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f}};
-	PreviewPort.GenMVPBuffer();
+	PreviewPort.UploadMVP();
 }
 
 void BrushManager::GenPreviewStroke()
@@ -74,7 +74,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	brush.PreviewTexture.CopyMS();
 }
 
-void BrushManager::Draw()
+void BrushManager::DrawUI()
 {
 	ImGui::Begin("Toolbox");
 	if (ImGui::BeginPopup("Brushes"))

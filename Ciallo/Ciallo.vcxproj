@@ -96,6 +96,7 @@
     <ClCompile Include="BezierSpline.cpp" />
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="BrushManager.cpp" />
+    <ClCompile Include="Canvas.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
@@ -120,6 +121,7 @@
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
+    <ClCompile Include="SelectionManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
     <ClCompile Include="Stroke.cpp" />
@@ -137,6 +139,7 @@
     <ClInclude Include="BezierSpline.h" />
     <ClInclude Include="Brush.h" />
     <ClInclude Include="BrushManager.h" />
+    <ClInclude Include="Canvas.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="CubicBezier.h" />
     <ClInclude Include="DotEngine.h" />
@@ -149,6 +152,7 @@
     <ClInclude Include="LayerManager.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />
+    <ClInclude Include="SelectionManager.h" />
     <ClInclude Include="StampBrushData.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="Viewport.h" />

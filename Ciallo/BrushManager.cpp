@@ -27,14 +27,14 @@ void BrushManager::GenPreviewStroke()
 		float a = static_cast<float>(i) / segments;
 		float x = glm::mix(-pi, pi, a);
 		float y = 1.0f / gr * glm::sin(x);
-		float t = glm::mix(0.0f, -thickness, glm::abs(2.0f * a - 1.0f));
+		float t = (glm::cos(x/2.0f) - 1.0f) * thickness;
 		position.push_back(x, y);
 		thicknessOffset.push_back(t);
 	}
 	PreviewStroke.Position = position;
 	PreviewStroke.Thickness = thickness;
 	PreviewStroke.ThicknessOffset = thicknessOffset;
-	PreviewStroke.OnChanged();
+	PreviewStroke.UpdateBuffers();
 }
 
 void BrushManager::RenderAllPreview()
@@ -68,9 +68,9 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	brush.Use();
-	brush.SetUniform();
-	PreviewStroke.SetUniform();
-	PreviewStroke.DrawCall();
+	brush.SetUniforms();
+	PreviewStroke.SetUniforms();
+	PreviewStroke.LineDrawCall();
 	brush.PreviewTexture.CopyMS();
 }
 
@@ -87,6 +87,17 @@ void BrushManager::DrawUI()
 		}
 			
 		ImGui::EndPopup();
+	}
+	ImGui::End();
+
+	ImGui::Begin("Brush Preview");
+	{
+		for (entt::entity bE : Brushes)
+		{
+			auto& brush = R.get<Brush>(bE);
+			ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
+				{ 256 * 2 * glm::golden_ratio<float>(), 256 });
+		}
 	}
 	ImGui::End();
 }

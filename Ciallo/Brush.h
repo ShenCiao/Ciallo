@@ -7,15 +7,20 @@
 class Brush
 {
 public:
-	// Program are owned by other managers;
+	// Program identifier is owned by other;
 	GLuint Program = 0;
-	
 	std::string Name;
 	RenderableTexture PreviewTexture{};
 
-	std::unique_ptr<AirBrushData> AirBrush{};
-	std::unique_ptr<StampBrushData> Stamp{};
+	std::unique_ptr<AirBrushData> AirBrush;
+	std::unique_ptr<StampBrushData> Stamp;
 
-	void SetUniform();
-	void Use();
+	Brush() = default;
+	Brush(const Brush& other);
+	Brush(Brush&& other) noexcept;
+	Brush& operator=(Brush other);
+	friend void swap(Brush& lhs, Brush& rhs) noexcept;
+
+	void SetUniforms() const;
+	void Use() const;
 };

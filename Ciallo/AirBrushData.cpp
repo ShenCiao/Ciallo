@@ -50,7 +50,14 @@ void AirBrushData::UpdateGradient()
 	glTextureSubImage1D(Gradient, 0, 0, SampleCount, GL_RED, GL_FLOAT, values.data());
 }
 
-void AirBrushData::SetUniform()
+void AirBrushData::SetUniforms()
 {
 	glBindTexture(GL_TEXTURE_1D, Gradient);
+}
+
+void swap(AirBrushData& lhs, AirBrushData& rhs) noexcept
+{
+	using std::swap;
+	swap(lhs.Gradient, rhs.Gradient);
+	swap(lhs.Curve, rhs.Curve);
 }

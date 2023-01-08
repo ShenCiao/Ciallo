@@ -1,17 +1,9 @@
 ﻿#pragma once
-
-class CanvasPanel;
+#include "CanvasEvent.h"
 
 class Tool
 {
-protected:
-	chrono::time_point<chrono::steady_clock> StartDraggingTimePoint{};
-	chrono::duration<float, std::milli> DraggingDuration;
-	bool IsDragging = false;
 public:
-	explicit Tool(CanvasPanel* canvas);
-	CanvasPanel* Canvas = nullptr;
-
 	virtual void Activate()
 	{
 	}
@@ -20,25 +12,30 @@ public:
 	{
 	}
 
-	virtual void ClickOrDragStart()
-	{
-	}
-
-	virtual void Dragging()
-	{
-	}
-
-	virtual void DragEnd()
-	{
-	}
-
 	virtual void DrawProperties()
 	{
 	}
 
-	virtual void Hovering()
+	virtual void OnClickOrDragStart(ClickOrDragStart)
 	{
 	}
-	// Run under the invisible button of canvas, default behavior
-	virtual void Run();
+
+	virtual void OnDragging(Dragging)
+	{
+	}
+
+	virtual void OnDragEnd(DragEnd)
+	{
+	}
+
+	virtual void OnHovering(Hovering)
+	{
+	}
+
+	virtual ~Tool() = default;
+
+	virtual std::string GetName() = 0;
+	
+	void Connect(entt::dispatcher& dispatcher);
+	void Disconnect(entt::dispatcher& dispatcher);
 };

@@ -13,13 +13,14 @@ public:
 	Viewport(const Viewport& other);
 	Viewport(Viewport&& other) noexcept;
 	Viewport& operator=(Viewport other);
+	friend void swap(Viewport& lhs, Viewport& rhs) noexcept;
 
 	void GenBuffer();
-	friend void swap(Viewport& lhs, Viewport& rhs) noexcept;
 
 	glm::mat4 GetViewProjMatrix() const;
 	GLuint UploadMVP(glm::mat4 model = glm::identity<glm::mat4>());
 	void BindMVPBuffer() const;
 	glm::vec2 GetSizePixelFloat(float dpi) const;
 	glm::ivec2 GetSizePixel(float dpi) const;
+	glm::vec2 GetSize() const;
 };

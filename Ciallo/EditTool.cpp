@@ -3,71 +3,77 @@
 
 #include <bitset>
 
-#include "CanvasPanel.h"
+#include "StrokeContainer.h"
+#include "Stroke.h"
+#include "Canvas.h"
+#include "Brush.h"
+#include "InnerBrush.h"
+#include "RenderingSystem.h"
 
 
-EditTool::EditTool(CanvasPanel* canvas): Tool(canvas)
+EditTool::EditTool()
 {
+	Brush b;
+	b.Name = "edit_selection";
+	b.Program = RenderingSystem::ArticulatedLine->Program();
+	R.ctx().get<InnerBrush>().Add(std::move(b));
 }
 
-void EditTool::ClickOrDragStart()
+void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 {
 	SelectionTexture.BindFramebuffer();
-	int x = Canvas->MousePosOnDrawingInPixel.x;
-	int y = Canvas->MousePosOnDrawingInPixel.y;
+	int x = static_cast<int>(event.MousePosPixel.x);
+	int y = static_cast<int>(event.MousePosPixel.y);
+
 	glm::vec4 clickedColor;
 	glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, &clickedColor);
 	if (clickedColor == glm::vec4(1, 1, 1, 1))
 	{
-		SelectedStroke = nullptr;
+		SelectedStrokeE = entt::null;
 		return;
 	}
 
 	uint32_t index = ColorToIndex(clickedColor);
-	SelectedStroke = Canvas->ActiveDrawing->Strokes[index].get();
+	SelectedStrokeE = static_cast<entt::entity>(index);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	MousePrev = Canvas->MousePosOnDrawing;
 }
 
-void EditTool::Dragging()
+void EditTool::OnDragging(Dragging event)
 {
-	if(SelectedStroke)
+	if (SelectedStrokeE != entt::null)
 	{
-		glm::vec2 delta = Canvas->MousePosOnDrawing - MousePrev;
-
-		for (auto& p : SelectedStroke->Position)
-		{
-			p = { p.x + delta.x, p.y + delta.y };
-		}
-		SelectedStroke->OnChanged();
-		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(SelectedStroke);
-		MousePrev = Canvas->MousePosOnDrawing;
+		// for (auto& p : SelectedStroke->Position)
+		// {
+		// 	p = { p.x + delta.x, p.y + delta.y };
+		// }
+		// SelectedStroke->UpdateBuffers();
+		// Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(SelectedStroke);
 	}
+}
+
+void EditTool::OnDragEnd(DragEnd)
+{
+	RenderSelectionTexture();
 }
 
 void EditTool::Activate()
 {
 	GenSelectionTexture();
-	RenderTextureForSelection();
-}
-
-void EditTool::DragEnd()
-{
-	RenderTextureForSelection();
+	RenderSelectionTexture();
 }
 
 void EditTool::Deactivate()
 {
-	
 }
 
 void EditTool::DrawProperties()
 {
-	if(SelectedStroke != nullptr)
+	if (SelectedStrokeE != entt::null)
 	{
 		if (ImGui::Button("Size"))
 		{
-			spdlog::info("size: {}", SelectedStroke->Position.size());
+			auto& stroke = R.get<Stroke>(SelectedStrokeE);
+			spdlog::info("size: {}", stroke.Position.size());
 		}
 	}
 }
@@ -75,28 +81,41 @@ void EditTool::DrawProperties()
 void EditTool::GenSelectionTexture()
 {
 	// Create textures used for selection
-	glm::ivec2 size = Canvas->ActiveDrawing->GetSizeInPixel();
+	auto& canvas = R.ctx().get<Canvas>();
+
+	glm::ivec2 size = canvas.GetSizePixel();
 	SelectionTexture = RenderableTexture(size.x, size.y);
 }
-void EditTool::RenderTextureForSelection()
+
+void EditTool::RenderSelectionTexture()
 {
-	Drawing* drawing = Canvas->ActiveDrawing;
 	SelectionTexture.BindFramebuffer();
-	int index = 0;
-	for (auto& s : drawing->Strokes)
+
+	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	auto& canvas = R.ctx().get<Canvas>();
+	canvas.Viewport.UploadMVP();
+	canvas.Viewport.BindMVPBuffer();
+	auto& brush = R.ctx().get<InnerBrush>().Get("edit_selection");
+	brush.Use();
+	brush.SetUniforms();
+	for (auto& e : strokeEs)
 	{
-		// VanillaBrush->Use();
-		// VanillaBrush->SetUniform();
-		s->SetUniform();
-		glm::vec4 color = IndexToColor(index);
+		brush.SetUniforms();
+		auto& s = R.get<Stroke>(e);
+		s.SetUniforms();
+		glm::vec4 color = IndexToColor(static_cast<uint32_t>(e));
 		glUniform4fv(1, 1, glm::value_ptr(color));
-		s->DrawCall();
-		index += 1;
+		s.LineDrawCall();
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-glm::vec4 EditTool::IndexToColor(uint32_t index)
+std::string EditTool::GetName()
+{
+	return "Edit";
+}
+
+glm::vec4 EditTool::IndexToColor(uint32_t index) const
 {
 	std::bitset<32> bits{index};
 	glm::vec4 color;
@@ -107,7 +126,7 @@ glm::vec4 EditTool::IndexToColor(uint32_t index)
 	return color;
 }
 
-uint32_t EditTool::ColorToIndex(glm::vec4 color)
+uint32_t EditTool::ColorToIndex(glm::vec4 color) const
 {
 	std::string bits;
 	for (int i = 0; i < 4; ++i)

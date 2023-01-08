@@ -1,31 +1,30 @@
 ﻿#pragma once
 
-#include "Stroke.h"
 #include "ColorFace.h"
 
 class ArrangementManager
 {
-	//TODO: make insertion and query asynchronous.
+	//TODO: make insertion and query asynchronous in a thread.
 public:
 	CGAL::Arrangement Arrangement{};
 	CGAL::PointLocation PointLocation{Arrangement};
 	CGAL::Visibility Visibility{}; // attach to arrangement only when needed
 
-	std::unordered_map<Stroke*, CGAL::Curve_handle> CurveHandleContainer{};
-	std::unordered_map<Stroke*, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};
+	std::unordered_map<entt::entity, CGAL::Curve_handle> CurveHandleContainer{};
+	std::unordered_map<entt::entity, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};
 	// One stroke may cross multiple polygons with holes.
-	std::unordered_map<Stroke*, std::vector<ColorFace>> QueryResultsContainer{};
+	std::unordered_map<entt::entity, std::vector<ColorFace>> QueryResultsContainer{};
 	
 
-	std::map<Stroke*, CGAL::Curve> UpdateQueue{};
+	std::map<entt::entity, CGAL::Curve> UpdateQueue{};
 
 	void Run();
 
-	void AddOrUpdate(Stroke* stroke);
-	void Remove(Stroke* stroke);
+	void AddOrUpdate(entt::entity strokeE);
+	void Remove(entt::entity strokeE);
 
-	void AddOrUpdateQuery(Stroke* stroke);
-	void RemoveQuery(Stroke* stroke);
+	void AddOrUpdateQuery(entt::entity strokeE);
+	void RemoveQuery(entt::entity strokeE);
 
 	Geom::Polyline PointQueryVisibility(glm::vec2 p) const;
 	std::vector<Geom::Polyline> PointQuery(glm::vec2 p) const;

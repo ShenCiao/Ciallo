@@ -1,30 +1,28 @@
 ﻿#pragma once
 
-#include "Tool.h"
-#include "Stroke.h"
 #include "RenderableTexture.h"
+#include "Tool.h"
 
 class EditTool : public Tool
 {
 public:
-	entt::entity VanillaBrush; // warning: this field is uninited!!!
-	Stroke* SelectedStroke = nullptr;
-	glm::vec2 MousePrev{};
-
+	entt::entity SelectedStrokeE = entt::null;
 	RenderableTexture SelectionTexture;
 
-	explicit EditTool(CanvasPanel* canvas);
+	EditTool();
 
-	void ClickOrDragStart() override;
-	void Dragging() override;
+	void OnClickOrDragStart(ClickOrDragStart) override;
+	void OnDragging(Dragging) override;
+	void OnDragEnd(DragEnd) override;
 	void Activate() override;
-	void DragEnd() override;
 	void Deactivate() override;
 	void DrawProperties() override;
 
 	void GenSelectionTexture();
-	void RenderTextureForSelection();
+	void RenderSelectionTexture();
 
-	glm::vec4 IndexToColor(uint32_t index);
-	uint32_t ColorToIndex(glm::vec4 color);
+	std::string GetName() override;
+
+	glm::vec4 IndexToColor(uint32_t index) const;
+	uint32_t ColorToIndex(glm::vec4 color) const;
 };

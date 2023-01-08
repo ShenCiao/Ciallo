@@ -10,13 +10,13 @@ public:
 	Geom::CubicBezier Curve;
 
 	AirBrushData();
-
 	AirBrushData(const AirBrushData& other);
 	AirBrushData(AirBrushData&& other) noexcept;
 	AirBrushData& operator=(AirBrushData other);
-
 	~AirBrushData();
+	friend void swap(AirBrushData& lhs, AirBrushData& rhs) noexcept;
+
 	void UpdateGradient();
-	void SetUniform();
+	void SetUniforms();
 };
 

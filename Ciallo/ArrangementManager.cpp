@@ -2,24 +2,25 @@
 #include "ArrangementManager.h"
 
 #include <algorithm>
+#include "Stroke.h"
 
 void ArrangementManager::Run()
 {
 	// Insertion and update strokes
-	for (auto& [stroke, curve] : UpdateQueue)
+	for (auto& [strokeE, curve] : UpdateQueue)
 	{
-		if (CurveHandleContainer.contains(stroke))
+		if (CurveHandleContainer.contains(strokeE))
 		{
 			// Warning: this function has been modified to fit our usage!
-			CGAL::remove_curve(Arrangement, CurveHandleContainer[stroke]);
+			CGAL::remove_curve(Arrangement, CurveHandleContainer[strokeE]);
 			if (curve.number_of_subcurves() == 0) // indicate remove
 			{
-				CurveHandleContainer.erase(stroke);
+				CurveHandleContainer.erase(strokeE);
 				continue;
 			}
 		}
 
-		CurveHandleContainer[stroke] = CGAL::insert(Arrangement, curve);
+		CurveHandleContainer[strokeE] = CGAL::insert(Arrangement, curve);
 	}
 
 	if(UpdateQueue.size() != 0 && Visibility.is_attached())
@@ -50,31 +51,33 @@ void ArrangementManager::Run()
 	}
 }
 
-void ArrangementManager::AddOrUpdate(Stroke* stroke)
+void ArrangementManager::AddOrUpdate(entt::entity strokeE)
 {
-	auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
+	auto& stroke = R.get<Stroke>(strokeE);
+	auto pos = RemoveConsecutiveOverlappingPoint(stroke.Position);
 	if (pos.size() <= 1)
 		return;
-	UpdateQueue[stroke] = CurveConstructor(VecToPoints(pos));
+	UpdateQueue[strokeE] = CurveConstructor(VecToPoints(pos));
 }
 
-void ArrangementManager::Remove(Stroke* stroke)
+void ArrangementManager::Remove(entt::entity strokeE)
 {
-	UpdateQueue[stroke] = CGAL::Curve{};
+	UpdateQueue[strokeE] = CGAL::Curve{};
 }
 
-void ArrangementManager::AddOrUpdateQuery(Stroke* stroke)
+void ArrangementManager::AddOrUpdateQuery(entt::entity strokeE)
 {
-	auto pos = RemoveConsecutiveOverlappingPoint(stroke->Position);
+	auto& stroke = R.get<Stroke>(strokeE);
+	auto pos = RemoveConsecutiveOverlappingPoint(stroke.Position);
 	if (pos.size() <= 1)
 		return;
 
-	CachedQueryCurves[stroke] = ConstructXMonotoneCurve(pos);
+	CachedQueryCurves[strokeE] = ConstructXMonotoneCurve(pos);
 }
 
-void ArrangementManager::RemoveQuery(Stroke* stroke)
+void ArrangementManager::RemoveQuery(entt::entity strokeE)
 {
-	CachedQueryCurves.erase(stroke);
+	CachedQueryCurves.erase(strokeE);
 }
 
 Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const

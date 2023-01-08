@@ -1,39 +1,19 @@
 ﻿#include "pch.hpp"
 #include "Tool.h"
 
-Tool::Tool(CanvasPanel* canvas): Canvas(canvas)
+
+void Tool::Connect(entt::dispatcher& dispatcher)
 {
+	dispatcher.sink<ClickOrDragStart>().connect<&Tool::OnClickOrDragStart>(this);
+	dispatcher.sink<Dragging>().connect<&Tool::OnDragging>(this);
+	dispatcher.sink<DragEnd>().connect<&Tool::OnDragEnd>(this);
+	dispatcher.sink<Hovering>().connect<&Tool::OnHovering>(this);
 }
 
-void Tool::Run()
+void Tool::Disconnect(entt::dispatcher& dispatcher)
 {
-	if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
-	{
-		if (IsDragging) IsDragging = false;
-		StartDraggingTimePoint = chrono::high_resolution_clock::now();
-		ClickOrDragStart();
-		return;
-	}
-
-	if (ImGui::IsMouseDragging(0) && !ImGui::IsItemActivated() && ImGui::IsItemActive())
-	{
-		IsDragging = true;
-		DraggingDuration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
-		Dragging();
-		return;
-	}
-
-	if (IsDragging && !ImGui::IsMouseDragging(0))
-	{
-		IsDragging = false;
-		DragEnd();
-		DraggingDuration = chrono::duration<float, std::milli>::zero();
-		return;
-	}
-
-	if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0))
-	{
-		Hovering();
-		return;
-	}
+	dispatcher.sink<ClickOrDragStart>().disconnect<&Tool::OnClickOrDragStart>(this);
+	dispatcher.sink<Dragging>().disconnect<&Tool::OnDragging>(this);
+	dispatcher.sink<DragEnd>().disconnect<&Tool::OnDragEnd>(this);
+	dispatcher.sink<Hovering>().disconnect<&Tool::OnHovering>(this);
 }

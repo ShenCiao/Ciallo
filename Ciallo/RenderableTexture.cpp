@@ -9,15 +9,24 @@ RenderableTexture::RenderableTexture(int width, int height, int multiSample):
 	GenBuffers();
 }
 
-RenderableTexture::RenderableTexture(RenderableTexture&& other) noexcept
+RenderableTexture::RenderableTexture(const RenderableTexture& other)
 {
-	*this = std::move(other);
+	Width = other.Width;
+	Height = other.Height;
+	MultiSample = other.MultiSample;
+	GenBuffers();
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, other.MSFramebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, MSFramebuffer);
+	glBlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, other.Framebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, Framebuffer);
+	glBlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
-RenderableTexture& RenderableTexture::operator=(RenderableTexture&& other) noexcept
+RenderableTexture::RenderableTexture(RenderableTexture&& other) noexcept
 {
-	if (this == &other)
-		return *this;
 	Width = other.Width;
 	Height = other.Height;
 	MultiSample = other.MultiSample;
@@ -28,9 +37,16 @@ RenderableTexture& RenderableTexture::operator=(RenderableTexture&& other) noexc
 	ColorTexture = other.ColorTexture;
 	DepthStencilTexture = other.DepthStencilTexture;
 
-	other.ZeroizeIdentifiers();
+	other.Zeroize();
+}
+
+RenderableTexture& RenderableTexture::operator=(RenderableTexture other)
+{
+	using std::swap;
+	swap(*this, other);
 	return *this;
 }
+
 
 RenderableTexture::~RenderableTexture()
 {
@@ -99,7 +115,7 @@ void RenderableTexture::DelBuffers()
 	glDeleteTextures(1, &MSColorTexture);
 	glDeleteTextures(1, &MSDepthStencilTexture);
 	glDeleteFramebuffers(1, &MSFramebuffer);
-	ZeroizeIdentifiers();
+	Zeroize();
 }
 
 // Warning: changing bound framebuffer
@@ -112,6 +128,8 @@ void RenderableTexture::CopyMS()
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, MSFramebuffer);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, Framebuffer);
 	glBlitFramebuffer(0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 }
 
 void RenderableTexture::BindFramebuffer()
@@ -125,7 +143,7 @@ glm::vec2 RenderableTexture::Size() const
 	return {static_cast<float>(Width), static_cast<float>(Height)};
 }
 
-void RenderableTexture::ZeroizeIdentifiers()
+void RenderableTexture::Zeroize()
 {
 	ColorTexture = 0;
 	DepthStencilTexture = 0;
@@ -133,4 +151,18 @@ void RenderableTexture::ZeroizeIdentifiers()
 	MSColorTexture = 0;
 	MSDepthStencilTexture = 0;
 	MSFramebuffer = 0;
+}
+
+void swap(RenderableTexture& lhs, RenderableTexture& rhs) noexcept
+{
+	using std::swap;
+	swap(lhs.Width, rhs.Width);
+	swap(lhs.Height, rhs.Height);
+	swap(lhs.MultiSample, rhs.MultiSample);
+	swap(lhs.MSFramebuffer, rhs.MSFramebuffer);
+	swap(lhs.MSColorTexture, rhs.MSColorTexture);
+	swap(lhs.MSDepthStencilTexture, rhs.MSDepthStencilTexture);
+	swap(lhs.Framebuffer, rhs.Framebuffer);
+	swap(lhs.ColorTexture, rhs.ColorTexture);
+	swap(lhs.DepthStencilTexture, rhs.DepthStencilTexture);
 }

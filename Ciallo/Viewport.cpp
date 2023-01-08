@@ -75,6 +75,11 @@ glm::ivec2 Viewport::GetSizePixel(float dpi) const
 	return {static_cast<int>(glm::round(size.x)), static_cast<int>(glm::round(size.y))};
 }
 
+glm::vec2 Viewport::GetSize() const
+{
+	return Max-Min;
+}
+
 void swap(Viewport& lhs, Viewport& rhs) noexcept
 {
 	using std::swap;

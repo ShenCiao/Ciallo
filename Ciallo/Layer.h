@@ -2,17 +2,17 @@
 
 #include "RenderableTexture.h"
 
-class Layer
-{
-public:
-	enum class Flags
+enum class LayerFlags
 	{
-		Visible = 1 << 1,
+		Visible = 1u << 1,
+		Selectable = 1 << 2,
 		_entt_enum_as_bitmask
 	};
 
+class Layer
+{
 public:
-	Flags Flags = Flags::Visible;
+	LayerFlags Flags = LayerFlags::Visible;
 	std::string Name;
 	RenderableTexture Content;
 };

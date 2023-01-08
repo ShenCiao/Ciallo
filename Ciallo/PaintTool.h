@@ -1,22 +1,16 @@
 ﻿#pragma once
 
 #include "Tool.h"
+#include "Painter.h"
 
 class PaintTool : public Tool
 {
 public:
-	chrono::duration<float, std::milli> LastSampleDuration{0.0f};
-	chrono::duration<float, std::milli> SampleInterval{ 10.f };
+	Painter Painter{};
 
-	glm::vec2 LastSampleMousePos{};
+	PaintTool();
 
-	entt::entity ActiveBrush = entt::null;
-
-	explicit PaintTool(CanvasPanel* canvas)
-		: Tool(canvas)
-	{
-	}
-
-	void ClickOrDragStart() override;
-	void Dragging() override;
+	void OnClickOrDragStart(ClickOrDragStart) override;
+	void OnDragging(Dragging) override;
+	std::string GetName() override;
 };

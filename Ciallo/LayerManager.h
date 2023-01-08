@@ -8,7 +8,7 @@ public:
 
 	void DrawUI();
 	void DrawMenuButton();
-	entt::entity CreateLayer();
+	entt::entity CreateLayer() const;
 	// move to back if target not found
 	void MoveSelection(entt::entity target = entt::null);
 	void RemoveSelection();

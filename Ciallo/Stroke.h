@@ -9,8 +9,7 @@ public:
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	entt::entity Brush = entt::null;
 
-	// Bad design but works!
-	glm::vec4 PolygonColor = {0.0f, 0.0f, 0.0f, 1.0f/3.0f};
+	glm::vec4 FillColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 	/*
 	 * Index----Attribute
@@ -28,11 +27,12 @@ public:
 	Stroke& operator=(Stroke&& other) noexcept = delete;
 	~Stroke();
 
-	void OnChanged();
+	void UpdateBuffers();
 	void GenBuffers();
 	void UpdatePositionBuffer();
 	void UpdateThicknessOffsetBuffer();
 	void UpdateDistanceBuffer();
-	void DrawCall();
-	void SetUniform();
+	void LineDrawCall();
+	void FillDrawCall();
+	void SetUniforms();
 };

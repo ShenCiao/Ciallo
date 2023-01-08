@@ -11,7 +11,7 @@ layout(location = 1) out flat vec2 p0;
 layout(location = 2) out flat vec2 p1;
 layout(location = 3) out vec2 p;
 layout(location = 4) out float halfThickness;
-layout(location = 5) out flat float[2] summedLength;
+layout(location = 5) out flat float summedLength;
 
 layout(std140, binding=0) uniform _MVP{ mat4 MVP; };
 layout(location = 1) uniform vec4 color = vec4(0.9, 0.0, 0.0, 1.0); // Red to warn if value is not set
@@ -29,8 +29,7 @@ void main(){
     p = p0 + n*halfThickness - nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength[0] = inSummedLength[0];
-    summedLength[1] = inSummedLength[1];
+    summedLength = inSummedLength[0];
     EmitVertex();
 
     // Vertex at p0 right
@@ -40,8 +39,7 @@ void main(){
     p = p0 - n*halfThickness - nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength[0] = inSummedLength[0];
-    summedLength[1] = inSummedLength[1];
+    summedLength = inSummedLength[0];
     EmitVertex();
 
     // Vertex at p1 left
@@ -51,8 +49,7 @@ void main(){
     p = p1 + n*halfThickness + nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength[0] = inSummedLength[0];
-    summedLength[1] = inSummedLength[1];
+    summedLength = inSummedLength[0];
     EmitVertex();
 
     // Vertex at p1 right
@@ -62,8 +59,7 @@ void main(){
     p = p1 - n*halfThickness + nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength[0] = inSummedLength[0];
-    summedLength[1] = inSummedLength[1];
+    summedLength = inSummedLength[0];
     EmitVertex();
 
     EndPrimitive();

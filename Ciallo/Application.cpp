@@ -7,6 +7,10 @@
 #include "TextureManager.h"
 #include "LayerManager.h"
 #include "Canvas.h"
+#include "TempLayers.h"
+#include "StrokeContainer.h"
+#include "Toolbox.h"
+#include "InnerBrush.h"
 
 #include <implot.h>
 
@@ -27,22 +31,23 @@ void Application::Run()
 		Window->BeginFrame();
 		ImPlot::ShowDemoWindow();
 		ImGui::ShowDemoWindow();
-		R.ctx().get<Canvas>().DrawUI();
+		auto& canvas = R.ctx().get<Canvas>();
+		canvas.Render();
+		canvas.DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
-		R.ctx().get<LayerManager>().DrawUI();
+		R.ctx().get<Toolbox>().DrawUI();
 		Window->EndFrame();
 	}
 }
 
 void Application::GenDefaultProject()
 {
-	ActiveProject = std::make_unique<Project>();
-	ActiveProject->MainRegistry = &R;
-
+	// project level "singleton" are managed by ctx()
 	auto& canvas = R.ctx().emplace<Canvas>();
 	canvas.Viewport.Min = {0.0f, 0.0f};
 	canvas.Viewport.Max = {0.297f, 0.21f};
 	canvas.Dpi = 144.0f;
+	canvas.GenRenderTarget();
 
 	std::vector<entt::entity> brushes;
 	brushes.push_back(R.create());
@@ -78,6 +83,16 @@ void Application::GenDefaultProject()
 	brushManager.Brushes = std::move(brushes);
 	brushManager.RenderAllPreview();
 
+	R.ctx().emplace<TempLayers>();
+	auto& sc = R.ctx().emplace<StrokeContainer>();
+	auto strokeE = R.create();
+	auto& stroke = R.emplace<Stroke>(strokeE);
+	stroke.Brush = brushManager.Brushes[0];
+	stroke.Position = {{0.0f, 0.0f}, {0.15f, 0.1f}, {0.15f, 0.0f}};
+	stroke.Thickness = 0.001f;
+	stroke.UpdateBuffers();
+	sc.StrokeEs.push_back(strokeE);
 
-	auto& lm = R.ctx().emplace<LayerManager>();
+	R.ctx().emplace<InnerBrush>(); 
+	R.ctx().emplace<Toolbox>();
 }

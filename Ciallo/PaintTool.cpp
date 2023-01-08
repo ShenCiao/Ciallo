@@ -1,37 +1,26 @@
 ﻿#include "pch.hpp"
 #include "PaintTool.h"
 
-#include "Stroke.h"
-#include "CanvasPanel.h"
+#include "BrushManager.h"
 
-void PaintTool::ClickOrDragStart()
+PaintTool::PaintTool()
 {
-	// TODO: pen pressure and thickness offset.
-	auto s = std::make_unique<Stroke>();
-
-	s->Position = { Canvas->MousePosOnDrawing };
-	s->Brush = ActiveBrush;
-	s->Thickness = 0.001f;
-	s->OnChanged();
-	Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());
-	Canvas->ActiveDrawing->Strokes.push_back(std::move(s));
-	LastSampleDuration = chrono::duration<float, std::milli>::zero();
+	auto& brushM = R.ctx().get<BrushManager>();
+	Painter.Brush = brushM.Brushes[2];
+	Painter.Usage = StrokeUsageFlags::Arrange;
 }
 
-void PaintTool::Dragging()
+void PaintTool::OnClickOrDragStart(ClickOrDragStart event)
 {
-	glm::vec2 delta = glm::abs(glm::vec2(ImGui::GetMousePos() - LastSampleMousePos));
+	Painter.OnDragStart(event);
+}
 
-	if (DraggingDuration - LastSampleDuration > SampleInterval && delta.x+delta.y >= 6.0f)
-	{
-		auto& s = Canvas->ActiveDrawing->Strokes.back();
+void PaintTool::OnDragging(Dragging event)
+{
+	Painter.OnDragging(event);
+}
 
-		glm::vec2 pos = Canvas->MousePosOnDrawing;
-		s->Position.push_back(pos);
-		s->OnChanged();
-		Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(s.get());
-
-		LastSampleMousePos = ImGui::GetMousePos();
-		LastSampleDuration = DraggingDuration;
-	}
+std::string PaintTool::GetName()
+{
+	return "Paint";
 }

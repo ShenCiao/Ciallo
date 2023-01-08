@@ -14,7 +14,7 @@ Stroke::~Stroke()
 	glDeleteBuffers(1, &VertexArray);
 }
 
-void Stroke::OnChanged()
+void Stroke::UpdateBuffers()
 {
 	UpdatePositionBuffer();
 	UpdateThicknessOffsetBuffer();
@@ -36,8 +36,8 @@ void Stroke::GenBuffers()
 	glVertexArrayAttribBinding(VertexArray, 2, 2);
 	glVertexArrayAttribFormat(VertexArray, 2, 1, GL_FLOAT, GL_FALSE, 0);
 
-	GLintptr offsets[] = { 0, 0, 0};
-	int strides[] = { sizeof(glm::vec2), sizeof(float), sizeof(float) };
+	GLintptr offsets[] = {0, 0, 0};
+	int strides[] = {sizeof(glm::vec2), sizeof(float), sizeof(float)};
 
 	glVertexArrayVertexBuffers(VertexArray, 0, VertexBuffers.size(), VertexBuffers.data(), offsets, strides);
 }
@@ -49,14 +49,15 @@ void Stroke::UpdatePositionBuffer()
 
 void Stroke::UpdateThicknessOffsetBuffer()
 {
-	if(ThicknessOffset.size() <= 1)
+	if (ThicknessOffset.size() <= 1)
 	{
 		float v = ThicknessOffset.empty() ? 0.0f : ThicknessOffset.at(0);
 		std::vector<float> values(Position.size(), v);
 		glNamedBufferData(VertexBuffers[1], values.size() * sizeof(float), values.data(), GL_DYNAMIC_DRAW);
 		return;
 	}
-	glNamedBufferData(VertexBuffers[1], ThicknessOffset.size() * sizeof(float), ThicknessOffset.data(), GL_DYNAMIC_DRAW);
+	glNamedBufferData(VertexBuffers[1], ThicknessOffset.size() * sizeof(float), ThicknessOffset.data(),
+	                  GL_DYNAMIC_DRAW);
 }
 
 // Using position buffer, be careful about the calling order.
@@ -69,7 +70,7 @@ void Stroke::UpdateDistanceBuffer()
 	glDispatchCompute(1, 1, 1);
 }
 
-void Stroke::DrawCall()
+void Stroke::LineDrawCall()
 {
 	int count = Position.size();
 	if (count == 1)
@@ -78,7 +79,7 @@ void Stroke::DrawCall()
 		float offset = 0.0f;
 		if (!ThicknessOffset.empty()) offset = ThicknessOffset[0];
 
-		glm::vec2 paddedPos = { p.x + 0.01f * (Thickness+offset), p.y };
+		glm::vec2 paddedPos = {p.x + 0.01f * (Thickness + offset), p.y};
 		Position.push_back(paddedPos);
 
 		UpdatePositionBuffer();
@@ -88,12 +89,31 @@ void Stroke::DrawCall()
 
 		count = 2;
 	}
-	
+
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }
 
-void Stroke::SetUniform()
+void Stroke::FillDrawCall()
+{
+	int count = Position.size();
+	if (count <= 2) return;
+
+	glClear(GL_STENCIL_BUFFER_BIT);
+	glStencilMask(1);
+	// stencil
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	glStencilFunc(GL_ALWAYS, 0, 1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
+	glBindVertexArray(VertexArray);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+	// color
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glStencilFunc(GL_EQUAL, 1, 1);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+}
+
+void Stroke::SetUniforms()
 {
 	glUniform1f(2, Thickness);
 	glUniform4fv(1, 1, glm::value_ptr(Color));

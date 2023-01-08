@@ -61,6 +61,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -97,17 +98,19 @@
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="BrushManager.cpp" />
     <ClCompile Include="Canvas.cpp" />
+    <ClCompile Include="CanvasEvent.cpp" />
     <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
     <ClCompile Include="DotEngine.cpp" />
-    <ClCompile Include="Drawing.cpp" />
     <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
     <ClCompile Include="CursorInteractionTracer.cpp" />
     <ClCompile Include="FillTool.cpp" />
+    <ClCompile Include="InnerBrush.cpp" />
     <ClCompile Include="Layer.cpp" />
     <ClCompile Include="LayerManager.cpp" />
+    <ClCompile Include="Painter.cpp" />
     <ClCompile Include="PaintTool.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -121,12 +124,14 @@
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
-    <ClCompile Include="SelectionManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
     <ClCompile Include="Stroke.cpp" />
+    <ClCompile Include="StrokeContainer.cpp" />
+    <ClCompile Include="TempLayers.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Tool.cpp" />
+    <ClCompile Include="Toolbox.cpp" />
     <ClCompile Include="Viewport.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
@@ -140,21 +145,25 @@
     <ClInclude Include="Brush.h" />
     <ClInclude Include="BrushManager.h" />
     <ClInclude Include="Canvas.h" />
+    <ClInclude Include="CanvasEvent.h" />
     <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="CubicBezier.h" />
     <ClInclude Include="DotEngine.h" />
-    <ClInclude Include="Drawing.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="InnerBrush.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerManager.h" />
+    <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />
-    <ClInclude Include="SelectionManager.h" />
     <ClInclude Include="StampBrushData.h" />
+    <ClInclude Include="StrokeContainer.h" />
+    <ClInclude Include="TempLayers.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Viewport.h" />
     <ClInclude Include="Visiblity.h" />
     <ClInclude Include="PaintTool.h" />
@@ -220,6 +229,20 @@
     <ProjectReference Include="..\imgui\imgui.vcxproj">
       <Project>{c4079022-342b-4aea-9437-6d3c27c856f5}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="shaders\dot.frag">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\dot.geom">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="shaders\dot.vert">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

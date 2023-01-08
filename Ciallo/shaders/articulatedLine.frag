@@ -5,7 +5,7 @@ layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
 layout(location = 4) in float halfThickness;
-layout(location = 5) in flat float[2] summedLength;
+layout(location = 5) in flat float summedLength;
 
 layout(location = 0) out vec4 outColor;
 
@@ -95,28 +95,24 @@ void main() {
 #endif
 
 #ifdef STAMP
-    // stamp starting point and index on this segment
     float stampInterval = stampIntervalRatio * uniThickness;
-    float stampStarting = mod(stampInterval - mod(summedLength[0], stampInterval), stampInterval);
-    float stampStartingIndex = ceil(summedLength[0]/stampInterval);
 
-    if(stampStarting > len) discard; // There are no stamps in this segment.
-
-    // first stamp can be reached by this pixel.
-    float innerStampStarting, innerStampStartingIndex;
-    if(pLH.x-halfThickness <= stampStarting){
-        innerStampStarting = stampStarting;
-        innerStampStartingIndex = stampStartingIndex;
+    // first stamp and its index can be reached by this pixel.
+    float stampStarting, stampStartingIndex;
+    float frontEdge = pLH.x-halfThickness;
+    if(frontEdge <= 0){
+        stampStarting = mod(stampInterval - mod(summedLength, stampInterval), stampInterval); // mod twice for get zero value
+        stampStartingIndex = ceil(summedLength/stampInterval);
     }
     else{
-        float n = 1.0+floor((pLH.x-halfThickness-stampStarting)/stampInterval);
-        innerStampStarting = stampStarting + stampInterval * n;
-        innerStampStartingIndex = stampStartingIndex + n;
+        stampStarting = mod(stampInterval - mod(summedLength+frontEdge, stampInterval), stampInterval) + frontEdge;
+        stampStartingIndex = ceil((summedLength+frontEdge)/stampInterval);
     }
-    float innerStampEnding = (pLH.x+halfThickness < len) ? pLH.x+halfThickness:len;
-    if(innerStampStarting > innerStampEnding) discard; // There are no stamps in this rect.
+    float backEdge = pLH.x+halfThickness;
+    float stampEnding = (backEdge < len) ? backEdge:len;
+    if(stampStarting > stampEnding) discard; // There are no stamps in this rect.
 
-    float currStamp = innerStampStarting, currStampIndex = innerStampStartingIndex;
+    float currStamp = stampStarting, currStampIndex = stampStartingIndex;
     float A = 0;
     int san_i = 0, MAX_i = 32; // sanity check to avoid infinite loop
     do{
@@ -129,11 +125,11 @@ void main() {
         vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
 
         vec4 color = texture(stamp, uv);
-        float alpha = clamp(color.a - 1.7*fbm((uv+currStampIndex)*50.0), 0.0, 1.0);
+        float alpha = clamp(color.a - 1.7*fbm(uv*50.0), 0.0, 1.0);
         A = A * (1.0-alpha) + alpha;
         currStamp += stampInterval;
         currStampIndex += 1.0;
-    }while(currStamp < innerStampEnding);
+    }while(currStamp < stampEnding);
     if(A < 1e-4){
         discard;
     }
@@ -151,12 +147,13 @@ void main() {
         discard;
     }
 
+    // normalize
     pLH = pLH / halfThickness;
     d0 /= halfThickness;
     d1 /= halfThickness;
     len /= halfThickness;
 
-    float reversedGradSroke = 1.0-A*sampleGraident(pLH.y);
+    float reversedGradBone = 1.0-A*sampleGraident(pLH.y);
 
     float exceed0, exceed1;
     exceed0 = exceed1 = 1.0;
@@ -164,14 +161,14 @@ void main() {
     if(d0 < 1.0) {
       exceed0 = pow(1.0-A*sampleGraident(d0), 
         sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-        pow(reversedGradSroke, step(0.0, -pLH.x));
+        pow(reversedGradBone, step(0.0, -pLH.x));
     }
     if(d1 < 1.0) {
       exceed1 = pow(1.0-A*sampleGraident(d1), 
         sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
-        pow(reversedGradSroke, step(0.0, pLH.x - len));
+        pow(reversedGradBone, step(0.0, pLH.x - len));
     }
-    A = clamp(1.0 - reversedGradSroke/exceed0/exceed1, 0.0, 1.0-1e-5);
+    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-5);
     outColor = vec4(fragColor.rgb, A);
     return;
 #endif

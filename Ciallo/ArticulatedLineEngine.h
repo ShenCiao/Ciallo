@@ -8,7 +8,6 @@ public:
 		Vanilla = 0,
 		Stamp = 1 << 0,
 		Airbrush = 1 << 1,
-		UniformThickness = 1 << 2,
 		_entt_enum_as_bitmask
 	};
 

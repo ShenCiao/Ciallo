@@ -2,6 +2,7 @@
 #include "LayerManager.h"
 
 #include "Layer.h"
+#include "StrokeContainer.h"
 #include <algorithm>
 
 void LayerManager::DrawUI()
@@ -49,8 +50,9 @@ void LayerManager::DrawUI()
 			dragMove = true;
 		}
 		// Visibility checkbox
-		ImGui::CheckboxFlags(fmt::format("##vis{}", e).c_str(), reinterpret_cast<unsigned*>(&layer.Flags),
-		                     static_cast<unsigned>(Layer::Flags::Visible));
+		ImGui::CheckboxFlags(fmt::format("##vis{}", e).c_str(),
+		                     reinterpret_cast<unsigned*>(&layer.Flags),
+		                     static_cast<unsigned>(LayerFlags::Visible));
 		ImGui::SameLine();
 		// Tree node
 		ImGuiTreeNodeFlags extraFlag = 0;
@@ -135,6 +137,7 @@ void LayerManager::DrawMenuButton()
 	if (ImGui::Button("Add"))
 	{
 		entt::entity e = CreateLayer();
+		R.emplace<StrokeContainer>(e);
 		Layers.push_back(e);
 	}
 
@@ -159,7 +162,7 @@ void LayerManager::RemoveSelection()
 	}
 }
 
-entt::entity LayerManager::CreateLayer()
+entt::entity LayerManager::CreateLayer() const
 {
 	entt::entity e = R.create();
 	auto& l = R.emplace<Layer>(e);

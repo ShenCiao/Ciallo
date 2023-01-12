@@ -485,6 +485,11 @@ namespace CGAL {
                 p_cdt->insert_constraint(it->curve().points_begin(), it->curve().points_end());
             }
         }
+
+        void insert(const std::vector<Point_2>& input)
+        {
+	        p_cdt->insert_constraint(input.begin(), input.end());
+        }
     };
 
 } // namespace CGAL

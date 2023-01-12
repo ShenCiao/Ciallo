@@ -8,15 +8,10 @@
 #include "Canvas.h"
 #include "Brush.h"
 #include "InnerBrush.h"
-#include "RenderingSystem.h"
 
 
 EditTool::EditTool()
 {
-	Brush b;
-	b.Name = "edit_selection";
-	b.Program = RenderingSystem::ArticulatedLine->Program();
-	R.ctx().get<InnerBrush>().Add(std::move(b));
 }
 
 void EditTool::OnClickOrDragStart(ClickOrDragStart event)
@@ -95,7 +90,7 @@ void EditTool::RenderSelectionTexture()
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
-	auto& brush = R.ctx().get<InnerBrush>().Get("edit_selection");
+	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
 	brush.Use();
 	brush.SetUniforms();
 	for (auto& e : strokeEs)

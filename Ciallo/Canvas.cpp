@@ -5,15 +5,29 @@
 #include "StrokeContainer.h"
 #include "Stroke.h"
 #include "Brush.h"
-#include "RenderingSystem.h"
+#include "TextureManager.h"
+
+#include <random>
+#include <glm/gtx/transform.hpp>
 
 void Canvas::DrawUI()
 {
 	const ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
-		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar;
+		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar|
+		ImGuiWindowFlags_MenuBar;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	ImGui::Begin("Canvas", nullptr, flags);
+
+	ImGui::BeginMenuBar();
+	if(ImGui::Button("Export")) Export();
+	static int n = 1;
+	ImGui::PushItemWidth(200);
+	ImGui::DragInt("n", &n, 10, 1, 10000, "%d");
+	ImGui::PopItemWidth();
+	if(ImGui::Button("TestSpeed")) RenderContentNTimes(n);
+	ImGui::EndMenuBar();
 
 	auto panel = ImGui::GetCurrentWindow();
 	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
@@ -88,8 +102,6 @@ void Canvas::GenRenderTarget()
 
 void Canvas::Render()
 {
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-
 	RenderableTexture& target = Image;
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -98,10 +110,11 @@ void Canvas::Render()
 	glClear(GL_COLOR_BUFFER_BIT);
 	Viewport.UploadMVP();
 	Viewport.BindMVPBuffer();
+	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);
-		auto& brush = R.get<Brush>(stroke.Brush);
+		auto& brush = R.get<Brush>(stroke.BrushE);
 		brush.Use();
 		brush.SetUniforms();
 		stroke.SetUniforms();
@@ -110,7 +123,52 @@ void Canvas::Render()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void Canvas::RenderContentNTimes(int n)
+{
+	RenderableTexture& target = Image;
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	target.BindFramebuffer();
+	glClearColor(1, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	std::vector<Stroke*> strokes;
+	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	for (entt::entity strokeE : strokeEs)
+	{
+		strokes.push_back(&R.get<Stroke>(strokeE));
+	}
+	auto& brush = R.get<Brush>(strokes[0]->BrushE);
+
+	std::default_random_engine rng;
+	std::uniform_real dist(-1.0f, 1.0f);
+	auto& canvas = R.ctx().get<Canvas>();
+	
+	brush.Use();
+	auto start = chrono::high_resolution_clock::now();
+	for(int i = 0; i < n; ++i)
+	{
+		glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize()/2.0f;
+		Viewport.UploadMVP(glm::translate(glm::vec3{randOffset, 0.f}));
+		Viewport.BindMVPBuffer();
+		for(auto* stroke: strokes)
+		{
+			brush.SetUniforms();
+			stroke->SetUniforms();
+			stroke->LineDrawCall();
+		}
+	}
+	chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
+	spdlog::info("{}ms", duration.count());
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 glm::ivec2 Canvas::GetSizePixel() const
 {
 	return Viewport.GetSizePixel(Dpi);
+}
+
+void Canvas::Export() const
+{
+	TextureManager::SaveTexture(Image.ColorTexture, "canvas");
 }

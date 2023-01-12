@@ -11,6 +11,42 @@ namespace Geom
 	{
 	}
 
+	glm::mat2 Polyline::BoundingBox() const
+	{
+		
+		auto resultX = ranges::minmax(Points|views::transform([](glm::vec2 pos){return pos.x;}));
+		auto resultY = ranges::minmax(Points|views::transform([](glm::vec2 pos){return pos.y;}));
+		return {{resultX.min, resultY.min}, {resultX.max, resultY.max}};
+	}
+
+	Polyline Polyline::Translate(glm::vec2 delta) const
+	{
+		std::vector<glm::vec2> result;
+		result.reserve(Points.size());
+		for (auto p : Points)
+		{
+			result.push_back(p + delta);
+		}
+		return result;
+	}
+
+	Polyline Polyline::Scale(glm::vec2 factor, glm::vec2 pivot) const
+	{
+		auto curve = *this;
+
+		if(pivot != glm::vec2{0.0f, 0.0f})
+		{
+			curve = Translate(-pivot);
+		}
+
+		for(auto& p : curve)
+		{
+			p *= factor;
+		}
+		curve = curve.Translate(pivot);
+		return curve;
+	}
+
 	glm::vec2* Polyline::data()
 	{
 		return Points.data();

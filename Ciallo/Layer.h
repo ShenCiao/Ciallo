@@ -2,6 +2,7 @@
 
 #include "RenderableTexture.h"
 
+// Layers are used in this project since siggraph ddl
 enum class LayerFlags
 	{
 		Visible = 1u << 1,

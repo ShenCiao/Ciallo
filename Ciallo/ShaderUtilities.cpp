@@ -12,8 +12,7 @@ GLuint ShaderUtilities::CreateFromFile(const std::filesystem::path& filePath, GL
 
 std::string ShaderUtilities::LoadCodeFromFile(const std::filesystem::path& filePath)
 {
-	std::ifstream shaderFile;
-	shaderFile.open(filePath);
+	std::ifstream shaderFile(filePath);
 	shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 	std::stringstream shaderStream;
 	shaderStream << shaderFile.rdbuf();

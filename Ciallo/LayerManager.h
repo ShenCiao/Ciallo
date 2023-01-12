@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+// Layers are used in this project
 class LayerManager
 {
 public:

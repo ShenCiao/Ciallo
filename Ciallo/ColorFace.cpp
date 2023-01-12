@@ -28,7 +28,7 @@ ColorFace::~ColorFace()
 	DeleteBuffers();
 }
 
-void ColorFace::DrawCall()
+void ColorFace::FillDrawCall()
 {
 	glClear(GL_STENCIL_BUFFER_BIT);
 	glStencilMask(1);
@@ -47,7 +47,7 @@ void ColorFace::DrawCall()
 	glDrawArrays(GL_TRIANGLE_FAN, 0, PolygonWithHoles[0].size());
 }
 
-void ColorFace::DrawRim()
+void ColorFace::LineDrawCall()
 {
 	int count = PolygonWithHoles[0].size();
 	glBindVertexArray(VertexArray);

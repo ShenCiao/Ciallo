@@ -54,7 +54,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)imgui</AdditionalIncludeDirectories>
@@ -110,6 +110,7 @@
     <ClCompile Include="InnerBrush.cpp" />
     <ClCompile Include="Layer.cpp" />
     <ClCompile Include="LayerManager.cpp" />
+    <ClCompile Include="Loader.cpp" />
     <ClCompile Include="Painter.cpp" />
     <ClCompile Include="PaintTool.cpp" />
     <ClCompile Include="pch.cpp">
@@ -156,6 +157,7 @@
     <ClInclude Include="InnerBrush.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerManager.h" />
+    <ClInclude Include="Loader.h" />
     <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />

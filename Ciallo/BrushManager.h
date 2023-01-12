@@ -17,7 +17,6 @@ public:
 	void SetContext() const;
 	void RenderPreview(entt::entity brushE);
 	void DrawUI();
-	void DrawPreview();
 	void OutputPreview();
 };
 

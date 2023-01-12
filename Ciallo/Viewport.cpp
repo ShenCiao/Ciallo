@@ -52,7 +52,7 @@ glm::mat4 Viewport::GetViewProjMatrix() const
 
 GLuint Viewport::UploadMVP(glm::mat4 model)
 {
-	glm::mat4 mvp = model * GetViewProjMatrix();
+	glm::mat4 mvp =  GetViewProjMatrix() * model;
 	glNamedBufferSubData(MVPBuffer, 0, sizeof(glm::mat4), &mvp);
 	return MVPBuffer;
 }

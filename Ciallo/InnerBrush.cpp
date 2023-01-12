@@ -1,5 +1,14 @@
 #include "pch.hpp"
 #include "InnerBrush.h"
+#include "RenderingSystem.h"
+
+InnerBrush::InnerBrush()
+{
+	Brush b;
+	b.Name = "vanilla";
+	b.Program = RenderingSystem::ArticulatedLine->Program();
+	Add(std::move(b));
+}
 
 void InnerBrush::Add(Brush&& brush)
 {

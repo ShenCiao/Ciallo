@@ -60,7 +60,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 {
 	auto gr = glm::golden_ratio<float>();
 	const int height = 1024, width = static_cast<int>(height * 2 * gr);
-	PreviewStroke.Brush = brushE;
+	PreviewStroke.BrushE = brushE;
 
 	auto& brush = R.get<Brush>(brushE);
 	brush.PreviewTexture = RenderableTexture(width, height, 0);

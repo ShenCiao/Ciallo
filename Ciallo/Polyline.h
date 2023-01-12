@@ -15,6 +15,10 @@ namespace Geom
 		glm::vec2& operator[](size_t i);
 		operator std::vector<glm::vec2>() { return Points; }
 
+		glm::mat2 BoundingBox() const;
+		[[nodiscard]] Polyline Translate(glm::vec2 delta) const;
+		[[nodiscard]] Polyline Scale(glm::vec2 factor, glm::vec2 pivot = {0.f, 0.f}) const;
+
 		glm::vec2* data();
 		void push_back(glm::vec2 point);
 		void push_back(float x, float y);

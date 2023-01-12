@@ -1,16 +1,19 @@
 #include "pch.hpp"
 #include "Application.h"
 
+#include <filesystem>
+
 #include "Project.h"
 #include "RenderingSystem.h"
 #include "Brush.h"
 #include "TextureManager.h"
-#include "LayerManager.h"
 #include "Canvas.h"
 #include "TempLayers.h"
 #include "StrokeContainer.h"
 #include "Toolbox.h"
 #include "InnerBrush.h"
+#include "Loader.h"
+#include "ArrangementManager.h"
 
 #include <implot.h>
 
@@ -36,13 +39,14 @@ void Application::Run()
 		canvas.DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
+		R.ctx().get<ArrangementManager>().Run();
 		Window->EndFrame();
 	}
 }
 
 void Application::GenDefaultProject()
 {
-	// project level "singleton" are managed by ctx()
+	// user's project level "singleton" are managed by ctx()
 	auto& canvas = R.ctx().emplace<Canvas>();
 	canvas.Viewport.Min = {0.0f, 0.0f};
 	canvas.Viewport.Max = {0.297f, 0.21f};
@@ -84,15 +88,10 @@ void Application::GenDefaultProject()
 	brushManager.RenderAllPreview();
 
 	R.ctx().emplace<TempLayers>();
-	auto& sc = R.ctx().emplace<StrokeContainer>();
-	auto strokeE = R.create();
-	auto& stroke = R.emplace<Stroke>(strokeE);
-	stroke.Brush = brushManager.Brushes[0];
-	stroke.Position = {{0.0f, 0.0f}, {0.15f, 0.1f}, {0.15f, 0.0f}};
-	stroke.Thickness = 0.001f;
-	stroke.UpdateBuffers();
-	sc.StrokeEs.push_back(strokeE);
-
-	R.ctx().emplace<InnerBrush>(); 
+	R.ctx().emplace<StrokeContainer>();
+	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>();
+	R.ctx().emplace<ArrangementManager>();
+	// std::filesystem::path path{R"(.\Models\suzanne.csv)"};
+	// Loader::LoadCsv(path);
 }

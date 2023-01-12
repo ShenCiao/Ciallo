@@ -11,7 +11,7 @@ void ArrangementManager::Run()
 	{
 		if (CurveHandleContainer.contains(strokeE))
 		{
-			// Warning: this function has been modified to fit our usage!
+			// Warning: `remove_curve` has been modified to fit our usage!
 			CGAL::remove_curve(Arrangement, CurveHandleContainer[strokeE]);
 			if (curve.number_of_subcurves() == 0) // indicate remove
 			{
@@ -21,11 +21,6 @@ void ArrangementManager::Run()
 		}
 
 		CurveHandleContainer[strokeE] = CGAL::insert(Arrangement, curve);
-	}
-
-	if(UpdateQueue.size() != 0 && Visibility.is_attached())
-	{
-		Visibility.init_cdt();
 	}
 
 	UpdateQueue.clear();

@@ -3,6 +3,7 @@
 
 #include "PaintTool.h"
 #include "EditTool.h"
+#include "FillTool.h"
 #include "Canvas.h"
 
 Toolbox::Toolbox()
@@ -16,6 +17,9 @@ Toolbox::Toolbox()
 
 	Tools.push_back(R.create());
 	R.emplace<std::unique_ptr<Tool>>(Tools.back(), std::make_unique<EditTool>());
+
+	Tools.push_back(R.create());
+	R.emplace<std::unique_ptr<Tool>>(Tools.back(), std::make_unique<FillTool>());
 }
 
 void Toolbox::DrawUI()

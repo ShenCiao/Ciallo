@@ -7,7 +7,7 @@ public:
 	float Thickness = 0.0f;
 	std::vector<float> ThicknessOffset{}; // empty is allowed, values in shader are zero
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
-	entt::entity Brush = entt::null;
+	entt::entity BrushE = entt::null;
 
 	glm::vec4 FillColor = {0.0f, 0.0f, 0.0f, 1.0f};
 

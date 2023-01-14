@@ -47,12 +47,12 @@ void Brush::DrawProperties()
 {
 	if (Stamp)
 	{
-		Stamp->SetUniforms();
 		return;
 	}
 	if (AirBrush)
 	{
-		AirBrush->SetUniforms();
+		AirBrush->DrawProperties();
+		AirBrush->UpdateGradient();
 		return;
 	}
 }

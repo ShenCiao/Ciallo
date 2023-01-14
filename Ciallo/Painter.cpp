@@ -59,8 +59,7 @@ void Painter::OnDragging(Dragging event)
 		{
 			arm.AddOrUpdateQuery(e);
 		}
-
-		// TODO: update arrangement or signal changing?
+		
 		LastSampleMousePosPixel = event.MousePosPixel;
 		LastSampleDuration = event.DragDuration;
 	}

@@ -18,5 +18,6 @@ public:
 
 	void UpdateGradient();
 	void SetUniforms();
+	void DrawProperties();
 };
 

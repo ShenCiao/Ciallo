@@ -59,7 +59,7 @@ void BrushManager::SetContext() const
 void BrushManager::RenderPreview(entt::entity brushE)
 {
 	auto gr = glm::golden_ratio<float>();
-	const int height = 1024, width = static_cast<int>(height * 2 * gr);
+	const int height = 256, width = static_cast<int>(height * 2 * gr);
 	PreviewStroke.BrushE = brushE;
 
 	auto& brush = R.get<Brush>(brushE);
@@ -72,6 +72,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	PreviewStroke.SetUniforms();
 	PreviewStroke.LineDrawCall();
 	brush.PreviewTexture.CopyMS();
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void BrushManager::DrawUI()
@@ -95,11 +96,14 @@ void BrushManager::DrawUI()
 
 		ImGui::BeginGroup();
 		auto& brush = R.get<Brush>(EditorActiveBrushE);
+		SetContext();
+		RenderPreview(EditorActiveBrushE);
 		ImGui::BeginChild("right panel", ImVec2(400, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Text(brush.Name.c_str());
 		const int height = 96;
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {height * 2 * glm::golden_ratio<float>(), height});
+		brush.DrawProperties();
 		ImGui::EndChild();
 
 		if (ImGui::Button("Use"))

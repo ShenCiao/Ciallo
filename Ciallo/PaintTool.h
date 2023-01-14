@@ -13,4 +13,5 @@ public:
 	void OnClickOrDragStart(ClickOrDragStart) override;
 	void OnDragging(Dragging) override;
 	std::string GetName() override;
+	void DrawProperties() override;
 };

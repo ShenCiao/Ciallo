@@ -23,4 +23,5 @@ public:
 
 	void SetUniforms() const;
 	void Use() const;
+	void DrawProperties();
 };

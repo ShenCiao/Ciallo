@@ -9,7 +9,7 @@ namespace chrono = std::chrono;
 #include <unordered_set>
 #include <string>
 
-#include <gl/glew.h>
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <fmt/ostream.h>

@@ -1,32 +1,101 @@
 #include "pch.hpp"
 #include "TempLayers.h"
 
-#include "Layer.h"
+#include "StrokeContainer.h"
+#include "Stroke.h"
+#include "Brush.h"
+#include "RenderingSystem.h"
 #include "Canvas.h"
 
-TempLayers::TempLayers()
+TempLayers::TempLayers(glm::ivec2 size)
 {
-	glm::ivec2 size = R.ctx().get<Canvas>().GetSizePixel();
-	for (int i = 0; i < 3; ++i)
+	Overlay = RenderableTexture{size.x, size.y};
+	Drawing = RenderableTexture{size.x, size.y};
+	Fill = RenderableTexture{size.x, size.y};
+}
+
+void TempLayers::RenderDrawing()
+{
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
+	Drawing.BindFramebuffer();
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	auto& canvas = R.ctx().get<Canvas>();
+	canvas.Viewport.UploadMVP();
+	canvas.Viewport.BindMVPBuffer();
+	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	for (entt::entity e : strokeEs)
 	{
-		entt::entity e = R.create();
-		Layers[i] = e;
-		auto& layer = R.emplace<Layer>(e);
-		layer.Content = RenderableTexture(size.x, size.y);
+		auto& stroke = R.get<Stroke>(e);
+		auto& brush = R.get<Brush>(stroke.BrushE);
+		brush.Use();
+		brush.SetUniforms();
+		stroke.SetUniforms();
+		stroke.LineDrawCall();
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-entt::entity TempLayers::GetOverlay() const
+void TempLayers::RenderFill()
 {
-	return Layers[0];
+	Fill.BindFramebuffer();
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	//TODO: 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-entt::entity TempLayers::GetDrawing() const
+void TempLayers::BlendAll()
 {
-	return Layers[1];
+	auto& canvas = R.ctx().get<Canvas>();
+	auto& port = canvas.Viewport;
+	glm::vec2 size = port.GetSize()/2.0f;
+	glm::vec2 mid = (port.Min+port.Max)/2.0f;
+
+	GLuint vao, vbo;
+	glCreateVertexArrays(1, &vao);
+	glCreateBuffers(1, &vbo);
+
+	glEnableVertexArrayAttrib(vao, 0);
+	glVertexArrayAttribBinding(vao, 0, 0);
+	glVertexArrayAttribFormat(vao, 0, 2, GL_FLOAT, GL_FALSE, 0);
+	glNamedBufferData(vbo, sizeof(glm::vec2), &mid, GL_DYNAMIC_DRAW);
+	glVertexArrayVertexBuffer(vao, 0, vbo, 0, sizeof(glm::vec2));
+
+	canvas.Image.BindFramebuffer();
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
+
+	glClearColor(1, 1, 1, 1);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(RenderingSystem::Dot->Program);
+	port.UploadMVP();
+	port.BindMVPBuffer();
+	glBindVertexArray(vao);
+	glUniform2fv(2, 1, glm::value_ptr(size));
+	
+	glBindTexture(GL_TEXTURE_2D, Fill.ColorTexture);
+	glDrawArrays(GL_POINTS, 0, 1);
+	glBindTexture(GL_TEXTURE_2D, Drawing.ColorTexture);
+	glDrawArrays(GL_POINTS, 0, 1);
+	glBindTexture(GL_TEXTURE_2D, Overlay.ColorTexture);
+	glDrawArrays(GL_POINTS, 0, 1);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
 }
 
-entt::entity TempLayers::GetFill() const
+void TempLayers::ClearOverlay()
 {
-	return Layers[2];
+	Overlay.BindFramebuffer();
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

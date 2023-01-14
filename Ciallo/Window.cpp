@@ -13,6 +13,7 @@ Window::Window()
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	GlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo Lab Version", nullptr, nullptr);
@@ -21,11 +22,11 @@ Window::Window()
 		throw std::runtime_error("Fail on init window");
 	}
 	glfwMakeContextCurrent(GlfwWindow);
-	glfwSwapInterval(0); // TODO: default vsync introduce extra input-to-visual lag. Control it manually.
+	glfwSwapInterval(0);
 
-	if (GLenum err = glewInit())
+	if (int version = gladLoadGL(); version == 0)
 	{
-		throw std::runtime_error("Fail on init glew");
+		throw std::runtime_error("Fail on init glad");
 	}
 	int contextFlags = 0;
 	glGetIntegerv(GL_CONTEXT_FLAGS, &contextFlags);

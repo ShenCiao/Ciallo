@@ -17,7 +17,6 @@ public:
 
 	void DrawUI();
 	void GenRenderTarget();
-	void Render();
 	void RenderContentNTimes(int n); // used for speed test
 	glm::ivec2 GetSizePixel() const;
 	void Export() const;

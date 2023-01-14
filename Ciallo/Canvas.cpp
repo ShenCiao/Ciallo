@@ -6,6 +6,7 @@
 #include "Stroke.h"
 #include "Brush.h"
 #include "TextureManager.h"
+#include "TempLayers.h"
 
 #include <random>
 #include <glm/gtx/transform.hpp>
@@ -98,29 +99,6 @@ void Canvas::GenRenderTarget()
 {
 	auto size = Viewport.GetSizePixel(Dpi);
 	Image = RenderableTexture(size.x, size.y);
-}
-
-void Canvas::Render()
-{
-	RenderableTexture& target = Image;
-	glEnable(GL_BLEND);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	target.BindFramebuffer();
-	glClearColor(1, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
-	Viewport.UploadMVP();
-	Viewport.BindMVPBuffer();
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-	for (entt::entity e : strokeEs)
-	{
-		auto& stroke = R.get<Stroke>(e);
-		auto& brush = R.get<Brush>(stroke.BrushE);
-		brush.Use();
-		brush.SetUniforms();
-		stroke.SetUniforms();
-		stroke.LineDrawCall();
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Canvas::RenderContentNTimes(int n)

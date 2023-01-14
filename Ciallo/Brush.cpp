@@ -43,6 +43,20 @@ void Brush::Use() const
 	glUseProgram(Program);
 }
 
+void Brush::DrawProperties()
+{
+	if (Stamp)
+	{
+		Stamp->SetUniforms();
+		return;
+	}
+	if (AirBrush)
+	{
+		AirBrush->SetUniforms();
+		return;
+	}
+}
+
 void swap(Brush& lhs, Brush& rhs) noexcept
 {
 	using std::swap;

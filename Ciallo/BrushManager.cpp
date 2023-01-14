@@ -27,7 +27,7 @@ void BrushManager::GenPreviewStroke()
 		float a = static_cast<float>(i) / segments;
 		float x = glm::mix(-pi, pi, a);
 		float y = 1.0f / gr * glm::sin(x);
-		float t = (glm::cos(x/2.0f) - 1.0f) * thickness;
+		float t = (glm::cos(x / 2.0f) - 1.0f) * thickness;
 		position.push_back(x, y);
 		thicknessOffset.push_back(t);
 	}
@@ -76,35 +76,63 @@ void BrushManager::RenderPreview(entt::entity brushE)
 
 void BrushManager::DrawUI()
 {
-	ImGui::Begin("Toolbox");
-	if (ImGui::BeginPopup("Brushes"))
-	{
-		for (entt::entity bE : Brushes)
-		{
-			auto& brush = R.get<Brush>(bE);
-			ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
-				{ 256 * 2 * glm::golden_ratio<float>(), 256 });
-		}
-			
-		ImGui::EndPopup();
-	}
-	ImGui::End();
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-	ImGui::Begin("Brush Preview");
+	ImGui::Begin("Toolbox");
+	if (ImGui::BeginPopupModal("BrushEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		for (entt::entity bE : Brushes)
+		ImGui::BeginChild("left pane", ImVec2(150, 400), true);
+		for (entt::entity e : Brushes)
 		{
-			auto& brush = R.get<Brush>(bE);
-			ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
-				{ 256 * 2 * glm::golden_ratio<float>(), 256 });
+			auto& brush = R.get<Brush>(e);
+			if (ImGui::Selectable(brush.Name.c_str(), e == EditorActiveBrushE))
+				EditorActiveBrushE = e;
 		}
+		ImGui::EndChild();
+
+		ImGui::SameLine();
+
+		ImGui::BeginGroup();
+		auto& brush = R.get<Brush>(EditorActiveBrushE);
+		ImGui::BeginChild("right panel", ImVec2(400, -ImGui::GetFrameHeightWithSpacing()));
+		ImGui::Text(brush.Name.c_str());
+		const int height = 96;
+		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
+		             {height * 2 * glm::golden_ratio<float>(), height});
+		ImGui::EndChild();
+
+		if (ImGui::Button("Use"))
+		{
+			ImGui::CloseCurrentPopup();
+			*TargetBrushE = EditorActiveBrushE;
+			TargetBrushE = nullptr;
+			EditorActiveBrushE = entt::null;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel"))
+		{
+			ImGui::CloseCurrentPopup();
+			TargetBrushE = nullptr;
+			EditorActiveBrushE = entt::null;
+		}
+		ImGui::EndGroup();
+		ImGui::EndPopup();
 	}
 	ImGui::End();
 }
 
+void BrushManager::OpenBrushEditor(entt::entity* brushE)
+{
+	EditorActiveBrushE = *brushE;
+	TargetBrushE = brushE;
+
+	ImGui::OpenPopup("BrushEditor", ImGuiPopupFlags_AnyPopup);
+}
+
 void BrushManager::OutputPreview()
 {
-	for(auto& bE : Brushes)
+	for (auto& bE : Brushes)
 	{
 		auto& brush = R.get<Brush>(bE);
 		std::string prefix = "brush_";

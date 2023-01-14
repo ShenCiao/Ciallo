@@ -6,7 +6,7 @@
 PaintTool::PaintTool()
 {
 	auto& brushM = R.ctx().get<BrushManager>();
-	Painter.Brush = brushM.Brushes[2];
+	Painter.BrushE = brushM.Brushes[2];
 	Painter.Usage = StrokeUsageFlags::Arrange;
 }
 
@@ -23,4 +23,9 @@ void PaintTool::OnDragging(Dragging event)
 std::string PaintTool::GetName()
 {
 	return "Paint";
+}
+
+void PaintTool::DrawProperties()
+{
+	Painter.DrawProperties();
 }

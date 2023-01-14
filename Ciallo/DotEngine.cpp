@@ -16,6 +16,7 @@ DotEngine::DotEngine()
 	glLinkProgram(Program);
 
 	glDeleteShader(vertShader);
+	glDeleteShader(geomShader);
 	glDeleteShader(fragShader);
 }
 

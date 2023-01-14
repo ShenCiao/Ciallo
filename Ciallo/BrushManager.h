@@ -5,9 +5,11 @@
 
 class BrushManager
 {
+	entt::entity EditorActiveBrushE = entt::null;
+	entt::entity* TargetBrushE;
+	Stroke PreviewStroke;
 public:
 	std::vector<entt::entity> Brushes;
-	Stroke PreviewStroke;
 	Viewport PreviewPort;
 
 	BrushManager();
@@ -17,6 +19,7 @@ public:
 	void SetContext() const;
 	void RenderPreview(entt::entity brushE);
 	void DrawUI();
+	void OpenBrushEditor(entt::entity* brushE);
 	void OutputPreview();
 };
 

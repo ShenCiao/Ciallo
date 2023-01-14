@@ -6,6 +6,7 @@
 #include "RenderingSystem.h"
 #include "Canvas.h"
 #include "InnerBrush.h"
+#include "TempLayers.h"
 
 void FillTool::PadVisRim()
 {
@@ -22,7 +23,7 @@ FillTool::FillTool()
 {
 	// TODO:should change Thickness, Label, delta threshold, SampleInterval
 	auto& brushM = R.ctx().get<BrushManager>();
-	Painter.Brush = brushM.Brushes[0];
+	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone | StrokeUsageFlags::Label;
 }
 
@@ -60,13 +61,14 @@ void FillTool::Deactivate()
 
 void FillTool::DrawProperties()
 {
-	ImGui::ColorPicker4("Polygon Color", glm::value_ptr(Painter.FillColor));
+	Painter.DrawProperties();
 }
 
 void FillTool::OnHovering(Hovering event)
 {
 	auto& canvas = R.ctx().get<Canvas>();
-	canvas.Image.BindFramebuffer();
+	auto& layers = R.ctx().get<TempLayers>();
+	layers.Overlay.BindFramebuffer();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
 	glEnable(GL_BLEND);
@@ -95,7 +97,6 @@ void FillTool::OnHovering(Hovering event)
 	// In fill preview mode
 	else
 	{
-		glDisable(GL_STENCIL_TEST);
 		auto polygonWithHoles = R.ctx().get<ArrangementManager>().PointQuery(event.MousePos);
 		if (!polygonWithHoles.empty())
 		{
@@ -105,6 +106,7 @@ void FillTool::OnHovering(Hovering event)
 			face.GenUploadBuffers();
 			face.FillDrawCall();
 		}
+		glDisable(GL_STENCIL_TEST);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

@@ -81,8 +81,6 @@ Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const
 	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
 	{
 		CGAL::Face_const_handle face = *faceHandlePtr;
-		if (face->is_unbounded())
-			return {};
 
 		CGAL::VisOutputArr arr;
 		CGAL::VisOutputArr::Face_const_handle output = Visibility.compute_visibility_in_bounded_face({p.x, p.y}, arr);
@@ -92,8 +90,10 @@ Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const
 		Geom::Polyline result;
 		do
 		{
-			result.push_back(CGAL::to_double(curr->source()->point().x()), CGAL::to_double(curr->source()->point().y()));
-		} while (++curr != start);
+			result.push_back(CGAL::to_double(curr->source()->point().x()),
+			                 CGAL::to_double(curr->source()->point().y()));
+		}
+		while (++curr != start);
 		return result;
 	}
 	return {};

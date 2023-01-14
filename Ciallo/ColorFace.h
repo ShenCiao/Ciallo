@@ -5,6 +5,7 @@ class ColorFace
 {
 public:
 	std::vector<Geom::Polyline> PolygonWithHoles;// a polygon at element 0 and holes are the rest.
+	glm::vec4 Color;
 
 	std::vector<GLuint> VertexBuffers; 
 	GLuint VertexArray = 0;

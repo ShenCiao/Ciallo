@@ -168,7 +168,7 @@ void main() {
         sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
         pow(reversedGradBone, step(0.0, pLH.x - len));
     }
-    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-5);
+    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
     outColor = vec4(fragColor.rgb, A);
     return;
 #endif

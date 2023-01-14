@@ -26,14 +26,14 @@ void Toolbox::DrawUI()
 {
 	ImGui::Begin("Toolbox");
 	entt::entity prevActive = ActiveTool;
-	for(auto toolE: Tools)
+	for (auto toolE : Tools)
 	{
 		auto& tool = R.get<std::unique_ptr<Tool>>(toolE);
 		if (ImGui::Selectable(tool->GetName().c_str(), ActiveTool == toolE))
-            ActiveTool = toolE;
+			ActiveTool = toolE;
 	}
 
-	if(prevActive != ActiveTool)
+	if (prevActive != ActiveTool)
 	{
 		auto& canvas = R.ctx().get<Canvas>();
 		auto& prevTool = R.get<std::unique_ptr<Tool>>(prevActive);
@@ -43,5 +43,8 @@ void Toolbox::DrawUI()
 		tool->Connect(canvas.EventDispatcher);
 		tool->Activate();
 	}
+	ImGui::Separator();
+	auto& tool = R.get<std::unique_ptr<Tool>>(ActiveTool);
+	tool->DrawProperties();
 	ImGui::End();
 }

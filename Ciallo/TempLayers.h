@@ -1,15 +1,19 @@
 #pragma once
 
+#include "RenderableTexture.h"
+
 // Used to catch up the siggraph DDL
 class TempLayers
 {
 public:
-	std::array<entt::entity, 3> Layers;
+	RenderableTexture Overlay;
+	RenderableTexture Drawing;
+	RenderableTexture Fill;
 
-	TempLayers();
-	
-	entt::entity GetOverlay() const;
-	entt::entity GetDrawing() const;
-	entt::entity GetFill() const;
+	TempLayers(glm::ivec2 size);
+	void RenderDrawing();
+	void RenderFill();
+	void BlendAll();
+	void ClearOverlay();
 };
 

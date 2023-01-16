@@ -99,7 +99,7 @@ void BrushManager::DrawUI()
 		SetContext();
 		RenderPreview(EditorActiveBrushE);
 		ImGui::BeginChild("right panel", ImVec2(400, -ImGui::GetFrameHeightWithSpacing()));
-		ImGui::Text(brush.Name.c_str());
+		ImGui::TextUnformatted(brush.Name.c_str());
 		const int height = 96;
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {height * 2 * glm::golden_ratio<float>(), height});

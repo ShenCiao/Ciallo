@@ -24,7 +24,7 @@ FillTool::FillTool()
 	// TODO:should change Thickness, Label, delta threshold, SampleInterval
 	auto& brushM = R.ctx().get<BrushManager>();
 	Painter.BrushE = brushM.Brushes[0];
-	Painter.Usage = StrokeUsageFlags::Zone | StrokeUsageFlags::Label;
+	Painter.Usage = StrokeUsageFlags::Zone;
 }
 
 std::string FillTool::GetName()

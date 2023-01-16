@@ -7,6 +7,7 @@
 #include "Brush.h"
 #include "TextureManager.h"
 #include "TempLayers.h"
+#include "Loader.h"
 
 #include <random>
 #include <glm/gtx/transform.hpp>
@@ -15,19 +16,30 @@ void Canvas::DrawUI()
 {
 	const ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
-		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar|
+		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar |
 		ImGuiWindowFlags_MenuBar;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	ImGui::Begin("Canvas", nullptr, flags);
 
+	ImGui::PopStyleVar();
 	ImGui::BeginMenuBar();
-	if(ImGui::Button("Export")) Export();
+	if (ImGui::BeginMenu("Load Model"))
+	{
+		if (ImGui::MenuItem("Monkey"))
+			Loader::LoadCsv("./models/monkey.csv");
+		if (ImGui::MenuItem("Bear"))
+			Loader::LoadCsv("./models/bear.csv");
+		ImGui::EndMenu();
+	}
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
+
+	if (ImGui::Button("Export")) Export();
 	static int n = 1;
 	ImGui::PushItemWidth(200);
 	ImGui::DragInt("n", &n, 10, 1, 10000, "%d");
 	ImGui::PopItemWidth();
-	if(ImGui::Button("TestSpeed")) RenderContentNTimes(n);
+	if (ImGui::Button("TestSpeed")) RenderContentNTimes(n);
 	ImGui::EndMenuBar();
 
 	auto panel = ImGui::GetCurrentWindow();
@@ -68,8 +80,9 @@ void Canvas::DrawUI()
 			IsDragging = true;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(Dragging{
-				mousePos, mousePosPixel, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration
+				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
+			PrevMousePos = mousePos;
 			return;
 		}
 
@@ -78,8 +91,9 @@ void Canvas::DrawUI()
 			IsDragging = false;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(DragEnd{
-				mousePos, mousePosPixel, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration
+				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
+			PrevMousePos = mousePos;
 			return;
 		}
 
@@ -121,15 +135,15 @@ void Canvas::RenderContentNTimes(int n)
 	std::default_random_engine rng;
 	std::uniform_real dist(-1.0f, 1.0f);
 	auto& canvas = R.ctx().get<Canvas>();
-	
+
 	brush.Use();
 	auto start = chrono::high_resolution_clock::now();
-	for(int i = 0; i < n; ++i)
+	for (int i = 0; i < n; ++i)
 	{
-		glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize()/2.0f;
+		glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize() / 2.0f;
 		Viewport.UploadMVP(glm::translate(glm::vec3{randOffset, 0.f}));
 		Viewport.BindMVPBuffer();
-		for(auto* stroke: strokes)
+		for (auto* stroke : strokes)
 		{
 			brush.SetUniforms();
 			stroke->SetUniforms();

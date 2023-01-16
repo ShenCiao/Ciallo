@@ -96,6 +96,4 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<ArrangementManager>();
-	// std::filesystem::path path{R"(.\Models\suzanne.csv)"};
-	// Loader::LoadCsv(path);
 }

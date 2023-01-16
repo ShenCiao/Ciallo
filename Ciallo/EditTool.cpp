@@ -8,6 +8,8 @@
 #include "Canvas.h"
 #include "Brush.h"
 #include "InnerBrush.h"
+#include "Painter.h"
+#include "ArrangementManager.h"
 
 
 EditTool::EditTool()
@@ -35,14 +37,15 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 
 void EditTool::OnDragging(Dragging event)
 {
-	if (SelectedStrokeE != entt::null)
+	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
 	{
-		// for (auto& p : SelectedStroke->Position)
-		// {
-		// 	p = { p.x + delta.x, p.y + delta.y };
-		// }
-		// SelectedStroke->UpdateBuffers();
-		// Canvas->ActiveDrawing->ArrangementSystem.AddOrUpdate(SelectedStroke);
+		auto& stroke = R.get<Stroke>(SelectedStrokeE);
+		for (auto& p : stroke.Position)
+		{
+			p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
+		}
+		stroke.UpdateBuffers();
+		R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
 	}
 }
 
@@ -57,19 +60,22 @@ void EditTool::Activate()
 	RenderSelectionTexture();
 }
 
-void EditTool::Deactivate()
-{
-}
-
 void EditTool::DrawProperties()
 {
-	if (SelectedStrokeE != entt::null)
+	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
 	{
-		if (ImGui::Button("Size"))
-		{
-			auto& stroke = R.get<Stroke>(SelectedStrokeE);
-			spdlog::info("size: {}", stroke.Position.size());
-		}
+		auto& stroke = R.get<Stroke>(SelectedStrokeE);
+		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
+		ImGui::TextUnformatted(fmt::format("number of vertices: {}", stroke.Position.size()).c_str());
+		
+		ImGui::CheckboxFlags("Label##0", reinterpret_cast<unsigned*>(&strokeUsage),
+		                     static_cast<unsigned>(StrokeUsageFlags::Final));
+		ImGui::CheckboxFlags("Fill##1", reinterpret_cast<unsigned*>(&strokeUsage),
+		                     static_cast<unsigned>(StrokeUsageFlags::Fill));
+		ImGui::CheckboxFlags("Arrange##2", reinterpret_cast<unsigned*>(&strokeUsage),
+		                     static_cast<unsigned>(StrokeUsageFlags::Arrange));
+		ImGui::CheckboxFlags("Zone##3", reinterpret_cast<unsigned*>(&strokeUsage),
+		                     static_cast<unsigned>(StrokeUsageFlags::Zone));
 	}
 }
 
@@ -85,14 +91,15 @@ void EditTool::GenSelectionTexture()
 void EditTool::RenderSelectionTexture()
 {
 	SelectionTexture.BindFramebuffer();
-
+	glDisable(GL_BLEND);
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_DEPTH_TEST);
 	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
 	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
 	brush.Use();
-	brush.SetUniforms();
 	for (auto& e : strokeEs)
 	{
 		brush.SetUniforms();

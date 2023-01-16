@@ -77,5 +77,5 @@ void Painter::DrawProperties()
 	ImGui::ColorPicker4("Line Color", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
 	if(!!(Usage&StrokeUsageFlags::Fill) || !!(Usage&StrokeUsageFlags::Zone))
 		ImGui::ColorPicker4("Fill Color", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::DragFloat("Thickness", &Thickness, 0.0001f, 0.0001f, 0.010f, "%.4f", ImGuiSliderFlags_ClampOnInput);
+	ImGui::DragFloat("Thickness", &Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
 }

@@ -5,10 +5,11 @@
 enum class StrokeUsageFlags
 {
 	Zero = 0,		// on final image, no fill
-	Label = 1 << 1,		// not on final image
-	Fill = 1 << 2,		// fill polygon color
-	Arrange = 1 << 3,	// insert into arrangement
-	Zone = 1 << 4,		// query zone
+	Final = 1u << 1,	// on final image
+	Line = 1 << 2,		// draw line
+	Fill = 1 << 3,		// draw fill
+	Arrange = 1 << 4,	// insert into arrangement
+	Zone = 1 << 5,		// query zone
 	_entt_enum_as_bitmask
 };
 

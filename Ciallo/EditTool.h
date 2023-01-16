@@ -5,8 +5,10 @@
 
 class EditTool : public Tool
 {
-public:
 	entt::entity SelectedStrokeE = entt::null;
+	void GenSelectionTexture();
+	void RenderSelectionTexture();
+public:
 	RenderableTexture SelectionTexture;
 
 	EditTool();
@@ -15,11 +17,7 @@ public:
 	void OnDragging(Dragging) override;
 	void OnDragEnd(DragEnd) override;
 	void Activate() override;
-	void Deactivate() override;
 	void DrawProperties() override;
-
-	void GenSelectionTexture();
-	void RenderSelectionTexture();
 
 	std::string GetName() override;
 

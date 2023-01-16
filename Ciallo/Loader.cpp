@@ -7,9 +7,13 @@
 #include "Stroke.h"
 #include "BrushManager.h"
 #include "StrokeContainer.h"
+#include "Painter.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath)
 {
+	// Warning: memory leak!
+	R.ctx().get<StrokeContainer>().StrokeEs.clear();
+
 	std::ifstream file(filePath);
 	std::string line;
 	file.exceptions(std::ifstream::badbit);
@@ -55,8 +59,8 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 		auto& offset = pressures[i];
 		for(float& t : offset) t = -(1.0f-t) * targetThickness;
 
-		
 		entt::entity strokeE = R.create();
+		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final|StrokeUsageFlags::Arrange);
 		R.ctx().get<StrokeContainer>().StrokeEs.push_back(strokeE);
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;

@@ -14,9 +14,9 @@ public:
 	std::unordered_map<entt::entity, std::vector<CGAL::X_monotone_Curve>> CachedQueryCurves{};
 	// One stroke may cross multiple polygons with holes.
 	std::unordered_map<entt::entity, std::vector<ColorFace>> QueryResultsContainer{};
-	
+	std::unordered_map<entt::entity, CGAL::Curve> UpdateQueue{};
 
-	std::map<entt::entity, CGAL::Curve> UpdateQueue{};
+	bool LogSpeed = false;
 
 	void Run();
 

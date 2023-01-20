@@ -59,6 +59,7 @@ void AirBrushData::SetUniforms()
 
 void AirBrushData::DrawProperties()
 {
+	ImGui::TextUnformatted("Alpha gradient");
 	ImPlotAxisFlags axFlags = ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_Lock;
 	if (ImPlot::BeginPlot("Alpha Gradient##Bezier", ImVec2(-1, 0), ImPlotFlags_CanvasOnly))
 	{

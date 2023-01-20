@@ -7,6 +7,7 @@
 void ArrangementManager::Run()
 {
 	// Insertion and update strokes
+	auto start = chrono::high_resolution_clock::now();
 	for (auto& [strokeE, curve] : UpdateQueue)
 	{
 		if (CurveHandleContainer.contains(strokeE))
@@ -22,12 +23,19 @@ void ArrangementManager::Run()
 
 		CurveHandleContainer[strokeE] = CGAL::insert(Arrangement, curve);
 	}
+	chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
+	if (LogSpeed)
+	{
+		spdlog::info("Arrangement Time: {}ms", duration.count());
+		LogSpeed = false;
+	}
+		
 
 	UpdateQueue.clear();
 
 	QueryResultsContainer.clear();
 	// Run query
-	for (auto& [stroke, monoCurves] : CachedQueryCurves)
+	for (auto& [e, monoCurves] : CachedQueryCurves)
 	{
 		std::vector<ColorFace> vecPolygons;
 		std::vector<CGAL::Face_const_handle> allFaces;
@@ -42,7 +50,7 @@ void ArrangementManager::Run()
 			std::vector<Geom::Polyline> polygonWithHoles = FaceToVec(face);
 			vecPolygons.emplace_back(polygonWithHoles);
 		}
-		QueryResultsContainer[stroke] = std::move(vecPolygons);
+		QueryResultsContainer[e] = std::move(vecPolygons);
 	}
 }
 
@@ -234,7 +242,7 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 
 			if (palindromic)
 			{
-				if (curr->twin() == handles.back())
+				if (!handles.empty() && curr->twin() == handles.back())
 				{
 					handles.pop_back();
 				}

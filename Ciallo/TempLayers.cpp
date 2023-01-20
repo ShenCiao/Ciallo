@@ -6,6 +6,8 @@
 #include "Brush.h"
 #include "RenderingSystem.h"
 #include "Canvas.h"
+#include "ArrangementManager.h"
+#include "Painter.h"
 
 TempLayers::TempLayers(glm::ivec2 size)
 {
@@ -18,7 +20,6 @@ void TempLayers::RenderDrawing()
 {
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
 	Drawing.BindFramebuffer();
 	glClearColor(0, 0, 0, 0);
@@ -30,11 +31,23 @@ void TempLayers::RenderDrawing()
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);
-		auto& brush = R.get<Brush>(stroke.BrushE);
-		brush.Use();
-		brush.SetUniforms();
-		stroke.SetUniforms();
-		stroke.LineDrawCall();
+		auto strokeUsage = R.get<StrokeUsageFlags>(e);
+		bool skipLine = FinalOnly && !!(strokeUsage & StrokeUsageFlags::Final);
+		if (!skipLine)
+		{
+			auto& brush = R.get<Brush>(stroke.BrushE);
+			brush.Use();
+			brush.SetUniforms();
+			stroke.SetUniforms();
+			glDisable(GL_STENCIL_TEST);
+			stroke.LineDrawCall();
+		}
+		if(!!(strokeUsage & StrokeUsageFlags::Fill))
+		{
+			glUseProgram(RenderingSystem::Polygon->Program);
+			glUniform4fv(1, 1, glm::value_ptr(stroke.FillColor));
+			stroke.FillDrawCall();
+		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -42,9 +55,37 @@ void TempLayers::RenderDrawing()
 void TempLayers::RenderFill()
 {
 	Fill.BindFramebuffer();
+	glEnable(GL_BLEND);
+	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+	auto& canvas = R.ctx().get<Canvas>();
+	canvas.Viewport.UploadMVP();
+	canvas.Viewport.BindMVPBuffer();
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
-	//TODO: 
+	auto& arm = R.ctx().get<ArrangementManager>();
+	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	glUseProgram(RenderingSystem::Polygon->Program);
+	glEnable(GL_STENCIL_TEST);
+	for (entt::entity e : strokeEs)
+	{
+		auto& stroke = R.get<Stroke>(e);
+		auto strokeUsage = R.get<StrokeUsageFlags>(e);
+		if (!!(strokeUsage & StrokeUsageFlags::Zone))
+		{
+			if (arm.QueryResultsContainer.contains(e))
+			{
+				for (auto& face : arm.QueryResultsContainer[e])
+				{
+					face.GenUploadBuffers();
+					glUniform4fv(1, 1, glm::value_ptr(stroke.FillColor));
+					face.FillDrawCall();
+				}
+			}
+		}
+	}
+
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -52,8 +93,8 @@ void TempLayers::BlendAll()
 {
 	auto& canvas = R.ctx().get<Canvas>();
 	auto& port = canvas.Viewport;
-	glm::vec2 size = port.GetSize()/2.0f;
-	glm::vec2 mid = (port.Min+port.Max)/2.0f;
+	glm::vec2 size = port.GetSize() / 2.0f;
+	glm::vec2 mid = (port.Min + port.Max) / 2.0f;
 
 	GLuint vao, vbo;
 	glCreateVertexArrays(1, &vao);
@@ -79,7 +120,7 @@ void TempLayers::BlendAll()
 	port.BindMVPBuffer();
 	glBindVertexArray(vao);
 	glUniform2fv(2, 1, glm::value_ptr(size));
-	
+
 	glBindTexture(GL_TEXTURE_2D, Fill.ColorTexture);
 	glDrawArrays(GL_POINTS, 0, 1);
 	glBindTexture(GL_TEXTURE_2D, Drawing.ColorTexture);

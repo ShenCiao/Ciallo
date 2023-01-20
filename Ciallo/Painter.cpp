@@ -59,7 +59,7 @@ void Painter::OnDragging(Dragging event)
 		{
 			arm.AddOrUpdateQuery(e);
 		}
-		
+
 		LastSampleMousePosPixel = event.MousePosPixel;
 		LastSampleDuration = event.DragDuration;
 	}
@@ -74,8 +74,8 @@ void Painter::DrawProperties()
 	if (ImGui::Button("Edit Brush"))
 		R.ctx().get<BrushManager>().OpenBrushEditor(&BrushE);
 
-	ImGui::ColorPicker4("Line Color", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
-	if(!!(Usage&StrokeUsageFlags::Fill) || !!(Usage&StrokeUsageFlags::Zone))
-		ImGui::ColorPicker4("Fill Color", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
+	ImGui::ColorPicker4("Line Color##0", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
+	if (!!(Usage & StrokeUsageFlags::Fill) || !!(Usage & StrokeUsageFlags::Zone))
+		ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
 	ImGui::DragFloat("Thickness", &Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
 }

@@ -10,6 +10,8 @@ public:
 	RenderableTexture Drawing;
 	RenderableTexture Fill;
 
+	bool FinalOnly = false;
+
 	TempLayers(glm::ivec2 size);
 	void RenderDrawing();
 	void RenderFill();

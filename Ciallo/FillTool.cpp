@@ -25,6 +25,7 @@ FillTool::FillTool()
 	auto& brushM = R.ctx().get<BrushManager>();
 	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone;
+	Painter.Thickness = 0.0005f;
 }
 
 std::string FillTool::GetName()

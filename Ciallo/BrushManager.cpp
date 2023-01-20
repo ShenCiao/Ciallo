@@ -18,9 +18,9 @@ void BrushManager::GenPreviewStroke()
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
-	const int segments = 128;
+	const int segments = 64;
 	Geom::Polyline position;
-	float thickness = 0.33f;
+	const float thickness = 0.33f;
 	std::vector<float> thicknessOffset;
 	for (int i = 0; i <= segments; ++i)
 	{
@@ -83,7 +83,7 @@ void BrushManager::DrawUI()
 	ImGui::Begin("Toolbox");
 	if (ImGui::BeginPopupModal("BrushEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::BeginChild("left pane", ImVec2(150, 400), true);
+		ImGui::BeginChild("left pane", ImVec2(150, 600), true);
 		for (entt::entity e : Brushes)
 		{
 			auto& brush = R.get<Brush>(e);
@@ -98,11 +98,12 @@ void BrushManager::DrawUI()
 		auto& brush = R.get<Brush>(EditorActiveBrushE);
 		SetContext();
 		RenderPreview(EditorActiveBrushE);
-		ImGui::BeginChild("right panel", ImVec2(400, -ImGui::GetFrameHeightWithSpacing()));
-		ImGui::TextUnformatted(brush.Name.c_str());
-		const int height = 96;
+		const int w = 600;
+		ImGui::BeginChild("right panel", ImVec2(w, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
-		             {height * 2 * glm::golden_ratio<float>(), height});
+		             {w, w / 2.0f / glm::golden_ratio<float>()});
+		ImGui::ColorEdit4("demo color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
+		ImGui::Separator();
 		brush.DrawProperties();
 		ImGui::EndChild();
 

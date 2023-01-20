@@ -30,6 +30,12 @@ void Canvas::DrawUI()
 			Loader::LoadCsv("./models/monkey.csv");
 		if (ImGui::MenuItem("Bear"))
 			Loader::LoadCsv("./models/bear.csv");
+		if (ImGui::MenuItem("Dango"))
+			Loader::LoadCsv("./models/dango.csv", 0.003f);
+		if (ImGui::MenuItem("Totoro"))
+			Loader::LoadCsv("./models/totoro.csv", 0.001f);
+		if (ImGui::MenuItem("Grid"))
+			Loader::LoadCsv("./models/grid.csv");
 		ImGui::EndMenu();
 	}
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});

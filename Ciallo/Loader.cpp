@@ -8,11 +8,15 @@
 #include "BrushManager.h"
 #include "StrokeContainer.h"
 #include "Painter.h"
+#include "ArrangementManager.h"
 
-void Loader::LoadCsv(const std::filesystem::path& filePath)
+void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThickness)
 {
 	// Warning: memory leak!
 	R.ctx().get<StrokeContainer>().StrokeEs.clear();
+	auto& arm = R.ctx().get<ArrangementManager>();
+	arm.Arrangement.clear();
+	arm.LogSpeed = true;
 
 	std::ifstream file(filePath);
 	std::string line;
@@ -22,6 +26,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 	std::vector<Geom::Polyline> curves;
 	std::vector<std::vector<float>> pressures; // pen pressures get from gpencil
 	std::vector<float> pressure;
+	float maxPressure = 0.0f;
 
 	while (std::getline(file, line))
 	{
@@ -43,6 +48,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 		curve.push_back(values[0], values[1]);
 		allPoints.push_back(values[0], values[1]);
 		pressure.push_back(values[2]);
+		if (values[2] >= maxPressure) maxPressure = values[2];
 	}
 	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
 	auto& canvas = R.ctx().get<Canvas>();
@@ -50,17 +56,16 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 	float factor = 1.0f / glm::max(factorXY.x, factorXY.y);
 	factor *= 0.8f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
-	for(int i = 0; i < curves.size(); ++i)
+	for (int i = 0; i < curves.size(); ++i)
 	{
-		const float targetThickness = 0.003f;
 		auto& c = curves[i];
 		c = c.Scale({factor, factor}, mid);
 		c = c.Translate(-mid + canvas.Viewport.GetSize() / 2.0f);
 		auto& offset = pressures[i];
-		for(float& t : offset) t = -(1.0f-t) * targetThickness;
+		for (float& t : offset) t = -(1.0f - t/maxPressure) * targetThickness;
 
 		entt::entity strokeE = R.create();
-		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final|StrokeUsageFlags::Arrange);
+		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
 		R.ctx().get<StrokeContainer>().StrokeEs.push_back(strokeE);
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
@@ -69,5 +74,13 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
 		stroke.UpdateBuffers();
+
+		arm.AddOrUpdate(strokeE);
 	}
+}
+
+void Loader::SaveCsv(const std::filesystem::path& filePath)
+{
+	std::ofstream file(filePath);
+	
 }

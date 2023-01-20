@@ -47,6 +47,7 @@ void Brush::DrawProperties()
 {
 	if (Stamp)
 	{
+		Stamp->DrawProperties();
 		return;
 	}
 	if (AirBrush)

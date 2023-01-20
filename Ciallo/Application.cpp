@@ -32,8 +32,6 @@ void Application::Run()
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
-		ImPlot::ShowDemoWindow();
-		ImGui::ShowDemoWindow();
 		auto& canvas = R.ctx().get<Canvas>();
 		canvas.DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
@@ -69,16 +67,18 @@ void Application::GenDefaultProject()
 	brush1.Name = "Splatter";
 	brush1.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush1.Stamp = std::make_unique<StampBrushData>();
-	brush1.Stamp->StampTexture = TextureManager::Textures[0];
+	brush1.Stamp->StampTexture = TextureManager::Textures[1];
 	brush1.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	
 
 	brushes.push_back(R.create());
 	auto& brush2 = R.emplace<Brush>(brushes.back());
 	brush2.Name = "Pencil";
 	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
-	brush2.Stamp->StampTexture = TextureManager::Textures[1];
+	brush2.Stamp->StampTexture = TextureManager::Textures[2];
 	brush2.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	brush2.Stamp->NoiseFactor = 1.7f;
 
 	brushes.push_back(R.create());
 	auto& brush3 = R.emplace<Brush>(brushes.back());

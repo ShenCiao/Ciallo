@@ -45,7 +45,10 @@ void EditTool::OnDragging(Dragging event)
 			p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
 		}
 		stroke.UpdateBuffers();
-		R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
+		if(!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Arrange))
+			R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
+		if(!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Zone))
+			R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
 	}
 }
 
@@ -68,7 +71,7 @@ void EditTool::DrawProperties()
 		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
 		ImGui::TextUnformatted(fmt::format("number of vertices: {}", stroke.Position.size()).c_str());
 		
-		ImGui::CheckboxFlags("Label##0", reinterpret_cast<unsigned*>(&strokeUsage),
+		ImGui::CheckboxFlags("Final##0", reinterpret_cast<unsigned*>(&strokeUsage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Final));
 		ImGui::CheckboxFlags("Fill##1", reinterpret_cast<unsigned*>(&strokeUsage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Fill));
@@ -76,6 +79,11 @@ void EditTool::DrawProperties()
 		                     static_cast<unsigned>(StrokeUsageFlags::Arrange));
 		ImGui::CheckboxFlags("Zone##3", reinterpret_cast<unsigned*>(&strokeUsage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Zone));
+		ImGui::ColorEdit4("Stroke Color", glm::value_ptr(stroke.Color), ImGuiColorEditFlags_InputRGB);
+	}
+	else
+	{
+		ImGui::TextWrapped("No stroke is selected, click on your target to select it, drag to move it");
 	}
 }
 

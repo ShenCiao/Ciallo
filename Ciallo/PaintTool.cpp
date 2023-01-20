@@ -29,5 +29,8 @@ void PaintTool::DrawProperties()
 {
 	ImGui::CheckboxFlags("Show in final image", reinterpret_cast<unsigned*>(&Painter.Usage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Final));
+
+	ImGui::CheckboxFlags("Fill color", reinterpret_cast<unsigned*>(&Painter.Usage),
+		                     static_cast<unsigned>(StrokeUsageFlags::Fill));
 	Painter.DrawProperties();
 }

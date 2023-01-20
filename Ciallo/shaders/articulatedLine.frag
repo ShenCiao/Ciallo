@@ -16,6 +16,8 @@ layout(location = 0) out vec4 outColor;
 layout(location = 2) uniform float uniThickness;
 layout(location = 3, binding = 0) uniform sampler2D stamp;
 layout(location = 4) uniform float stampIntervalRatio;
+layout(location = 5) uniform float noiseFactor;
+layout(location = 6) uniform float rotationRand;
 #endif
 
 #ifdef AIRBRUSH
@@ -79,19 +81,32 @@ void main() {
     vec2 p0LH = vec2(0, 0);
     vec2 p1LH = vec2(len, 0);
 
-    float d0 = distance(pLH, p0LH);
-    float d1 = distance(pLH, p1LH);
+    float d0 = distance(p, p0);
+    float d1 = distance(p, p1);
 
 #if !defined(STAMP) && !defined(AIRBRUSH)
     // Vanilla 
-    if((pLH.x < 0 && d0 > halfThickness)){
+    if(pLH.x < 0 && d0 > halfThickness){
         discard;
     }
-    if((pLH.x > p1LH.x && d1 > halfThickness)){
+    if(pLH.x > p1LH.x && d1 > halfThickness){
         discard;
     }
+
+    // False overlapping vanilla (OK if opaque stroke)
     outColor = fragColor;
     return;
+
+    // // perfect vanilla
+    // float A = fragColor.a;
+    // if(d0 < halfThickness && d1 < halfThickness){
+    //     A = 0.0;
+    // }
+    // if(d0 < halfThickness || d1 < halfThickness){
+    //     A = 1.0 - sqrt(1.0 - fragColor.a);
+    // }
+    // outColor = vec4(fragColor.rgb, A);
+    // return;
 #endif
 
 #ifdef STAMP
@@ -119,13 +134,13 @@ void main() {
         san_i += 1;
         if(san_i > MAX_i) break;
         // Sample on stamp and manually blend alpha
-        float angle = radians(360*fract(sin(currStampIndex)*1.0));
+        float angle = rotationRand*radians(360*fract(sin(currStampIndex)*1.0));
         vec2 vStamp = pLH - vec2(currStamp, 0);
         vStamp *= rotate(angle);
         vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
 
         vec4 color = texture(stamp, uv);
-        float alpha = clamp(color.a - 1.7*fbm(uv*50.0), 0.0, 1.0);
+        float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0);
         A = A * (1.0-alpha) + alpha;
         currStamp += stampInterval;
         currStampIndex += 1.0;

@@ -47,15 +47,18 @@ void Brush::DrawProperties()
 {
 	if (Stamp)
 	{
+		ImGui::TextUnformatted("Type: Stamp");
 		Stamp->DrawProperties();
 		return;
 	}
 	if (AirBrush)
 	{
+		ImGui::TextUnformatted("Type: Airbrush");
 		AirBrush->DrawProperties();
 		AirBrush->UpdateGradient();
 		return;
 	}
+	ImGui::TextUnformatted("Type: Vanilla");
 }
 
 void swap(Brush& lhs, Brush& rhs) noexcept

@@ -142,7 +142,7 @@ void main() {
         vec4 color = texture(stamp, uv);
         float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0);
         A = A * (1.0-alpha) + alpha;
-        currStamp += stampInterval;
+        currStamp += stampInterval; 
         currStampIndex += 1.0;
     }while(currStamp < stampEnding);
     if(A < 1e-4){

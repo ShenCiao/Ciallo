@@ -10,6 +10,7 @@
 #include "InnerBrush.h"
 #include "Painter.h"
 #include "ArrangementManager.h"
+#include "BrushManager.h"
 
 
 EditTool::EditTool()
@@ -79,7 +80,12 @@ void EditTool::DrawProperties()
 		                     static_cast<unsigned>(StrokeUsageFlags::Arrange));
 		ImGui::CheckboxFlags("Zone##3", reinterpret_cast<unsigned*>(&strokeUsage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Zone));
-		ImGui::ColorEdit4("Stroke Color", glm::value_ptr(stroke.Color), ImGuiColorEditFlags_InputRGB);
+		if (ImGui::Button("Edit Brush"))
+			R.ctx().get<BrushManager>().OpenBrushEditor(&stroke.BrushE);
+		ImGui::ColorEdit4("Line", glm::value_ptr(stroke.Color), ImGuiColorEditFlags_InputRGB);
+		ImGui::ColorEdit4("Fill", glm::value_ptr(stroke.FillColor), ImGuiColorEditFlags_InputRGB);
+		ImGui::DragFloat("Thickness", &stroke.Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
+
 	}
 	else
 	{

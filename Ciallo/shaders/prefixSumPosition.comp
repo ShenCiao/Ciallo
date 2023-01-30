@@ -36,6 +36,6 @@ void main(){
 		barrier();
 		memoryBarrierShared();
     }
-    // Prefix sum done! For now segmentLengths is the distance from the starting point of polyline
+    // Prefix sum done! For now segmentLengths is the distance to the starting point of polyline
     lengthOutput[id] = segmentLengths[id];
 }

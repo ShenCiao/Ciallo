@@ -32,7 +32,7 @@ void TempLayers::RenderDrawing()
 	{
 		auto& stroke = R.get<Stroke>(e);
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		bool skipLine = FinalOnly && !!(strokeUsage & StrokeUsageFlags::Final);
+		bool skipLine = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
 		if (!skipLine)
 		{
 			auto& brush = R.get<Brush>(stroke.BrushE);
@@ -41,12 +41,6 @@ void TempLayers::RenderDrawing()
 			stroke.SetUniforms();
 			glDisable(GL_STENCIL_TEST);
 			stroke.LineDrawCall();
-		}
-		if(!!(strokeUsage & StrokeUsageFlags::Fill))
-		{
-			glUseProgram(RenderingSystem::Polygon->Program);
-			glUniform4fv(1, 1, glm::value_ptr(stroke.FillColor));
-			stroke.FillDrawCall();
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -71,6 +65,11 @@ void TempLayers::RenderFill()
 	{
 		auto& stroke = R.get<Stroke>(e);
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
+		if (!!(strokeUsage & StrokeUsageFlags::Fill))
+		{
+			glUniform4fv(1, 1, glm::value_ptr(stroke.FillColor));
+			stroke.FillDrawCall();
+		}
 		if (!!(strokeUsage & StrokeUsageFlags::Zone))
 		{
 			if (arm.QueryResultsContainer.contains(e))
@@ -120,9 +119,11 @@ void TempLayers::BlendAll()
 	port.BindMVPBuffer();
 	glBindVertexArray(vao);
 	glUniform2fv(2, 1, glm::value_ptr(size));
-
-	glBindTexture(GL_TEXTURE_2D, Fill.ColorTexture);
-	glDrawArrays(GL_POINTS, 0, 1);
+	if (!HideFill)
+	{
+		glBindTexture(GL_TEXTURE_2D, Fill.ColorTexture);
+		glDrawArrays(GL_POINTS, 0, 1);
+	}
 	glBindTexture(GL_TEXTURE_2D, Drawing.ColorTexture);
 	glDrawArrays(GL_POINTS, 0, 1);
 	glBindTexture(GL_TEXTURE_2D, Overlay.ColorTexture);

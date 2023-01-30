@@ -38,8 +38,15 @@ void Canvas::DrawUI()
 			Loader::LoadCsv("./models/grid.csv");
 		ImGui::EndMenu();
 	}
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
-
+	
+	if (ImGui::BeginMenu("Layers"))
+	{
+		auto& layers = R.ctx().get<TempLayers>();
+		ImGui::Checkbox("Final only", &layers.FinalOnly);
+		ImGui::Checkbox("Hide Fill", &layers.HideFill);
+		ImGui::EndMenu();
+	}
+	
 	if (ImGui::Button("Export")) Export();
 	static int n = 1;
 	ImGui::PushItemWidth(200);
@@ -48,6 +55,7 @@ void Canvas::DrawUI()
 	if (ImGui::Button("TestSpeed")) RenderContentNTimes(n);
 	ImGui::EndMenuBar();
 
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	auto panel = ImGui::GetCurrentWindow();
 	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
 

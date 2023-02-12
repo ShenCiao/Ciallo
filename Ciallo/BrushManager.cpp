@@ -18,7 +18,7 @@ void BrushManager::GenPreviewStroke()
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
-	const int segments = 64;
+	const int segments = 16;
 	Geom::Polyline position;
 	const float thickness = 0.33f;
 	std::vector<float> thicknessOffset;
@@ -121,6 +121,11 @@ void BrushManager::DrawUI()
 			TargetBrushE = nullptr;
 			EditorActiveBrushE = entt::null;
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Export Demo"))
+		{
+			ExportDemo();
+		}
 		ImGui::EndGroup();
 		ImGui::EndPopup();
 	}
@@ -135,12 +140,9 @@ void BrushManager::OpenBrushEditor(entt::entity* brushE)
 	ImGui::OpenPopup("BrushEditor", ImGuiPopupFlags_AnyPopup);
 }
 
-void BrushManager::OutputPreview()
+void BrushManager::ExportDemo()
 {
-	for (auto& bE : Brushes)
-	{
-		auto& brush = R.get<Brush>(bE);
-		std::string prefix = "brush_";
-		TextureManager::SaveTexture(brush.PreviewTexture.ColorTexture, prefix + brush.Name);
-	}
+	auto& brush = R.get<Brush>(EditorActiveBrushE);
+	std::string prefix = "brush_";
+	TextureManager::SaveTexture(brush.PreviewTexture.ColorTexture, prefix + brush.Name);
 }

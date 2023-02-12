@@ -20,6 +20,6 @@ public:
 	void RenderPreview(entt::entity brushE);
 	void DrawUI();
 	void OpenBrushEditor(entt::entity* brushE);
-	void OutputPreview();
+	void ExportDemo();
 };
 

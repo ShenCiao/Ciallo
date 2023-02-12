@@ -6,6 +6,7 @@ layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
 layout(location = 4) in float halfThickness;
 layout(location = 5) in flat float summedLength;
+layout(location = 6) in flat float hthickness[2]; // only being used by perfect vanilla
 
 layout(location = 0) out vec4 outColor;
 
@@ -29,7 +30,7 @@ mat2 rotate(float angle){
     return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 }
 
-// Noise helper functions ------------------
+// ---------------- Noise helper functions, ignore them ------------------
 float random (in vec2 st) {
     return fract(sin(dot(st.xy,
                          vec2(12.9898,78.233)))*
@@ -68,7 +69,7 @@ float fbm (in vec2 st) {
     }
     return value;
 }
-// Noise end ------------------
+// ---------------- Noise end ------------------
 
 void main() {
     
@@ -85,24 +86,29 @@ void main() {
     float d1 = distance(p, p1);
 
 #if !defined(STAMP) && !defined(AIRBRUSH)
-    // Vanilla 
+    // - Naive vanilla (OK if stroke is opaque)
     if(pLH.x < 0 && d0 > halfThickness){
         discard;
     }
     if(pLH.x > p1LH.x && d1 > halfThickness){
         discard;
     }
-
-    // False overlapping vanilla (OK if opaque stroke)
     outColor = fragColor;
     return;
 
-    // // perfect vanilla
-    // float A = fragColor.a;
-    // if(d0 < halfThickness && d1 < halfThickness){
-    //     A = 0.0;
+    // - perfect vanilla (perfectly handle transparency and self overlapping)
+    //  use uninterpolated(flat) thickness avoid the joint mismatch.
+    // if(pLH.x < 0 && d0 > hthickness[0]){
+    //     discard;
     // }
-    // if(d0 < halfThickness || d1 < halfThickness){
+    // if(pLH.x > p1LH.x && d1 > hthickness[1]){
+    //     discard;
+    // }
+    // if(d0 < hthickness[0] && d1 < hthickness[1]){
+    //     discard;
+    // }
+    // float A = fragColor.a;
+    // if(d0 < hthickness[0] || d1 < hthickness[1]){
     //     A = 1.0 - sqrt(1.0 - fragColor.a);
     // }
     // outColor = vec4(fragColor.rgb, A);
@@ -116,7 +122,7 @@ void main() {
     float stampStarting, stampStartingIndex;
     float frontEdge = pLH.x-halfThickness;
     if(frontEdge <= 0){
-        stampStarting = mod(stampInterval - mod(summedLength, stampInterval), stampInterval); // mod twice for get zero value
+        stampStarting = mod(stampInterval - mod(summedLength, stampInterval), stampInterval); // mod twice for getting zero value
         stampStartingIndex = ceil(summedLength/stampInterval);
     }
     else{

@@ -96,7 +96,7 @@ void main() {
     outColor = fragColor;
     return;
 
-    // - perfect vanilla (perfectly handle transparency and self overlapping)
+    // - Transparent vanilla (perfectly handle transparency and self overlapping)
     //  use uninterpolated(flat) thickness avoid the joint mismatch.
     // if(pLH.x < 0 && d0 > hthickness[0]){
     //     discard;

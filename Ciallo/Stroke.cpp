@@ -96,18 +96,19 @@ void Stroke::LineDrawCall()
 
 void Stroke::FillDrawCall()
 {
-	int count = Position.size();
+	int count = Position.size(); // number of points in polygon
 	if (count <= 2) return;
 
 	glClear(GL_STENCIL_BUFFER_BIT);
 	glStencilMask(1);
-	// stencil
+	// render to stencil only
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	// flip bit in stencil buffer pixel, odd pass the stencil test.
 	glStencilFunc(GL_ALWAYS, 0, 1);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_INVERT);
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, count);
-	// color
+	// only color odd times fliped pixel.
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glStencilFunc(GL_EQUAL, 1, 1);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, count);

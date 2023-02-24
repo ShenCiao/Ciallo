@@ -10,6 +10,8 @@ The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", 
 
 Ciallo is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). It's a wonderful toolset based on polylines in 3D space inside Blender. Here are some successful artworks drawn with polyline vector lines (in blender): [GPencil open project](https://cloud.blender.org/p/gallery/5b642e25bf419c1042056fc6).
 
+I'm pretty ambitious about the stroke rendering method. Since its simplicity and usefulness, it would be the infrastructure of every 2D game engine and a must-learn technique for everybody learning computer graphics. Everybody should learn how to render a curve just like learn how to render a mesh.
+
 ### Vector Bucket Fill
 
 ![vectorFillDemo](./articles/vector_bucket_fill_demo.gif)

@@ -32,6 +32,10 @@ I'm pretty ambitious about the stroke rendering method. Since its simplicity and
 
 ![monkey](./articles/monkey.png)
 
+The figure above shows the monkey suzanne rendered with the pencil brush. It has 15 strokes and 516 vertices. 
+
+I rendered the monkey 100 times on a 1684x1191 framebuffer (A4 paper in 144 dpi) on NVIDIA GeForce RTX 3060 Laptop GPU. It takes 0.67ms in total.
+
 ### ~~Curve binding~~
 
 ~~Polylines are hard to edit. So Ciallo allows users to "bind" a polyline upon a bezier curve. It'll act like this:~~

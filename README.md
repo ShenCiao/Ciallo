@@ -49,6 +49,7 @@ I rendered the monkey 100 times on a 1684x1191 framebuffer (A4 paper in 144 dpi)
 ## About the Future
 
 I used to think that I could make a program that could produce content even though naïve. But I highly underestimate ~~my laziness~~ the difficulty of programming layers and animation systems. However, as a research project, Ciallo completes its mission nicely.
+
 Now I need a job. Contact me if you are interested in developing a new paint program.
 
 ## How to Compile

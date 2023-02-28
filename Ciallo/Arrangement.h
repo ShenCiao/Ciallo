@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arrangement_with_history_2.h>
@@ -16,7 +17,7 @@ namespace CGAL
 
 	using Point = Geom_traits::Point_2;
 	using Curve = Geom_traits::Curve_2; // Polyline
-	using X_monotone_Curve = Geom_traits::X_monotone_curve_2;
+	using X_monotone_curve = Geom_traits::X_monotone_curve_2;
 
 	using Arrangement = CGAL::Arrangement_with_history_2<Geom_traits>;
 	using PointLocation = CGAL::Arr_walk_along_line_point_location<Arrangement>;

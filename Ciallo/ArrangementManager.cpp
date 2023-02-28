@@ -122,7 +122,7 @@ std::vector<Geom::Polyline> ArrangementManager::PointQuery(glm::vec2 p) const
 }
 
 // For test usage only
-std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_monotone_Curve& monoCurve)
+std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_monotone_curve& monoCurve)
 {
 	std::vector<CGAL::PointLocation::Result_type> output(256);
 	auto beginIt = output.begin();
@@ -138,7 +138,7 @@ std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_
 }
 
 // Only unbounded face returned
-std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGAL::X_monotone_Curve& monoCurve)
+std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGAL::X_monotone_curve& monoCurve)
 {
 	std::vector<CGAL::Face_const_handle> result;
 	std::vector<CGAL::PointLocation::Result_type> output(256);
@@ -314,60 +314,9 @@ Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Polygon& polygon)
 	return result;
 }
 
-std::vector<CGAL::X_monotone_Curve> ArrangementManager::ConstructXMonotoneCurve(
+std::vector<CGAL::X_monotone_curve> ArrangementManager::ConstructXMonotoneCurve(
 	const std::vector<glm::vec2>& polyline)
 {
-	enum
-	{
-		LeftToRight = -1,
-		RightToLeft = 1,
-		Overlap = 0,
-	};
-
-
-	auto calDirection = [](glm::vec2 p0, glm::vec2 p1)
-	{
-		if (p0.x < p1.x)
-		{
-			return LeftToRight;
-		}
-		else if (p0.x > p1.x)
-		{
-			return RightToLeft;
-		}
-		else
-		{
-			if (p0.y < p1.y)
-			{
-				return LeftToRight;
-			}
-			else if (p0.y > p1.y)
-			{
-				return RightToLeft;
-			}
-			else
-			{
-				return Overlap;
-			}
-		}
-	};
-
-	std::vector<size_t> indices;
-	auto cachedDirection = Overlap;
-	for (size_t i = 0; i < polyline.size(); ++i)
-	{
-		if (i + 1 == polyline.size())
-		{
-			indices.push_back(i);
-			continue;
-		}
-		auto currDirection = calDirection(polyline[i], polyline[i + 1]);
-		if (currDirection != cachedDirection)
-		{
-			indices.push_back(i);
-			cachedDirection = currDirection;
-		}
-	}
 
 	std::vector<CGAL::Point> points(polyline.size());
 	for (int i = 0; i < polyline.size(); ++i)
@@ -375,10 +324,19 @@ std::vector<CGAL::X_monotone_Curve> ArrangementManager::ConstructXMonotoneCurve(
 		points[i] = {polyline[i].x, polyline[i].y};
 	}
 
-	std::vector<CGAL::X_monotone_Curve> result;
-	for (int i = 0; i < indices.size() - 1; ++i)
+	CGAL::Curve curve = CurveConstructor(points);
+	using Make_x_monotone_result = boost::variant<CGAL::Point, CGAL::X_monotone_curve>;
+	std::list<Make_x_monotone_result> x_objects;
+	XMonoMaker(curve, std::back_inserter(x_objects));
+
+	std::vector<CGAL::X_monotone_curve> result;
+	for (const auto& x_obj : x_objects) 
 	{
-		result.push_back(XMonoConstructor(points.begin() + indices[i], points.begin() + indices[i + 1] + 1));
+		const auto* x_curve = boost::get<CGAL::X_monotone_curve>(&x_obj);
+		if (x_curve != nullptr) 
+		{
+			result.push_back(*x_curve);
+		}
 	}
 	return result;
 }

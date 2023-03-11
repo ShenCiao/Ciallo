@@ -75,9 +75,6 @@
     <ClCompile Include="CubicBezier.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="BezierSpline.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Polyline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -144,6 +141,9 @@
     <ClCompile Include="Loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CubicBezierBone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -201,9 +201,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CubicBezier.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BezierSpline.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Polyline.h">
@@ -273,6 +270,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CubicBezierBone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

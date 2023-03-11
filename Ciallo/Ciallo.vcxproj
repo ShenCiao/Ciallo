@@ -94,7 +94,7 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
-    <ClCompile Include="BezierSpline.cpp" />
+    <ClCompile Include="CubicBezierBone.cpp" />
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="BrushManager.cpp" />
     <ClCompile Include="Canvas.cpp" />
@@ -142,7 +142,7 @@
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
-    <ClInclude Include="BezierSpline.h" />
+    <ClInclude Include="CubicBezierBone.h" />
     <ClInclude Include="Brush.h" />
     <ClInclude Include="BrushManager.h" />
     <ClInclude Include="Canvas.h" />

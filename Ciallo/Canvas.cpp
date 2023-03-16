@@ -131,42 +131,48 @@ void Canvas::GenRenderTarget()
 
 void Canvas::RenderContentNTimes(int n)
 {
-	RenderableTexture& target = Image;
-	glEnable(GL_BLEND);
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	target.BindFramebuffer();
-	glClearColor(1, 1, 1, 1);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	std::vector<Stroke*> strokes;
+	// RenderableTexture& target = Image;
+	// glEnable(GL_BLEND);
+	// glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	// target.BindFramebuffer();
+	// glClearColor(1, 1, 1, 1);
+	// glClear(GL_COLOR_BUFFER_BIT);
+	//
+	// std::vector<Stroke*> strokes;
+	// auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	// for (entt::entity strokeE : strokeEs)
+	// {
+	// 	strokes.push_back(&R.get<Stroke>(strokeE));
+	// }
+	// auto& brush = R.get<Brush>(strokes[0]->BrushE);
+	//
+	// std::default_random_engine rng;
+	// std::uniform_real dist(-1.0f, 1.0f);
+	// auto& canvas = R.ctx().get<Canvas>();
+	//
+	// brush.Use();
+	// auto start = chrono::high_resolution_clock::now();
+	// for (int i = 0; i < n; ++i)
+	// {
+	// 	glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize() / 2.0f;
+	// 	Viewport.UploadMVP(glm::translate(glm::vec3{randOffset, 0.f}));
+	// 	Viewport.BindMVPBuffer();
+	// 	for (auto* stroke : strokes)
+	// 	{
+	// 		brush.SetUniforms();
+	// 		stroke->SetUniforms();
+	// 		stroke->LineDrawCall();
+	// 	}
+	// }
+	// chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
+	// spdlog::info("{}ms", duration.count());
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-	for (entt::entity strokeE : strokeEs)
+	auto dup = strokeEs;
+	for(int i = 0; i <n; ++i)
 	{
-		strokes.push_back(&R.get<Stroke>(strokeE));
+		std::copy(dup.begin(), dup.end(), std::back_inserter(strokeEs));
 	}
-	auto& brush = R.get<Brush>(strokes[0]->BrushE);
-
-	std::default_random_engine rng;
-	std::uniform_real dist(-1.0f, 1.0f);
-	auto& canvas = R.ctx().get<Canvas>();
-
-	brush.Use();
-	auto start = chrono::high_resolution_clock::now();
-	for (int i = 0; i < n; ++i)
-	{
-		glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize() / 2.0f;
-		Viewport.UploadMVP(glm::translate(glm::vec3{randOffset, 0.f}));
-		Viewport.BindMVPBuffer();
-		for (auto* stroke : strokes)
-		{
-			brush.SetUniforms();
-			stroke->SetUniforms();
-			stroke->LineDrawCall();
-		}
-	}
-	chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
-	spdlog::info("{}ms", duration.count());
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 glm::ivec2 Canvas::GetSizePixel() const

@@ -12,6 +12,8 @@ Stroke::~Stroke()
 {
 	glDeleteBuffers(VertexBuffers.size(), VertexBuffers.data());
 	glDeleteBuffers(1, &VertexArray);
+	VertexBuffers.fill(0);
+	VertexArray = 0;
 }
 
 void Stroke::UpdateBuffers()

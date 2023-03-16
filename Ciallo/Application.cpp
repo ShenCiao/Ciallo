@@ -12,7 +12,6 @@
 #include "StrokeContainer.h"
 #include "Toolbox.h"
 #include "InnerBrush.h"
-#include "Loader.h"
 #include "ArrangementManager.h"
 
 #include <implot.h>
@@ -32,16 +31,16 @@ void Application::Run()
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
-		auto& canvas = R.ctx().get<Canvas>();
-		canvas.DrawUI();
+		ImGui::ShowMetricsWindow();
+		R.ctx().get<Canvas>().DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
 		R.ctx().get<ArrangementManager>().Run();
 		auto& layers = R.ctx().get<TempLayers>();
+		layers.RenderOverlay();
 		layers.RenderDrawing();
 		layers.RenderFill();
 		layers.BlendAll();
-		layers.ClearOverlay();
 		Window->EndFrame();
 	}
 }
@@ -93,6 +92,9 @@ void Application::GenDefaultProject()
 	brushManager.RenderAllPreview();
 
 	R.ctx().emplace<StrokeContainer>();
+	auto& temp = R.ctx().emplace<OverlayContainer>();
+	temp.Circles.push_back(Geom::Polyline{{{0.0f, 0.0f}, {0.14f, 0.15f}}});
+	temp.Circles.push_back(Geom::Polyline{{{0.2f, 0.15f}}});
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<ArrangementManager>();

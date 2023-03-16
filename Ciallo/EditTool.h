@@ -2,12 +2,16 @@
 
 #include "RenderableTexture.h"
 #include "Tool.h"
+#include "CubicBezierBone.h"
 
 class EditTool : public Tool
 {
 	entt::entity SelectedStrokeE = entt::null;
 	void GenSelectionTexture();
 	void RenderSelectionTexture();
+
+	bool BezierCustomizeMode = false; // Shitty design, change it later.
+	CubicBezierBone Bone;
 public:
 	RenderableTexture SelectionTexture;
 

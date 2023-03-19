@@ -1,5 +1,4 @@
 #pragma once
-#include <fmt/format.h>
 
 namespace Geom
 {
@@ -26,6 +25,8 @@ namespace Geom
 		size_t size() const;
 		auto begin() { return Points.begin(); }
 		auto end() { return Points.end(); }
+		auto begin() const { return Points.begin(); }
+		auto end() const { return Points.end(); }
 		void resize(size_t size);
 	};
 }
@@ -47,5 +48,3 @@ struct fmt::formatter<Geom::Polyline> : fmt::formatter<std::string>
 		return fmt::format_to(ctx.out(), "End point: {}", line.Points.back());
 	}
 };
-
-

@@ -22,9 +22,9 @@ public:
 
 	Stroke();
 	Stroke(const Stroke& other) = delete;
-	Stroke(Stroke&& other) = delete;
+	Stroke(Stroke&& other) noexcept;
 	Stroke& operator=(const Stroke& other) = delete;
-	Stroke& operator=(Stroke&& other) noexcept = delete;
+	Stroke& operator=(Stroke&& other) noexcept;
 	~Stroke();
 
 	void UpdateBuffers();
@@ -35,4 +35,7 @@ public:
 	void LineDrawCall();
 	void FillDrawCall();
 	void SetUniforms();
+
+private:
+	void Zeroize();
 };

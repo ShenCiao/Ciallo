@@ -115,12 +115,12 @@ namespace Geom
 	 */
 	float CubicBezier::FindNearestPoint(glm::vec2 p)
 	{
-		auto it = std::max_element(LookUpTable.begin(), LookUpTable.end(),
+		auto it = std::min_element(LookUpTable.begin(), LookUpTable.end(),
 		                           [p](glm::vec2 a, glm::vec2 b)
 		                           {
 			                           return glm::distance(a, p) < glm::distance(b, p);
 		                           });
-		int i = static_cast<int>(std::distance(it, LookUpTable.begin()));
+		int i = static_cast<int>(std::distance(LookUpTable.begin(), it));
 
 		// left to right assumed
 		float lDist, rDist; // distance to segments

@@ -5,6 +5,7 @@ public:
 	std::vector<entt::entity> StrokeEs{};
 };
 
+// Dirtiest thing in this project. It sicks me.
 class OverlayContainer
 {
 public:

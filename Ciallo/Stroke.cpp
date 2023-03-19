@@ -8,12 +8,33 @@ Stroke::Stroke()
 	GenBuffers();
 }
 
+Stroke::Stroke(Stroke&& other) noexcept
+{
+	*this = std::move(other);
+}
+
+Stroke& Stroke::operator=(Stroke&& other) noexcept
+{
+	if (this == &other)
+		return *this;
+	Position = std::move(other.Position);
+	Thickness = other.Thickness;
+	ThicknessOffset = other.ThicknessOffset;
+	Color = other.Color;
+	BrushE = other.BrushE;
+	FillColor = other.FillColor;
+	VertexBuffers = other.VertexBuffers;
+	VertexArray = other.VertexArray;
+
+	other.Zeroize();
+	return *this;
+}
+
 Stroke::~Stroke()
 {
 	glDeleteBuffers(VertexBuffers.size(), VertexBuffers.data());
-	glDeleteBuffers(1, &VertexArray);
-	VertexBuffers.fill(0);
-	VertexArray = 0;
+	glDeleteVertexArrays(1, &VertexArray);
+	Zeroize();
 }
 
 void Stroke::UpdateBuffers()
@@ -120,4 +141,10 @@ void Stroke::SetUniforms()
 {
 	glUniform1f(2, Thickness);
 	glUniform4fv(1, 1, glm::value_ptr(Color));
+}
+
+void Stroke::Zeroize()
+{
+	VertexBuffers.fill(0);
+	VertexArray = 0;
 }

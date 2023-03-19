@@ -19,43 +19,120 @@ EditTool::EditTool()
 
 void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 {
-	SelectionTexture.BindFramebuffer();
-	int x = static_cast<int>(event.MousePosPixel.x);
-	int y = static_cast<int>(event.MousePosPixel.y);
-
-	glm::vec4 clickedColor;
-	glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, &clickedColor);
-	if (clickedColor == glm::vec4(1, 1, 1, 1))
+	if (!BezierDrawingMode)
 	{
-		SelectedStrokeE = entt::null;
-		return;
-	}
+		std::array<float, 4> dists{};
+		for (int i = 0; i < 4; ++i)
+		{
+			dists[i] = glm::distance(event.MousePos, Bone.Curve.ControlPoints[i]);
+		}
+		if (auto it = std::min_element(dists.begin(), dists.end()); *it < 0.001f)
+		{
+			DraggingControlPointIndex = std::distance(dists.begin(), it);
+			return;
+		}
+		else
+		{
+			DraggingControlPointIndex = -1;
+			Bone.Reset();
+		}
+		SelectionTexture.BindFramebuffer();
+		int x = static_cast<int>(event.MousePosPixel.x);
+		int y = static_cast<int>(event.MousePosPixel.y);
 
-	uint32_t index = ColorToIndex(clickedColor);
-	SelectedStrokeE = static_cast<entt::entity>(index);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glm::vec4 clickedColor;
+		glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, &clickedColor);
+		if (clickedColor == glm::vec4(1, 1, 1, 1))
+		{
+			SelectedStrokeE = entt::null;
+			return;
+		}
+
+		uint32_t index = ColorToIndex(clickedColor);
+		SelectedStrokeE = static_cast<entt::entity>(index);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+	else
+	{
+		if (!FirstHandleDone)
+		{
+			Bone.Curve.ControlPoints = {event.MousePos, event.MousePos, event.MousePos, event.MousePos};
+			Bone.UpdateOverlay();
+			DrawingFirstHandle = true;
+		}
+		else
+		{
+			Bone.Curve.ControlPoints[2] = event.MousePos;
+			Bone.Curve.ControlPoints[3] = event.MousePos;
+			DrawingSecondHandle = true;
+			FirstHandleDone = false;
+		}
+	}
 }
 
 void EditTool::OnDragging(Dragging event)
 {
-	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
+	if (!BezierDrawingMode)
 	{
-		auto& stroke = R.get<Stroke>(SelectedStrokeE);
-		for (auto& p : stroke.Position)
+		if(DraggingControlPointIndex != -1)
 		{
-			p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
+			Bone.Curve.ControlPoints[DraggingControlPointIndex] = event.MousePos;
+			Bone.Update();
+		} else
+		if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
+		{
+			auto& stroke = R.get<Stroke>(SelectedStrokeE);
+			for (auto& p : stroke.Position)
+			{
+				p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
+			}
+			stroke.UpdateBuffers();
+			if (!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Arrange))
+				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
+			if (!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Zone))
+				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
 		}
-		stroke.UpdateBuffers();
-		if(!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Arrange))
-			R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
-		if(!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Zone))
-			R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
+	}
+	else
+	{
+		if (DrawingFirstHandle)
+		{
+			Bone.Curve.ControlPoints[1] = event.MousePos;
+			Bone.Update();
+		}
+
+		if (DrawingSecondHandle)
+		{
+			Bone.Curve.ControlPoints[2] = event.MousePos;
+			Bone.Update();
+		}
 	}
 }
 
-void EditTool::OnDragEnd(DragEnd)
+void EditTool::OnDragEnd(DragEnd event)
 {
-	RenderSelectionTexture();
+	if (!BezierDrawingMode)
+	{
+		RenderSelectionTexture();
+	}
+
+	if (BezierDrawingMode && DrawingFirstHandle)
+	{
+		Bone.Curve.ControlPoints[1] = event.MousePos;
+		Bone.Update();
+		DrawingFirstHandle = false;
+		FirstHandleDone = true;
+	}
+
+	if (BezierDrawingMode && DrawingSecondHandle)
+	{
+		Bone.Curve.ControlPoints[2] = event.MousePos;
+		Bone.Update();
+		auto& stroke = R.get<Stroke>(SelectedStrokeE);
+		Bone.Bind(&stroke);
+		DrawingSecondHandle = false;
+		BezierDrawingMode = false;
+	}
 }
 
 void EditTool::Activate()
@@ -71,7 +148,7 @@ void EditTool::DrawProperties()
 		auto& stroke = R.get<Stroke>(SelectedStrokeE);
 		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
 		ImGui::TextUnformatted(fmt::format("number of vertices: {}", stroke.Position.size()).c_str());
-		
+
 		ImGui::CheckboxFlags("Final##0", reinterpret_cast<unsigned*>(&strokeUsage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Final));
 		ImGui::CheckboxFlags("Fill##1", reinterpret_cast<unsigned*>(&strokeUsage),
@@ -84,12 +161,32 @@ void EditTool::DrawProperties()
 			R.ctx().get<BrushManager>().OpenBrushEditor(&stroke.BrushE);
 		ImGui::ColorEdit4("Line", glm::value_ptr(stroke.Color), ImGuiColorEditFlags_InputRGB);
 		ImGui::ColorEdit4("Fill", glm::value_ptr(stroke.FillColor), ImGuiColorEditFlags_InputRGB);
-		ImGui::DragFloat("Thickness", &stroke.Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
-
+		ImGui::DragFloat("Thickness", &stroke.Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f",
+		                 ImGuiSliderFlags_ClampOnInput);
+		if (ImGui::Button("Bezier Edit")) {
+			BezierDrawingMode = true;
+			Bone.Reset();
+		}
 	}
 	else
 	{
 		ImGui::TextWrapped("No stroke is selected, click on your target to select it, drag to move it");
+	}
+}
+
+void EditTool::Deactivate()
+{
+	if (BezierDrawingMode) BezierDrawingMode = false;
+	Bone.Reset();
+}
+
+void EditTool::OnHovering(Hovering event)
+{
+	if (BezierDrawingMode && FirstHandleDone)
+	{
+		Bone.Curve.ControlPoints[2] = event.MousePos;
+		Bone.Curve.ControlPoints[3] = event.MousePos;
+		Bone.Update();
 	}
 }
 

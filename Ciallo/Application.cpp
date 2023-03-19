@@ -41,6 +41,7 @@ void Application::Run()
 		layers.RenderDrawing();
 		layers.RenderFill();
 		layers.BlendAll();
+		layers.ClearOverlay();
 		Window->EndFrame();
 	}
 }
@@ -92,9 +93,7 @@ void Application::GenDefaultProject()
 	brushManager.RenderAllPreview();
 
 	R.ctx().emplace<StrokeContainer>();
-	auto& temp = R.ctx().emplace<OverlayContainer>();
-	temp.Circles.push_back(Geom::Polyline{{{0.0f, 0.0f}, {0.14f, 0.15f}}});
-	temp.Circles.push_back(Geom::Polyline{{{0.2f, 0.15f}}});
+	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<ArrangementManager>();

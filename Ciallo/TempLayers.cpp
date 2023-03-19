@@ -17,6 +17,7 @@ TempLayers::TempLayers(glm::ivec2 size)
 	Overlay = RenderableTexture{size.x, size.y};
 	Drawing = RenderableTexture{size.x, size.y};
 	Fill = RenderableTexture{size.x, size.y};
+	GenCircleStroke();
 }
 
 void TempLayers::RenderOverlay()
@@ -26,41 +27,41 @@ void TempLayers::RenderOverlay()
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
 	Overlay.BindFramebuffer();
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
 
 	auto& viewport = R.ctx().get<Canvas>().Viewport;
 	viewport.UploadMVP();
 	viewport.BindMVPBuffer();
 
+	Lines.clear();
+	auto& ls = R.ctx().get<OverlayContainer>().Lines;
+	for (auto& l : ls)
+	{
+		if (l.size() == 0) continue;
+		Stroke s{};
+		s.Position = l;
+		s.Thickness = 0.0003f;
+		s.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
+		s.UpdateBuffers();
+		Lines.push_back(std::move(s));
+	}
+
 	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
 	brush.Use();
 
-	auto& s = TempStroke;
-	auto& Circles = R.ctx().get<OverlayContainer>().Circles;
-	const int nSeg = 32;
-	float r = 0.01f;
-	std::vector<glm::vec2> line(nSeg + 1);
-	for (int i = 0; i < nSeg; ++i)
+	for (auto& line : Lines)
 	{
-		float theta = static_cast<float>(i) / nSeg * 2 * glm::pi<float>();
-		glm::vec2 p = {r * glm::sin(theta), r * glm::cos(theta)};
-		line[i] = p;
+		line.SetUniforms();
+		line.LineDrawCall();
 	}
-	line[nSeg] = line[0];
-	s.Position = line;
-	s.Thickness = 0.001f;
-	s.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
-	s.UpdateBuffers();
 
-	brush.Use();
-	for (auto& c : Circles)
+	auto& circlePos = R.ctx().get<OverlayContainer>().Circles;
+	for (auto& c : circlePos)
 	{
 		for (glm::vec2 pos : c)
 		{
 			viewport.UploadMVP(glm::translate(glm::vec3(pos.x, pos.y, 0.0f)));
-			s.SetUniforms();
-			s.LineDrawCall();
+			Circle.SetUniforms();
+			Circle.LineDrawCall();
 		}
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -134,7 +135,6 @@ void TempLayers::RenderFill()
 		}
 	}
 
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -190,4 +190,22 @@ void TempLayers::ClearOverlay()
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void TempLayers::GenCircleStroke()
+{
+	const int nSeg = 32;
+	float r = 0.001f;
+	std::vector<glm::vec2> line(nSeg + 1);
+	for (int i = 0; i < nSeg; ++i)
+	{
+		float theta = static_cast<float>(i) / nSeg * 2 * glm::pi<float>();
+		glm::vec2 p = {r * glm::sin(theta), r * glm::cos(theta)};
+		line[i] = p;
+	}
+	line[nSeg] = line[0];
+	Circle.Position = line;
+	Circle.Thickness = 0.0003f;
+	Circle.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
+	Circle.UpdateBuffers();
 }

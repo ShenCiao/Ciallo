@@ -29,7 +29,6 @@ void ArrangementManager::Run()
 		spdlog::info("Arrangement Time: {}ms", duration.count());
 		LogSpeed = false;
 	}
-		
 
 	UpdateQueue.clear();
 

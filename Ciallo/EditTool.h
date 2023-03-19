@@ -6,11 +6,12 @@
 
 class EditTool : public Tool
 {
-	entt::entity SelectedStrokeE = entt::null;
-	void GenSelectionTexture();
-	void RenderSelectionTexture();
+	bool BezierDrawingMode = false; // Shitty design, suppose to be a state mechine
+	bool DrawingFirstHandle = false;
+	bool FirstHandleDone = false;
+	bool DrawingSecondHandle = false;
 
-	bool BezierCustomizeMode = false; // Shitty design, change it later.
+	int DraggingControlPointIndex = -1;
 	CubicBezierBone Bone;
 public:
 	RenderableTexture SelectionTexture;
@@ -22,9 +23,15 @@ public:
 	void OnDragEnd(DragEnd) override;
 	void Activate() override;
 	void DrawProperties() override;
+	void Deactivate() override;
+	void OnHovering(Hovering) override;
 
 	std::string GetName() override;
 
+private:
+	entt::entity SelectedStrokeE = entt::null;
+	void GenSelectionTexture();
+	void RenderSelectionTexture();
 	glm::vec4 IndexToColor(uint32_t index) const;
 	uint32_t ColorToIndex(glm::vec4 color) const;
 };

@@ -25,7 +25,8 @@ FillTool::FillTool()
 	auto& brushM = R.ctx().get<BrushManager>();
 	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone;
-	Painter.Thickness = 0.0005f;
+	Painter.Thickness = 0.0008f;
+	Painter.Color = glm::vec4(18, 18, 129, 255) / 255.0f;
 }
 
 std::string FillTool::GetName()
@@ -76,10 +77,12 @@ void FillTool::OnHovering(Hovering event)
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
+
+	auto& arm = R.ctx().get<ArrangementManager>();
 	// In vis mode
 	if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
 	{
-		auto polygon = R.ctx().get<ArrangementManager>().PointQueryVisibility(event.MousePos);
+		auto polygon = arm.PointQueryVisibility(event.MousePos);
 
 		glUseProgram(RenderingSystem::Polygon->Program);
 		glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor)); // color
@@ -98,7 +101,7 @@ void FillTool::OnHovering(Hovering event)
 	// In fill preview mode
 	else
 	{
-		auto polygonWithHoles = R.ctx().get<ArrangementManager>().PointQuery(event.MousePos);
+		auto polygonWithHoles = arm.PointQuery(event.MousePos);
 		if (!polygonWithHoles.empty())
 		{
 			glUseProgram(RenderingSystem::Polygon->Program);

@@ -14,13 +14,17 @@ public:
 	bool FinalOnly = false;
 	bool HideFill = false;
 
-	Stroke TempStroke;
-
 	TempLayers(glm::ivec2 size);
 	void RenderOverlay();
 	void RenderDrawing();
 	void RenderFill();
 	void BlendAll();
 	void ClearOverlay();
+private:
+	// Used by overlay, shitty design
+	Stroke Circle;
+	std::vector<Stroke> Lines;
+
+	void GenCircleStroke();
 };
 

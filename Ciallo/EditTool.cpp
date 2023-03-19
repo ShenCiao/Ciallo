@@ -50,6 +50,8 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 
 		uint32_t index = ColorToIndex(clickedColor);
 		SelectedStrokeE = static_cast<entt::entity>(index);
+		Bone.Fit(SelectedStrokeE);
+		Bone.Bind(SelectedStrokeE);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	else
@@ -87,9 +89,10 @@ void EditTool::OnDragging(Dragging event)
 				p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
 			}
 			stroke.UpdateBuffers();
-			if (!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Arrange))
+			auto usage = R.get<StrokeUsageFlags>(SelectedStrokeE);
+			if (!!(usage & StrokeUsageFlags::Arrange))
 				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
-			if (!!(R.get<StrokeUsageFlags>(SelectedStrokeE) & StrokeUsageFlags::Zone))
+			if (!!(usage & StrokeUsageFlags::Zone))
 				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
 		}
 	}
@@ -128,8 +131,7 @@ void EditTool::OnDragEnd(DragEnd event)
 	{
 		Bone.Curve.ControlPoints[2] = event.MousePos;
 		Bone.Update();
-		auto& stroke = R.get<Stroke>(SelectedStrokeE);
-		Bone.Bind(&stroke);
+		Bone.Bind(SelectedStrokeE);
 		DrawingSecondHandle = false;
 		BezierDrawingMode = false;
 	}

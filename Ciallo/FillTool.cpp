@@ -25,6 +25,7 @@ FillTool::FillTool()
 	auto& brushM = R.ctx().get<BrushManager>();
 	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone;
+	Painter.FillColor = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	Painter.Thickness = 0.0008f;
 	Painter.Color = glm::vec4(18, 18, 129, 255) / 255.0f;
 }

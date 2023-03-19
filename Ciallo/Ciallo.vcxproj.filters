@@ -16,6 +16,9 @@
     <Filter Include="Resource Files\shaders">
       <UniqueIdentifier>{54c6d3c7-0dd0-4cae-8337-90ed6c905a23}</UniqueIdentifier>
     </Filter>
+    <Filter Include="dlib">
+      <UniqueIdentifier>{455fcf12-b322-4aa9-91f1-4e222a6b8833}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ciallo.cpp">
@@ -143,6 +146,9 @@
     </ClCompile>
     <ClCompile Include="CubicBezierBone.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\dlib\dlib\all\source.cpp">
+      <Filter>dlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

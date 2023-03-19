@@ -1,7 +1,12 @@
 #include "pch.hpp"
 #include "CubicBezierBone.h"
 
+#include "Stroke.h"
 #include "StrokeContainer.h"
+#include "Painter.h"
+#include "ArrangementManager.h"
+
+#include <dlib/optimization.h>
 
 void CubicBezierBone::UpdateOverlay()
 {
@@ -26,17 +31,24 @@ void CubicBezierBone::Update()
 {
 	Curve.EvalLUT();
 	UpdateOverlay();
-	if (BoundCurve)
+	if (BoundStrokeE != entt::null)
 	{
+		auto& stroke = R.get<Stroke>(BoundStrokeE);
 		for (int i = 0; i < TBound.size(); ++i)
 		{
 			float t = TBound[i];
 			glm::vec2 prevPos = PrevCurve(t);
 			glm::vec2 pos = Curve(t);
 			glm::vec2 delta = pos - prevPos;
-			BoundCurve->Position[i] += delta;
+			stroke.Position[i] += delta;
 		}
-		BoundCurve->UpdateBuffers();
+
+		stroke.UpdateBuffers();
+		auto& usage = R.get<StrokeUsageFlags>(BoundStrokeE);
+		if (!!(usage & StrokeUsageFlags::Arrange))
+			R.ctx().get<ArrangementManager>().AddOrUpdate(BoundStrokeE);
+		if (!!(usage & StrokeUsageFlags::Zone))
+			R.ctx().get<ArrangementManager>().AddOrUpdateQuery(BoundStrokeE);
 	}
 	PrevCurve = Curve;
 }
@@ -45,7 +57,7 @@ void CubicBezierBone::Reset()
 {
 	PrevCurve = Curve = Geom::CubicBezier{};
 	TBound.clear();
-	BoundCurve = nullptr;
+	BoundStrokeE = entt::null;
 
 	auto& lines = R.ctx().get<OverlayContainer>().Lines;
 	auto& circles = R.ctx().get<OverlayContainer>().Circles;
@@ -53,13 +65,52 @@ void CubicBezierBone::Reset()
 	circles.clear();
 }
 
-void CubicBezierBone::Bind(Stroke* s)
+void CubicBezierBone::Bind(entt::entity e)
 {
-	BoundCurve = s;
+	BoundStrokeE = e;
 	TBound.clear();
-	for (glm::vec2 p : s->Position)
+	auto& s = R.get<Stroke>(BoundStrokeE);
+	for (glm::vec2 p : s.Position)
 	{
 		float t = Curve.FindNearestPoint(p);
 		TBound.push_back(t);
 	}
+}
+
+void CubicBezierBone::Fit(entt::entity e)
+{
+	auto& stroke = R.get<Stroke>(e);
+	glm::vec2 p0 = stroke.Position[0];
+	glm::vec2 p3 = *std::prev(stroke.Position.end());
+	dlib::matrix<double, 0, 1> params(4);
+	params = {p0.x, p0.y, p3.x, p3.y};
+
+	auto rateCurve = [&](const dlib::matrix<double, 0, 1>& params) -> double
+	{
+		glm::vec2 p1 = {params(0, 0), params(1, 0)};
+		glm::vec2 p2 = {params(2, 0), params(3, 0)};
+		Geom::CubicBezier curve{{p0, p1, p2, p3}};
+		curve.EvalLUT();
+		double totDistance = 0.0;
+		for (glm::vec2 linePoint : stroke.Position)
+		{
+			float t = curve.FindNearestPoint(linePoint);
+			totDistance += glm::distance(linePoint, curve(t));
+		}
+		// float handleDiff = glm::abs(glm::distance(p0, p1) - glm::distance(p2, p3));
+
+		return totDistance;
+	};
+
+	dlib::find_min_using_approximate_derivatives(
+		dlib::cg_search_strategy(),
+		dlib::objective_delta_stop_strategy(1).be_verbose(),
+		rateCurve,
+		params,
+		-1);
+	Curve.ControlPoints[0] = p0;
+	Curve.ControlPoints[1] = {params(0, 0), params(1, 0)};
+	Curve.ControlPoints[2] = {params(2, 0), params(3, 0)};
+	Curve.ControlPoints[3] = p3;
+	Update();
 }

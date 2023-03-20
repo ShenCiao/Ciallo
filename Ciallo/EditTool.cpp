@@ -50,8 +50,11 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 
 		uint32_t index = ColorToIndex(clickedColor);
 		SelectedStrokeE = static_cast<entt::entity>(index);
-		Bone.Fit(SelectedStrokeE);
-		Bone.Bind(SelectedStrokeE);
+		if (AutoBezierEdit)
+		{
+			Bone.Fit(SelectedStrokeE);
+			Bone.Bind(SelectedStrokeE);
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 	else
@@ -76,12 +79,12 @@ void EditTool::OnDragging(Dragging event)
 {
 	if (!BezierDrawingMode)
 	{
-		if(DraggingControlPointIndex != -1)
+		if (DraggingControlPointIndex != -1)
 		{
 			Bone.Curve.ControlPoints[DraggingControlPointIndex] = event.MousePos;
 			Bone.Update();
-		} else
-		if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
+		}
+		else if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
 		{
 			auto& stroke = R.get<Stroke>(SelectedStrokeE);
 			for (auto& p : stroke.Position)
@@ -95,9 +98,9 @@ void EditTool::OnDragging(Dragging event)
 			if (!!(usage & StrokeUsageFlags::Zone))
 				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
 
-			if(Bone.BoundStrokeE == SelectedStrokeE)
+			if (Bone.BoundStrokeE == SelectedStrokeE)
 			{
-				for(int i = 0; i < 4; ++i)
+				for (int i = 0; i < 4; ++i)
 				{
 					Bone.Curve.ControlPoints[i] += event.DeltaMousePos;
 				}
@@ -156,8 +159,14 @@ void EditTool::Activate()
 
 void EditTool::DrawProperties()
 {
+	ImGui::Checkbox("Auto Bezier Edit", &AutoBezierEdit);
 	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
 	{
+		if (ImGui::Button("Bezier Edit"))
+		{
+			BezierDrawingMode = true;
+			Bone.Reset();
+		}
 		auto& stroke = R.get<Stroke>(SelectedStrokeE);
 		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
 		ImGui::TextUnformatted(fmt::format("number of vertices: {}", stroke.Position.size()).c_str());
@@ -176,10 +185,6 @@ void EditTool::DrawProperties()
 		ImGui::ColorEdit4("Fill", glm::value_ptr(stroke.FillColor), ImGuiColorEditFlags_InputRGB);
 		ImGui::DragFloat("Thickness", &stroke.Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f",
 		                 ImGuiSliderFlags_ClampOnInput);
-		if (ImGui::Button("Bezier Edit")) {
-			BezierDrawingMode = true;
-			Bone.Reset();
-		}
 	}
 	else
 	{

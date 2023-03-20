@@ -115,7 +115,7 @@ void CubicBezierBone::Fit(entt::entity e)
 
 	dlib::find_min_using_approximate_derivatives(
 		dlib::bfgs_search_strategy(),
-		dlib::objective_delta_stop_strategy().be_verbose(),
+		dlib::objective_delta_stop_strategy(),
 		rateCurve,
 		params,
 		-1);

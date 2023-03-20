@@ -6,6 +6,8 @@
 
 class EditTool : public Tool
 {
+	bool AutoBezierEdit = true;
+
 	bool BezierDrawingMode = false; // Shitty design, suppose to be a state mechine, rework for further change.
 	bool DrawingFirstHandle = false;
 	bool FirstHandleDone = false;

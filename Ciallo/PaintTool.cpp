@@ -8,6 +8,7 @@ PaintTool::PaintTool()
 	auto& brushM = R.ctx().get<BrushManager>();
 	Painter.BrushE = brushM.Brushes[2];
 	Painter.Usage = StrokeUsageFlags::Arrange | StrokeUsageFlags::Final;
+	Painter.SampleInterval =  chrono::duration<float>(0.005f) ;
 }
 
 void PaintTool::OnClickOrDragStart(ClickOrDragStart event)

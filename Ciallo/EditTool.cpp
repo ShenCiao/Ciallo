@@ -42,7 +42,7 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 
 		glm::vec4 clickedColor;
 		glReadPixels(x, y, 1, 1, GL_RGBA, GL_FLOAT, &clickedColor);
-		if (clickedColor == glm::vec4(1, 1, 1, 1))
+		if (clickedColor == glm::vec4(0, 0, 0, 0))
 		{
 			SelectedStrokeE = entt::null;
 			return;
@@ -86,7 +86,7 @@ void EditTool::OnDragging(Dragging event)
 			auto& stroke = R.get<Stroke>(SelectedStrokeE);
 			for (auto& p : stroke.Position)
 			{
-				p = {p.x + event.DeltaMousePos.x, p.y + event.DeltaMousePos.y};
+				p += event.DeltaMousePos;
 			}
 			stroke.UpdateBuffers();
 			auto usage = R.get<StrokeUsageFlags>(SelectedStrokeE);
@@ -94,6 +94,17 @@ void EditTool::OnDragging(Dragging event)
 				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
 			if (!!(usage & StrokeUsageFlags::Zone))
 				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
+
+			if(Bone.BoundStrokeE == SelectedStrokeE)
+			{
+				for(int i = 0; i < 4; ++i)
+				{
+					Bone.Curve.ControlPoints[i] += event.DeltaMousePos;
+				}
+				Bone.Curve.EvalLUT();
+				Bone.UpdateOverlay();
+				Bone.PrevCurve = Bone.Curve;
+			}
 		}
 	}
 	else

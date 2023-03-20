@@ -27,10 +27,8 @@ void CubicBezierBone::UpdateOverlay()
 	});
 }
 
-void CubicBezierBone::Update()
+void CubicBezierBone::UpdateBoundStroke()
 {
-	Curve.EvalLUT();
-	UpdateOverlay();
 	if (BoundStrokeE != entt::null)
 	{
 		auto& stroke = R.get<Stroke>(BoundStrokeE);
@@ -50,6 +48,13 @@ void CubicBezierBone::Update()
 		if (!!(usage & StrokeUsageFlags::Zone))
 			R.ctx().get<ArrangementManager>().AddOrUpdateQuery(BoundStrokeE);
 	}
+}
+
+void CubicBezierBone::Update()
+{
+	Curve.EvalLUT();
+	UpdateOverlay();
+	UpdateBoundStroke();
 	PrevCurve = Curve;
 }
 
@@ -82,6 +87,8 @@ void CubicBezierBone::Fit(entt::entity e)
 	auto& stroke = R.get<Stroke>(e);
 	glm::vec2 p0 = stroke.Position[0];
 	glm::vec2 p3 = *std::prev(stroke.Position.end());
+	float length = stroke.Position.Length();
+	float numPoints = stroke.Position.size();
 	dlib::matrix<double, 0, 1> params(4);
 	params = {p0.x, p0.y, p3.x, p3.y};
 
@@ -97,14 +104,18 @@ void CubicBezierBone::Fit(entt::entity e)
 			float t = curve.FindNearestPoint(linePoint);
 			totDistance += glm::distance(linePoint, curve(t));
 		}
-		// float handleDiff = glm::abs(glm::distance(p0, p1) - glm::distance(p2, p3));
+		double handleDiff = glm::abs(glm::distance(p0, p1) - glm::distance(p2, p3));
+		// double handleLengthPenalty = 0.2 * (glm::distance(p0, p1) + glm::distance(p2, p3)); // cg strategy
+		double handleLengthPenalty = 
+			glm::distance(p0, p1)/length + 
+			glm::distance(p2, p3)/length;
 
-		return totDistance;
+		return totDistance * 50.0/numPoints + 0.1*handleLengthPenalty + 0.5*handleDiff;
 	};
 
 	dlib::find_min_using_approximate_derivatives(
-		dlib::cg_search_strategy(),
-		dlib::objective_delta_stop_strategy(1).be_verbose(),
+		dlib::bfgs_search_strategy(),
+		dlib::objective_delta_stop_strategy().be_verbose(),
 		rateCurve,
 		params,
 		-1);

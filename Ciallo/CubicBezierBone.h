@@ -3,7 +3,7 @@
 #include "CubicBezier.h"
 
 
-// similar to skleton systems in 3D and 2D 
+// similar to skleton systems in 3D or 2D, the whole system is broken, definately need to reconstruct for further development
 class CubicBezierBone
 {
 public:
@@ -13,6 +13,7 @@ public:
 	entt::entity BoundStrokeE = entt::null;
 
 	void UpdateOverlay();
+	void UpdateBoundStroke();
 	void Update();
 	void Reset();
 	void Bind(entt::entity e);

@@ -83,5 +83,16 @@ namespace Geom
 	{
 		Points.resize(size);
 	}
+
+	float Polyline::Length() const
+	{
+		float result = 0;
+		for(int i = 0; i < Points.size() - 1; ++i)
+		{
+			float l = glm::distance(Points[i+1], Points[i]);
+			result += l;
+		}
+		return result;
+	}
 }
 

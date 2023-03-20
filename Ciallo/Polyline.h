@@ -28,6 +28,7 @@ namespace Geom
 		auto begin() const { return Points.begin(); }
 		auto end() const { return Points.end(); }
 		void resize(size_t size);
+		float Length() const;
 	};
 }
 

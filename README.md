@@ -36,21 +36,21 @@ The figure above shows the monkey suzanne rendered with the pencil brush. It has
 
 I rendered the monkey 100 times on a 1684x1191 framebuffer (A4 paper in 144 dpi) on NVIDIA GeForce RTX 3060 Laptop GPU. It takes 0.67ms in total.
 
-### ~~Curve binding~~
+### Curve binding
 
-~~Polylines are hard to edit. So Ciallo allows users to "bind" a polyline upon a bezier curve. It'll act like this:~~
+Polylines are hard to edit. So Ciallo allows users to "bind" a polyline upon a bezier curve. Inspired by Blender Grease Pencil's curve editing system and _StrokeStrip: Joint Parameterization and Fitting of Stroke Clusters_
 
-<figure>
-    <p> <img src="./articles/strokeManipulation.gif"/></p>
-</figure>
+![binding](./articles/binding_demo.gif)
 
+## Trinity!
 
+![trinity](./articles/trinity.gif)
 
 ## About the Future
 
 I used to think that I could make a program that could produce content even though naïve. But I highly underestimate ~~my laziness~~ the difficulty of programming layers and animation systems. However, as a research project, Ciallo completes its mission nicely.
 
-Now I need a job. Contact me if you are interested in developing a new paint program.
+Now I need a job. Contact me if you are interested in upgrading vector related functionality.
 
 ## How to Compile
 
@@ -71,3 +71,4 @@ Now I need a job. Contact me if you are interested in developing a new paint pro
 - Geometry and algebra
   - CGAL
   - GLM
+  - dlib - For curve fitting

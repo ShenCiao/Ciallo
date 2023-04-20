@@ -11,7 +11,7 @@ layout(location = 1) out flat vec2 p0;
 layout(location = 2) out flat vec2 p1;
 layout(location = 3) out vec2 p;
 layout(location = 4) out float halfThickness;
-layout(location = 5) out flat float summedLength;
+layout(location = 5) out flat vec2 summedLength;
 layout(location = 6) out flat float hthickness[2];
 
 layout(std140, binding=0) uniform _MVP{ mat4 MVP; };
@@ -30,7 +30,8 @@ void main(){
     p = p0 + n*halfThickness - nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength = inSummedLength[0];
+    summedLength.x = inSummedLength[0];
+    summedLength.y = inSummedLength[1];
     hthickness[0] = uniThickness+inHalfThicknessOffset[0];
     hthickness[1] = uniThickness+inHalfThicknessOffset[1];
     EmitVertex();
@@ -42,7 +43,8 @@ void main(){
     p = p0 - n*halfThickness - nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength = inSummedLength[0];
+    summedLength.x = inSummedLength[0];
+    summedLength.y = inSummedLength[1];
     hthickness[0] = uniThickness+inHalfThicknessOffset[0];
     hthickness[1] = uniThickness+inHalfThicknessOffset[1];
     EmitVertex();
@@ -54,7 +56,8 @@ void main(){
     p = p1 + n*halfThickness + nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength = inSummedLength[0];
+    summedLength.x = inSummedLength[0];
+    summedLength.y = inSummedLength[1];
     hthickness[0] = uniThickness+inHalfThicknessOffset[0];
     hthickness[1] = uniThickness+inHalfThicknessOffset[1];
     EmitVertex();
@@ -66,7 +69,8 @@ void main(){
     p = p1 - n*halfThickness + nv*halfThickness;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
-    summedLength = inSummedLength[0];
+    summedLength.x = inSummedLength[0];
+    summedLength.y = inSummedLength[1];
     hthickness[0] = uniThickness+inHalfThicknessOffset[0];
     hthickness[1] = uniThickness+inHalfThicknessOffset[1];
     EmitVertex();

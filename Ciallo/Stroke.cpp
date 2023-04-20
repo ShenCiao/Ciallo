@@ -89,7 +89,9 @@ void Stroke::UpdateDistanceBuffer()
 	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 	glUseProgram(RenderingSystem::PrefixSum->Program);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[2]);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, VertexBuffers[2]);
+	glUniform1f(2, Thickness);
 	glDispatchCompute(1, 1, 1);
 }
 

@@ -5,8 +5,8 @@ layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
 layout(location = 4) in float halfThickness;
-layout(location = 5) in flat float summedLength;
-layout(location = 6) in flat float hthickness[2]; // only being used by perfect vanilla
+layout(location = 5) in flat vec2 summedLength;
+layout(location = 6) in flat float hthickness[2]; // used by transparent vanilla and stamp
 
 layout(location = 0) out vec4 outColor;
 
@@ -71,8 +71,43 @@ float fbm (in vec2 st) {
 }
 // ---------------- Noise end ------------------
 
+float x2n(float x, float r, float t1, float t2, float L){
+    // I screw the code up.
+    const float tolerance = 1e-5;
+    if(t1 <= 0 || t1/t2 < tolerance){
+        t1 = tolerance*t2;
+    }
+    else if(t2 <= 0 || t2/t1 < tolerance){
+        t2 = tolerance*t1;
+    }
+    t1 = 2.0*t1; t2 = 2.0*t2; 
+    if(t1 == t2){
+        return x/(r*t1);
+    }
+    else{
+        
+        return -L / r / (t1 - t2) * log(1.0 - (1.0 - t2/t1)/L * x);
+    }
+}
+
+float n2x(float n, float r, float t1, float t2, float L){
+    const float tolerance = 1e-5;
+    if(t1 <= 0 || t1/t2 < tolerance){
+        t1 = tolerance*t2;
+    }
+    else if(t2 <= 0 || t2/t1 < tolerance){
+        t2 = tolerance*t1;
+    }
+    t1 = 2.0*t1; t2 = 2.0*t2;
+    if(t1 == t2){
+        return n * r * t1;
+    }
+    else{
+        return L * (1.0-exp(-(t1-t2)*n*r/L)) / (1.0-t2/t1);
+    }
+}
+
 void main() {
-    
     vec2 lHat = normalize(p1 - p0);
     vec2 hHat = vec2(-lHat.y, lHat.x);
     float len = length(p1-p0);
@@ -116,44 +151,34 @@ void main() {
 #endif
 
 #ifdef STAMP
-    float stampInterval = stampIntervalRatio * uniThickness;
-
-    // first stamp and its index can be reached by this pixel.
-    float stampStarting, stampStartingIndex;
     float frontEdge = pLH.x-halfThickness;
-    if(frontEdge <= 0){
-        stampStarting = mod(stampInterval - mod(summedLength, stampInterval), stampInterval); // mod twice for getting zero value
-        stampStartingIndex = ceil(summedLength/stampInterval);
+    float summedIndex = summedLength[0]/stampIntervalRatio;
+    float startIndex, endIndex;
+    if (frontEdge <= 0){
+        startIndex = ceil(summedIndex) - summedIndex;
     }
     else{
-        stampStarting = mod(stampInterval - mod(summedLength+frontEdge, stampInterval), stampInterval) + frontEdge;
-        stampStartingIndex = ceil((summedLength+frontEdge)/stampInterval);
+        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, hthickness[0], hthickness[1], len)) - summedIndex;
     }
-    float backEdge = pLH.x+halfThickness;
-    float stampEnding = (backEdge < len) ? backEdge:len;
-    if(stampStarting > stampEnding) discard; // There are no stamps in this rect.
+    endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+    if(startIndex > endIndex) discard;
 
-    float currStamp = stampStarting, currStampIndex = stampStartingIndex;
-    float A = 0;
-    int san_i = 0, MAX_i = 32; // sanity check to avoid infinite loop
-    do{
-        san_i += 1;
-        if(san_i > MAX_i) break;
-        // Sample on stamp and manually blend alpha
-        float angle = rotationRand*radians(360*fract(sin(currStampIndex)*1.0));
+    int MAX_i = 32; float currIndex = startIndex;
+    float A = 0.0;
+    for(int i = 0; i < MAX_i; i++){
+        float currStamp = n2x(currIndex, stampIntervalRatio, hthickness[0], hthickness[1], len);
         vec2 vStamp = pLH - vec2(currStamp, 0);
+        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
         vStamp *= rotate(angle);
         vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
-
         vec4 color = texture(stamp, uv);
         float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0);
         A = A * (1.0-alpha) + alpha;
-        currStamp += stampInterval; 
-        currStampIndex += 1.0;
-    }while(currStamp < stampEnding);
-    if(A < 1e-4){
-        discard;
+
+        currIndex += 1.0;
+        if(currIndex > endIndex) break;
     }
+    if(A < 1e-4) discard;
     outColor = vec4(fragColor.rgb, A*fragColor.a);
     return;
 #endif

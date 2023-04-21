@@ -18,7 +18,7 @@ void StampBrushData::DrawProperties()
 	ImGui::Image(reinterpret_cast<ImTextureID>(TextureManager::Textures[0]), {128, 128 } );
 	ImGui::SetCursorPos(pos);
 	ImGui::Image(reinterpret_cast<ImTextureID>(StampTexture), {128, 128 });
-	ImGui::DragFloat("Interval", &StampIntervalRatio, 0.005f, 0.01f, 3.0f, "%.2f");
+	ImGui::DragFloat("Interval", &StampIntervalRatio, 0.005f, 0.005f, 3.0f, "%.2f");
 	ImGui::DragFloat("Noise factor", &NoiseFactor, 0.01f, 0.0f, 3.0f, "%.2f");
 	ImGui::DragFloat("Rotation randomness", &RotationRand, 0.01f, 0.0f, 2.0f, "%.2f");
 }

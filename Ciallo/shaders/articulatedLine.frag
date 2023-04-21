@@ -151,7 +151,7 @@ void main() {
 #endif
 
 #ifdef STAMP
-    float frontEdge = pLH.x-halfThickness;
+    float frontEdge = pLH.x-halfThickness, backEdge = pLH.x+halfThickness;
     float summedIndex = summedLength[0]/stampIntervalRatio;
     float startIndex, endIndex;
     if (frontEdge <= 0){
@@ -161,6 +161,8 @@ void main() {
         startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, hthickness[0], hthickness[1], len)) - summedIndex;
     }
     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+    float backIndex = x2n(backEdge, stampIntervalRatio, hthickness[0], hthickness[1], len);
+    endIndex = endIndex < backIndex ? endIndex : backIndex;
     if(startIndex > endIndex) discard;
 
     int MAX_i = 32; float currIndex = startIndex;

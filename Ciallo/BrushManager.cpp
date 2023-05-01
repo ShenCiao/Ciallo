@@ -60,9 +60,12 @@ void BrushManager::RenderPreview(entt::entity brushE)
 {
 	auto gr = glm::golden_ratio<float>();
 	const int height = 256, width = static_cast<int>(height * 2 * gr);
-	PreviewStroke.BrushE = brushE;
 
 	auto& brush = R.get<Brush>(brushE);
+	if(brush.Stamp)
+	{
+		PreviewStroke.UpdateDistanceBuffer(brush.Stamp->StampMode);
+	}
 	brush.PreviewTexture = RenderableTexture(width, height, 0);
 	brush.PreviewTexture.BindFramebuffer();
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);

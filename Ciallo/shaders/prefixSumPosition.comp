@@ -29,7 +29,7 @@ void main(){
     float L = distance(p0, p1);
 
     if(stampMode == EquiDistance){
-        segmentLengths[id] = L;
+        segmentLengths[id] = L/uniThickness/2.0;
     }
     else if (stampMode == RatioDistance){
         float t2 = 2.0 * (uniThickness + thicknessOffset[id]);

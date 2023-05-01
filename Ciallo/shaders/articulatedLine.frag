@@ -19,6 +19,9 @@ layout(location = 3, binding = 0) uniform sampler2D stamp;
 layout(location = 4) uniform float stampIntervalRatio;
 layout(location = 5) uniform float noiseFactor;
 layout(location = 6) uniform float rotationRand;
+layout(location = 7) uniform int stampMode;
+const int EquiDistance = 0;
+const int RatioDistance = 1;
 #endif
 
 #ifdef AIRBRUSH
@@ -71,41 +74,53 @@ float fbm (in vec2 st) {
 }
 // ---------------- Noise end ------------------
 
+#ifdef STAMP
 float x2n(float x, float r, float t1, float t2, float L){
     // I screw the code up.
-    const float tolerance = 1e-5;
-    if(t1 <= 0 || t1/t2 < tolerance){
-        t1 = tolerance*t2;
-    }
-    else if(t2 <= 0 || t2/t1 < tolerance){
-        t2 = tolerance*t1;
-    }
-    t1 = 2.0*t1; t2 = 2.0*t2; 
-    if(t1 == t2){
-        return x/(r*t1);
+    if(stampMode == RatioDistance){
+        const float tolerance = 1e-5;
+        if(t1 <= 0 || t1/t2 < tolerance){
+            t1 = tolerance*t2;
+        }
+        else if(t2 <= 0 || t2/t1 < tolerance){
+            t2 = tolerance*t1;
+        }
+        t1 = 2.0*t1; t2 = 2.0*t2; 
+        if(t1 == t2){
+            return x/(r*t1);
+        }
+        else{
+            return -L / r / (t1 - t2) * log(1.0 - (1.0 - t2/t1)/L * x);
+        }
     }
     else{
-        
-        return -L / r / (t1 - t2) * log(1.0 - (1.0 - t2/t1)/L * x);
+        return x / (uniThickness * 2.0 * r);
     }
+    
 }
 
 float n2x(float n, float r, float t1, float t2, float L){
-    const float tolerance = 1e-5;
-    if(t1 <= 0 || t1/t2 < tolerance){
-        t1 = tolerance*t2;
-    }
-    else if(t2 <= 0 || t2/t1 < tolerance){
-        t2 = tolerance*t1;
-    }
-    t1 = 2.0*t1; t2 = 2.0*t2;
-    if(t1 == t2){
-        return n * r * t1;
+    if(stampMode == RatioDistance){
+        const float tolerance = 1e-5;
+        if(t1 <= 0 || t1/t2 < tolerance){
+            t1 = tolerance*t2;
+        }
+        else if(t2 <= 0 || t2/t1 < tolerance){
+            t2 = tolerance*t1;
+        }
+        t1 = 2.0*t1; t2 = 2.0*t2;
+        if(t1 == t2){
+            return n * r * t1;
+        }
+        else{
+            return L * (1.0-exp(-(t1-t2)*n*r/L)) / (1.0-t2/t1);
+        }
     }
     else{
-        return L * (1.0-exp(-(t1-t2)*n*r/L)) / (1.0-t2/t1);
+        return n * uniThickness * 2.0 * r;
     }
 }
+#endif
 
 void main() {
     vec2 lHat = normalize(p1 - p0);
@@ -131,8 +146,8 @@ void main() {
     outColor = fragColor;
     return;
 
-    // - Transparent vanilla (perfectly handle transparency and self overlapping)
-    //  use uninterpolated(flat) thickness avoid the joint mismatch.
+    // // - Transparent vanilla (perfectly handle transparency and self overlapping)
+    // //  use uninterpolated(flat) thickness avoid the joint mismatch.
     // if(pLH.x < 0 && d0 > hthickness[0]){
     //     discard;
     // }

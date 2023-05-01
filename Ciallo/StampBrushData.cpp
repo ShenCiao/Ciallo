@@ -9,7 +9,7 @@ void StampBrushData::SetUniforms()
 	glUniform1f(4, StampIntervalRatio);
 	glUniform1f(5, NoiseFactor);
 	glUniform1f(6, RotationRand);
-	// glUniform1i(7, StampMode);
+	glUniform1i(7, StampMode);
 }
 
 void StampBrushData::DrawProperties()

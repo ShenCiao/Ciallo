@@ -37,11 +37,11 @@ Stroke::~Stroke()
 	Zeroize();
 }
 
-void Stroke::UpdateBuffers()
+void Stroke::UpdateBuffers(int stampMode)
 {
 	UpdatePositionBuffer();
 	UpdateThicknessOffsetBuffer();
-	UpdateDistanceBuffer();
+	UpdateDistanceBuffer(stampMode);
 }
 
 void Stroke::GenBuffers()
@@ -84,7 +84,7 @@ void Stroke::UpdateThicknessOffsetBuffer()
 }
 
 // Using position buffer, be careful about the calling order.
-void Stroke::UpdateDistanceBuffer()
+void Stroke::UpdateDistanceBuffer(int stampMode)
 {
 	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 	glUseProgram(RenderingSystem::PrefixSum->Program);
@@ -92,6 +92,7 @@ void Stroke::UpdateDistanceBuffer()
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, VertexBuffers[2]);
 	glUniform1f(2, Thickness);
+	glUniform1i(3, stampMode);
 	glDispatchCompute(1, 1, 1);
 }
 

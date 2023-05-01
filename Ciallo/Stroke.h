@@ -4,7 +4,7 @@ class Stroke
 {
 public:
 	Geom::Polyline Position{};
-	float Thickness = 0.0f;
+	float Thickness = 0.0f; // This is half thickness (radius).
 	std::vector<float> ThicknessOffset{}; // empty is allowed, values in shader are zero
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	entt::entity BrushE = entt::null;
@@ -27,11 +27,11 @@ public:
 	Stroke& operator=(Stroke&& other) noexcept;
 	~Stroke();
 
-	void UpdateBuffers();
+	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this parameter
 	void GenBuffers();
 	void UpdatePositionBuffer();
 	void UpdateThicknessOffsetBuffer();
-	void UpdateDistanceBuffer();
+	void UpdateDistanceBuffer(int stampMode = 1); 
 	void LineDrawCall();
 	void FillDrawCall();
 	void SetUniforms();

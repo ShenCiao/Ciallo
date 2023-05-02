@@ -88,6 +88,15 @@ void Application::GenDefaultProject()
 	brush3.AirBrush->Curve = glm::mat4x2{ {0.0f, 1.0f}, {0.2f, 1.0f}, {0.5f, 0.0f}, {1.0f, 0.0f} };
 	brush3.AirBrush->UpdateGradient();
 
+	brushes.push_back(R.create());
+	auto& brush4 = R.emplace<Brush>(brushes.back());
+	brush4.Name = "Dot";
+	brush4.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush4.Stamp = std::make_unique<StampBrushData>();
+	brush4.Stamp->StampTexture = TextureManager::Textures[3];
+	brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	brush4.Stamp->RotationRand = 0.0f;
+
 	auto& brushManager = R.ctx().emplace<BrushManager>();
 	brushManager.Brushes = std::move(brushes);
 	brushManager.RenderAllPreview();

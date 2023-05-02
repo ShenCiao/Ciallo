@@ -18,7 +18,7 @@ void BrushManager::GenPreviewStroke()
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
-	const int segments = 16;
+	const int segments = 4;
 	Geom::Polyline position;
 	const float thickness = 0.33f;
 	std::vector<float> thicknessOffset;

@@ -189,14 +189,14 @@ void main() {
         vStamp *= rotate(angle);
         vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
         vec4 color = texture(stamp, uv);
-        float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0);
+        float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
         A = A * (1.0-alpha) + alpha;
 
         currIndex += 1.0;
         if(currIndex > endIndex) break;
     }
     if(A < 1e-4) discard;
-    outColor = vec4(fragColor.rgb, A*fragColor.a);
+    outColor = vec4(fragColor.rgb, A);
     return;
 #endif
 

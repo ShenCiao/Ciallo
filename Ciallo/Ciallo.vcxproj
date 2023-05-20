@@ -109,7 +109,6 @@
     <ClCompile Include="DotEngine.cpp" />
     <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
-    <ClCompile Include="CursorInteractionTracer.cpp" />
     <ClCompile Include="FillTool.cpp" />
     <ClCompile Include="InnerBrush.cpp" />
     <ClCompile Include="Layer.cpp" />
@@ -156,7 +155,6 @@
     <ClInclude Include="DotEngine.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
-    <ClInclude Include="CursorInteractionTracer.h" />
     <ClInclude Include="FillTool.h" />
     <ClInclude Include="InnerBrush.h" />
     <ClInclude Include="Layer.h" />

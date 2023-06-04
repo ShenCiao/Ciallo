@@ -4,19 +4,31 @@ Ciallo～(∠・ω< )⌒★! Anime computer graphics.
 
 ## Introduction
 
-Ciallo aims for improving 2D artists' work efficiency with modern GPU and computational geometry. 
+Ciallo is the first 2D paint program whose brush engine is fully GPU-based. It demonstrates a very promising technical paradigm for upgrading core functionalities in existing paint software.
 
-The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", and comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
+The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", which comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 
-Ciallo is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). It's a wonderful toolset based on polylines in 3D space inside Blender. Here are some successful artworks drawn with polyline vector lines (in blender): [GPencil open project](https://cloud.blender.org/p/gallery/5b642e25bf419c1042056fc6).
+Ciallo is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). It's a excellently toolset based on polylines in 3D space. Here are some successful artworks drawn with polyline vector lines (in Blender): [GPencil open project](https://cloud.blender.org/p/gallery/5b642e25bf419c1042056fc6).
 
-I'm pretty ambitious about the stroke rendering method. Since its simplicity and usefulness, it would be the infrastructure of every 2D game engine and a must-learn technique for everybody learning computer graphics. Everybody should learn how to render a curve just like learn how to render a mesh.
+Shen Ciao will present Ciallo at SIGGRAPH Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The draft and distributed version of the paper (two-page abstract) is available here. 
+
+## Core Features
 
 ### Vector Bucket Fill
 
+Bucket fill in real-time. Hundreds of times faster than the antique flood-fill algorithm.
+
+Benefiting from this crazy amount of performance gain, Ciallo can "vectorize" the position where users fill color, which is recorded and rendered as a regular stroke. The image below shows translating the position of the stroke (blue line), the regions to fill are updated automatically in real-time.
+
+In the future, users can copy these strokes from one frame to another in an animation project. It can significantly improve their coloring efficiency since frames are usually highly correlated to each other. Artists can just do easy translation and deformation for the vast majority of frames.
+
 ![vectorFillDemo](./articles/vector_bucket_fill_demo.gif)
 
-### GPU-rendered Brush 
+### GPU-rendered Brushes
+
+Fully GPU-powered brush engine. (At least) thousands of times faster to render than CPU brushes. Potentially replicate the vast majority of brushes in other paint programs.
+
+You may have encountered paint software advertising their brushes as GPU-accelerated, [like this one](https://www.youtube.com/watch?v=v7RF0etZWwQ). In contrast, Ciallo's brush engine is fully built upon GPU (the difference would be a literally technical topic). And more importantly, we would like to share this technique with everybody.
 
 <img src=".\articles\six.gif" alt="naiive brush engine" style="zoom:100%;" />
 
@@ -34,11 +46,11 @@ I'm pretty ambitious about the stroke rendering method. Since its simplicity and
 
 The figure above shows the monkey suzanne rendered with the pencil brush. It has 15 strokes and 516 vertices. 
 
-I rendered the monkey 100 times on a 1684x1191 framebuffer (A4 paper in 144 dpi) on NVIDIA GeForce RTX 3060 Laptop GPU. It takes 0.67ms in total.
-
 ### Curve binding
 
-Polylines are hard to edit. So Ciallo allows users to "bind" a polyline upon a bezier curve. Inspired by Blender Grease Pencil's curve editing system and _StrokeStrip: Joint Parameterization and Fitting of Stroke Clusters_
+Polylines are hard to deform, so Ciallo allows users to "bind" a polyline upon a bezier curve. User can deform a polyline as if it was a bezier curve.
+
+This feature is inspired by Blender Grease Pencil's curve editing system and the research _StrokeStrip: Joint Parameterization and Fitting of Stroke Clusters_
 
 ![binding](./articles/binding_demo.gif)
 
@@ -48,16 +60,18 @@ Polylines are hard to edit. So Ciallo allows users to "bind" a polyline upon a b
 
 ## About the Future
 
-I used to think that I could make a program that could produce content even though naïve. But I highly underestimate ~~my laziness~~ the difficulty of programming layers and animation systems. However, as a research project, Ciallo completes its mission nicely.
+Ciallo began with a clownish plan. Shen thought he could turn himself into a GPT model which can write thousands of lines of code per day, several months later, he would get a medium-large paint program that can produce serious 2D content. But it quickly turns out the actual progress is two orders of magnitude slower than the initial plan.
 
-Now I need a job. Contact me if you are interested in upgrading vector related functionality.
+Now this project has accumulated too many historical engineering issues. A major rework is necessary for further development. However, it cannot be handled by Shen since his inexperience in large project management (he graduated in Psychology).
+
+Shen needs a job or a Ph.D. degree in the USA. Check out his resume and contact him if you are interested in upgrading your paint software or wish him to join your Ph.D. program.
 
 ## How to Compile
 
 ### Windows
 
 - Pull vcpkg and integrate.
-- Pull the codebase and run Ciallo.sln with visual studio.
+- Pull the codebase and run `Ciallo/Ciallo.sln` with visual studio.
 
 ### External Dependencies
 

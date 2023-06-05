@@ -4,6 +4,7 @@ Ciallo～(∠・ω< )⌒★! Anime computer graphics.
 
 ## Introduction
 
+Ciallo is the first 2D paint program whose brush engine is fully GPU-powered. It demonstrates a very promising technical paradigm for upgrading core functionalities in paint software.
 
 The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", which comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 
@@ -12,6 +13,10 @@ Ciallo is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/m
 Shen Ciao will present Ciallo at SIGGRAPH Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The draft and distributed version of the paper (two-page abstract) is available [here](./paper).
 
 ## Core Features
+
+**Live demo video**:
+
+[![Ciallo live demo](http://img.youtube.com/vi/gqTrD8-nlh0/0.jpg)](https://youtu.be/gqTrD8-nlh0 "Live Demo of Ciallo: The Next-generation Vector Paint Program")
 
 ### Vector Bucket Fill
 

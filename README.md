@@ -62,7 +62,7 @@ This feature is inspired by Blender Grease Pencil's curve editing system and the
 
 ## Trinity!
 
-Each invi
+Each feature individually do not make a big change, until we combine them together!
 
 ![trinity](./articles/trinity.gif)
 

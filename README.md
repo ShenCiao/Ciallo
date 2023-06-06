@@ -12,6 +12,8 @@ Ciallo is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/m
 
 Shen Ciao will present Ciallo at SIGGRAPH Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The draft and distributed version of the paper (two-page abstract) is available [here](./paper).
 
+If you have any questions about the paper or code, feel free to leave messages in the issue page.
+
 ## Core Features
 
 **Live demo video**:
@@ -35,6 +37,8 @@ In the future, users can copy labeling strokes from one frame to another in an a
 Fully GPU-powered brush engine. (At least) a thousand of times faster to render than CPU brushes. Potentially be able to replicate the vast majority of brushes in other paint programs.
 
 You may have encountered paint software advertising their brushes as GPU-accelerated, [like this one](https://www.youtube.com/watch?v=v7RF0etZWwQ). In contrast, Ciallo's brush engine is fully built upon GPU (the difference would be a literally technical topic). And more importantly, we would like to share this technique with everybody.
+
+Our curve (polyline) rendering methods would be widely used in game engines, UI frameworks and Live2D (Vtuber's avatar). They are really simple to implement by engineers.
 
 <img src=".\articles\six.gif" alt="naiive brush engine" style="zoom:100%;" />
 
@@ -70,7 +74,9 @@ Each feature individually do not make a big change, until we combine them togeth
 
 Ciallo began with a clownish plan. Shen thought he could turn himself into a GPT model which can write thousands of lines of code per day, several months later, he would get a medium-large paint program that can produce serious 2D content. But it quickly turns out the actual pace is two orders of magnitude slower than the initial plan.
 
-Now this project has accumulated too many historical engineering issues. A major rework is necessary for further development. However, it cannot be handled by Shen since his inexperience in large project management (he graduated in Psychology).
+Now this project has accumulated too many historical engineering issues and mistakes. A major rework is necessary for further development. However, it cannot be handled by Shen since his inexperience in large project management (he graduated in Psychology).
+
+If this project get enough concerns by computer graphics community or someone is willing to sponsor, Shen will make a series of tutorial videos about the stroke rendering.
 
 You may have already found several novel features that we never mentioned in Ciallo's research paper. They might be published in the future.
 

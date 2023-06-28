@@ -125,7 +125,7 @@ float n2x(float n, float r, float t1, float t2, float L){
 void main() {
     vec2 tangent = normalize(p1 - p0);
     vec2 normal = vec2(-tangent.y, tangent.x);
-    float len = length(p1-p0);
+    float len = distance(p1, p0);
 
     // edge's locate coordinate, origin at the starting point, x axis along the tangent 
     vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
@@ -138,13 +138,15 @@ void main() {
     float d1 = distance(p, p1);
     float d1cos = (pLocal.x - len) / d1;
 
-#if !defined(AIRBRUSH)
+    // remove four corners
     if(d0cos < cosTheta && d0 > flatRadius[0]){
         discard;
     }
     if(d1cos > cosTheta && d1 > flatRadius[1]){
         discard;
     }
+
+#if !defined(AIRBRUSH) && !defined(STAMP)
     if(d0 < flatRadius[0] && d1 < flatRadius[1]){
         discard;
     }
@@ -156,50 +158,57 @@ void main() {
     return;
 #endif
 
-// #ifdef STAMP
-//     float frontEdge = pLocal.x-radius, backEdge = pLocal.x+radius;
-//     float summedIndex = summedLength[0]/stampIntervalRatio;
-//     float startIndex, endIndex;
-//     if (frontEdge <= 0){
-//         startIndex = ceil(summedIndex) - summedIndex;
-//     }
-//     else{
-//         startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
-//     }
-//     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-//     float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-//     endIndex = endIndex < backIndex ? endIndex : backIndex;
-//     if(startIndex > endIndex) discard;
+#ifdef STAMP
+    // roots of the quadratic polynomial are frontedge and backedge
+    // formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
+    float a, b, c, delta;
+    a = 1.0 - pow(cosTheta, 2.0);
+    b = 2.0 * (flatRadius[0] * cosTheta - pLocal.x);
+    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(flatRadius[0], 2.0);
+    delta = pow(b, 2.0) - 4.0*a*c;
+    if(delta <= 0.0) discard; // This should never happen.
+    
+    float tempMathBlock = b + sign(b) * sqrt(delta);
+    float x1 = -2 * c / tempMathBlock;
+    float x2 = -tempMathBlock / (2*a);
+    float frontEdge = x1 <= x2 ? x1 : x2;
+    float backEdge = x1 > x2 ? x1 : x2;
 
-//     int MAX_i = 32; float currIndex = startIndex;
-//     float A = 0.0;
-//     for(int i = 0; i < MAX_i; i++){
-//         float currStamp = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-//         vec2 vStamp = pLocal - vec2(currStamp, 0);
-//         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
-//         vStamp *= rotate(angle);
-//         vec2 uv = (vStamp/radius + 1.0)/2.0;
-//         vec4 color = texture(stamp, uv);
-//         float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
-//         A = A * (1.0-alpha) + alpha;
+    // float summedIndex = summedLength[0]/stampIntervalRatio;
+    // float startIndex, endIndex;
+    // if (frontEdge <= 0){
+    //     startIndex = ceil(summedIndex) - summedIndex;
+    // }
+    // else{
+    //     startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
+    // }
+    // endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+    // float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+    // endIndex = endIndex < backIndex ? endIndex : backIndex;
+    // if(startIndex > endIndex) discard;
 
-//         currIndex += 1.0;
-//         if(currIndex > endIndex) break;
-//     }
-//     if(A < 1e-4) discard;
-//     outColor = vec4(fragColor.rgb, A);
-//     return;
-// #endif
+    // int MAX_i = 32; float currIndex = startIndex;
+    // float A = 0.0;
+    // for(int i = 0; i < MAX_i; i++){
+    //     float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+    //     vec2 vStamp = pLocal - vec2(currStampLocalX, 0);
+    //     float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
+    //     vStamp *= rotate(angle);
+    //     vec2 uv = (vStamp/radius + 1.0)/2.0;
+    //     vec4 color = texture(stamp, uv);
+    //     float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
+    //     A = A * (1.0-alpha) + alpha;
+
+    //     currIndex += 1.0;
+    //     if(currIndex > endIndex) break;
+    // }
+    // if(A < 1e-4) discard;
+    // outColor = vec4(fragColor.rgb, A);
+    outColor = vec4(temp, fragColor.gba);
+    return;
+#endif
 
 #ifdef AIRBRUSH
-    
-    if(d0cos < cosTheta && d0 > flatRadius[0]){
-        discard;
-    }
-    if(d1cos > cosTheta && d1 > flatRadius[1]){
-        discard;
-    }
-
     // normalize
     pLocal = pLocal / radius;
     d0 /= radius;

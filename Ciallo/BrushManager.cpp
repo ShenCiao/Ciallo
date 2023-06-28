@@ -18,7 +18,7 @@ void BrushManager::GenPreviewStroke()
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
-	const int segments = 32;
+	const int segments = 16;
 	Geom::Polyline position;
 	const float thickness = 0.33f;
 	std::vector<float> thicknessOffset;
@@ -68,7 +68,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	}
 	brush.PreviewTexture = RenderableTexture(width, height, 0);
 	brush.PreviewTexture.BindFramebuffer();
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(PreviewBackgroundColor.r, PreviewBackgroundColor.g, PreviewBackgroundColor.b, PreviewBackgroundColor.a);
 	glClear(GL_COLOR_BUFFER_BIT);
 	brush.Use();
 	brush.SetUniforms();
@@ -105,7 +105,8 @@ void BrushManager::DrawUI()
 		ImGui::BeginChild("right panel", ImVec2(w, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {w, w / 2.0f / glm::golden_ratio<float>()});
-		ImGui::ColorEdit4("demo color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
+		ImGui::ColorEdit4("stroke preview color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
+		ImGui::ColorEdit4("background color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::Separator();
 		brush.DrawProperties();
 		ImGui::EndChild();

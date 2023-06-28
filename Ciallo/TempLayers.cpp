@@ -84,8 +84,8 @@ void TempLayers::RenderDrawing()
 	{
 		auto& stroke = R.get<Stroke>(e);
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		bool skipLine = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
-		if (!skipLine)
+		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
+		if (!skip)
 		{
 			auto& brush = R.get<Brush>(stroke.BrushE);
 			brush.Use();

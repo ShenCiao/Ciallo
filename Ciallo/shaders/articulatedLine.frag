@@ -136,33 +136,33 @@ void main() {
     float d1 = distance(p, p1);
 
 #if !defined(STAMP) && !defined(AIRBRUSH)
-    // - Naive vanilla (OK if stroke is opaque)
-    if(pLH.x < 0 && d0 > halfThickness){
-        discard;
-    }
-    if(pLH.x > p1LH.x && d1 > halfThickness){
-        discard;
-    }
-    outColor = fragColor;
-    return;
-
-    // // - Transparent vanilla (perfectly handle transparency and self overlapping)
-    // //  use uninterpolated(flat) thickness avoid the joint mismatch.
-    // if(pLH.x < 0 && d0 > hthickness[0]){
+    // // - Naive vanilla (OK if stroke is opaque)
+    // if(pLH.x < 0 && d0 > halfThickness){
     //     discard;
     // }
-    // if(pLH.x > p1LH.x && d1 > hthickness[1]){
+    // if(pLH.x > p1LH.x && d1 > halfThickness){
     //     discard;
     // }
-    // if(d0 < hthickness[0] && d1 < hthickness[1]){
-    //     discard;
-    // }
-    // float A = fragColor.a;
-    // if(d0 < hthickness[0] || d1 < hthickness[1]){
-    //     A = 1.0 - sqrt(1.0 - fragColor.a);
-    // }
-    // outColor = vec4(fragColor.rgb, A);
+    // outColor = fragColor;
     // return;
+
+    // - Transparent vanilla (perfectly handle transparency and self overlapping)
+    //  use uninterpolated(flat) thickness avoid the joint mismatch.
+    if(pLH.x < 0 && d0 > hthickness[0]){
+        discard;
+    }
+    if(pLH.x > p1LH.x && d1 > hthickness[1]){
+        discard;
+    }
+    if(d0 < hthickness[0] && d1 < hthickness[1]){
+        discard;
+    }
+    float A = fragColor.a;
+    if(d0 < hthickness[0] || d1 < hthickness[1]){
+        A = 1.0 - sqrt(1.0 - fragColor.a);
+    }
+    outColor = vec4(fragColor.rgb, A);
+    return;
 #endif
 
 #ifdef STAMP

@@ -4,7 +4,7 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
-layout(location = 4) in float radius;
+layout(location = 4) in float radius; // radius value across the current pixel
 layout(location = 5) in flat vec2 summedLength;
 layout(location = 6) in flat vec2 flatRadius;
 
@@ -131,26 +131,17 @@ void main() {
     vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
     vec2 p0Local = vec2(0, 0);
     vec2 p1Local = vec2(len, 0);
+    float cosTheta = (flatRadius[0] - flatRadius[1])/len; // theta is the angle stroke tilt.
 
     float d0 = distance(p, p0);
+    float d0cos = pLocal.x / d0;
     float d1 = distance(p, p1);
+    float d1cos = (pLocal.x - len) / d1;
 
-    // // - Naive vanilla (OK if stroke is opaque)
-    // if(pLocal.x < 0 && d0 > radius){
-    //     discard;
-    // }
-    // if(pLocal.x > p1Local.x && d1 > radius){
-    //     discard;
-    // }
-    // outColor = fragColor;
-    // return;
-
-    // - Transparent vanilla (perfectly handle transparency and self overlapping)
-    //  use uninterpolated(flat) thickness avoid the joint mismatch.
-    if(pLocal.x < 0 && d0 > flatRadius[0]){
+    if(d0cos < cosTheta && d0 > flatRadius[0]){
         discard;
     }
-    if(pLocal.x > p1Local.x && d1 > flatRadius[1]){
+    if(d1cos > cosTheta && d1 > flatRadius[1]){
         discard;
     }
     if(d0 < flatRadius[0] && d1 < flatRadius[1]){

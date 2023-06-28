@@ -174,37 +174,37 @@ void main() {
     float frontEdge = x1 <= x2 ? x1 : x2;
     float backEdge = x1 > x2 ? x1 : x2;
 
-    // float summedIndex = summedLength[0]/stampIntervalRatio;
-    // float startIndex, endIndex;
-    // if (frontEdge <= 0){
-    //     startIndex = ceil(summedIndex) - summedIndex;
-    // }
-    // else{
-    //     startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
-    // }
-    // endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-    // float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-    // endIndex = endIndex < backIndex ? endIndex : backIndex;
-    // if(startIndex > endIndex) discard;
+    float summedIndex = summedLength[0]/stampIntervalRatio;
+    float startIndex, endIndex;
+    if (frontEdge <= 0){
+        startIndex = ceil(summedIndex) - summedIndex;
+    }
+    else{
+        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
+    }
+    endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+    float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+    endIndex = endIndex < backIndex ? endIndex : backIndex;
+    if(startIndex > endIndex) discard;
 
-    // int MAX_i = 32; float currIndex = startIndex;
-    // float A = 0.0;
-    // for(int i = 0; i < MAX_i; i++){
-    //     float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-    //     vec2 vStamp = pLocal - vec2(currStampLocalX, 0);
-    //     float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
-    //     vStamp *= rotate(angle);
-    //     vec2 uv = (vStamp/radius + 1.0)/2.0;
-    //     vec4 color = texture(stamp, uv);
-    //     float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
-    //     A = A * (1.0-alpha) + alpha;
+    int MAX_i = 128; float currIndex = startIndex;
+    float A = 0.0;
+    for(int i = 0; i < MAX_i; i++){
+        float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+        float r = flatRadius[0] - cosTheta * pLocal.x;
+        vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0);
+        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
+        distanceToStamp *= rotate(angle);
+        vec2 textureCoordinate = (distanceToStamp/r + 1.0)/2.0;
+        vec4 color = texture(stamp, textureCoordinate);
+        float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
+        A = A * (1.0-alpha) + alpha;
 
-    //     currIndex += 1.0;
-    //     if(currIndex > endIndex) break;
-    // }
-    // if(A < 1e-4) discard;
-    // outColor = vec4(fragColor.rgb, A);
-    outColor = vec4(temp, fragColor.gba);
+        currIndex += 1.0;
+        if(currIndex > endIndex) break;
+    }
+    if(A < 1e-4) discard;
+    outColor = vec4(fragColor.rgb, A);
     return;
 #endif
 

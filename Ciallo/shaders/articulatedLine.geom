@@ -35,6 +35,13 @@ void main(){
     float sinTheta = sqrt(1.0-pow(cosTheta, 2.0));
     float tanValue1 = (1.0-cosTheta)/sinTheta;
 
+    // corner cases:
+    // small disk is fully inside the big disk
+    if(abs(cosTheta) >= 1.0) return;
+    // center of the small disk is very near to the big disk
+    const float offsetRatioTolerance = 10.0;
+    if(tanValue0 > offsetRatioTolerance || tanValue1 > offsetRatioTolerance) return;
+
     // Vertex at p0 left(v01 direction)
     radius = r0;
     p0 = pos0;

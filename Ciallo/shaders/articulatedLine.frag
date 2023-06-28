@@ -131,13 +131,14 @@ void main() {
     vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
     vec2 p0Local = vec2(0, 0);
     vec2 p1Local = vec2(len, 0);
-    float cosTheta = (flatRadius[0] - flatRadius[1])/len; // theta is the angle stroke tilt.
 
+    float cosTheta = (flatRadius[0] - flatRadius[1])/len; // theta is the angle stroke tilt.
     float d0 = distance(p, p0);
     float d0cos = pLocal.x / d0;
     float d1 = distance(p, p1);
     float d1cos = (pLocal.x - len) / d1;
 
+#if !defined(AIRBRUSH)
     if(d0cos < cosTheta && d0 > flatRadius[0]){
         discard;
     }
@@ -153,6 +154,7 @@ void main() {
     }
     outColor = vec4(fragColor.rgb, A);
     return;
+#endif
 
 // #ifdef STAMP
 //     float frontEdge = pLocal.x-radius, backEdge = pLocal.x+radius;
@@ -189,40 +191,40 @@ void main() {
 //     return;
 // #endif
 
-// #ifdef AIRBRUSH
-//     float A = fragColor.a;
-
-//     if((pLocal.x < 0 && d0 > radius)){
-//         discard;
-//     }
-//     if((pLocal.x > p1Local.x && d1 > radius)){
-//         discard;
-//     }
-
-//     // normalize
-//     pLocal = pLocal / radius;
-//     d0 /= radius;
-//     d1 /= radius;
-//     len /= radius;
-
-//     float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
-
-//     float exceed0, exceed1;
-//     exceed0 = exceed1 = 1.0;
+#ifdef AIRBRUSH
     
-//     if(d0 < 1.0) {
-//       exceed0 = pow(1.0-A*sampleGraident(d0), 
-//         sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
-//         pow(reversedGradBone, step(0.0, -pLocal.x));
-//     }
-//     if(d1 < 1.0) {
-//       exceed1 = pow(1.0-A*sampleGraident(d1), 
-//         sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
-//         pow(reversedGradBone, step(0.0, pLocal.x - len));
-//     }
-//     A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
-//     outColor = vec4(fragColor.rgb, A);
-//     return;
-// #endif
+    if(d0cos < cosTheta && d0 > flatRadius[0]){
+        discard;
+    }
+    if(d1cos > cosTheta && d1 > flatRadius[1]){
+        discard;
+    }
+
+    // normalize
+    pLocal = pLocal / radius;
+    d0 /= radius;
+    d1 /= radius;
+    len /= radius;
+
+    float A = fragColor.a;
+    float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
+
+    float exceed0, exceed1;
+    exceed0 = exceed1 = 1.0;
+    
+    if(d0 < 1.0) {
+      exceed0 = pow(1.0-A*sampleGraident(d0), 
+        sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
+        pow(reversedGradBone, step(0.0, -pLocal.x));
+    }
+    if(d1 < 1.0) {
+      exceed1 = pow(1.0-A*sampleGraident(d1), 
+        sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
+        pow(reversedGradBone, step(0.0, pLocal.x - len));
+    }
+    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
+    outColor = vec4(fragColor.rgb, A);
+    return;
+#endif
     
 }

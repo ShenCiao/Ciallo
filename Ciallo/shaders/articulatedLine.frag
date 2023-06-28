@@ -4,7 +4,7 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
-layout(location = 4) in float halfThickness;
+layout(location = 4) in float radius;
 layout(location = 5) in flat vec2 summedLength;
 layout(location = 6) in flat float hthickness[2]; // used by transparent vanilla and stamp
 
@@ -14,7 +14,7 @@ layout(location = 0) out vec4 outColor;
 // #define AIRBRUSH
 
 #ifdef STAMP
-layout(location = 2) uniform float uniThickness;
+layout(location = 2) uniform float uniRadius;
 layout(location = 3, binding = 0) uniform sampler2D stamp;
 layout(location = 4) uniform float stampIntervalRatio;
 layout(location = 5) uniform float noiseFactor;
@@ -94,7 +94,7 @@ float x2n(float x, float r, float t1, float t2, float L){
         }
     }
     else{
-        return x / (uniThickness * 2.0 * r);
+        return x / (uniRadius * 2.0 * r);
     }
     
 }
@@ -117,7 +117,7 @@ float n2x(float n, float r, float t1, float t2, float L){
         }
     }
     else{
-        return n * uniThickness * 2.0 * r;
+        return n * uniRadius * 2.0 * r;
     }
 }
 #endif
@@ -135,12 +135,11 @@ void main() {
     float d0 = distance(p, p0);
     float d1 = distance(p, p1);
 
-#if !defined(STAMP) && !defined(AIRBRUSH)
     // // - Naive vanilla (OK if stroke is opaque)
-    // if(pLH.x < 0 && d0 > halfThickness){
+    // if(pLH.x < 0 && d0 > radius){
     //     discard;
     // }
-    // if(pLH.x > p1LH.x && d1 > halfThickness){
+    // if(pLH.x > p1LH.x && d1 > radius){
     //     discard;
     // }
     // outColor = fragColor;
@@ -163,77 +162,76 @@ void main() {
     }
     outColor = vec4(fragColor.rgb, A);
     return;
-#endif
 
-#ifdef STAMP
-    float frontEdge = pLH.x-halfThickness, backEdge = pLH.x+halfThickness;
-    float summedIndex = summedLength[0]/stampIntervalRatio;
-    float startIndex, endIndex;
-    if (frontEdge <= 0){
-        startIndex = ceil(summedIndex) - summedIndex;
-    }
-    else{
-        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, hthickness[0], hthickness[1], len)) - summedIndex;
-    }
-    endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-    float backIndex = x2n(backEdge, stampIntervalRatio, hthickness[0], hthickness[1], len);
-    endIndex = endIndex < backIndex ? endIndex : backIndex;
-    if(startIndex > endIndex) discard;
+// #ifdef STAMP
+//     float frontEdge = pLH.x-radius, backEdge = pLH.x+radius;
+//     float summedIndex = summedLength[0]/stampIntervalRatio;
+//     float startIndex, endIndex;
+//     if (frontEdge <= 0){
+//         startIndex = ceil(summedIndex) - summedIndex;
+//     }
+//     else{
+//         startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, hthickness[0], hthickness[1], len)) - summedIndex;
+//     }
+//     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+//     float backIndex = x2n(backEdge, stampIntervalRatio, hthickness[0], hthickness[1], len);
+//     endIndex = endIndex < backIndex ? endIndex : backIndex;
+//     if(startIndex > endIndex) discard;
 
-    int MAX_i = 32; float currIndex = startIndex;
-    float A = 0.0;
-    for(int i = 0; i < MAX_i; i++){
-        float currStamp = n2x(currIndex, stampIntervalRatio, hthickness[0], hthickness[1], len);
-        vec2 vStamp = pLH - vec2(currStamp, 0);
-        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
-        vStamp *= rotate(angle);
-        vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
-        vec4 color = texture(stamp, uv);
-        float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
-        A = A * (1.0-alpha) + alpha;
+//     int MAX_i = 32; float currIndex = startIndex;
+//     float A = 0.0;
+//     for(int i = 0; i < MAX_i; i++){
+//         float currStamp = n2x(currIndex, stampIntervalRatio, hthickness[0], hthickness[1], len);
+//         vec2 vStamp = pLH - vec2(currStamp, 0);
+//         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
+//         vStamp *= rotate(angle);
+//         vec2 uv = (vStamp/radius + 1.0)/2.0;
+//         vec4 color = texture(stamp, uv);
+//         float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * fragColor.a;
+//         A = A * (1.0-alpha) + alpha;
 
-        currIndex += 1.0;
-        if(currIndex > endIndex) break;
-    }
-    if(A < 1e-4) discard;
-    outColor = vec4(fragColor.rgb, A);
-    return;
-#endif
+//         currIndex += 1.0;
+//         if(currIndex > endIndex) break;
+//     }
+//     if(A < 1e-4) discard;
+//     outColor = vec4(fragColor.rgb, A);
+//     return;
+// #endif
 
-#ifdef AIRBRUSH
-    float A = fragColor.a;
+// #ifdef AIRBRUSH
+//     float A = fragColor.a;
 
-    if((pLH.x < 0 && d0 > halfThickness)){
-        discard;
-    }
-    if((pLH.x > p1LH.x && d1 > halfThickness)){
-        discard;
-    }
+//     if((pLH.x < 0 && d0 > radius)){
+//         discard;
+//     }
+//     if((pLH.x > p1LH.x && d1 > radius)){
+//         discard;
+//     }
 
-    // normalize
-    pLH = pLH / halfThickness;
-    d0 /= halfThickness;
-    d1 /= halfThickness;
-    len /= halfThickness;
+//     // normalize
+//     pLH = pLH / radius;
+//     d0 /= radius;
+//     d1 /= radius;
+//     len /= radius;
 
-    float reversedGradBone = 1.0-A*sampleGraident(pLH.y);
+//     float reversedGradBone = 1.0-A*sampleGraident(pLH.y);
 
-    float exceed0, exceed1;
-    exceed0 = exceed1 = 1.0;
+//     float exceed0, exceed1;
+//     exceed0 = exceed1 = 1.0;
     
-    if(d0 < 1.0) {
-      exceed0 = pow(1.0-A*sampleGraident(d0), 
-        sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-        pow(reversedGradBone, step(0.0, -pLH.x));
-    }
-    if(d1 < 1.0) {
-      exceed1 = pow(1.0-A*sampleGraident(d1), 
-        sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
-        pow(reversedGradBone, step(0.0, pLH.x - len));
-    }
-    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
-    outColor = vec4(fragColor.rgb, A);
-    return;
-#endif
+//     if(d0 < 1.0) {
+//       exceed0 = pow(1.0-A*sampleGraident(d0), 
+//         sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
+//         pow(reversedGradBone, step(0.0, -pLH.x));
+//     }
+//     if(d1 < 1.0) {
+//       exceed1 = pow(1.0-A*sampleGraident(d1), 
+//         sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
+//         pow(reversedGradBone, step(0.0, pLH.x - len));
+//     }
+//     A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
+//     outColor = vec4(fragColor.rgb, A);
+//     return;
+// #endif
     
 }

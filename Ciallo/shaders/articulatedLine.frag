@@ -6,7 +6,7 @@ layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
 layout(location = 4) in float radius;
 layout(location = 5) in flat vec2 summedLength;
-layout(location = 6) in flat float hthickness[2]; // used by transparent vanilla and stamp
+layout(location = 6) in flat vec2 flatRadius;
 
 layout(location = 0) out vec4 outColor;
 
@@ -123,23 +123,23 @@ float n2x(float n, float r, float t1, float t2, float L){
 #endif
 
 void main() {
-    vec2 lHat = normalize(p1 - p0);
-    vec2 hHat = vec2(-lHat.y, lHat.x);
+    vec2 tangent = normalize(p1 - p0);
+    vec2 normal = vec2(-tangent.y, tangent.x);
     float len = length(p1-p0);
 
-    // In LH coordinate
-    vec2 pLH = vec2(dot(p-p0, lHat), dot(p-p0, hHat));
-    vec2 p0LH = vec2(0, 0);
-    vec2 p1LH = vec2(len, 0);
+    // edge's locate coordinate, origin at the starting point, x axis along the tangent 
+    vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
+    vec2 p0Local = vec2(0, 0);
+    vec2 p1Local = vec2(len, 0);
 
     float d0 = distance(p, p0);
     float d1 = distance(p, p1);
 
     // // - Naive vanilla (OK if stroke is opaque)
-    // if(pLH.x < 0 && d0 > radius){
+    // if(pLocal.x < 0 && d0 > radius){
     //     discard;
     // }
-    // if(pLH.x > p1LH.x && d1 > radius){
+    // if(pLocal.x > p1Local.x && d1 > radius){
     //     discard;
     // }
     // outColor = fragColor;
@@ -147,42 +147,42 @@ void main() {
 
     // - Transparent vanilla (perfectly handle transparency and self overlapping)
     //  use uninterpolated(flat) thickness avoid the joint mismatch.
-    if(pLH.x < 0 && d0 > hthickness[0]){
+    if(pLocal.x < 0 && d0 > flatRadius[0]){
         discard;
     }
-    if(pLH.x > p1LH.x && d1 > hthickness[1]){
+    if(pLocal.x > p1Local.x && d1 > flatRadius[1]){
         discard;
     }
-    if(d0 < hthickness[0] && d1 < hthickness[1]){
+    if(d0 < flatRadius[0] && d1 < flatRadius[1]){
         discard;
     }
     float A = fragColor.a;
-    if(d0 < hthickness[0] || d1 < hthickness[1]){
+    if(d0 < flatRadius[0] || d1 < flatRadius[1]){
         A = 1.0 - sqrt(1.0 - fragColor.a);
     }
     outColor = vec4(fragColor.rgb, A);
     return;
 
 // #ifdef STAMP
-//     float frontEdge = pLH.x-radius, backEdge = pLH.x+radius;
+//     float frontEdge = pLocal.x-radius, backEdge = pLocal.x+radius;
 //     float summedIndex = summedLength[0]/stampIntervalRatio;
 //     float startIndex, endIndex;
 //     if (frontEdge <= 0){
 //         startIndex = ceil(summedIndex) - summedIndex;
 //     }
 //     else{
-//         startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, hthickness[0], hthickness[1], len)) - summedIndex;
+//         startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
 //     }
 //     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-//     float backIndex = x2n(backEdge, stampIntervalRatio, hthickness[0], hthickness[1], len);
+//     float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
 //     endIndex = endIndex < backIndex ? endIndex : backIndex;
 //     if(startIndex > endIndex) discard;
 
 //     int MAX_i = 32; float currIndex = startIndex;
 //     float A = 0.0;
 //     for(int i = 0; i < MAX_i; i++){
-//         float currStamp = n2x(currIndex, stampIntervalRatio, hthickness[0], hthickness[1], len);
-//         vec2 vStamp = pLH - vec2(currStamp, 0);
+//         float currStamp = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+//         vec2 vStamp = pLocal - vec2(currStamp, 0);
 //         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
 //         vStamp *= rotate(angle);
 //         vec2 uv = (vStamp/radius + 1.0)/2.0;
@@ -201,33 +201,33 @@ void main() {
 // #ifdef AIRBRUSH
 //     float A = fragColor.a;
 
-//     if((pLH.x < 0 && d0 > radius)){
+//     if((pLocal.x < 0 && d0 > radius)){
 //         discard;
 //     }
-//     if((pLH.x > p1LH.x && d1 > radius)){
+//     if((pLocal.x > p1Local.x && d1 > radius)){
 //         discard;
 //     }
 
 //     // normalize
-//     pLH = pLH / radius;
+//     pLocal = pLocal / radius;
 //     d0 /= radius;
 //     d1 /= radius;
 //     len /= radius;
 
-//     float reversedGradBone = 1.0-A*sampleGraident(pLH.y);
+//     float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
 
 //     float exceed0, exceed1;
 //     exceed0 = exceed1 = 1.0;
     
 //     if(d0 < 1.0) {
 //       exceed0 = pow(1.0-A*sampleGraident(d0), 
-//         sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-//         pow(reversedGradBone, step(0.0, -pLH.x));
+//         sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
+//         pow(reversedGradBone, step(0.0, -pLocal.x));
 //     }
 //     if(d1 < 1.0) {
 //       exceed1 = pow(1.0-A*sampleGraident(d1), 
-//         sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
-//         pow(reversedGradBone, step(0.0, pLH.x - len));
+//         sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
+//         pow(reversedGradBone, step(0.0, pLocal.x - len));
 //     }
 //     A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
 //     outColor = vec4(fragColor.rgb, A);

@@ -12,7 +12,7 @@ layout(location = 2) out flat vec2 p1;
 layout(location = 3) out vec2 p;
 layout(location = 4) out float radius;
 layout(location = 5) out flat vec2 summedLength;
-layout(location = 6) out flat float hthickness[2];
+layout(location = 6) out flat vec2 flatRadius;
 
 layout(std140, binding=0) uniform _MVP{ mat4 MVP; };
 layout(location = 1) uniform vec4 color = vec4(0.9, 0.0, 0.0, 1.0); // Red to warn if value is not set
@@ -32,8 +32,8 @@ void main(){
     fragColor = color;
     summedLength.x = inSummedLength[0];
     summedLength.y = inSummedLength[1];
-    hthickness[0] = uniRadius+inRadiusOffset[0];
-    hthickness[1] = uniRadius+inRadiusOffset[1];
+    flatRadius[0] = uniRadius+inRadiusOffset[0];
+    flatRadius[1] = uniRadius+inRadiusOffset[1];
     EmitVertex();
 
     // Vertex at p0 right
@@ -45,8 +45,8 @@ void main(){
     fragColor = color;
     summedLength.x = inSummedLength[0];
     summedLength.y = inSummedLength[1];
-    hthickness[0] = uniRadius+inRadiusOffset[0];
-    hthickness[1] = uniRadius+inRadiusOffset[1];
+    flatRadius[0] = uniRadius+inRadiusOffset[0];
+    flatRadius[1] = uniRadius+inRadiusOffset[1];
     EmitVertex();
 
     // Vertex at p1 left
@@ -58,8 +58,8 @@ void main(){
     fragColor = color;
     summedLength.x = inSummedLength[0];
     summedLength.y = inSummedLength[1];
-    hthickness[0] = uniRadius+inRadiusOffset[0];
-    hthickness[1] = uniRadius+inRadiusOffset[1];
+    flatRadius[0] = uniRadius+inRadiusOffset[0];
+    flatRadius[1] = uniRadius+inRadiusOffset[1];
     EmitVertex();
 
     // Vertex at p1 right
@@ -71,8 +71,8 @@ void main(){
     fragColor = color;
     summedLength.x = inSummedLength[0];
     summedLength.y = inSummedLength[1];
-    hthickness[0] = uniRadius+inRadiusOffset[0];
-    hthickness[1] = uniRadius+inRadiusOffset[1];
+    flatRadius[0] = uniRadius+inRadiusOffset[0];
+    flatRadius[1] = uniRadius+inRadiusOffset[1];
     EmitVertex();
 
     EndPrimitive();

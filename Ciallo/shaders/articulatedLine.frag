@@ -191,7 +191,7 @@ void main() {
     float A = 0.0;
     for(int i = 0; i < MAX_i; i++){
         float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-        float r = flatRadius[0] - cosTheta * pLocal.x;
+        float r = flatRadius[0] - cosTheta * currStampLocalX;
         vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0);
         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
         distanceToStamp *= rotate(angle);
@@ -209,31 +209,57 @@ void main() {
 #endif
 
 #ifdef AIRBRUSH
-    // normalize
-    pLocal = pLocal / radius;
-    d0 /= radius;
-    d1 /= radius;
-    len /= radius;
-
-    float A = fragColor.a;
-    float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
-
-    float exceed0, exceed1;
-    exceed0 = exceed1 = 1.0;
+    float alphaDensity = sampleGraident(0.5) * fragColor.a;
+    // copied from stamp
+    float a, b, c, delta;
+    a = 1.0 - pow(cosTheta, 2.0);
+    b = 2.0 * (flatRadius[0] * cosTheta - pLocal.x);
+    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(flatRadius[0], 2.0);
+    delta = pow(b, 2.0) - 4.0*a*c;
+    if(delta < 0.0) discard;
     
-    if(d0 < 1.0) {
-      exceed0 = pow(1.0-A*sampleGraident(d0), 
-        sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
-        pow(reversedGradBone, step(0.0, -pLocal.x));
-    }
-    if(d1 < 1.0) {
-      exceed1 = pow(1.0-A*sampleGraident(d1), 
-        sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
-        pow(reversedGradBone, step(0.0, pLocal.x - len));
-    }
-    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
+    float tempMathBlock = b + sign(b) * sqrt(delta);
+    float x1 = -2 * c / tempMathBlock;
+    float x2 = -tempMathBlock / (2*a);
+    float frontEdge = x1 <= x2 ? x1 : x2;
+    float backEdge = x1 > x2 ? x1 : x2;
+    // copy end
+
+    float r1 = flatRadius[0] - cosTheta * x1;
+    float r2 = flatRadius[0] - cosTheta * x2;
+    float front = frontEdge > 0.0 ? frontEdge : 0.0;
+    float back = backEdge > len ? len : backEdge;
+    float ratioRange = (back - front)/ (r1 + r2) * 10.0;
+
+    float A = 1.0 - exp(-alphaDensity * ratioRange);
     outColor = vec4(fragColor.rgb, A);
     return;
+
+    // // normalize
+    // pLocal = pLocal / radius;
+    // d0 /= radius;
+    // d1 /= radius;
+    // len /= radius;
+
+    // float A = fragColor.a;
+    // float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
+
+    // float exceed0, exceed1;
+    // exceed0 = exceed1 = 1.0;
+    
+    // if(d0 < 1.0) {
+    //   exceed0 = pow(1.0-A*sampleGraident(d0), 
+    //     sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
+    //     pow(reversedGradBone, step(0.0, -pLocal.x));
+    // }
+    // if(d1 < 1.0) {
+    //   exceed1 = pow(1.0-A*sampleGraident(d1), 
+    //     sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
+    //     pow(reversedGradBone, step(0.0, pLocal.x - len));
+    // }
+    // A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
+    // outColor = vec4(fragColor.rgb, A);
+    // return;
 #endif
     
 }

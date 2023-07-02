@@ -8,23 +8,22 @@
 
 BrushManager::BrushManager()
 {
-	GenPreviewStroke();
+	GenPreviewStroke(nSegment);
 	auto gr = glm::golden_ratio<float>();
 	PreviewPort = {{-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f}};
 	PreviewPort.UploadMVP();
 }
 
-void BrushManager::GenPreviewStroke()
+void BrushManager::GenPreviewStroke(int nSegment)
 {
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
-	const int segments = 8;
 	Geom::Polyline position;
 	const float thickness = 0.33f;
 	std::vector<float> thicknessOffset;
-	for (int i = 0; i <= segments; ++i)
+	for (int i = 0; i <= nSegment; ++i)
 	{
-		float a = static_cast<float>(i) / segments;
+		float a = static_cast<float>(i) / nSegment;
 		float x = glm::mix(-pi, pi, a);
 		float y = 1.0f / gr * glm::sin(x);
 		float t = (glm::cos(x / 2.0f) - 1.0f) * thickness;
@@ -101,10 +100,14 @@ void BrushManager::DrawUI()
 		auto& brush = R.get<Brush>(EditorActiveBrushE);
 		SetContext();
 		RenderPreview(EditorActiveBrushE);
-		const int w = 600;
+		const int w = 1200;
 		ImGui::BeginChild("right panel", ImVec2(w, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {w, w / 2.0f / glm::golden_ratio<float>()});
+		if(ImGui::DragInt("number of segments", &nSegment, 1.0f, 2, 256))
+		{
+			GenPreviewStroke(nSegment);
+		}
 		ImGui::ColorEdit4("stroke preview color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::ColorEdit4("background color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::Separator();

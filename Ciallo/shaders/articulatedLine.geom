@@ -35,7 +35,7 @@ void main(){
     float sinTheta = sqrt(1.0-pow(cosTheta, 2.0));
     float tanValue1 = (1.0-cosTheta)/sinTheta;
 
-    // corner cases:
+    // the corner case, Shen call it "Transit":
     // small disk is fully inside the big disk
     if(abs(cosTheta) >= 1.0) return;
     // center of the small disk is very near to the big disk

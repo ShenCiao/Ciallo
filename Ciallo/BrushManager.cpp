@@ -85,7 +85,7 @@ void BrushManager::DrawUI()
 	ImGui::Begin("Toolbox");
 	if (ImGui::BeginPopupModal("BrushEditor", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::BeginChild("left pane", ImVec2(150, 600), true);
+		ImGui::BeginChild("left pane", ImVec2(150, 800), true);
 		for (entt::entity e : Brushes)
 		{
 			auto& brush = R.get<Brush>(e);

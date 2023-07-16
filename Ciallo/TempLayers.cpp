@@ -17,7 +17,7 @@ TempLayers::TempLayers(glm::ivec2 size)
 	Overlay = RenderableTexture{size.x, size.y};
 	Drawing = RenderableTexture{size.x, size.y};
 	Fill = RenderableTexture{size.x, size.y};
-	GenCircleStroke();
+	GenCircleStroke(); 
 }
 
 void TempLayers::RenderOverlay()

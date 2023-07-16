@@ -4,7 +4,6 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
-layout(location = 4) in float radius; // radius value across the current pixel
 layout(location = 5) in flat vec2 summedLength;
 layout(location = 6) in flat vec2 flatRadius;
 
@@ -209,57 +208,26 @@ void main() {
 #endif
 
 #ifdef AIRBRUSH
-    float alphaDensity = sampleGraident(0.5) * fragColor.a;
-    // copied from stamp
-    float a, b, c, delta;
-    a = 1.0 - pow(cosTheta, 2.0);
-    b = 2.0 * (flatRadius[0] * cosTheta - pLocal.x);
-    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(flatRadius[0], 2.0);
-    delta = pow(b, 2.0) - 4.0*a*c;
-    if(delta < 0.0) discard;
-    
-    float tempMathBlock = b + sign(b) * sqrt(delta);
-    float x1 = -2 * c / tempMathBlock;
-    float x2 = -tempMathBlock / (2*a);
-    float frontEdge = x1 <= x2 ? x1 : x2;
-    float backEdge = x1 > x2 ? x1 : x2;
-    // copy end
+    // Approximation solution.
+    float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
+    float mid = pLocal.x - abs(pLocal.y)/tanTheta;
+    float A = fragColor.a;
+    float transparency0 = d0 > flatRadius[0] ? 1.0:sqrt(1.0 - A*sampleGraident(d0/flatRadius[0]));
+    float transparency1 = d1 > flatRadius[1] ? 1.0:sqrt(1.0 - A*sampleGraident(d1/flatRadius[1]));
+    float transparency;
 
-    float r1 = flatRadius[0] - cosTheta * x1;
-    float r2 = flatRadius[0] - cosTheta * x2;
-    float front = frontEdge > 0.0 ? frontEdge : 0.0;
-    float back = backEdge > len ? len : backEdge;
-    float ratioRange = (back - front)/ (r1 + r2) * 10.0;
+    if(mid <= 0){
+        transparency = transparency0/transparency1;
+    }
+    if(mid > 0 && mid < len){
+        float r = (mid * flatRadius[1] + (len - mid) * flatRadius[0])/len;
+        float dr = distance(pLocal, vec2(mid, 0))/r;
+        transparency = (1.0 - A*sampleGraident(dr))/transparency0/transparency1;
+    }
+    if(mid >= len){
+        transparency = transparency1/transparency0;
+    }
 
-    float A = 1.0 - exp(-alphaDensity * ratioRange);
-    outColor = vec4(fragColor.rgb, A);
-    return;
-
-    // // normalize
-    // pLocal = pLocal / radius;
-    // d0 /= radius;
-    // d1 /= radius;
-    // len /= radius;
-
-    // float A = fragColor.a;
-    // float reversedGradBone = 1.0-A*sampleGraident(pLocal.y);
-
-    // float exceed0, exceed1;
-    // exceed0 = exceed1 = 1.0;
-    
-    // if(d0 < 1.0) {
-    //   exceed0 = pow(1.0-A*sampleGraident(d0), 
-    //     sign(pLocal.x) * 1.0/2.0 * (1.0-abs(pLocal.x))) * 
-    //     pow(reversedGradBone, step(0.0, -pLocal.x));
-    // }
-    // if(d1 < 1.0) {
-    //   exceed1 = pow(1.0-A*sampleGraident(d1), 
-    //     sign(len - pLocal.x) * 1.0/2.0 * (1.0-abs(len-pLocal.x))) * 
-    //     pow(reversedGradBone, step(0.0, pLocal.x - len));
-    // }
-    // A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
-    // outColor = vec4(fragColor.rgb, A);
-    // return;
+    outColor = vec4(fragColor.rgb, 1.0-transparency);
 #endif
-    
 }

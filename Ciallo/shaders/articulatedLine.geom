@@ -10,7 +10,6 @@ layout(location = 0) out vec4 fragColor;
 layout(location = 1) out flat vec2 p0;
 layout(location = 2) out flat vec2 p1;
 layout(location = 3) out vec2 p;
-layout(location = 4) out float radius; // radius across the current pixel
 layout(location = 5) out flat vec2 summedLength;
 layout(location = 6) out flat vec2 flatRadius;
 
@@ -32,8 +31,7 @@ void main(){
     float cosTheta = (r0 - r1)/len; // theta is the angle stroke tilt.
     // apply trigonometric half angle formula
     float tanValue0 = sqrt((1.0+cosTheta) / (1.0-cosTheta));
-    float sinTheta = sqrt(1.0-pow(cosTheta, 2.0));
-    float tanValue1 = (1.0-cosTheta)/sinTheta;
+    float tanValue1 = 1.0/tanValue0;
 
     // the corner case, Shen call it "Transit":
     // small disk is fully inside the big disk
@@ -43,7 +41,6 @@ void main(){
     if(tanValue0 > offsetRatioTolerance || tanValue1 > offsetRatioTolerance) return;
 
     // Vertex at p0 left(v01 direction)
-    radius = r0;
     p0 = pos0;
     p1 = pos1;
     p = p0 + normal*radius*tanValue0 - tangent*radius;
@@ -54,7 +51,6 @@ void main(){
     EmitVertex();
 
     // Vertex at p0 right
-    radius = r0;
     p0 = pos0;
     p1 = pos1;
     p = p0 - normal*radius*tanValue0 - tangent*radius;
@@ -65,7 +61,6 @@ void main(){
     EmitVertex();
 
     // Vertex at p1 left
-    radius = r1;
     p0 = pos0;
     p1 = pos1;
     p = p1 + normal*radius*tanValue1 + tangent*radius;
@@ -76,7 +71,6 @@ void main(){
     EmitVertex();
 
     // Vertex at p1 right
-    radius = r1;
     p0 = pos0;
     p1 = pos1;
     p = p1 - normal*radius*tanValue1 + tangent*radius;

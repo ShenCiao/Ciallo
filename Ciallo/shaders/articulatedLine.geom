@@ -43,7 +43,7 @@ void main(){
     // Vertex at p0 left(v01 direction)
     p0 = pos0;
     p1 = pos1;
-    p = p0 + normal*radius*tanValue0 - tangent*radius;
+    p = p0 + normal*r0*tanValue0 - tangent*r0;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -53,7 +53,7 @@ void main(){
     // Vertex at p0 right
     p0 = pos0;
     p1 = pos1;
-    p = p0 - normal*radius*tanValue0 - tangent*radius;
+    p = p0 - normal*r0*tanValue0 - tangent*r0;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -63,7 +63,7 @@ void main(){
     // Vertex at p1 left
     p0 = pos0;
     p1 = pos1;
-    p = p1 + normal*radius*tanValue1 + tangent*radius;
+    p = p1 + normal*r1*tanValue1 + tangent*r1;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -73,7 +73,7 @@ void main(){
     // Vertex at p1 right
     p0 = pos0;
     p1 = pos1;
-    p = p1 - normal*radius*tanValue1 + tangent*radius;
+    p = p1 - normal*r1*tanValue1 + tangent*r1;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);

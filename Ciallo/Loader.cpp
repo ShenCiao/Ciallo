@@ -12,7 +12,7 @@
 
 void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThickness)
 {
-	// Warning: memory leak!
+	// Warning: memory leak! (not trying to remove unused stroke)
 	R.ctx().get<StrokeContainer>().StrokeEs.clear();
 	auto& arm = R.ctx().get<ArrangementManager>();
 	arm.Arrangement.clear();
@@ -28,10 +28,13 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThicknes
 	std::vector<float> pressure;
 	float maxPressure = 0.0f;
 
+	int nStroke = 0, nVertex = 0;
+
 	while (std::getline(file, line))
 	{
 		if (line.empty())
 		{
+			++nStroke;
 			curves.push_back(std::move(curve));
 			pressures.push_back(std::move(pressure));
 			curve = Geom::Polyline{};
@@ -39,6 +42,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThicknes
 			continue;
 		}
 
+		++nVertex;
 		std::vector<float> values;
 		for (auto value : views::split(line, ','))
 		{
@@ -50,6 +54,10 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThicknes
 		pressure.push_back(values[2]);
 		if (values[2] >= maxPressure) maxPressure = values[2];
 	}
+
+	spdlog::info("Number of strokes: {}", nStroke);
+	spdlog::info("Number of vertices: {}", nVertex);
+
 	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();

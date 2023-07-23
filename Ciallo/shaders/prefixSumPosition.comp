@@ -2,11 +2,20 @@
 
 layout(local_size_x = 1024) in;
 
-layout(std430, binding = 0) readonly buffer Input{
-    vec2[] posInput;
+layout(std430, binding = 0) readonly buffer PosInput{
+    vec2[] position;
 };
 
-layout(std430,binding = 1) writeonly buffer Output{
+layout(std430, binding = 1) readonly buffer ThicknessInput{
+    float[] thicknessOffset;
+};
+layout(location = 2) uniform float uniRadius;
+layout(location = 3) uniform int stampMode;
+const int EquiDistance = 0;
+const int RatioDistance = 1;
+
+// won't change name for historical reason. It's not length anymore but stamp count.
+layout(std430, binding = 2) writeonly buffer Output{
     float[] lengthOutput;
 };
 
@@ -14,13 +23,40 @@ shared float[gl_WorkGroupSize.x * 2] segmentLengths;
 
 void main(){
     uint id = gl_LocalInvocationID.x;
-    vec2 p0 = posInput[id];
-    vec2 p1 = id == 0 ? p0:posInput[id - 1];
+    vec2 p0 = position[id];
+    vec2 p1 = id == 0 ? p0:position[id - 1];
     // length of each segment
-    float curLength = distance(p0, p1);
-    segmentLengths[id] = curLength;
+    float L = distance(p0, p1);
 
-    barrier();
+    if(stampMode == EquiDistance){
+        segmentLengths[id] = L/uniRadius/2.0;
+    }
+    else if (stampMode == RatioDistance){
+        float t2 = 2.0 * (uniRadius + thicknessOffset[id]);
+        float t1 = id == 0 ? t2 : 2.0 * (uniRadius + thicknessOffset[id-1]); // yeah I'm misusing half thickness (radius) as real thickness
+
+        float stretchedL = 0;
+        const float tolerance = 1e-5;
+        if(t1 <= 0 || t1/t2 < tolerance){
+            t1 = tolerance*t2;
+        }
+        else if(t2 <= 0 || t2/t1 < tolerance){
+            t2 = tolerance*t1;
+        }
+        
+        if(t1 <= 0 && t2 <= 0){
+            stretchedL = 0;
+        }
+        else if (t1 == t2){
+            stretchedL = L/t1;
+        }
+        else{
+            stretchedL = log(t1/t2)/(t1 - t2) * L;
+        }
+        segmentLengths[id] = stretchedL;
+    }
+
+    barrier(); 
 	memoryBarrierShared();
 
     // Prefix sum on segment length

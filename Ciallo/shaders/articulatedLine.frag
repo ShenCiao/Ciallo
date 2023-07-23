@@ -4,9 +4,8 @@ layout(location = 0) in vec4 fragColor;
 layout(location = 1) in flat vec2 p0;
 layout(location = 2) in flat vec2 p1;
 layout(location = 3) in vec2 p;
-layout(location = 4) in float halfThickness;
-layout(location = 5) in flat float summedLength;
-layout(location = 6) in flat float hthickness[2]; // only being used by perfect vanilla
+layout(location = 5) in flat vec2 summedLength;
+layout(location = 6) in flat vec2 flatRadius;
 
 layout(location = 0) out vec4 outColor;
 
@@ -14,11 +13,14 @@ layout(location = 0) out vec4 outColor;
 // #define AIRBRUSH
 
 #ifdef STAMP
-layout(location = 2) uniform float uniThickness;
+layout(location = 2) uniform float uniRadius;
 layout(location = 3, binding = 0) uniform sampler2D stamp;
 layout(location = 4) uniform float stampIntervalRatio;
 layout(location = 5) uniform float noiseFactor;
 layout(location = 6) uniform float rotationRand;
+layout(location = 7) uniform int stampMode;
+const int EquiDistance = 0;
+const int RatioDistance = 1;
 #endif
 
 #ifdef AIRBRUSH
@@ -71,127 +73,161 @@ float fbm (in vec2 st) {
 }
 // ---------------- Noise end ------------------
 
-void main() {
+#ifdef STAMP
+float x2n(float x, float r, float t1, float t2, float L){
+    // I screw the code up.
+    if(stampMode == RatioDistance){
+        const float tolerance = 1e-5;
+        if(t1 <= 0 || t1/t2 < tolerance){
+            t1 = tolerance*t2;
+        }
+        else if(t2 <= 0 || t2/t1 < tolerance){
+            t2 = tolerance*t1;
+        }
+        t1 = 2.0*t1; t2 = 2.0*t2; 
+        if(t1 == t2){
+            return x/(r*t1);
+        }
+        else{
+            return -L / r / (t1 - t2) * log(1.0 - (1.0 - t2/t1)/L * x);
+        }
+    }
+    else{
+        return x / (uniRadius * 2.0 * r);
+    }
     
-    vec2 lHat = normalize(p1 - p0);
-    vec2 hHat = vec2(-lHat.y, lHat.x);
-    float len = length(p1-p0);
+}
 
-    // In LH coordinate
-    vec2 pLH = vec2(dot(p-p0, lHat), dot(p-p0, hHat));
-    vec2 p0LH = vec2(0, 0);
-    vec2 p1LH = vec2(len, 0);
+float n2x(float n, float r, float t1, float t2, float L){
+    if(stampMode == RatioDistance){
+        const float tolerance = 1e-5;
+        if(t1 <= 0 || t1/t2 < tolerance){
+            t1 = tolerance*t2;
+        }
+        else if(t2 <= 0 || t2/t1 < tolerance){
+            t2 = tolerance*t1;
+        }
+        t1 = 2.0*t1; t2 = 2.0*t2;
+        if(t1 == t2){
+            return n * r * t1;
+        }
+        else{
+            return L * (1.0-exp(-(t1-t2)*n*r/L)) / (1.0-t2/t1);
+        }
+    }
+    else{
+        return n * uniRadius * 2.0 * r;
+    }
+}
+#endif
 
+void main() {
+    vec2 tangent = normalize(p1 - p0);
+    vec2 normal = vec2(-tangent.y, tangent.x);
+    float len = distance(p1, p0);
+
+    // edge's locate coordinate, origin at the starting point, x axis along the tangent 
+    vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
+    vec2 p0Local = vec2(0, 0);
+    vec2 p1Local = vec2(len, 0);
+
+    float cosTheta = (flatRadius[0] - flatRadius[1])/len; // theta is the angle stroke tilt.
     float d0 = distance(p, p0);
+    float d0cos = pLocal.x / d0;
     float d1 = distance(p, p1);
+    float d1cos = (pLocal.x - len) / d1;
 
-#if !defined(STAMP) && !defined(AIRBRUSH)
-    // - Naive vanilla (OK if stroke is opaque)
-    if(pLH.x < 0 && d0 > halfThickness){
+    // remove four corners
+    if(d0cos < cosTheta && d0 > flatRadius[0]){
         discard;
     }
-    if(pLH.x > p1LH.x && d1 > halfThickness){
+    if(d1cos > cosTheta && d1 > flatRadius[1]){
         discard;
     }
-    outColor = fragColor;
+
+#if !defined(AIRBRUSH) && !defined(STAMP)
+    if(d0 < flatRadius[0] && d1 < flatRadius[1]){
+        discard;
+    }
+    float A = fragColor.a;
+    if(d0 < flatRadius[0] || d1 < flatRadius[1]){
+        A = 1.0 - sqrt(1.0 - fragColor.a);
+    }
+    outColor = vec4(fragColor.rgb, A);
     return;
-
-    // - Transparent vanilla (perfectly handle transparency and self overlapping)
-    //  use uninterpolated(flat) thickness avoid the joint mismatch.
-    // if(pLH.x < 0 && d0 > hthickness[0]){
-    //     discard;
-    // }
-    // if(pLH.x > p1LH.x && d1 > hthickness[1]){
-    //     discard;
-    // }
-    // if(d0 < hthickness[0] && d1 < hthickness[1]){
-    //     discard;
-    // }
-    // float A = fragColor.a;
-    // if(d0 < hthickness[0] || d1 < hthickness[1]){
-    //     A = 1.0 - sqrt(1.0 - fragColor.a);
-    // }
-    // outColor = vec4(fragColor.rgb, A);
-    // return;
 #endif
 
 #ifdef STAMP
-    float stampInterval = stampIntervalRatio * uniThickness;
+    // roots of the quadratic polynomial are frontedge and backedge
+    // formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
+    float a, b, c, delta;
+    a = 1.0 - pow(cosTheta, 2.0);
+    b = 2.0 * (flatRadius[0] * cosTheta - pLocal.x);
+    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(flatRadius[0], 2.0);
+    delta = pow(b, 2.0) - 4.0*a*c;
+    if(delta <= 0.0) discard; // This should never happen.
+    
+    float tempMathBlock = b + sign(b) * sqrt(delta);
+    float x1 = -2 * c / tempMathBlock;
+    float x2 = -tempMathBlock / (2*a);
+    float frontEdge = x1 <= x2 ? x1 : x2;
+    float backEdge = x1 > x2 ? x1 : x2;
 
-    // first stamp and its index can be reached by this pixel.
-    float stampStarting, stampStartingIndex;
-    float frontEdge = pLH.x-halfThickness;
-    if(frontEdge <= 0){
-        stampStarting = mod(stampInterval - mod(summedLength, stampInterval), stampInterval); // mod twice for getting zero value
-        stampStartingIndex = ceil(summedLength/stampInterval);
+    float summedIndex = summedLength[0]/stampIntervalRatio;
+    float startIndex, endIndex;
+    if (frontEdge <= 0){
+        startIndex = ceil(summedIndex) - summedIndex;
     }
     else{
-        stampStarting = mod(stampInterval - mod(summedLength+frontEdge, stampInterval), stampInterval) + frontEdge;
-        stampStartingIndex = ceil((summedLength+frontEdge)/stampInterval);
+        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
     }
-    float backEdge = pLH.x+halfThickness;
-    float stampEnding = (backEdge < len) ? backEdge:len;
-    if(stampStarting > stampEnding) discard; // There are no stamps in this rect.
+    endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
+    float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+    endIndex = endIndex < backIndex ? endIndex : backIndex;
+    if(startIndex > endIndex) discard;
 
-    float currStamp = stampStarting, currStampIndex = stampStartingIndex;
-    float A = 0;
-    int san_i = 0, MAX_i = 32; // sanity check to avoid infinite loop
-    do{
-        san_i += 1;
-        if(san_i > MAX_i) break;
-        // Sample on stamp and manually blend alpha
-        float angle = rotationRand*radians(360*fract(sin(currStampIndex)*1.0));
-        vec2 vStamp = pLH - vec2(currStamp, 0);
-        vStamp *= rotate(angle);
-        vec2 uv = (vStamp/halfThickness + 1.0)/2.0;
-
-        vec4 color = texture(stamp, uv);
-        float alpha = clamp(color.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0);
+    int MAX_i = 128; float currIndex = startIndex;
+    float A = 0.0;
+    for(int i = 0; i < MAX_i; i++){
+        float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+        float r = flatRadius[0] - cosTheta * currStampLocalX;
+        vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0);
+        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
+        distanceToStamp *= rotate(angle);
+        vec2 textureCoordinate = (distanceToStamp/r + 1.0)/2.0;
+        vec4 color = texture(stamp, textureCoordinate);
+        float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
         A = A * (1.0-alpha) + alpha;
-        currStamp += stampInterval; 
-        currStampIndex += 1.0;
-    }while(currStamp < stampEnding);
-    if(A < 1e-4){
-        discard;
+
+        currIndex += 1.0;
+        if(currIndex > endIndex) break;
     }
-    outColor = vec4(fragColor.rgb, A*fragColor.a);
+    if(A < 1e-4) discard;
+    outColor = vec4(fragColor.rgb, A);
     return;
 #endif
 
 #ifdef AIRBRUSH
+    // Approximation solution.
+    float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
+    float mid = pLocal.x - abs(pLocal.y)/tanTheta;
     float A = fragColor.a;
+    float transparency0 = d0 > flatRadius[0] ? 1.0:sqrt(1.0 - A*sampleGraident(d0/flatRadius[0]));
+    float transparency1 = d1 > flatRadius[1] ? 1.0:sqrt(1.0 - A*sampleGraident(d1/flatRadius[1]));
+    float transparency;
 
-    if((pLH.x < 0 && d0 > halfThickness)){
-        discard;
+    if(mid <= 0){
+        transparency = transparency0/transparency1;
     }
-    if((pLH.x > p1LH.x && d1 > halfThickness)){
-        discard;
+    if(mid > 0 && mid < len){
+        float r = (mid * flatRadius[1] + (len - mid) * flatRadius[0])/len;
+        float dr = distance(pLocal, vec2(mid, 0))/r;
+        transparency = (1.0 - A*sampleGraident(dr))/transparency0/transparency1;
+    }
+    if(mid >= len){
+        transparency = transparency1/transparency0;
     }
 
-    // normalize
-    pLH = pLH / halfThickness;
-    d0 /= halfThickness;
-    d1 /= halfThickness;
-    len /= halfThickness;
-
-    float reversedGradBone = 1.0-A*sampleGraident(pLH.y);
-
-    float exceed0, exceed1;
-    exceed0 = exceed1 = 1.0;
-    
-    if(d0 < 1.0) {
-      exceed0 = pow(1.0-A*sampleGraident(d0), 
-        sign(pLH.x) * 1.0/2.0 * (1.0-abs(pLH.x))) * 
-        pow(reversedGradBone, step(0.0, -pLH.x));
-    }
-    if(d1 < 1.0) {
-      exceed1 = pow(1.0-A*sampleGraident(d1), 
-        sign(len - pLH.x) * 1.0/2.0 * (1.0-abs(len-pLH.x))) * 
-        pow(reversedGradBone, step(0.0, pLH.x - len));
-    }
-    A = clamp(1.0 - reversedGradBone/exceed0/exceed1, 0.0, 1.0-1e-3);
-    outColor = vec4(fragColor.rgb, A);
-    return;
+    outColor = vec4(fragColor.rgb, 1.0-transparency);
 #endif
-    
 }

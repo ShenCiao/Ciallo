@@ -51,9 +51,6 @@
     <ClCompile Include="RenderingSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CursorInteractionTracer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Tool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -180,9 +177,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PaintTool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CursorInteractionTracer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Tool.h">

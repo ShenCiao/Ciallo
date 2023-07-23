@@ -1,6 +1,6 @@
 #version 460
 
-// Beginner friendly triangle rendering. Used for rendering convex polygon.
+// Beginner's triangle rendering. Used for rendering convex polygon.
 layout(location = 0) in vec2 inPos;
 
 layout(std140, binding=0) uniform _MVP{

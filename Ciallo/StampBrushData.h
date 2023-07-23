@@ -8,6 +8,9 @@ public:
 	float NoiseFactor = 0.0f;
 	float RotationRand = 1.0f;
 
+	enum StampMode { EquiDistant, RatioDistant };
+	StampMode StampMode = RatioDistant;
+
 	StampBrushData() = default;
 
 	void SetUniforms();

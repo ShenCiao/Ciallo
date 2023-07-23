@@ -17,7 +17,7 @@ TempLayers::TempLayers(glm::ivec2 size)
 	Overlay = RenderableTexture{size.x, size.y};
 	Drawing = RenderableTexture{size.x, size.y};
 	Fill = RenderableTexture{size.x, size.y};
-	GenCircleStroke();
+	GenCircleStroke(); 
 }
 
 void TempLayers::RenderOverlay()
@@ -84,8 +84,8 @@ void TempLayers::RenderDrawing()
 	{
 		auto& stroke = R.get<Stroke>(e);
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		bool skipLine = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
-		if (!skipLine)
+		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
+		if (!skip)
 		{
 			auto& brush = R.get<Brush>(stroke.BrushE);
 			brush.Use();

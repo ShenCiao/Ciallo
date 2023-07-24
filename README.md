@@ -7,6 +7,19 @@
 
 ![Ciallo](https://github.com/ShenCiao/Ciallo/assets/24319509/455de8e7-06ac-49ca-bcd7-854b40102d2d)
 
+    @inproceedings{Ciallo2023,
+       author       = {Shen Ciao, Li-Yi Wei},
+       title        = {Ciallo: The next-generation vector paint program},
+       booktitle    = {ACM SIGGRAPH 2023 Talks},
+       series       = {SIGGRAPH 2023},
+       year         = {2023},
+       month        = {August},
+       url          = {https://doi.org/10.1145/3587421.3595418},
+       doi          = {10.1145/3587421.3595418},
+       publisher    = {ACM},
+       address      = {New York, NY, USA},
+    }
+
 ## Introduction
 
 Render 2D art with GPU stroke by stroke!

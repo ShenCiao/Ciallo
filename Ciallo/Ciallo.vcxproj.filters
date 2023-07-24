@@ -292,7 +292,7 @@
     <CopyFileToFolders Include="shaders\polygon.vert">
       <Filter>Resource Files\shaders</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\prefixSumPosition.comp">
+    <CopyFileToFolders Include="shaders\articulatedLine.comp">
       <Filter>Resource Files\shaders</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="images\stamp1.png">

@@ -85,6 +85,8 @@
       const int Vanilla = 0, Stamp = 1, Airbrush = 2;
       uniform vec3 color;
       uniform float alpha;
+      uniform mediump sampler2D tex;
+      float sampleGraident(float distance){ return texture(tex, vec2(distance, 0.0)).r; }
       
       out vec4 outColor;
       
@@ -112,9 +114,31 @@
               float A = (d0 < r0 || d1 < r1) ? 1.0 - sqrt(1.0 - alpha) : alpha;
               outColor = vec4(color, A);
           }
-          
+      
+          if(type == Airbrush){
+              float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
+              float mid = pLocal.x - abs(pLocal.y)/tanTheta;
+              float A = alpha;
+              float transparency0 = d0 > r0 ? 1.0:sqrt(1.0 - A*sampleGraident(d0/r0));
+              float transparency1 = d1 > r1 ? 1.0:sqrt(1.0 - A*sampleGraident(d1/r1));
+              float transparency;
+      
+              if(mid <= 0.0){
+                  transparency = transparency0/transparency1;
+              }
+              if(mid > 0.0 && mid < len){
+                  float r = (mid * r1 + (len - mid) * r0)/len;
+                  float dr = distance(pLocal, vec2(mid, 0))/r;
+                  transparency = (1.0 - A*sampleGraident(dr))/transparency0/transparency1;
+              }
+              if(mid >= len){
+                  transparency = transparency1/transparency0;
+              }
+      
+              outColor = vec4(color, 1.0 - transparency);
+          }
           return;
-      }
+        }
 		</script>
 
     <script type="module" src="./main.js"></script>

@@ -58,9 +58,10 @@ const Types = {
 }
 const strokeMaterial = new THREE.RawShaderMaterial( {
   uniforms: {
-    type: {value: Types.Vanilla},
+    type: {value: Types.Airbrush},
     alpha: {value: 1.0}, // it's pretty annoying threejs don't support RGBA color.
     color: new THREE.Uniform(new THREE.Color()),
+    tex: { type: "t", value: new THREE.DataTexture() },
   },
   vertexShader: document.getElementById( 'vertexShader' ).textContent,
   fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
@@ -111,17 +112,82 @@ const updatePolylineMesh = (n) => {
 
 let variables = {
   nSegments: 32,
+  bezierControlPoint1: new THREE.Vector2(0.33, 1.0),
+  bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
 };
 
 updatePolylineMesh(variables.nSegments);
-scene.add(polylineMesh);
 
+const updateGradient = (point1, point2)=>{
+  let curve = new THREE.CubicBezierCurve(
+    new THREE.Vector2(0.0, 1.0),
+    point1,
+    point2,
+    new THREE.Vector2(1.0, 0.0),
+  );
+  
+  const width = 256;
+  const height = 1;
+  const size = width * height;
+  const data = new Uint8Array( 4 * size );
+  const points = curve.getPoints( width * 2 );
+  
+  for (let i = 0; i < width; ++i){
+    let x = i/width;
+    for (let j = 0; j < width * 2 - 1; ++j){
+      let p0 = points[j], p1 = points[j+1];
+      if(x >= p0.x && x <= p1.x){
+        let y = (p0.y * (p1.x - x) + p1.y * (x - p0.x))/(p1.x - p0.x);
+        data[i*4] = Math.floor(y * 255);
+      }
+    }
+  }
+
+  polylineMesh.material.uniforms.tex.value.dispose();
+  const texture = new THREE.DataTexture(data, width, height);
+  texture.needsUpdate = true;
+  polylineMesh.material.uniforms.tex.value = texture;
+  
+  scene.add(polylineMesh);
+}
+
+updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
+
+// prameter GUI
 gui.addColor(polylineMesh.material.uniforms, 'color').name("RGB").onChange( 
   (value) => polylineMesh.material.uniforms.color.value = value 
 );
 gui.add(polylineMesh.material.uniforms.alpha, 'value', 0.0, 1.0, 0.01).name("Opacity");
 gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
   (value) => updatePolylineMesh(value)
+);
+
+const airbrushFolder = gui.addFolder("Airbrush Parameters");
+airbrushFolder.add(variables.bezierControlPoint1, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 1 X").onChange(
+  (value) => {
+    variables.bezierControlPoint1.x = value;
+    updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
+  }
+)
+airbrushFolder.add(variables.bezierControlPoint1, 'y', 0.0, 1.0, 0.01).name("Gradient Control Point 1 Y").onChange(
+  (value) => {
+    variables.bezierControlPoint1.y = value;
+    updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
+  }
+);
+
+airbrushFolder.add(variables.bezierControlPoint2, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 2 X").onChange(
+  (value) => {
+    variables.bezierControlPoint2.x = value;
+    updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
+  }
+);
+
+airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Gradient Control Point 2 Y").onChange(
+  (value) => {
+    variables.bezierControlPoint2.y = value;
+    updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
+  }
 );
 // -------------------------------------------------------------------------------
 // Rendering Function

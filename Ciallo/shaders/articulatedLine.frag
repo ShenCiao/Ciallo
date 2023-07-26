@@ -131,26 +131,27 @@ void main() {
     vec2 p0Local = vec2(0, 0);
     vec2 p1Local = vec2(len, 0);
 
-    float cosTheta = (flatRadius[0] - flatRadius[1])/len; // theta is the angle stroke tilt.
+    float r0 = flatRadius[0], r1 = flatRadius[1];
+    float cosTheta = (r0 - r1)/len; // theta is the angle stroke tilt.
     float d0 = distance(p, p0);
     float d0cos = pLocal.x / d0;
     float d1 = distance(p, p1);
     float d1cos = (pLocal.x - len) / d1;
 
     // remove four corners
-    if(d0cos < cosTheta && d0 > flatRadius[0]){
+    if(d0cos < cosTheta && d0 > r0){
         discard;
     }
-    if(d1cos > cosTheta && d1 > flatRadius[1]){
+    if(d1cos > cosTheta && d1 > r1){
         discard;
     }
 
 #if !defined(AIRBRUSH) && !defined(STAMP)
-    if(d0 < flatRadius[0] && d1 < flatRadius[1]){
+    if(d0 < r0 && d1 < r1){
         discard;
     }
     float A = fragColor.a;
-    if(d0 < flatRadius[0] || d1 < flatRadius[1]){
+    if(d0 < r0 || d1 < r1){
         A = 1.0 - sqrt(1.0 - fragColor.a);
     }
     outColor = vec4(fragColor.rgb, A);
@@ -162,8 +163,8 @@ void main() {
     // formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
     float a, b, c, delta;
     a = 1.0 - pow(cosTheta, 2.0);
-    b = 2.0 * (flatRadius[0] * cosTheta - pLocal.x);
-    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(flatRadius[0], 2.0);
+    b = 2.0 * (r0 * cosTheta - pLocal.x);
+    c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(r0, 2.0);
     delta = pow(b, 2.0) - 4.0*a*c;
     if(delta <= 0.0) discard; // This should never happen.
     
@@ -179,18 +180,18 @@ void main() {
         startIndex = ceil(summedIndex) - summedIndex;
     }
     else{
-        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len)) - summedIndex;
+        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, r0, r1, len)) - summedIndex;
     }
     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-    float backIndex = x2n(backEdge, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
+    float backIndex = x2n(backEdge, stampIntervalRatio, r0, r1, len);
     endIndex = endIndex < backIndex ? endIndex : backIndex;
     if(startIndex > endIndex) discard;
 
     int MAX_i = 128; float currIndex = startIndex;
     float A = 0.0;
     for(int i = 0; i < MAX_i; i++){
-        float currStampLocalX = n2x(currIndex, stampIntervalRatio, flatRadius[0], flatRadius[1], len);
-        float r = flatRadius[0] - cosTheta * currStampLocalX;
+        float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
+        float r = r0 - cosTheta * currStampLocalX;
         vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0);
         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
         distanceToStamp *= rotate(angle);
@@ -212,15 +213,15 @@ void main() {
     float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
     float mid = pLocal.x - abs(pLocal.y)/tanTheta;
     float A = fragColor.a;
-    float transparency0 = d0 > flatRadius[0] ? 1.0:sqrt(1.0 - A*sampleGraident(d0/flatRadius[0]));
-    float transparency1 = d1 > flatRadius[1] ? 1.0:sqrt(1.0 - A*sampleGraident(d1/flatRadius[1]));
+    float transparency0 = d0 > r0 ? 1.0:sqrt(1.0 - A*sampleGraident(d0/r0));
+    float transparency1 = d1 > r1 ? 1.0:sqrt(1.0 - A*sampleGraident(d1/r1));
     float transparency;
 
     if(mid <= 0){
         transparency = transparency0/transparency1;
     }
     if(mid > 0 && mid < len){
-        float r = (mid * flatRadius[1] + (len - mid) * flatRadius[0])/len;
+        float r = (mid * r1 + (len - mid) * r0)/len;
         float dr = distance(pLocal, vec2(mid, 0))/r;
         transparency = (1.0 - A*sampleGraident(dr))/transparency0/transparency1;
     }

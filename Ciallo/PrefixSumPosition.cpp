@@ -6,7 +6,7 @@
 PrefixSumPosition::PrefixSumPosition()
 {
 	std::filesystem::path root = "./shaders";
-	GLuint compShader = ShaderUtilities::CreateFromFile(root / "prefixSumPosition.comp", GL_COMPUTE_SHADER);
+	GLuint compShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.comp", GL_COMPUTE_SHADER);
 
 	Program = glCreateProgram();
 	glAttachShader(Program, compShader);

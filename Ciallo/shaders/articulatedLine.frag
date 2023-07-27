@@ -14,13 +14,12 @@ layout(location = 0) out vec4 outColor;
 
 #ifdef STAMP
 layout(location = 2) uniform float uniRadius;
-layout(location = 3, binding = 0) uniform sampler2D stamp;
+layout(location = 3, binding = 0) uniform sampler2D footprint;
 layout(location = 4) uniform float stampIntervalRatio;
 layout(location = 5) uniform float noiseFactor;
 layout(location = 6) uniform float rotationRand;
 layout(location = 7) uniform int stampMode;
-const int EquiDistance = 0;
-const int RatioDistance = 1;
+const int EquiDistance = 0, RatioDistance = 1;
 #endif
 
 #ifdef AIRBRUSH
@@ -95,7 +94,6 @@ float x2n(float x, float r, float t1, float t2, float L){
     else{
         return x / (uniRadius * 2.0 * r);
     }
-    
 }
 
 float n2x(float n, float r, float t1, float t2, float L){
@@ -169,14 +167,14 @@ void main() {
     if(delta <= 0.0) discard; // This should never happen.
     
     float tempMathBlock = b + sign(b) * sqrt(delta);
-    float x1 = -2 * c / tempMathBlock;
-    float x2 = -tempMathBlock / (2*a);
+    float x1 = -2.0 * c / tempMathBlock;
+    float x2 = -tempMathBlock / (2.0*a);
     float frontEdge = x1 <= x2 ? x1 : x2;
     float backEdge = x1 > x2 ? x1 : x2;
 
     float summedIndex = summedLength[0]/stampIntervalRatio;
     float startIndex, endIndex;
-    if (frontEdge <= 0){
+    if (frontEdge <= 0.0){
         startIndex = ceil(summedIndex) - summedIndex;
     }
     else{
@@ -196,7 +194,7 @@ void main() {
         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
         distanceToStamp *= rotate(angle);
         vec2 textureCoordinate = (distanceToStamp/r + 1.0)/2.0;
-        vec4 color = texture(stamp, textureCoordinate);
+        vec4 color = texture(footprint, textureCoordinate);
         float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
         A = A * (1.0-alpha) + alpha;
 
@@ -222,7 +220,7 @@ void main() {
     }
     if(mid > 0 && mid < len){
         float r = (mid * r1 + (len - mid) * r0)/len;
-        float dr = distance(pLocal, vec2(mid, 0))/r;
+        float dr = distance(pLocal, vec2(mid, 0.0))/r;
         transparency = (1.0 - A*sampleGraident(dr))/transparency0/transparency1;
     }
     if(mid >= len){

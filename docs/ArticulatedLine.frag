@@ -1,24 +1,42 @@
 #version 300 es
+
 precision mediump float;
 precision mediump int;
 
 in vec2 p;
-in float r;
 flat in vec2 p0;
 flat in float r0;
+flat in float l0;
 flat in vec2 p1;
 flat in float r1;
+flat in float l1;
 
 // Common
 uniform int type;
 const int Vanilla = 0, Stamp = 1, Airbrush = 2;
 uniform vec3 color;
 uniform float alpha;
+// Stamp
+uniform mediump sampler2D footprint;
+uniform float stampInterval;
+uniform float noiseFactor;
+uniform float rotationRand;
+uniform int stampMode;
+const int EquiDistance = 0, RatioDistance = 1;
+float x2n(float x);
+float n2x(float n);
+mat2 rotate(float angle);
 // Airbrush
 uniform mediump sampler2D gradient;
 float sampleGraident(float distance){ return texture(gradient, vec2(distance, 0.0)).r; }
 
+// Output
 out vec4 outColor;
+
+// Noise helper functions from _The Book of Shader_.
+float random (in vec2 st);
+float noise (in vec2 st);
+float fbm (in vec2 st);
 
 void main()	{
     vec2 tangent = normalize(p1 - p0);
@@ -39,10 +57,60 @@ void main()	{
     if(d0cos < cosTheta && d0 > r0) discard;
     if(d1cos > cosTheta && d1 > r1) discard;
     
+    // Type specific parts
     if(type == Vanilla){
         if(d0 < r0 && d1 < r1) discard;
         float A = (d0 < r0 || d1 < r1) ? 1.0 - sqrt(1.0 - alpha) : alpha;
         outColor = vec4(color, A);
+        return;
+    }
+    
+    if(type == Stamp){
+        // Two roots of the quadratic polynomial are frontedge and backedge
+        // formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
+        float a, b, c, delta;
+        a = 1.0 - pow(cosTheta, 2.0);
+        b = 2.0 * (r0 * cosTheta - pLocal.x);
+        c = pow(pLocal.x, 2.0) + pow(pLocal.y, 2.0) - pow(r0, 2.0);
+        delta = pow(b, 2.0) - 4.0*a*c;
+        if(delta <= 0.0) discard; // This should never happen.
+        
+        float tempMathBlock = b + sign(b) * sqrt(delta);
+        float x1 = -2.0 * c / tempMathBlock;
+        float x2 = -tempMathBlock / (2.0*a);
+        float frontEdge = x1 <= x2 ? x1 : x2;
+        float backEdge = x1 > x2 ? x1 : x2;
+
+        float summedIndex = l0/stampInterval;
+        float startIndex, endIndex;
+        if (frontEdge <= 0.0){
+            startIndex = ceil(summedIndex);
+        }
+        else{
+            startIndex = ceil(summedIndex + x2n(frontEdge));
+        }
+        endIndex = l1/stampInterval;
+        float backIndex = x2n(backEdge) + summedIndex;
+        endIndex = endIndex < backIndex ? endIndex : backIndex;
+        if(startIndex > endIndex) discard;
+
+        int MAX_i = 128; float currIndex = startIndex;
+        float A = 0.0;
+        for(int i = 0; i < MAX_i; i++){
+            float currStampLocalX = n2x(currIndex - summedIndex);
+            float r = r0 - cosTheta * currStampLocalX;
+            vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0.0);
+            float angle = rotationRand*radians(360.0*fract(sin(summedIndex+currIndex)*1.0));
+            
+            float opacity = length(distanceToStamp)/r > 1.0 ? 0.0:0.5;
+            A = A * (1.0-opacity) + opacity;
+
+            currIndex += 1.0;
+            if(currIndex > endIndex) break;
+        }
+        if(A < 1e-4) discard;
+        outColor = vec4(color, A);
+        return;
     }
 
     if(type == Airbrush){
@@ -68,4 +136,66 @@ void main()	{
         outColor = vec4(color, 1.0 - transparency);
     }
     return;
+}
+
+float x2n(float x){
+    if(stampMode == EquiDistance) return x / stampInterval;
+    if(stampMode == RatioDistance){
+        float L = distance(p0, p1);
+        if(r0 == r1) return x/(stampInterval*r0);
+        else return -L / stampInterval / (2.0*r0 - 2.0*r1) * log(1.0 - (1.0 - r1/r0)/L * x);
+    }
+}
+
+float n2x(float n){
+    if(stampMode == EquiDistance) return n * stampInterval;
+    if(stampMode == RatioDistance){
+        float L = distance(p0, p1);
+        if(r0 == r1) return n * stampInterval * r0;
+        else return L * (1.0-exp((r0-r1)*n*stampInterval/L)) / (1.0-r1/r0);
+    }
+}
+
+mat2 rotate(float angle){
+    return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+}
+
+// ----------------------------------------------------------------------------------
+float random (in vec2 st) {
+    return fract(sin(dot(st.xy,
+                        vec2(12.9898,78.233)))*
+        43758.5453123);
+}
+
+float noise (in vec2 st) {
+    vec2 i = floor(st);
+    vec2 f = fract(st);
+
+    // Four corners in 2D of a tile
+    float a = random(i);
+    float b = random(i + vec2(1.0, 0.0));
+    float c = random(i + vec2(0.0, 1.0));
+    float d = random(i + vec2(1.0, 1.0));
+
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    return mix(a, b, u.x) +
+            (c - a)* u.y * (1.0 - u.x) +
+            (d - b) * u.x * u.y;
+}
+
+#define OCTAVES 6
+float fbm (in vec2 st) {
+    // Initial values
+    float value = 0.0;
+    float amplitude = .5;
+    float frequency = 0.;
+    //
+    // Loop of octaves
+    for (int i = 0; i < OCTAVES; i++) {
+        value += amplitude * noise(st);
+        st *= 2.;
+        amplitude *= .5;
+    }
+    return value;
 }

@@ -56,11 +56,22 @@ const Types = {
   Stamp: 1,
   Airbrush: 2,
 }
+const StampModes = {
+  EquiDistant: 0,
+  RatioDistant: 1,
+}
 const strokeMaterial = new THREE.RawShaderMaterial( {
   uniforms: {
     type: {value: Types.Airbrush},
-    alpha: {value: 1.0}, // it's pretty annoying threejs don't support RGBA color.
+    alpha: {value: 1.0}, // threejs don't support RGBA color.
     color: new THREE.Uniform(new THREE.Color()),
+    // Stamp
+    footprint: {type: "t", value: new THREE.Texture()},
+    stampInterval: {value: 1.0},
+    noiseFactor: {value: 0.0},
+    rotationRand: {value: 0.0},
+    stampMode: {value: StampModes.EquiDistant},
+    // Airbrush
     gradient: { type: "t", value: new THREE.DataTexture() },
   },
   vertexShader: document.getElementById( 'vertexShader' ).textContent,
@@ -72,21 +83,26 @@ const strokeMaterial = new THREE.RawShaderMaterial( {
 
 // I mean "polylinePath" here but in threejs it's a mesh object, hope it won't confuse you.
 const polylineMesh = new THREE.InstancedMesh( trapzoidGeometry, strokeMaterial); 
-polylineMesh.frustumCulled = false; // I debuged half hours to find this property.
+polylineMesh.frustumCulled = false;
+
+let variables = {
+  nSegments: 32,
+  bezierControlPoint1: new THREE.Vector2(0.33, 1.0),
+  bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
+};
 
 // Since we don't have geometry shader and compute shader, we have to replicate their behaviors here.
 // Push two successive vertices' (an edge's) infos into a single vertex, same as the "lines" input in geometry shader.
-const updatePolylineMesh = (n) => {
-  polylineMesh.geometry.deleteAttribute("position0");
-  polylineMesh.geometry.deleteAttribute("radius0");
-  polylineMesh.geometry.deleteAttribute("position1");
-  polylineMesh.geometry.deleteAttribute("radius1");
+const updatePolylineMesh = () => {
   const position0 = [];
   const position1 = [];
   const radius0 = [];
   const radius1 = [];
+  const summedLength0 = [];
+  const summedLength1 = [];
+  let n = variables.nSegments;
 
-  // golden ratio
+  // gr is the golden ratio value
   const gr = (1 + Math.sqrt(5)) / 2; 
   const pi = Math.PI;
   const maxRadius = 0.33;
@@ -103,22 +119,61 @@ const updatePolylineMesh = (n) => {
     }
   }
 
+  // The length is supposed to be calculated in a compute shader with the prefix sum algorithm. WebGL don't support it.
+  // Though WebGPU supports compute shader, shen isn't familiar with it.
+  if(polylineMesh.material.uniforms.stampMode.value == StampModes.EquiDistant){
+    let currLength = 0.0;
+    summedLength0.push(currLength);
+    for(let i = 0; i < n; ++i){
+      const stride = 2*i;
+      const p0 = new THREE.Vector2(position0[stride], position0[stride+1]);
+      const p1 = new THREE.Vector2(position1[stride], position1[stride+1]);
+      currLength += p0.distanceTo(p1);
+      summedLength0.push(currLength);
+      summedLength1.push(currLength);
+    }
+  }
+  if(polylineMesh.material.uniforms.stampMode.value == StampModes.RatioDistant){
+    let currLength = 0.0;
+    summedLength0.push(currLength);
+    for(let i = 0; i < n; ++i){
+      const stride = 2*i;
+      const p0 = new THREE.Vector2(position0[stride], position0[stride+1]);
+      const p1 = new THREE.Vector2(position1[stride], position1[stride+1]);
+      let r0 = radius0[i];
+      let r1 = radius1[i];
+
+      const tolerance = 1e-5;
+      if(r0 <= 0 || r0/r1 < tolerance){
+        r0 = tolerance * r1;
+        radius0[i] = r0;
+      }
+      if(r1 <= 0 || r1/r0 < tolerance){
+        r1 = tolerance * r0;
+        radius1[i] = r1;
+      }
+
+      let l = p0.distanceTo(p1);
+      if(r0 <= 0.0 && r1 <= 0.0) currLength += 0.0;
+      else if(r0 == r1) currLength += l/r0;
+      else currLength += Math.log(r0/r1)/(r0 - r1) * l;
+      summedLength0.push(currLength);
+      summedLength1.push(currLength);
+    }
+  }
+  
   polylineMesh.geometry.setAttribute("position0", new THREE.InstancedBufferAttribute(new Float32Array(position0), 2));
   polylineMesh.geometry.setAttribute("radius0", new THREE.InstancedBufferAttribute(new Float32Array(radius0), 1));
+  polylineMesh.geometry.setAttribute("summedLength0", new THREE.InstancedBufferAttribute(new Float32Array(summedLength0), 1));
   polylineMesh.geometry.setAttribute("position1", new THREE.InstancedBufferAttribute(new Float32Array(position1), 2));
   polylineMesh.geometry.setAttribute("radius1", new THREE.InstancedBufferAttribute(new Float32Array(radius1), 1));
+  polylineMesh.geometry.setAttribute("summedLength1", new THREE.InstancedBufferAttribute(new Float32Array(summedLength1), 1));
   polylineMesh.count = n;
 }
+updatePolylineMesh();
 
-let variables = {
-  nSegments: 32,
-  bezierControlPoint1: new THREE.Vector2(0.33, 1.0),
-  bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
-};
-
-updatePolylineMesh(variables.nSegments);
-
-const updateGradient = (point1, point2)=>{
+// point1 and point2 are the cubic bezier control point 1 and 2
+const updateGradient = (point1, point2) => {
   let curve = new THREE.CubicBezierCurve(
     new THREE.Vector2(0.0, 1.0),
     point1,
@@ -132,6 +187,7 @@ const updateGradient = (point1, point2)=>{
   const data = new Uint8Array( 4 * size );
   const points = curve.getPoints( width * 2 );
   
+  // Resample on the polyline generated from the points
   for (let i = 0; i < width; ++i){
     let x = i/width;
     for (let j = 0; j < width * 2 - 1; ++j){
@@ -160,7 +216,10 @@ gui.addColor(polylineMesh.material.uniforms, 'color').name("RGB").onChange(
 );
 gui.add(polylineMesh.material.uniforms.alpha, 'value', 0.0, 1.0, 0.01).name("Opacity");
 gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
-  (value) => updatePolylineMesh(value)
+  (value) => {
+    variables.nSegments = value;
+    updatePolylineMesh();
+  }
 );
 
 // Type specific parameters
@@ -185,23 +244,35 @@ function swtichType(type){
 }
 
 const swtichStorke = {
-  vanilla: () => { // Types.Vanilla
-    swtichType(Types.Vanilla);
-  },
+  vanilla: () => swtichType(Types.Vanilla),
   splatter: () => {
-    
+    swtichType(Types.Stamp);
   },
   pencil: () => {
 
   },
-  airbrush: () => {
-    swtichType(Types.Airbrush);
-  }
+  airbrush: () => swtichType(Types.Airbrush),
 }
-
 strokeTypeFolder.add(swtichStorke, 'vanilla').name("Vanilla");
+strokeTypeFolder.add(swtichStorke, 'splatter').name("Splatter");
 strokeTypeFolder.add(swtichStorke, 'airbrush').name("Airbrush");
 swtichStorke.vanilla();
+
+// Stamp
+const swtichStampMode = {
+  equiDistant: () => {
+    polylineMesh.material.uniforms.stampMode.value = StampModes.EquiDistant;
+    updatePolylineMesh();
+  },
+  ratioDistant: () => {
+    polylineMesh.material.uniforms.stampMode.value = StampModes.RatioDistant;
+    updatePolylineMesh();
+  }
+}
+stampFolder.add(swtichStampMode, "equiDistant").name("Equidistant");
+stampFolder.add(swtichStampMode, "ratioDistant").name("Ratiodistant");
+
+stampFolder.add(polylineMesh.material.uniforms.stampInterval, 'value', 0.001, 2.0, 0.01).name("Interval");
 
 // Airbrush
 airbrushFolder.add(variables.bezierControlPoint1, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 1 X").onChange(

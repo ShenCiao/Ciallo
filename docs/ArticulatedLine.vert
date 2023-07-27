@@ -7,21 +7,27 @@ uniform mat4 projectionMatrix;
 
 in vec2 position0;
 in float radius0;
+in float summedLength0;
 in vec2 position1;
 in float radius1;
+in float summedLength1;
+
 
 out vec2 p;
-out float r;
 flat out vec2 p0;
 flat out float r0;
+flat out float l0;
 flat out vec2 p1;
 flat out float r1;
+flat out float l1;
 
 void main()	{
     r0 = radius0;
     r1 = radius1;
     p0 = position0;
     p1 = position1;
+    l0 = summedLength0;
+    l1 = summedLength1;
     vec2 tangentDirection = normalize(position1 - position0);
     vec2 normalDirection = vec2(-tangentDirection.y, tangentDirection.x);
     float cosTheta = (r0 - r1)/distance(p0, p1); // theta is the angle stroke tilt.
@@ -38,7 +44,6 @@ void main()	{
     vec2 pos = polylineVertexPositions[gl_VertexID];
     
     float radius = vec4(radius0, radius0, radius1, radius1)[gl_VertexID];
-    r = radius;
 
     float tanHalfTheta = sqrt((1.0+cosTheta) / (1.0-cosTheta));
     float cotHalfTheta = 1.0 / tanHalfTheta;

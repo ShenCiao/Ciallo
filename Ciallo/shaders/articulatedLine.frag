@@ -190,10 +190,10 @@ void main() {
     for(int i = 0; i < MAX_i; i++){
         float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
         float r = r0 - cosTheta * currStampLocalX;
-        vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0);
+        vec2 pToStamp = pLocal - vec2(currStampLocalX, 0);
         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
-        distanceToStamp *= rotate(angle);
-        vec2 textureCoordinate = (distanceToStamp/r + 1.0)/2.0;
+        pToStamp *= rotate(angle);
+        vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
         vec4 color = texture(footprint, textureCoordinate);
         float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
         A = A * (1.0-alpha) + alpha;

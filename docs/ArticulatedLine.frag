@@ -1,5 +1,4 @@
 #version 300 es
-
 precision mediump float;
 precision mediump int;
 
@@ -20,7 +19,7 @@ uniform float alpha;
 uniform mediump sampler2D footprint;
 uniform float stampInterval;
 uniform float noiseFactor;
-uniform float rotationRand;
+uniform float rotationFactor;
 uniform int stampMode;
 const int EquiDistance = 0, RatioDistance = 1;
 float x2n(float x);
@@ -98,11 +97,15 @@ void main()	{
         float A = 0.0;
         for(int i = 0; i < MAX_i; i++){
             float currStampLocalX = n2x(currIndex - summedIndex);
-            float r = r0 - cosTheta * currStampLocalX;
-            vec2 distanceToStamp = pLocal - vec2(currStampLocalX, 0.0);
-            float angle = rotationRand*radians(360.0*fract(sin(summedIndex+currIndex)*1.0));
             
-            float opacity = length(distanceToStamp)/r > 1.0 ? 0.0:0.5;
+            vec2 pToStamp = pLocal - vec2(currStampLocalX, 0.0);
+            float angle = rotationFactor*radians(360.0*fract(sin(summedIndex+currIndex)*1.0));
+            pToStamp *= rotate(angle);
+
+            float r = r0 - cosTheta * currStampLocalX;
+            vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
+            float opacity = texture(footprint, textureCoordinate).a;
+            opacity = clamp(opacity - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * alpha;
             A = A * (1.0-opacity) + opacity;
 
             currIndex += 1.0;
@@ -143,7 +146,7 @@ float x2n(float x){
     if(stampMode == RatioDistance){
         float L = distance(p0, p1);
         if(r0 == r1) return x/(stampInterval*r0);
-        else return -L / stampInterval / (2.0*r0 - 2.0*r1) * log(1.0 - (1.0 - r1/r0)/L * x);
+        else return -L / stampInterval / (r0 - r1) * log(1.0 - (1.0 - r1/r0)/L * x);
     }
 }
 
@@ -152,7 +155,7 @@ float n2x(float n){
     if(stampMode == RatioDistance){
         float L = distance(p0, p1);
         if(r0 == r1) return n * stampInterval * r0;
-        else return L * (1.0-exp((r0-r1)*n*stampInterval/L)) / (1.0-r1/r0);
+        else return L * (1.0-exp(-(r0-r1)*n*stampInterval/L)) / (1.0-r1/r0);
     }
 }
 

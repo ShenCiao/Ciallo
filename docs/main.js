@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MapControls } from "three/addons/controls/MapControls.js";
 import Stats from 'three/addons/libs/stats.module'
-import { GUI } from 'three/addons/libs/lil-gui.module.min.js'
+import {GUI} from './dat.gui.module.js'
 
 // Scene
 const scene = new THREE.Scene();
@@ -63,14 +63,14 @@ const StampModes = {
 const strokeMaterial = new THREE.RawShaderMaterial( {
   uniforms: {
     type: {value: Types.Airbrush},
-    alpha: {value: 1.0}, // threejs don't support RGBA color.
-    color: new THREE.Uniform(new THREE.Color()),
+    alpha: {value: 1.0},
+    color: {value: [1.0, 1.0, 1.0]},
     // Stamp
     footprint: {type: "t", value: new THREE.Texture()},
     stampInterval: {value: 1.0},
     noiseFactor: {value: 0.0},
-    rotationRand: {value: 0.0},
-    stampMode: {value: StampModes.EquiDistant},
+    rotationFactor: {value: 0.0},
+    stampMode: {value: StampModes.RatioDistant},
     // Airbrush
     gradient: { type: "t", value: new THREE.DataTexture() },
   },
@@ -87,6 +87,8 @@ polylineMesh.frustumCulled = false;
 
 let variables = {
   nSegments: 32,
+  color: [1.0, 1.0, 1.0],
+  backgroundColor: "#233143",
   bezierControlPoint1: new THREE.Vector2(0.33, 1.0),
   bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
 };
@@ -209,11 +211,21 @@ const updateGradient = (point1, point2) => {
 
 updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
 
-// prameter GUI
+// GUI
 // Common parameters
-gui.addColor(polylineMesh.material.uniforms, 'color').name("RGB").onChange( 
-  (value) => polylineMesh.material.uniforms.color.value = value 
+gui.addColor(variables, "backgroundColor").name("Background").onChange(
+  (value) => {
+    variables.backgroundColor = value;
+    renderer.setClearColor(value);
+  } 
 );
+gui.addColor(variables, 'color').name("Stroke Color").onChange( 
+  (value) => {
+    let color = polylineMesh.material.uniforms.color.value;
+    color[0] = value[0]/255.0; color[1] = value[1]/255.0; color[2] = value[2]/255.0;
+  }
+);
+
 gui.add(polylineMesh.material.uniforms.alpha, 'value', 0.0, 1.0, 0.01).name("Opacity");
 gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
   (value) => {
@@ -243,18 +255,46 @@ function swtichType(type){
   }
 }
 
+
 const swtichStorke = {
   vanilla: () => swtichType(Types.Vanilla),
   splatter: () => {
     swtichType(Types.Stamp);
+    let uniforms = polylineMesh.material.uniforms;
+    uniforms.stampMode.value= StampModes.RatioDistant;
+    uniforms.footprint.value = new THREE.TextureLoader().load("stamp1.png");
+    uniforms.stampInterval.value = 0.4;
+    uniforms.noiseFactor.value = 0.0;
+    uniforms.rotationFactor.value = 1.0;
+    stampFolder.updateDisplay();
   },
   pencil: () => {
-
+    swtichType(Types.Stamp);
+    let uniforms = polylineMesh.material.uniforms;
+    uniforms.stampMode.value = StampModes.RatioDistant;
+    uniforms.footprint.value = new THREE.TextureLoader().load("stamp2.png");
+    uniforms.stampInterval.value = 0.4;
+    uniforms.noiseFactor.value = 1.7;
+    uniforms.rotationFactor.value = 1.0;
+    stampFolder.updateDisplay();
+  },
+  dot: () => {
+    swtichType(Types.Stamp);
+    let uniforms = polylineMesh.material.uniforms;
+    uniforms.stampMode.value = StampModes.RatioDistant;
+    uniforms.footprint.value = new THREE.TextureLoader().load("stamp3.png");
+    uniforms.stampInterval.value = 2.0;
+    uniforms.noiseFactor.value = 0.0;
+    uniforms.rotationFactor.value = 0.0;
+    stampFolder.updateDisplay();
   },
   airbrush: () => swtichType(Types.Airbrush),
 }
+strokeTypeFolder.open();
 strokeTypeFolder.add(swtichStorke, 'vanilla').name("Vanilla");
 strokeTypeFolder.add(swtichStorke, 'splatter').name("Splatter");
+strokeTypeFolder.add(swtichStorke, 'pencil').name("Pencil");
+strokeTypeFolder.add(swtichStorke, 'dot').name("Dot");
 strokeTypeFolder.add(swtichStorke, 'airbrush').name("Airbrush");
 swtichStorke.vanilla();
 
@@ -269,33 +309,36 @@ const swtichStampMode = {
     updatePolylineMesh();
   }
 }
+stampFolder.open();
 stampFolder.add(swtichStampMode, "equiDistant").name("Equidistant");
 stampFolder.add(swtichStampMode, "ratioDistant").name("Ratiodistant");
-
 stampFolder.add(polylineMesh.material.uniforms.stampInterval, 'value', 0.001, 2.0, 0.01).name("Interval");
+stampFolder.add(polylineMesh.material.uniforms.rotationFactor, 'value', 0.0, 2.0, 0.01).name("Rotation");
+stampFolder.add(polylineMesh.material.uniforms.noiseFactor, 'value', 0.0, 2.0, 0.01).name("Noise");
 
 // Airbrush
-airbrushFolder.add(variables.bezierControlPoint1, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 1 X").onChange(
+airbrushFolder.open();
+airbrushFolder.add(variables.bezierControlPoint1, 'x', 0.0, 1.0, 0.01).name("Point 1 X").onChange(
   (value) => {
     variables.bezierControlPoint1.x = value;
     updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
   }
 )
-airbrushFolder.add(variables.bezierControlPoint1, 'y', 0.0, 1.0, 0.01).name("Gradient Control Point 1 Y").onChange(
+airbrushFolder.add(variables.bezierControlPoint1, 'y', 0.0, 1.0, 0.01).name("Point 1 Y").onChange(
   (value) => {
     variables.bezierControlPoint1.y = value;
     updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
   }
 );
 
-airbrushFolder.add(variables.bezierControlPoint2, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 2 X").onChange(
+airbrushFolder.add(variables.bezierControlPoint2, 'x', 0.0, 1.0, 0.01).name("Point 2 X").onChange(
   (value) => {
     variables.bezierControlPoint2.x = value;
     updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
   }
 );
 
-airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Gradient Control Point 2 Y").onChange(
+airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Point 2 Y").onChange(
   (value) => {
     variables.bezierControlPoint2.y = value;
     updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);

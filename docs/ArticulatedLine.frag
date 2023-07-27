@@ -9,12 +9,14 @@ flat in float r0;
 flat in vec2 p1;
 flat in float r1;
 
+// Common
 uniform int type;
 const int Vanilla = 0, Stamp = 1, Airbrush = 2;
 uniform vec3 color;
 uniform float alpha;
-uniform mediump sampler2D tex;
-float sampleGraident(float distance){ return texture(tex, vec2(distance, 0.0)).r; }
+// Airbrush
+uniform mediump sampler2D gradient;
+float sampleGraident(float distance){ return texture(gradient, vec2(distance, 0.0)).r; }
 
 out vec4 outColor;
 

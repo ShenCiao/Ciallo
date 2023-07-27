@@ -61,7 +61,7 @@ const strokeMaterial = new THREE.RawShaderMaterial( {
     type: {value: Types.Airbrush},
     alpha: {value: 1.0}, // it's pretty annoying threejs don't support RGBA color.
     color: new THREE.Uniform(new THREE.Color()),
-    tex: { type: "t", value: new THREE.DataTexture() },
+    gradient: { type: "t", value: new THREE.DataTexture() },
   },
   vertexShader: document.getElementById( 'vertexShader' ).textContent,
   fragmentShader: document.getElementById( 'fragmentShader' ).textContent,
@@ -143,10 +143,10 @@ const updateGradient = (point1, point2)=>{
     }
   }
 
-  polylineMesh.material.uniforms.tex.value.dispose();
-  const texture = new THREE.DataTexture(data, width, height);
-  texture.needsUpdate = true;
-  polylineMesh.material.uniforms.tex.value = texture;
+  polylineMesh.material.uniforms.gradient.value.dispose();
+  const gradientTexture = new THREE.DataTexture(data, width, height);
+  gradientTexture.needsUpdate = true;
+  polylineMesh.material.uniforms.gradient.value = gradientTexture;
   
   scene.add(polylineMesh);
 }
@@ -154,6 +154,7 @@ const updateGradient = (point1, point2)=>{
 updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
 
 // prameter GUI
+// Common parameters
 gui.addColor(polylineMesh.material.uniforms, 'color').name("RGB").onChange( 
   (value) => polylineMesh.material.uniforms.color.value = value 
 );
@@ -162,7 +163,47 @@ gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
   (value) => updatePolylineMesh(value)
 );
 
+// Type specific parameters
+const strokeTypeFolder = gui.addFolder("Stroke Types");
 const airbrushFolder = gui.addFolder("Airbrush Parameters");
+const stampFolder = gui.addFolder("Stamp Parameters");
+
+function swtichType(type){
+  stampFolder.domElement.style.display = 'none';
+  airbrushFolder.domElement.style.display = 'none';
+  if(type == Types.Vanilla){
+    polylineMesh.material.uniforms.type.value = Types.Vanilla;
+  }
+  if(type == Types.Stamp) {
+    polylineMesh.material.uniforms.type.value = Types.Stamp;
+    stampFolder.domElement.style.display = '';
+  }
+  if(type == Types.Airbrush) {
+    polylineMesh.material.uniforms.type.value = Types.Airbrush;
+    airbrushFolder.domElement.style.display = '';
+  }
+}
+
+const swtichStorke = {
+  vanilla: () => { // Types.Vanilla
+    swtichType(Types.Vanilla);
+  },
+  splatter: () => {
+    
+  },
+  pencil: () => {
+
+  },
+  airbrush: () => {
+    swtichType(Types.Airbrush);
+  }
+}
+
+strokeTypeFolder.add(swtichStorke, 'vanilla').name("Vanilla");
+strokeTypeFolder.add(swtichStorke, 'airbrush').name("Airbrush");
+swtichStorke.vanilla();
+
+// Airbrush
 airbrushFolder.add(variables.bezierControlPoint1, 'x', 0.0, 1.0, 0.01).name("Gradient Control Point 1 X").onChange(
   (value) => {
     variables.bezierControlPoint1.x = value;

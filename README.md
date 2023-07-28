@@ -1,6 +1,6 @@
 # Ciallo ～(∠・ω< )⌒★!
 
-[Paper](./pape) | [Shaders](./Ciallo/shaders) | [Video Demo](https://youtu.be/gqTrD8-nlh0) | [Web Demo](https://shenciao.github.io/Ciallo/) | [Talk](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176) (in progress) | [Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
+[Paper](./pape) | [Video Demo](https://youtu.be/gqTrD8-nlh0) | [Web Demo](https://shenciao.github.io/Ciallo/) | [Talk](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176) (in progress) | [Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
 
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)
 - [Li-Yi Wei](https://www.liyiwei.org/)

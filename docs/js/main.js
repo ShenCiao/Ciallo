@@ -6,10 +6,16 @@ import {GUI} from './dat.gui.module.js'
 // Scene
 const scene = new THREE.Scene();
 
+let canvasHolder = document.getElementById('canvas-holder');
+// Apply your desired aspect ratio
+var canvasWidth = canvasHolder.clientWidth;
+var canvasHeight = canvasWidth * 0.64;
+canvasHolder.style.clientHeight = canvasHeight;
+
 // Camera
 let camera = new THREE.OrthographicCamera( 
-  window.innerWidth / - 2, window.innerWidth / 2, 
-  window.innerHeight / 2, window.innerHeight / - 2,
+  canvasWidth / - 2, canvasWidth / 2, 
+  canvasHeight / 2, canvasHeight / - 2,
   0.0, 1000
   );
 camera.position.z = 1;
@@ -17,18 +23,20 @@ camera.zoom = 100;
 camera.updateProjectionMatrix();
 
 // Renderer
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setClearColor("#233143"); // Set background colour
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement); // Add renderer to HTML as a canvas element
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setClearColor("#FFFFFF"); // Set background colour
+renderer.setSize(canvasWidth, canvasHeight);
+canvasHolder.appendChild(renderer.domElement); // Add renderer to HTML as a canvas element
 
 // Make Canvas Responsive
 window.addEventListener("resize", () => {
-  renderer.setSize(window.innerWidth, window.innerHeight); // Update size
-  camera.left = -window.innerWidth/2;
-  camera.right= window.innerWidth/2;
-  camera.top = window.innerHeight/2;
-  camera.bottom = -window.innerHeight/2;
+  var canvasWidth = canvasHolder.clientWidth;
+var canvasHeight = canvasWidth * 0.64;
+  renderer.setSize(canvasWidth, canvasHeight); // Update size
+  camera.left = -canvasWidth/2;
+  camera.right= canvasWidth/2;
+  camera.top = canvasHeight/2;
+  camera.bottom = -canvasHeight/2;
   camera.updateProjectionMatrix();
 });
 
@@ -39,9 +47,9 @@ controls.enableDamping = false;
 controls.screenSpacePanning = true;
 
 // Add GUI
-const stats = new Stats();
-document.body.appendChild(stats.dom);
-const gui = new GUI();
+const gui = new GUI({ autoPlace: false });
+gui.close();
+document.getElementById('dat-gui-holder').appendChild(gui.domElement);
 // -------------------------------------------------------------------------------
 // The dummy trapzoid, whose vertices' positions are determined in the vertex shader instead of here.
 const trapzoidGeometry = new THREE.BufferGeometry(); 
@@ -64,7 +72,7 @@ const strokeMaterial = new THREE.RawShaderMaterial( {
   uniforms: {
     type: {value: Types.Airbrush},
     alpha: {value: 1.0},
-    color: {value: [1.0, 1.0, 1.0]},
+    color: {value: [0.0, 0.0, 0.0]},
     // Stamp
     footprint: {type: "t", value: new THREE.Texture()},
     stampInterval: {value: 1.0},
@@ -87,8 +95,8 @@ polylineMesh.frustumCulled = false;
 
 let variables = {
   nSegments: 32,
-  color: [1.0, 1.0, 1.0],
-  backgroundColor: "#233143",
+  color: [0.0, 0.0, 0.0],
+  backgroundColor: "#FFFFFF",
   bezierControlPoint1: new THREE.Vector2(0.33, 1.0),
   bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
 };
@@ -262,7 +270,7 @@ const swtichStorke = {
     swtichType(Types.Stamp);
     let uniforms = polylineMesh.material.uniforms;
     uniforms.stampMode.value= StampModes.RatioDistant;
-    uniforms.footprint.value = new THREE.TextureLoader().load("stamp1.png");
+    uniforms.footprint.value = new THREE.TextureLoader().load("img/stamp1.png");
     uniforms.stampInterval.value = 0.4;
     uniforms.noiseFactor.value = 0.0;
     uniforms.rotationFactor.value = 1.0;
@@ -272,17 +280,17 @@ const swtichStorke = {
     swtichType(Types.Stamp);
     let uniforms = polylineMesh.material.uniforms;
     uniforms.stampMode.value = StampModes.RatioDistant;
-    uniforms.footprint.value = new THREE.TextureLoader().load("stamp2.png");
+    uniforms.footprint.value = new THREE.TextureLoader().load("img/stamp2.png");
     uniforms.stampInterval.value = 0.4;
-    uniforms.noiseFactor.value = 1.7;
-    uniforms.rotationFactor.value = 1.0;
+    uniforms.noiseFactor.value = 1.2;
+    uniforms.rotationFactor.value = 0.75;
     stampFolder.updateDisplay();
   },
   dot: () => {
     swtichType(Types.Stamp);
     let uniforms = polylineMesh.material.uniforms;
     uniforms.stampMode.value = StampModes.RatioDistant;
-    uniforms.footprint.value = new THREE.TextureLoader().load("stamp3.png");
+    uniforms.footprint.value = new THREE.TextureLoader().load("img/stamp3.png");
     uniforms.stampInterval.value = 2.0;
     uniforms.noiseFactor.value = 0.0;
     uniforms.rotationFactor.value = 0.0;
@@ -346,11 +354,20 @@ airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Poi
 );
 // -------------------------------------------------------------------------------
 // Rendering Function
+let guiClosed = gui.closed;
 const rendering = function () {
   // Rerender every time the page refreshes (pause when on another tab)
   requestAnimationFrame(rendering);
   controls.update();
-  stats.update();
+  if ( guiClosed != gui.closed ){
+    if(!guiClosed){
+        document.getElementById('dat-gui-holder').style.left = "0em"
+    }else{
+        document.getElementById('dat-gui-holder').style.left = (-gui.width).toString() + "px";
+    }
+    guiClosed = gui.closed;
+  }
+//   stats.update();
   renderer.render(scene, camera);
 };
 

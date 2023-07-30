@@ -7,6 +7,11 @@ import {GUI} from './dat.gui.module.js'
 const scene = new THREE.Scene();
 
 let canvasHolder = document.getElementById('canvas-holder');
+canvasHolder.onmousedown = function(e){
+  if(e.button == 1 || e.button == 0){
+    e.preventDefault();
+  }
+}
 // Apply your desired aspect ratio
 var canvasWidth = canvasHolder.clientWidth;
 var canvasHeight = canvasWidth * 0.64;
@@ -47,6 +52,8 @@ controls.enableDamping = false;
 controls.screenSpacePanning = true;
 
 // Add GUI
+// const stats = new Stats();
+// document.getElementById('canvas-holder').appendChild( stats.dom );
 const gui = new GUI({ autoPlace: false });
 gui.close();
 document.getElementById('dat-gui-holder').appendChild(gui.domElement);
@@ -367,7 +374,7 @@ const rendering = function () {
     }
     guiClosed = gui.closed;
   }
-//   stats.update();
+  // stats.update();
   renderer.render(scene, camera);
 };
 

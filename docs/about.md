@@ -303,7 +303,7 @@ permalink: /
 
 **Zoom**: Scroll or drag the mouse wheel.
 
-**Settings**: Open controls.
+**Settings**: Click the `Open Controls` button.
 
 ### Intro
 

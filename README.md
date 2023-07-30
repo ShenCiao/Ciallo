@@ -1,6 +1,6 @@
 # Ciallo ～(∠・ω< )⌒★!
 
-[Paper](./pape) | [Shaders](./Ciallo/shaders) | [Live Demo](https://youtu.be/gqTrD8-nlh0) | [Talk](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176) (in progress) | [Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
+[Paper](./pape) | [Video Demo](https://youtu.be/gqTrD8-nlh0) | [Web Demo](https://shenciao.github.io/Ciallo/) | [Talk](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176) (in progress) | [Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
 
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)
 - [Li-Yi Wei](https://www.liyiwei.org/)
@@ -20,9 +20,9 @@
        address      = {New York, NY, USA},
     }
 
-## Introduction
+## Intro
 
-Render 2D art with GPU stroke by stroke!
+Render 2D art with GPU stroke by stroke! Check out the online stroke demos at [project page](https://shenciao.github.io/Ciallo).
 
 The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 

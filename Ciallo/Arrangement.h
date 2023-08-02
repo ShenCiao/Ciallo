@@ -21,7 +21,7 @@ namespace CGAL
 
 	using Arrangement = CGAL::Arrangement_with_history_2<Geom_traits>;
 	using PointLocation = CGAL::Arr_walk_along_line_point_location<Arrangement>;
-	// This is a custom version of Triangular_expansion_visibility
+	// This is a customized version of Triangular_expansion_visibility
 	using Visibility = CGAL::Triangular_expansion_visibility_2<Arrangement, CGAL::Tag_true>;
 	using VisOutputArr = CGAL::Arrangement_2<Segment_traits>; // Arrangement class used for output the vis result.
 

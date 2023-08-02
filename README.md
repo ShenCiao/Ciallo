@@ -22,7 +22,7 @@
 
 ## Intro
 
-Render 2D art with GPU stroke by stroke! Check out the online stroke demos at [project page](https://shenciao.github.io/Ciallo).
+Render 2D art with GPU stroke by stroke! Check out the [online stroke demo](https://shenciao.github.io/Ciallo).
 
 The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 

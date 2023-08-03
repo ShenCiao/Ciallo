@@ -36,7 +36,7 @@ canvasHolder.appendChild(renderer.domElement); // Add renderer to HTML as a canv
 // Make Canvas Responsive
 window.addEventListener("resize", () => {
   var canvasWidth = canvasHolder.clientWidth;
-var canvasHeight = canvasWidth * 0.64;
+  var canvasHeight = canvasWidth * 0.64;
   renderer.setSize(canvasWidth, canvasHeight); // Update size
   camera.left = -canvasWidth/2;
   camera.right= canvasWidth/2;
@@ -110,6 +110,7 @@ let variables = {
 
 // Since we don't have geometry shader and compute shader, we have to replicate their behaviors here.
 // Push two successive vertices' (an edge's) infos into a single vertex, same as the "lines" input in geometry shader.
+// About the batch rendering, if isEndPoint true, don't connect to the next point.
 const updatePolylineMesh = () => {
   const position0 = [];
   const position1 = [];
@@ -117,6 +118,7 @@ const updatePolylineMesh = () => {
   const radius1 = [];
   const summedLength0 = [];
   const summedLength1 = [];
+  const isEndPoint0 = [];
   let n = variables.nSegments;
 
   // gr is the golden ratio value
@@ -130,6 +132,7 @@ const updatePolylineMesh = () => {
     let r = Math.cos(x / 2.0) * maxRadius;
     position0.push(x, y);
     radius0.push(r);
+    isEndPoint0.push(0);
     if(i != 0) {
       position1.push(x, y);
       radius1.push(r);
@@ -139,17 +142,22 @@ const updatePolylineMesh = () => {
   // The length is supposed to be calculated in a compute shader with the prefix sum algorithm. WebGL don't support it.
   // Though WebGPU supports compute shader, shen isn't familiar with it.
   if(polylineMesh.material.uniforms.stampMode.value == StampModes.EquiDistant){
-    let currLength = 0.0;
+    var currLength = 0.0;
     summedLength0.push(currLength);
     for(let i = 0; i < n; ++i){
       const stride = 2*i;
       const p0 = new THREE.Vector2(position0[stride], position0[stride+1]);
       const p1 = new THREE.Vector2(position1[stride], position1[stride+1]);
-      currLength += p0.distanceTo(p1);
+      if(isEndPoint0[i]) currLength = 0.0;
+      else currLength += p0.distanceTo(p1);
       summedLength0.push(currLength);
       summedLength1.push(currLength);
     }
   }
+
+  // The method about RatioDistant is not published yet. 
+  // There is calculus in it so you can see several weired formulas when it comes.
+  // Ignore it temporily.
   if(polylineMesh.material.uniforms.stampMode.value == StampModes.RatioDistant){
     let currLength = 0.0;
     summedLength0.push(currLength);
@@ -160,6 +168,7 @@ const updatePolylineMesh = () => {
       let r0 = radius0[i];
       let r1 = radius1[i];
 
+      // When raidus is zero, index comes to infinity. Avoid it here.
       const tolerance = 1e-5;
       if(r0 <= 0 || r0/r1 < tolerance){
         r0 = tolerance * r1;
@@ -171,7 +180,9 @@ const updatePolylineMesh = () => {
       }
 
       let l = p0.distanceTo(p1);
-      if(r0 <= 0.0 && r1 <= 0.0) currLength += 0.0;
+
+      if(isEndPoint0[i]) currLength = 0.0;
+      else if(r0 <= 0.0 && r1 <= 0.0) currLength += 0.0;
       else if(r0 == r1) currLength += l/r0;
       else currLength += Math.log(r0/r1)/(r0 - r1) * l;
       summedLength0.push(currLength);
@@ -182,9 +193,11 @@ const updatePolylineMesh = () => {
   polylineMesh.geometry.setAttribute("position0", new THREE.InstancedBufferAttribute(new Float32Array(position0), 2));
   polylineMesh.geometry.setAttribute("radius0", new THREE.InstancedBufferAttribute(new Float32Array(radius0), 1));
   polylineMesh.geometry.setAttribute("summedLength0", new THREE.InstancedBufferAttribute(new Float32Array(summedLength0), 1));
+  polylineMesh.geometry.setAttribute("isEndPoint0", new THREE.InstancedBufferAttribute(new Int32Array(isEndPoint0), 1));
   polylineMesh.geometry.setAttribute("position1", new THREE.InstancedBufferAttribute(new Float32Array(position1), 2));
   polylineMesh.geometry.setAttribute("radius1", new THREE.InstancedBufferAttribute(new Float32Array(radius1), 1));
   polylineMesh.geometry.setAttribute("summedLength1", new THREE.InstancedBufferAttribute(new Float32Array(summedLength1), 1));
+  
   polylineMesh.count = n;
 }
 updatePolylineMesh();

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MapControls } from "three/addons/controls/MapControls.js";
 import Stats from 'three/addons/libs/stats.module'
 import {GUI} from './dat.gui.module.js'
-const modelNames = ["Monkey", "Totoro"];
+const modelNames = ["Monkey", "Bear", "Totoro"];
 
 // Scene
 const scene = new THREE.Scene();
@@ -331,7 +331,7 @@ gui.add(polylineMesh.material.uniforms.alpha, 'value', 0.0, 1.0, 0.01).name("Opa
 gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
   (value) => {
     variables.nSegments = value;
-    updatePolylineMesh();
+    renewSineWave();
   }
 );
 
@@ -452,7 +452,6 @@ airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Poi
 // Geometry
 swtichModel.sineWave = ()=>renewSineWave();
 modelFolder.add(swtichModel, "sineWave").name("Sine Wave");
-modelFolder.open();
 // The default geometry
 swtichModel.sineWave();
 
@@ -460,7 +459,6 @@ swtichModel.sineWave();
 // Rendering Function
 let guiClosed = gui.closed;
 const rendering = function () {
-  // Rerender every time the page refreshes (pause when on another tab)
   requestAnimationFrame(rendering);
   controls.update();
   if ( guiClosed != gui.closed ){

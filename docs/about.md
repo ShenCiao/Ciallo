@@ -75,9 +75,11 @@ The _Airbrush_ has two control points, which are the two middle control points o
 
 **`Bear`** is created by Renato Roldan and Daniel Martinez Lara (Pepeland). We run a performance test with it and show the test result in our talk.
 
-**`Totoro`** is the character from the anime movie _My Neighbor Totoro_. I like the character so put it here. This version is created by Currobot. 
+**`Totoro`** is the character from the anime movie _My Neighbor Totoro_. I like the character so put it here. This version is created by Francisco Antonio Peinado (Currobot). 
 
 ---
+
+### Have Fun!
 
 If you like this demo and want to learn more about 2D paint stroke rendering, please check out for the project main page and star the project.
 

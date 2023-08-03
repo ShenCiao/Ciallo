@@ -45,7 +45,7 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
 });
 
-// Trackball Controls for Camera
+// Map Controls for Camera
 const controls = new MapControls(camera, renderer.domElement);
 controls.enableRotate = false;
 controls.enableDamping = false;
@@ -110,7 +110,7 @@ let variables = {
 
 // Since we don't have geometry shader and compute shader, we have to replicate their behaviors here.
 // Push two successive vertices' (an edge's) infos into a single vertex, same as the "lines" input in geometry shader.
-// About the batch rendering, if isEndPoint true, don't connect to the next point.
+// For the batch rendering, if isEndPoint true, don't connect to the next point (in vertex shader).
 const updatePolylineMesh = () => {
   const position0 = [];
   const position1 = [];
@@ -138,13 +138,14 @@ const updatePolylineMesh = () => {
       radius1.push(r);
     }
   }
+  isEndPoint0[isEndPoint0.length - 1] = 1;
 
   // The length is supposed to be calculated in a compute shader with the prefix sum algorithm. WebGL don't support it.
   // Though WebGPU supports compute shader, shen isn't familiar with it.
   if(polylineMesh.material.uniforms.stampMode.value == StampModes.EquiDistant){
     var currLength = 0.0;
     summedLength0.push(currLength);
-    for(let i = 0; i < n; ++i){
+    for(let i = 0; i < radius1.length; ++i){
       const stride = 2*i;
       const p0 = new THREE.Vector2(position0[stride], position0[stride+1]);
       const p1 = new THREE.Vector2(position1[stride], position1[stride+1]);
@@ -154,21 +155,20 @@ const updatePolylineMesh = () => {
       summedLength1.push(currLength);
     }
   }
-
   // The method about RatioDistant is not published yet. 
   // There is calculus in it so you can see several weired formulas when it comes.
   // Ignore it temporily.
   if(polylineMesh.material.uniforms.stampMode.value == StampModes.RatioDistant){
-    let currLength = 0.0;
+    var currLength = 0.0;
     summedLength0.push(currLength);
-    for(let i = 0; i < n; ++i){
+    for(let i = 0; i < radius1.length; ++i){
       const stride = 2*i;
       const p0 = new THREE.Vector2(position0[stride], position0[stride+1]);
       const p1 = new THREE.Vector2(position1[stride], position1[stride+1]);
       let r0 = radius0[i];
       let r1 = radius1[i];
 
-      // When raidus is zero, index comes to infinity. Avoid it here.
+      // When raidus is zero index comes to infinity, which is avoided here.
       const tolerance = 1e-5;
       if(r0 <= 0 || r0/r1 < tolerance){
         r0 = tolerance * r1;
@@ -198,7 +198,7 @@ const updatePolylineMesh = () => {
   polylineMesh.geometry.setAttribute("radius1", new THREE.InstancedBufferAttribute(new Float32Array(radius1), 1));
   polylineMesh.geometry.setAttribute("summedLength1", new THREE.InstancedBufferAttribute(new Float32Array(summedLength1), 1));
   
-  polylineMesh.count = n;
+  polylineMesh.count = radius1.length;
 }
 updatePolylineMesh();
 

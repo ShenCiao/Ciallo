@@ -13,7 +13,6 @@ in vec2 position1;
 in float radius1;
 in float summedLength1;
 
-
 out vec2 p;
 flat out vec2 p0;
 flat out float r0;

@@ -55,14 +55,29 @@ permalink: /
 
 "This is a GPU-rendered 2D stroke demo built upon Three.js, showcasing methods derived from a research project called Ciallo. The project focuses on GPU-based rendering of 2D paint strokes."
 
-There are three categories of strokes available: _Vanilla_, _Stamp_ and _Airbrush_:
+---
+
+**Strokes Categories:** _Vanilla_, _Stamp_ and _Airbrush_.
 
 The _Vanilla_ is the default stroke and self-explanatory.
 
-The _Stamp_ includes the `Splatter`, `Pencil` and `Dot` strokes. The option `Equidistant` means the interval between the textures are equal,
-the option `Ratiodistant` means the interval between the textures are propotional to the stroke radius.
+The _Stamp_ includes the **`Splatter`**, **`Pencil`** and **`Dot`** strokes. 
+The option **`Equidistant`** means the interval between the textures are equal,
+the option **`Ratiodistant`** means the interval between the textures are propotional to the stroke radius.
 
-The _Airbrush_ has two control points, which are the two middle control points of a cubic bezier curve.
+The _Airbrush_ has two control points, which are the two middle control points of a cubic bezier curve starts from (0.0, 1.0) ends to (1.0, 0.0).
+
+**Models:**
+
+**`Sine Wave`** is the default model.
+
+**`Monkey`** is the mascot of Blender Grease Pencil.
+
+**`Bear`** is created by Renato Roldan and Daniel Martinez Lara (Pepeland). We run a performance test with it and show the test result in our talk.
+
+**`Totoro`** is the character from the anime movie _My Neighbor Totoro_. I like the character so put it here. This version is created by Currobot. 
+
+---
 
 If you like this demo and want to learn more about 2D paint stroke rendering, please check out for the project main page and star the project.
 

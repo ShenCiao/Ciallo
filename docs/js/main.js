@@ -452,6 +452,7 @@ airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Poi
 // Geometry
 swtichModel.sineWave = ()=>renewSineWave();
 modelFolder.add(swtichModel, "sineWave").name("Sine Wave");
+modelFolder.open();
 // The default geometry
 swtichModel.sineWave();
 

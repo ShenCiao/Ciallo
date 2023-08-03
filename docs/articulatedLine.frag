@@ -99,7 +99,7 @@ void main()	{
             float currStampLocalX = n2x(currIndex - summedIndex);
             
             vec2 pToStamp = pLocal - vec2(currStampLocalX, 0.0);
-            float angle = rotationFactor*radians(360.0*fract(sin(summedIndex+currIndex)*1.0));
+            float angle = rotationFactor*radians(360.0*fract(sin(currIndex)*1.0));
             pToStamp *= rotate(angle);
 
             float r = r0 - cosTheta * currStampLocalX;

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { MapControls } from "three/addons/controls/MapControls.js";
 import Stats from 'three/addons/libs/stats.module'
 import {GUI} from './dat.gui.module.js'
+const modelNames = ["Monkey", "Totoro"];
 
 // Scene
 const scene = new THREE.Scene();
@@ -24,7 +25,7 @@ let camera = new THREE.OrthographicCamera(
   0.0, 1000
   );
 camera.position.z = 1;
-camera.zoom = 100;
+camera.zoom = 200;
 camera.updateProjectionMatrix();
 
 // Renderer
@@ -96,7 +97,7 @@ const strokeMaterial = new THREE.RawShaderMaterial( {
   glslVersion: THREE.GLSL3
 } );
 
-// I mean "polylinePath" here but in threejs it's a mesh object, hope it won't confuse you.
+// The mesh object we upload everything to.
 const polylineMesh = new THREE.InstancedMesh( trapzoidGeometry, strokeMaterial); 
 polylineMesh.frustumCulled = false;
 
@@ -108,28 +109,53 @@ let variables = {
   bezierControlPoint2: new THREE.Vector2(0.66, 0.0),
 };
 
-// Since we don't have geometry shader and compute shader, we have to replicate their behaviors here.
-// Push two successive vertices' (an edge's) infos into a single vertex, same as the "lines" input in geometry shader.
-// For the batch rendering, if isEndPoint true, don't connect to the next point (in vertex shader).
-const updatePolylineMesh = () => {
-  const position0 = [];
-  const position1 = [];
-  const radius0 = [];
-  const radius1 = [];
-  const summedLength0 = [];
-  const summedLength1 = [];
-  const isEndPoint0 = [];
+function renewSineWave(){
+  loadSineWave();
+  articulatedLineCompute();
+  updatePolylineMesh();
+}
+
+function renewModel(name){
+  loadModel(name);
+  articulatedLineCompute();
+  updatePolylineMesh();
+}
+
+// Since we don't have geometry shader and compute shader, we have to replicate their behaviors in javascript.
+// Push two successive vertices' (an edge's) infos into a single vertex, same as the "lines" input in a geometry shader.
+// For the batch rendering, if isEndPoint true, don't connect to the next point (in the vertex shader).
+
+// Global variables to store vertex attributes:
+let position0 = [];
+let position1 = [];
+let radius0 = [];
+let radius1 = [];
+let summedLength0 = [];
+let summedLength1 = [];
+let isEndPoint0 = [];
+
+function loadSineWave(){
+  position0 = [];
+  position1 = [];
+  radius0 = [];
+  radius1 = [];
+  isEndPoint0 = [];
   let n = variables.nSegments;
 
   // gr is the golden ratio value
   const gr = (1 + Math.sqrt(5)) / 2; 
   const pi = Math.PI;
   const maxRadius = 0.33;
+  
   for(let i = 0; i <= n; ++i){
     let a = 1.0 * i / n;
     let x =  -pi + (2 * pi * a);
     let y = 1.0 / gr * Math.sin(x);
     let r = Math.cos(x / 2.0) * maxRadius;
+
+    // resize a little bit, ugly code but work!
+    const reizeFactor = 0.5;
+    x *= reizeFactor; y *= reizeFactor; r*= reizeFactor;
     position0.push(x, y);
     radius0.push(r);
     isEndPoint0.push(0);
@@ -139,9 +165,55 @@ const updatePolylineMesh = () => {
     }
   }
   isEndPoint0[isEndPoint0.length - 1] = 1;
+}
 
-  // The length is supposed to be calculated in a compute shader with the prefix sum algorithm. WebGL don't support it.
-  // Though WebGPU supports compute shader, shen isn't familiar with it.
+const swtichModel = {};
+const modelObject = {};
+for(const name of modelNames){
+  import('../models/' + name + '.js').then((module) => {
+    modelObject[name] = module.default;
+    swtichModel[name] = ()=>renewModel(name);
+    modelFolder.add(swtichModel, name).name(name);
+  })
+}
+
+function loadModel(name){
+  position0 = [];
+  position1 = [];
+  radius0 = [];
+  radius1 = [];
+  isEndPoint0 = [];
+  
+  let data = modelObject[name];
+  let n = data.length/3;
+  for(let i = 0; i < n; ++i){
+    const radiusFactor = 0.02;
+    const stride = i*3;
+    const x = data[stride];
+    const y = - data[stride + 1]; // for some stupid reason, the data is reversed.
+    const r = data[stride + 2] * radiusFactor;
+
+    if(isNaN(x)){
+      if(!isNaN(y) || !isNaN(r)) throw new Error(message || "Wrong Model Data");
+      isEndPoint0[isEndPoint0.length - 1] = 1;
+      continue;
+    }
+    position0.push(x, y);
+    radius0.push(r);
+    isEndPoint0.push(0);
+    if(i != 0) {
+      position1.push(x, y);
+      radius1.push(r);
+    }
+  }
+  isEndPoint0[isEndPoint0.length - 1] = 1;
+}
+// The length is supposed to be calculated in a compute shader with the prefix sum algorithm. WebGL don't support it.
+// Though WebGPU supports compute shader, shen isn't familiar with it.
+function articulatedLineCompute(){
+  summedLength0 = [];
+  summedLength1 = [];
+
   if(polylineMesh.material.uniforms.stampMode.value == StampModes.EquiDistant){
     var currLength = 0.0;
     summedLength0.push(currLength);
@@ -189,7 +261,9 @@ const updatePolylineMesh = () => {
       summedLength1.push(currLength);
     }
   }
-  
+}
+
+function updatePolylineMesh() {
   polylineMesh.geometry.setAttribute("position0", new THREE.InstancedBufferAttribute(new Float32Array(position0), 2));
   polylineMesh.geometry.setAttribute("radius0", new THREE.InstancedBufferAttribute(new Float32Array(radius0), 1));
   polylineMesh.geometry.setAttribute("summedLength0", new THREE.InstancedBufferAttribute(new Float32Array(summedLength0), 1));
@@ -200,7 +274,6 @@ const updatePolylineMesh = () => {
   
   polylineMesh.count = radius1.length;
 }
-updatePolylineMesh();
 
 // point1 and point2 are the cubic bezier control point 1 and 2
 const updateGradient = (point1, point2) => {
@@ -266,23 +339,7 @@ gui.add(variables, 'nSegments', 2, 64, 1).name("Segments Count").onChange(
 const strokeTypeFolder = gui.addFolder("Stroke Types");
 const airbrushFolder = gui.addFolder("Airbrush Parameters");
 const stampFolder = gui.addFolder("Stamp Parameters");
-
-function swtichType(type){
-  stampFolder.domElement.style.display = 'none';
-  airbrushFolder.domElement.style.display = 'none';
-  if(type == Types.Vanilla){
-    polylineMesh.material.uniforms.type.value = Types.Vanilla;
-  }
-  if(type == Types.Stamp) {
-    polylineMesh.material.uniforms.type.value = Types.Stamp;
-    stampFolder.domElement.style.display = '';
-  }
-  if(type == Types.Airbrush) {
-    polylineMesh.material.uniforms.type.value = Types.Airbrush;
-    airbrushFolder.domElement.style.display = '';
-  }
-}
-
+const modelFolder = gui.addFolder("Model Types");
 
 const swtichStorke = {
   vanilla: () => swtichType(Types.Vanilla),
@@ -318,6 +375,23 @@ const swtichStorke = {
   },
   airbrush: () => swtichType(Types.Airbrush),
 }
+
+function swtichType(type){
+  stampFolder.domElement.style.display = 'none';
+  airbrushFolder.domElement.style.display = 'none';
+  if(type == Types.Vanilla){
+    polylineMesh.material.uniforms.type.value = Types.Vanilla;
+  }
+  if(type == Types.Stamp) {
+    polylineMesh.material.uniforms.type.value = Types.Stamp;
+    stampFolder.domElement.style.display = '';
+  }
+  if(type == Types.Airbrush) {
+    polylineMesh.material.uniforms.type.value = Types.Airbrush;
+    airbrushFolder.domElement.style.display = '';
+  }
+}
+
 strokeTypeFolder.open();
 strokeTypeFolder.add(swtichStorke, 'vanilla').name("Vanilla");
 strokeTypeFolder.add(swtichStorke, 'splatter').name("Splatter");
@@ -330,10 +404,12 @@ swtichStorke.vanilla();
 const swtichStampMode = {
   equiDistant: () => {
     polylineMesh.material.uniforms.stampMode.value = StampModes.EquiDistant;
+    articulatedLineCompute();
     updatePolylineMesh();
   },
   ratioDistant: () => {
     polylineMesh.material.uniforms.stampMode.value = StampModes.RatioDistant;
+    articulatedLineCompute();
     updatePolylineMesh();
   }
 }
@@ -372,6 +448,13 @@ airbrushFolder.add(variables.bezierControlPoint2, 'y', 0.0, 1.0, 0.01).name("Poi
     updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);
   }
 );
+
+// Geometry
+swtichModel.sineWave = ()=>renewSineWave();
+modelFolder.add(swtichModel, "sineWave").name("Sine Wave");
+// The default geometry
+swtichModel.sineWave();
+
 // -------------------------------------------------------------------------------
 // Rendering Function
 let guiClosed = gui.closed;

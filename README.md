@@ -20,27 +20,27 @@
        address      = {New York, NY, USA},
     }
 
-## Intro
+## Introduction
 
-Render 2D art with GPU stroke by stroke! Check out the [online stroke demo](https://shenciao.github.io/Ciallo).
+This research project, titled  **_Ciallo: The next-generation vector paint program_** is published in the SIGGRAPH 2023 Talk. The techniques demonstrated in this project have been anticipated by our community for almost two decades.
+
+A [web demo](https://shenciao.github.io/Ciallo) to showcase our stroke rendering technique.
 
 The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 
-The project is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). Shen Ciao will integrate the stroke rendering methods into it. Here are some successful artworks drawn in the grease pencil: [GPencil open project](https://cloud.blender.org/p/gallery/5b642e25bf419c1042056fc6).
+The project is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). To offer a free open-source industrial-level paint program, Shen Ciao will integrate the stroke rendering methods into the grease pencil.
 
-The project will be presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The final draft version of the paper (two-page abstract) is available [here](./paper).
+The research will be presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The final draft version of the paper (two-page abstract) is [available](./paper).
 
 ## Core Features
 
-### Vector Fill
-
-![vectorFillDemo](./articles/vector_bucket_fill_demo.gif)
-
-labels and lines|labels, lines and fills|lines and fills
-:-------------------------:|:-------------------------:|:-------------------------:
-![](./articles/dango_label.png) | ![](./articles/dango_both.png) | ![](./articles/dango_final.png)
-
 ### GPU-rendered Brushes
+
+Render stylized strokes on vector lines using Graphic Processing Unit (GPU). 
+
+Existing vector paint software restricts the type of brushes available and tends to be laggy - our program enables rendering of most digital brushes with unprecedented efficiency. 
+
+Check out the [web demo](https://shenciao.github.io/Ciallo).
 
 <img src=".\articles\six.gif" alt="naiive brush engine" style="zoom:100%;" />
 
@@ -52,13 +52,23 @@ Pencil|Splatter
 :-------------------------:|:-------------------------:
 ![](./articles/brush_pencil.png)| ![](./articles/brush_splatter.png)
 
+### Vector Fill
+
+The positions to fill color are vectorized as the color markers. The markers are similar to regular vector lines. Artists can freely transform and deform them, and the filled areas will be updated in real-time.
+
+![vectorFillDemo](./articles/vector_bucket_fill_demo.gif)
+
+Markers and lines|Markers, lines and fills|Lines and fills
+:-------------------------:|:-------------------------:|:-------------------------:
+![](./articles/dango_label.png) | ![](./articles/dango_both.png) | ![](./articles/dango_final.png)
+
 ### Curve binding
 
 ![binding](./articles/binding_demo.gif)
 
 ## Trinity!
 
-Each feature individually do not make a big change, until we combine them together!
+Each feature individually do not make a big change for artists, until we combine them together!
 
 ![trinity](./articles/trinity.gif)
 
@@ -66,11 +76,11 @@ Each feature individually do not make a big change, until we combine them togeth
 
 The project began with a clownish plan. Shen thought he could turn himself into a GPT model which can produce thousands of lines of code per day, several months later, he would get a medium-large paint program that can produce serious 2D content. But it quickly turns out the actual pace is two orders of magnitude slower than the initial plan.
 
-Shen will integrate the techniques into the Blender Grease Pencil to provide a production-ready solution for artists.
+Shen will integrate the techniques into the Blender Grease Pencil to provide an free open-source industrial level paint program for artists.
 
-If this project get enough concerns by computer graphics community or someone is willing to sponsor, Shen will make a series of tutorial videos about the stroke rendering.
+If this project get concerns by computer graphics community or someone is willing to sponsor, Shen will make a series of tutorial videos about the stroke rendering.
 
-You may have already found several novel features that we never mentioned in Ciallo's research paper. They might be published in the future.
+You may have already found several novel features that we never mentioned in the research paper. They will be published in the future.
 
 ## How to Compile
 ### Windows

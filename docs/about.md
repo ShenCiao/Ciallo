@@ -82,7 +82,7 @@ The _Airbrush_ has two control points, which are the two middle control points o
 
 ### Have Fun!
 
-Shader code [link](./shaders). 
+Shader code [link](https://github.com/ShenCiao/Ciallo/tree/main/docs/shaders). 
 
 If you like this demo and want to learn more about 2D paint stroke rendering, please check out for the project main page and star the project.
 

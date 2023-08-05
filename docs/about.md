@@ -17,14 +17,14 @@ permalink: /
 </script>
 <script id="vertexShader" type="x-shader/x-vertex">
 	{% capture vertex_shader %}
-  	{% include_relative /articulatedLine.vert %}
+  	{% include_relative /shaders/articulatedLine.vert %}
 	{% endcapture %}
   {{ vertex_shader | remove_first: "#version 300 es" }}
 </script>
 
 <script id="fragmentShader" type="x-shader/x-fragment">
 	{% capture fragment_shader %}
-  	{% include_relative /articulatedLine.frag %}
+  	{% include_relative /shaders/articulatedLine.frag %}
 	{% endcapture %}
   {{ fragment_shader | remove_first: "#version 300 es" }}
 </script>
@@ -82,9 +82,12 @@ The _Airbrush_ has two control points, which are the two middle control points o
 
 ### Have Fun!
 
+Shader code [link](./shaders). 
+
 If you like this demo and want to learn more about 2D paint stroke rendering, please check out for the project main page and star the project.
 
 {::nomarkdown}
 <script type="module" src="js/main.js"></script>
 <a href="https://github.com/ShenCiao/Ciallo"><button class="btn btn-default btn-lg"><i class="fa fa-github fa-lg"></i>GitHub</button></a>
 {:/}
+

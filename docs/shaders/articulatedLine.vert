@@ -2,6 +2,15 @@
 precision mediump float;
 precision mediump int;
 
+// Author: Shen Ciao
+// 
+// This is the web version of articulated line rendering, imlementing instanced and batch rendering.
+// There is no geometry shader on web so we need to push two vertices' info into a single vertex and do instanced rendering.
+// Two vertices' attributes are labelled with 0 and 1, 0 is the left and 1 is the right.
+//
+// p is position, r is radius
+// l (summedLength) is the distance from the vertex to the first vertex of the stroke along the polyline.
+
 uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
@@ -13,7 +22,7 @@ in vec2 position1;
 in float radius1;
 in float summedLength1;
 
-out vec2 p;
+out vec2 p; // position of the current pixel
 flat out vec2 p0;
 flat out float r0;
 flat out float l0;
@@ -22,18 +31,27 @@ flat out float r1;
 flat out float l1;
 
 void main()	{
+    // Batch rendering: 
+    // We push all polylines into a single vertex buffer.
+    // if the vertex0 is the end point of a polyline, don't connect it to the next point, batch rendering done!
     if(bool(isEndPoint0)) return;
+
+    // Pass values to fragment shader
     r0 = radius0;
     r1 = radius1;
     p0 = position0;
     p1 = position1;
     l0 = summedLength0;
     l1 = summedLength1;
+
     vec2 tangentDirection = normalize(position1 - position0);
     vec2 normalDirection = vec2(-tangentDirection.y, tangentDirection.x);
-    float cosTheta = (r0 - r1)/distance(p0, p1); // theta is the angle stroke tilt.
-    if(abs(cosTheta) >= 1.0) return;
+    float cosTheta = (r0 - r1)/distance(p0, p1); // theta is the angle stroke tilt, there is a diagram in README to explain this.
+    // the vertex1 with radius is fully inside the vertex0.
+    if(abs(cosTheta) >= 1.0) return; 
     
+    // Each instance is a trapzoid, whose vertices' positions are determined here. 
+    // Use gl_VertexID {0, 1, 2, 3} to index and get the desired parameters.
     vec2[] offsetSigns = vec2[](
         vec2(-1.0, -1.0),
         vec2(-1.0, 1.0), 
@@ -50,7 +68,7 @@ void main()	{
     float cotHalfTheta = 1.0 / tanHalfTheta;
     float normalTanValue = vec4(tanHalfTheta, tanHalfTheta, cotHalfTheta, cotHalfTheta)[gl_VertexID];
     if(normalTanValue > 10.0 || normalTanValue < 0.1) return;
-
+    
     vec2 trapzoidVertexPosition = pos + 
         offsetSign.x * radius * tangentDirection + 
         offsetSign.y * radius * normalDirection * normalTanValue;

@@ -2,6 +2,11 @@
 precision mediump float;
 precision mediump int;
 
+// Author: Shen Ciao
+// 
+// p is position, r is radius
+// l (summedLength) is the distance from the vertex to the first vertex of the stroke along the polyline.
+
 in vec2 p;
 flat in vec2 p0;
 flat in float r0;
@@ -22,8 +27,8 @@ uniform float noiseFactor;
 uniform float rotationFactor;
 uniform int stampMode;
 const int EquiDistance = 0, RatioDistance = 1;
-float x2n(float x);
-float n2x(float n);
+float x2n(float x); // from distance to stamp index.
+float n2x(float n); // from stamp index to distance.
 mat2 rotate(float angle);
 // Airbrush
 uniform mediump sampler2D gradient;
@@ -41,6 +46,7 @@ void main()	{
     vec2 tangent = normalize(p1 - p0);
     vec2 normal = vec2(-tangent.y, tangent.x);
 
+    // The local coordinate orgin at p0, x axis along the tangent direct.
     float len = distance(p1, p0);
     vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
     vec2 p0Local = vec2(0, 0);
@@ -52,7 +58,7 @@ void main()	{
     float d1 = distance(p, p1);
     float d1cos = (pLocal.x - len) / d1;
 
-    // remove corners
+    // Remove corners
     if(d0cos < cosTheta && d0 > r0) discard;
     if(d1cos > cosTheta && d1 > r1) discard;
     
@@ -65,8 +71,9 @@ void main()	{
     }
     
     if(type == Stamp){
-        // Two roots of the quadratic polynomial are frontedge and backedge
-        // formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
+        // The method here is not published yet, there will be a 10min video to explain.
+        // Two roots of the quadratic polynomial are effectRangeFront and effectRangeBack.
+        // Formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
         float a, b, c, delta;
         a = 1.0 - pow(cosTheta, 2.0);
         b = 2.0 * (r0 * cosTheta - pLocal.x);
@@ -77,34 +84,35 @@ void main()	{
         float tempMathBlock = b + sign(b) * sqrt(delta);
         float x1 = -2.0 * c / tempMathBlock;
         float x2 = -tempMathBlock / (2.0*a);
-        float frontEdge = x1 <= x2 ? x1 : x2;
-        float backEdge = x1 > x2 ? x1 : x2;
+        float effectRangeFront = x1 <= x2 ? x1 : x2;
+        float effectRangeBack = x1 > x2 ? x1 : x2;
 
-        float summedIndex = l0/stampInterval;
+        // We stamp on polyline every time the stamp index comes to an integer.
+        float index0 = l0/stampInterval;
         float startIndex, endIndex;
-        if (frontEdge <= 0.0){
-            startIndex = ceil(summedIndex);
+        if (effectRangeFront <= 0.0){
+            startIndex = ceil(index0);
         }
         else{
-            startIndex = ceil(summedIndex + x2n(frontEdge));
+            startIndex = ceil(index0 + x2n(effectRangeFront));
         }
         endIndex = l1/stampInterval;
-        float backIndex = x2n(backEdge) + summedIndex;
+        float backIndex = x2n(effectRangeBack) + index0;
         endIndex = endIndex < backIndex ? endIndex : backIndex;
         if(startIndex > endIndex) discard;
 
         int MAX_i = 128; float currIndex = startIndex;
         float A = 0.0;
         for(int i = 0; i < MAX_i; i++){
-            float currStampLocalX = n2x(currIndex - summedIndex);
-            
-            vec2 pToStamp = pLocal - vec2(currStampLocalX, 0.0);
+            float currStampLocalX = n2x(currIndex - index0);
+            // Apply roation and sample the footprint.
+            vec2 pToCurrStamp = pLocal - vec2(currStampLocalX, 0.0);
+            float currStampRadius = r0 - cosTheta * currStampLocalX;
             float angle = rotationFactor*radians(360.0*fract(sin(currIndex)*1.0));
-            pToStamp *= rotate(angle);
-
-            float r = r0 - cosTheta * currStampLocalX;
-            vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
+            pToCurrStamp *= rotate(angle);
+            vec2 textureCoordinate = (pToCurrStamp/currStampRadius + 1.0)/2.0;
             float opacity = texture(footprint, textureCoordinate).a;
+            // Blend opacity.
             opacity = clamp(opacity - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * alpha;
             A = A * (1.0-opacity) + opacity;
 
@@ -117,6 +125,7 @@ void main()	{
     }
 
     if(type == Airbrush){
+        // The method here is not published yet.
         float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
         float mid = pLocal.x - abs(pLocal.y)/tanTheta;
         float A = alpha;
@@ -124,6 +133,7 @@ void main()	{
         float transparency1 = d1 > r1 ? 1.0:sqrt(1.0 - A*sampleGraident(d1/r1));
         float transparency;
 
+        // A bunch of math derived with calculus here.
         if(mid <= 0.0){
             transparency = transparency0/transparency1;
         }
@@ -159,11 +169,11 @@ float n2x(float n){
     }
 }
 
+// Helper functions----------------------------------------------------------------------------------
 mat2 rotate(float angle){
     return mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
 }
 
-// ----------------------------------------------------------------------------------
 float random (in vec2 st) {
     return fract(sin(dot(st.xy,
                         vec2(12.9898,78.233)))*

@@ -100,6 +100,7 @@ const strokeMaterial = new THREE.RawShaderMaterial( {
 // The mesh object we upload everything to.
 const polylineMesh = new THREE.InstancedMesh( trapzoidGeometry, strokeMaterial); 
 polylineMesh.frustumCulled = false;
+scene.add(polylineMesh);
 
 let variables = {
   nSegments: 32,
@@ -306,8 +307,6 @@ const updateGradient = (point1, point2) => {
   const gradientTexture = new THREE.DataTexture(data, width, height);
   gradientTexture.needsUpdate = true;
   polylineMesh.material.uniforms.gradient.value = gradientTexture;
-  
-  scene.add(polylineMesh);
 }
 
 updateGradient(variables.bezierControlPoint1, variables.bezierControlPoint2);

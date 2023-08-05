@@ -53,8 +53,8 @@ controls.enableDamping = false;
 controls.screenSpacePanning = true;
 
 // Add GUI
-// const stats = new Stats();
-// document.getElementById('canvas-holder').appendChild( stats.dom );
+const stats = new Stats();
+document.getElementById('stats-holder').appendChild( stats.dom );
 const gui = new GUI({ autoPlace: false });
 gui.close();
 document.getElementById('dat-gui-holder').appendChild(gui.domElement);
@@ -457,19 +457,22 @@ swtichModel.sineWave();
 
 // -------------------------------------------------------------------------------
 // Rendering Function
+// there is no close event in datgui, do it manually
 let guiClosed = gui.closed;
 const rendering = function () {
   requestAnimationFrame(rendering);
   controls.update();
   if ( guiClosed != gui.closed ){
     if(!guiClosed){
-        document.getElementById('dat-gui-holder').style.left = "0em"
+        document.getElementById('dat-gui-holder').style.left = "0em";
+        document.getElementById('stats-holder').style.display = "None";
     }else{
         document.getElementById('dat-gui-holder').style.left = (-gui.width).toString() + "px";
+        document.getElementById('stats-holder').style.display = "";
     }
     guiClosed = gui.closed;
   }
-  // stats.update();
+  stats.update();
   renderer.render(scene, camera);
 };
 

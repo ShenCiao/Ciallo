@@ -38,6 +38,7 @@ permalink: /
 <style>
   canvas { width: inherit; position: relative; top: 0;}
 </style>
+<div id="stats-holder" style="display: none;"></div>
 <div id='canvas-holder' style="position: relative;">
   <div id="dat-gui-holder" style="position: absolute; top: 0em; left: 0em; z-index: 1;"></div>
 </div>

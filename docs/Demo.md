@@ -16,16 +16,16 @@ permalink: /
 }
 </script>
 <script id="vertexShader" type="x-shader/x-vertex">
-	{% capture vertex_shader %}
-  	{% include_relative /shaders/articulatedLine.vert %}
-	{% endcapture %}
+  {% capture vertex_shader %}
+    {% include_relative /shaders/articulatedLine.vert %}
+  {% endcapture %}
   {{ vertex_shader | remove_first: "#version 300 es" }}
 </script>
 
 <script id="fragmentShader" type="x-shader/x-fragment">
-	{% capture fragment_shader %}
-  	{% include_relative /shaders/articulatedLine.frag %}
-	{% endcapture %}
+  {% capture fragment_shader %}
+    {% include_relative /shaders/articulatedLine.frag %}
+  {% endcapture %}
   {{ fragment_shader | remove_first: "#version 300 es" }}
 </script>
 {:/}
@@ -56,6 +56,8 @@ permalink: /
 
 "This is a GPU-rendered 2D stroke demo built upon Three.js, showcasing methods derived from a research project called Ciallo. The project focuses on GPU-based rendering of 2D paint strokes."
 
+For more details, check out the [Project Introduction](./AboutProject) page.
+
 ---
 
 **Strokes Categories:** _Vanilla_, _Stamp_ and _Airbrush_.
@@ -63,10 +65,10 @@ permalink: /
 The _Vanilla_ is the default stroke and self-explanatory.
 
 The _Stamp_ includes the **`Splatter`**, **`Pencil`** and **`Dot`** strokes. 
-The option **`Equidistant`** means the interval between the textures are equal,
-the option **`Ratiodistant`** means the interval between the textures are propotional to the stroke radius.
+The option **`Equidistant`** means the interval between the textures is equal,
+the option **`Ratiodistant`** means the intervals between the textures are proportional to the stroke radius.
 
-The _Airbrush_ has two control points, which are the two middle control points of a cubic bezier curve starts from (0.0, 1.0) ends to (1.0, 0.0).
+The _Airbrush_ has two control points, which are the two middle control points of a cubic bezier curve that starts from (0.0, 1.0) and ends at (1.0, 0.0).
 
 **Models:**
 
@@ -84,7 +86,7 @@ The _Airbrush_ has two control points, which are the two middle control points o
 
 Shader code [link](https://github.com/ShenCiao/Ciallo/tree/main/docs/shaders). 
 
-If you like this demo and want to learn more about 2D paint stroke rendering, please check out for the project main page and star the project.
+If you like this demo and want to learn more about 2D paint stroke rendering, please check out the project main page and star the project.
 
 {::nomarkdown}
 <script type="module" src="js/main.js"></script>

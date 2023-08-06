@@ -15,8 +15,13 @@
 # in the templates via {{ site.myvariable }}.
 title: "Ciallo ～(∠・ω< )⌒★!"
 email: '1500013714 at pku.edu.cn'
-description: "Greatings from Shen Ciao, developer of the Ciallo project."
-baseurl: "/Ciallo" # the subpath of your site, e.g. /blog
+description: "
+Greetings from Shen Ciao, the developer of the Ciallo project.
+I love anime and games. Even before developing Ciallo, I wished to make contributions to technologies about digital painting, anime games, Live2D, etc. 
+(so that I could appreciate more high-quality 'waifus').
+Fortunately, I have made some breakthroughs in this continuous exploration.
+"
+baseurl: "/Ciallo" # the subpath of your site, e.g. /blog 
 url: "https://shenciao.github.io"
 linkedin_url: 'https://www.linkedin.com/in/shenciao'
 github_url: 'https://github.com/ShenCiao'
@@ -97,4 +102,5 @@ enable_contact: false
 enable_nav: true
 nav_item:
   - { url: '/', text: 'Demo' }
-  - { url: '/about', text: 'About' }
+  - { url: '/AboutProject', text: 'Project Introduction' }
+  - { url: '/TalkSummary', text: 'Talk Summary' }

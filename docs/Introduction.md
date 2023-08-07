@@ -1,11 +1,9 @@
 ---
 layout: inner
-title: About
-permalink: /AboutProject
+title: Introduction
+permalink: /Introduction
 ---
 # Ciallo: The Next-Generation Vector Paint Program
-
-## Introduction
 
 Ciallo is a GPU-driven vector paint program. All its brushes are fully rendered by GPU (OpenGL). We can render the vast majority of digital brushes on vector lines, which were only available on pixel images. Soon, digital paint artists will get rid of the issue of lag caused by CPU rendering and create 2D artwork efficiently.
 

@@ -102,5 +102,5 @@ enable_contact: false
 enable_nav: true
 nav_item:
   - { url: '/', text: 'Demo' }
-  - { url: '/AboutProject', text: 'Project Introduction' }
+  - { url: '/Introduction', text: 'Introduction' }
   - { url: '/TalkSummary', text: 'Talk Summary' }

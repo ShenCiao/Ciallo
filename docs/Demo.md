@@ -56,7 +56,7 @@ permalink: /
 
 "This is a GPU-rendered 2D stroke demo built upon Three.js, showcasing methods derived from a research project called Ciallo. The project focuses on GPU-based rendering of 2D paint strokes."
 
-For more details, check out the [Project Introduction](./AboutProject) page.
+For more details, check out the [Introduction](./Introduction) page.
 
 ---
 

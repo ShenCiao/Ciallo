@@ -30,20 +30,20 @@ void main(){
 
     float cosTheta = (r0 - r1)/len; // theta is the angle stroke tilt.
     // apply trigonometric half angle formula
-    float tanValue0 = sqrt((1.0+cosTheta) / (1.0-cosTheta));
-    float tanValue1 = 1.0/tanValue0;
+    float tanHalfTheta = sqrt((1.0+cosTheta) / (1.0-cosTheta));
+    float cotHalfTheta = 1.0/tanHalfTheta;
 
     // the corner case, Shen call it "Transit":
     // small disk is fully inside the big disk
     if(abs(cosTheta) >= 1.0) return;
     // center of the small disk is very near to the big disk
     const float offsetRatioTolerance = 10.0;
-    if(tanValue0 > offsetRatioTolerance || tanValue1 > offsetRatioTolerance) return;
+    if(tanHalfTheta > offsetRatioTolerance || cotHalfTheta > offsetRatioTolerance) return;
 
     // Vertex at p0 left(v01 direction)
     p0 = pos0;
     p1 = pos1;
-    p = p0 + normal*r0*tanValue0 - tangent*r0;
+    p = p0 + normal*r0*tanHalfTheta - tangent*r0;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -53,7 +53,7 @@ void main(){
     // Vertex at p0 right
     p0 = pos0;
     p1 = pos1;
-    p = p0 - normal*r0*tanValue0 - tangent*r0;
+    p = p0 - normal*r0*tanHalfTheta - tangent*r0;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -63,7 +63,7 @@ void main(){
     // Vertex at p1 left
     p0 = pos0;
     p1 = pos1;
-    p = p1 + normal*r1*tanValue1 + tangent*r1;
+    p = p1 + normal*r1*cotHalfTheta + tangent*r1;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);
@@ -73,7 +73,7 @@ void main(){
     // Vertex at p1 right
     p0 = pos0;
     p1 = pos1;
-    p = p1 - normal*r1*tanValue1 + tangent*r1;
+    p = p1 - normal*r1*cotHalfTheta + tangent*r1;
     gl_Position = MVP*vec4(p, 0.0, 1.0);
     fragColor = color;
     summedLength = vec2(inSummedLength[0], inSummedLength[1]);

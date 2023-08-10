@@ -14,6 +14,7 @@
        series       = {SIGGRAPH 2023},
        year         = {2023},
        month        = {August},
+       isbn         = {979-8-4007-0143-6/23/08},
        url          = {https://doi.org/10.1145/3587421.3595418},
        doi          = {10.1145/3587421.3595418},
        publisher    = {ACM},

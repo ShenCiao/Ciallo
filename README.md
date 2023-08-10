@@ -1,6 +1,6 @@
 # Ciallo ～(∠・ω< )⌒★!
 
-[Paper](./pape) |
+[Paper](./paper) |
 [Web Demo](https://shenciao.github.io/Ciallo/) |
 [SIGGRAPH 2023 Talk](https://youtu.be/KkwW6M16O3c) |
 [Video Demo](https://youtu.be/gqTrD8-nlh0) |

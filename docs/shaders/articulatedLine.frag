@@ -5,7 +5,7 @@ precision mediump int;
 // Author: Shen Ciao
 // 
 // p is position, r is radius
-// l (summedLength) is the distance from the vertex to the first vertex of the stroke along the polyline.
+// l (summedLength) is the distance from the vertex to the first vertex of the stroke along the polyline, only for the stamp stroke.
 
 in vec2 p;
 flat in vec2 p0;
@@ -71,8 +71,10 @@ void main()	{
     }
     
     if(type == Stamp){
-        // The method here is not published yet, there will be a 10min video to explain.
-        // Two roots of the quadratic polynomial are effectRangeFront and effectRangeBack.
+        // The method here is not published yet, it should be explained in a 10min video.
+        // The footprint is a disk instead of a square.
+        // We set a quadratic polynomial to calculate the effect range, the range on polyline edge footprint can touch the current pixel.
+        // Two roots of the quadratic polynomial are the effectRangeFront and effectRangeBack.
         // Formulas from SIGGRAPH 2022 Talk - A Fast & Robust Solution for Cubic & Higher-Order Polynomials
         float a, b, c, delta;
         a = 1.0 - pow(cosTheta, 2.0);
@@ -88,7 +90,7 @@ void main()	{
         float effectRangeBack = x1 > x2 ? x1 : x2;
 
         // We stamp on polyline every time the stamp index comes to an integer.
-        float index0 = l0/stampInterval;
+        float index0 = l0/stampInterval; // The stamp index of vertex0.
         float startIndex, endIndex;
         if (effectRangeFront <= 0.0){
             startIndex = ceil(index0);
@@ -96,11 +98,12 @@ void main()	{
         else{
             startIndex = ceil(index0 + x2n(effectRangeFront));
         }
-        endIndex = l1/stampInterval;
+        float index1 = l1/stampInterval;
         float backIndex = x2n(effectRangeBack) + index0;
-        endIndex = endIndex < backIndex ? endIndex : backIndex;
+        endIndex = index1 < backIndex ? index1 : backIndex;
         if(startIndex > endIndex) discard;
 
+        // The main loop to sample and blend color from the footprint.
         int MAX_i = 128; float currIndex = startIndex;
         float A = 0.0;
         for(int i = 0; i < MAX_i; i++){
@@ -113,7 +116,8 @@ void main()	{
             vec2 textureCoordinate = (pToCurrStamp/currStampRadius + 1.0)/2.0;
             float opacity = texture(footprint, textureCoordinate).a;
             // Blend opacity.
-            opacity = clamp(opacity - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * alpha;
+            float opacityNoise = noiseFactor*fbm(textureCoordinate*50.0);
+            opacity = clamp(opacity - opacityNoise, 0.0, 1.0) * alpha;
             A = A * (1.0-opacity) + opacity;
 
             currIndex += 1.0;
@@ -125,7 +129,7 @@ void main()	{
     }
 
     if(type == Airbrush){
-        // The method here is not published yet.
+        // The method here is not published yet. Shen is not fully satisfied with the current solution.
         float tanTheta = sqrt(1.0 - cosTheta*cosTheta)/cosTheta;
         float mid = pLocal.x - abs(pLocal.y)/tanTheta;
         float A = alpha;
@@ -133,7 +137,7 @@ void main()	{
         float transparency1 = d1 > r1 ? 1.0:sqrt(1.0 - A*sampleGraident(d1/r1));
         float transparency;
 
-        // A bunch of math derived with calculus here.
+        // A bunch of math derived with the continuous form of airbrush here.
         if(mid <= 0.0){
             transparency = transparency0/transparency1;
         }

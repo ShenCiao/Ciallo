@@ -1,6 +1,10 @@
 # Ciallo ～(∠・ω< )⌒★!
 
-[Paper](./pape) | [Video Demo](https://youtu.be/gqTrD8-nlh0) | [Web Demo](https://shenciao.github.io/Ciallo/) | [Talk](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176) (in progress) | [Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
+[Paper](./pape) |
+[Web Demo](https://shenciao.github.io/Ciallo/) |
+[SIGGRAPH 2023 Talk](https://youtu.be/KkwW6M16O3c) |
+[Video Demo](https://youtu.be/gqTrD8-nlh0) |
+[Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
 
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)
 - [Li-Yi Wei](https://www.liyiwei.org/)
@@ -25,13 +29,13 @@
 
 This research project, titled  **_Ciallo: The next-generation vector paint program_** is published in the SIGGRAPH 2023 Talk. The techniques demonstrated in this project have been anticipated by our community for almost two decades.
 
-A [web demo](https://shenciao.github.io/Ciallo) to showcase our stroke rendering technique.
+A [web demo](https://shenciao.github.io/Ciallo) to showcase the stroke rendering technique.
 
 The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", comes from the video game *Sabbat of the Witch* developed by *Yuzusoft*.
 
 The project is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). To offer a free open-source industrial-level paint program, Shen Ciao will integrate the stroke rendering methods into the grease pencil.
 
-The research will be presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023, [presentation link](https://s2023.siggraph.org/presentation/?id=gensub_185&sess=sess176). The final draft version of the paper (two-page abstract) is [available](./paper).
+The final draft version of the [paper](./paper) (two-page abstract). The research was presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023, [video](https://youtu.be/KkwW6M16O3c). 
 
 ## Core Features
 

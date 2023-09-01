@@ -4,25 +4,28 @@
 [Web Demo](https://shenciao.github.io/Ciallo/) |
 [SIGGRAPH 2023 Talk](https://youtu.be/KkwW6M16O3c) |
 [Video Demo](https://youtu.be/gqTrD8-nlh0) |
-[Blender Implementation](https://devtalk.blender.org/t/2023-02-06-grease-pencil-module-meeting/27526) (in progress)
+[Blender Implementation](https://devtalk.blender.org/t/add-stamp-brush-and-fix-airbrush/30884) (in progress at stage 1)
 
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)
 - [Li-Yi Wei](https://www.liyiwei.org/)
 
 ![Ciallo](https://github.com/ShenCiao/Ciallo/assets/24319509/455de8e7-06ac-49ca-bcd7-854b40102d2d)
 
-    @inproceedings{Ciallo2023,
-       author       = {Shen Ciao, Li-Yi Wei},
-       title        = {Ciallo: The next-generation vector paint program},
-       booktitle    = {ACM SIGGRAPH 2023 Talks},
-       series       = {SIGGRAPH 2023},
-       year         = {2023},
-       month        = {August},
-       isbn         = {979-8-4007-0143-6/23/08},
-       url          = {https://doi.org/10.1145/3587421.3595418},
-       doi          = {10.1145/3587421.3595418},
-       publisher    = {ACM},
-       address      = {New York, NY, USA},
+    @inproceedings{Ciallo,
+      author = {Ciao, Shen and Wei, Li-Yi},
+      title = {Ciallo: The next-Generation Vector Paint Program},
+      year = {2023},
+      isbn = {9798400701436},
+      publisher = {Association for Computing Machinery},
+      address = {New York, NY, USA},
+      url = {https://doi.org/10.1145/3587421.3595418},
+      doi = {10.1145/3587421.3595418},
+      booktitle = {ACM SIGGRAPH 2023 Talks},
+      articleno = {67},
+      numpages = {2},
+      keywords = {Digital painting, stylized stroke, arrangement, vector graphics. coloring, graphics processing unit (GPU)},
+      location = {Los Angeles, CA, USA},
+      series = {SIGGRAPH '23}
     }
 
 ## Introduction

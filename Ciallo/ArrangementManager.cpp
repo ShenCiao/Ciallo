@@ -120,22 +120,6 @@ std::vector<Geom::Polyline> ArrangementManager::PointQuery(glm::vec2 p) const
 	return {};
 }
 
-// For test usage only
-std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_monotone_curve& monoCurve)
-{
-	std::vector<CGAL::PointLocation::Result_type> output(256);
-	auto beginIt = output.begin();
-	auto endIt = CGAL::zone(Arrangement, monoCurve, output.begin(), PointLocation);
-
-	std::vector<std::vector<glm::vec2>> result;
-	for (auto it = beginIt; it < endIt; ++it)
-	{
-		auto polygons = GetConvexPolygonsFromQueryResult(*it);
-		result.insert(result.end(), polygons.begin(), polygons.end());
-	}
-	return result;
-}
-
 // Only unbounded face returned
 std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGAL::X_monotone_curve& monoCurve)
 {
@@ -155,41 +139,6 @@ std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGA
 	return result;
 }
 
-std::vector<Geom::Polyline> ArrangementManager::GetConvexPolygonsFromQueryResult(
-	const CGAL::PointLocation::Result_type& queryResult)
-{
-	// TODO: deal with hole
-	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
-	{
-		CGAL::Face_const_handle face = *faceHandlePtr;
-		if (face->is_unbounded())
-		{
-			return {};
-		}
-		else
-		{
-			// TODO: deal with holes
-			std::vector<CGAL::Polygon> simplePolygonWithHole = FaceToPolygon(face);
-			auto& outer = simplePolygonWithHole[0];
-
-			std::list<CGAL::Polygon> partitionResult;
-			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
-			                                std::back_inserter(partitionResult));
-
-			std::vector<Geom::Polyline> result;
-			for (auto& poly : partitionResult)
-			{
-				result.push_back(PolygonToVec(poly));
-			}
-			return result;
-		}
-	}
-	else
-	{
-		return {};
-	}
-}
-
 std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::vec2>& vec)
 {
 	std::vector<CGAL::Point> points;
@@ -200,17 +149,17 @@ std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::
 	return points;
 }
 
-
 /**
- * \brief Get the polygon from face.
+ * \brief Get the polygon vector from face.
  * If there is a line inserted into a face but not across it, CGAL will return vertices associated with this line.
  * So we need to eliminate it with a palindromic detection.
  * \param face Face handle to get polygon from.
- * \return index 0 is the boundary, others are holes. Hole is not implemented yet.
+ * \return index 0 is the boundary, others are holes.
  */
-std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_handle face)
+std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handle face)
 {
-	std::vector<CGAL::Polygon> result;
+	std::vector<Geom::Polyline> result;
+	// std::vector<CGAL::Polygon> polygonWithHoles = FaceToPolygon(face);
 
 	std::vector<CGAL::Arrangement::Ccb_halfedge_const_circulator> starters;
 	starters.push_back(face->outer_ccb());
@@ -218,7 +167,6 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 	{
 		starters.push_back(*hole);
 	}
-
 
 	for (auto start : starters)
 	{
@@ -265,14 +213,14 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 			{
 				for (auto it = beginIt; it != --halfEdge->curve().points_end(); ++it)
 				{
-					result.back().push_back(*it);
+					result.back().push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 				}
 			}
 			else if (halfEdge->source()->point() == *--halfEdge->curve().points_end())
 			{
 				for (auto it = --halfEdge->curve().points_end(); it != beginIt; --it)
 				{
-					result.back().push_back(*it);
+					result.back().push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 				}
 			}
 			else
@@ -282,34 +230,6 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 		}
 	}
 
-	return result;
-}
-
-/**
- * \brief Get the polygon vector from face.
- *  Dealing with the line inserted. Member function `FaceToPolygon` is dealing with it too.
- * \param face Face handle to get polygon from.
- * \return index 0 is the boundary, others are holes. Hole is not implemented yet.
- */
-std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handle face)
-{
-	std::vector<Geom::Polyline> result;
-	std::vector<CGAL::Polygon> polygonWithHoles = FaceToPolygon(face);
-
-	for (auto& polygon : polygonWithHoles)
-	{
-		result.push_back(PolygonToVec(polygon));
-	}
-	return result;
-}
-
-Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Polygon& polygon)
-{
-	Geom::Polyline result;
-	for (auto it = polygon.begin(); it != polygon.end(); ++it)
-	{
-		result.push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
-	}
 	return result;
 }
 

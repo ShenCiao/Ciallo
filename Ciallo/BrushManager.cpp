@@ -31,7 +31,7 @@ void BrushManager::GenPreviewStroke(int nSegment)
 		thicknessOffset.push_back(t);
 	}
 	PreviewStroke.Position = position;
-	PreviewStroke.Thickness = thickness;
+	PreviewStroke.Radius = thickness;
 	PreviewStroke.ThicknessOffset = thicknessOffset;
 	PreviewStroke.UpdateBuffers();
 }

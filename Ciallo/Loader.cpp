@@ -78,7 +78,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThicknes
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
 		stroke.ThicknessOffset = offset;
-		stroke.Thickness = targetThickness;
+		stroke.Radius = targetThickness;
 
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
 		stroke.UpdateBuffers();

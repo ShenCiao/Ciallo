@@ -18,7 +18,7 @@ Stroke& Stroke::operator=(Stroke&& other) noexcept
 	if (this == &other)
 		return *this;
 	Position = std::move(other.Position);
-	Thickness = other.Thickness;
+	Radius = other.Radius;
 	ThicknessOffset = other.ThicknessOffset;
 	Color = other.Color;
 	BrushE = other.BrushE;
@@ -91,7 +91,7 @@ void Stroke::UpdateDistanceBuffer(int stampMode)
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, VertexBuffers[2]);
-	glUniform1f(2, Thickness);
+	glUniform1f(2, Radius);
 	glUniform1i(3, stampMode);
 	glDispatchCompute(1, 1, 1);
 }
@@ -105,7 +105,7 @@ void Stroke::LineDrawCall()
 		float offset = 0.0f;
 		if (!ThicknessOffset.empty()) offset = ThicknessOffset[0];
 
-		glm::vec2 paddedPos = {p.x + 0.01f * (Thickness + offset), p.y};
+		glm::vec2 paddedPos = {p.x + 0.01f * (Radius + offset), p.y};
 		Position.push_back(paddedPos);
 
 		UpdatePositionBuffer();
@@ -142,7 +142,7 @@ void Stroke::FillDrawCall()
 
 void Stroke::SetUniforms()
 {
-	glUniform1f(2, Thickness);
+	glUniform1f(2, Radius);
 	glUniform4fv(1, 1, glm::value_ptr(Color));
 }
 

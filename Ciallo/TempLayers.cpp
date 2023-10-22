@@ -39,7 +39,7 @@ void TempLayers::RenderOverlay()
 		if (l.size() == 0) continue;
 		Stroke s{};
 		s.Position = l;
-		s.Thickness = 0.0003f;
+		s.Radius = 0.0003f;
 		s.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
 		s.UpdateBuffers();
 		Lines.push_back(std::move(s));
@@ -205,7 +205,7 @@ void TempLayers::GenCircleStroke()
 	}
 	line[nSeg] = line[0];
 	Circle.Position = line;
-	Circle.Thickness = 0.0003f;
+	Circle.Radius = 0.0003f;
 	Circle.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
 	Circle.UpdateBuffers();
 }

@@ -16,7 +16,7 @@ void Painter::OnDragStart(ClickOrDragStart event)
 
 	s.Position = {event.MousePos};
 	s.BrushE = BrushE;
-	s.Thickness = Thickness;
+	s.Radius = Radius;
 	s.Color = Color;
 	s.FillColor = FillColor;
 	s.UpdateBuffers();
@@ -77,5 +77,5 @@ void Painter::DrawProperties()
 	ImGui::ColorPicker4("Line Color##0", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
 	if (!!(Usage & StrokeUsageFlags::Fill) || !!(Usage & StrokeUsageFlags::Zone))
 		ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::DragFloat("Thickness", &Thickness, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
+	ImGui::DragFloat("Radius", &Radius, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
 }

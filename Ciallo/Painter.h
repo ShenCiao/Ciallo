@@ -23,7 +23,7 @@ public:
 	chrono::duration<float> SampleInterval{ 0.01f }; // 10ms
 	entt::entity BrushE = entt::null;
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
-	float Thickness = 0.001f;
+	float Radius = 0.001f;
 	glm::vec4 FillColor = {0.0f, 0.0f, 0.0f, 1.0f};
 	StrokeUsageFlags Usage = StrokeUsageFlags::Zero;
 

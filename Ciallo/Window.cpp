@@ -1,9 +1,13 @@
 #include "pch.hpp"
 #include "Window.h"
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <implot.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#define EASYTAB_IMPLEMENTATION
+#include "easytab.h"
 
 Window::Window()
 {
@@ -48,6 +52,9 @@ Window::Window()
 	ImGui_ImplGlfw_InitForOpenGL(GlfwWindow, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
 	ImGui::StyleColorsLight();
+
+	// Get Windows pen pressure events
+	EasyTab_Load(glfwGetWin32Window(GlfwWindow));
 }
 
 Window::~Window()
@@ -56,6 +63,8 @@ Window::~Window()
 	ImGui_ImplGlfw_Shutdown();
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
+
+	EasyTab_Unload();
 
 	glfwDestroyWindow(GlfwWindow);
 	glfwTerminate();
@@ -68,16 +77,29 @@ bool Window::ShouldClose() const
 
 void Window::BeginFrame() const
 {
+	MSG msg;
+	float pressure = 0.0f;
+	if (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		if (EasyTab_HandleEvent(msg.hwnd, msg.message, msg.lParam, msg.wParam) == EASYTAB_OK)
+		{
+			pressure = EasyTab->Pressure;
+		}
+		else pressure = ImGui::GetIO().PenPressure;
+	}
+	else pressure = ImGui::GetIO().PenPressure;
+
 	glfwPollEvents();
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	ImGui::DockSpaceOverViewport();
+	ImGui::GetIO().PenPressure = pressure;
 }
 
 void Window::EndFrame() const
 {
-	const ImVec4 clearColor{ .0f, .0f, 0.0f, 1.00f };
+	const ImVec4 clearColor{.0f, .0f, 0.0f, 1.00f};
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

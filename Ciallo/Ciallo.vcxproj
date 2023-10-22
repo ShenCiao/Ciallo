@@ -156,6 +156,7 @@
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="easytab.h" />
     <ClInclude Include="InnerBrush.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerManager.h" />

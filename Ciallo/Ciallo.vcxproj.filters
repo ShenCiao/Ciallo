@@ -275,6 +275,9 @@
     <ClInclude Include="CubicBezierBone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="easytab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">

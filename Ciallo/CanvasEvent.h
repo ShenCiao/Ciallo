@@ -18,6 +18,7 @@ struct Dragging : ClickOrDragStart
 	glm::vec2 DeltaMousePos{};
 	glm::vec2 DeltaMousePosPixel{};
 	chrono::duration<float> DragDuration = chrono::duration<float>::zero();
+	float Pressure = 0.0f;
 };
 
 struct DragEnd : Dragging

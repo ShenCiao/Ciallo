@@ -9,7 +9,6 @@
 #include "TempLayers.h"
 #include "Loader.h"
 
-#include <random>
 #include <glm/gtx/transform.hpp>
 
 void Canvas::DrawUI()
@@ -38,7 +37,7 @@ void Canvas::DrawUI()
 			Loader::LoadCsv("./models/grid.csv");
 		ImGui::EndMenu();
 	}
-	
+
 	if (ImGui::BeginMenu("Layers"))
 	{
 		auto& layers = R.ctx().get<TempLayers>();
@@ -46,7 +45,7 @@ void Canvas::DrawUI()
 		ImGui::Checkbox("Hide Fill", &layers.HideFill);
 		ImGui::EndMenu();
 	}
-	
+
 	if (ImGui::Button("Export")) Export();
 	static int n = 1;
 	ImGui::PushItemWidth(200);
@@ -63,6 +62,7 @@ void Canvas::DrawUI()
 	// mouse position relative to image
 	glm::vec2 mousePosPixel = ImGui::GetMousePos() - drawingScreenOrigin;
 	glm::vec2 mousePos = mousePosPixel / (Viewport.GetSizePixelFloat(Dpi) * Zoom) * Viewport.GetSize();
+	float pressure = ImGui::GetIO().PenPressure;
 
 	// Invisible button for interaction
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
@@ -80,7 +80,7 @@ void Canvas::DrawUI()
 				IsDragging = false;
 				auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 				EventDispatcher.trigger(DragEnd{
-					mousePos, mousePosPixel, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration
+					mousePos, mousePosPixel, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration, pressure
 				});
 			}
 			StartDraggingTimePoint = chrono::high_resolution_clock::now();
@@ -94,7 +94,7 @@ void Canvas::DrawUI()
 			IsDragging = true;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(Dragging{
-				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
+				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration, pressure
 			});
 			PrevMousePos = mousePos;
 			return;
@@ -105,7 +105,7 @@ void Canvas::DrawUI()
 			IsDragging = false;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(DragEnd{
-				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
+				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration, pressure
 			});
 			PrevMousePos = mousePos;
 			return;
@@ -169,7 +169,7 @@ void Canvas::RenderContentNTimes(int n)
 	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
 	auto dup = strokeEs;
-	for(int i = 0; i <n; ++i)
+	for (int i = 0; i < n; ++i)
 	{
 		std::copy(dup.begin(), dup.end(), std::back_inserter(strokeEs));
 	}

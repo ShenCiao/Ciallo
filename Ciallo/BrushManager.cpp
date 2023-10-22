@@ -19,20 +19,20 @@ void BrushManager::GenPreviewStroke(int nSegment)
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
 	Geom::Polyline position;
-	const float thickness = 0.33f;
-	std::vector<float> thicknessOffset;
+	const float radius = 0.33f;
+	std::vector<float> radiusOffset;
 	for (int i = 0; i <= nSegment; ++i)
 	{
 		float a = static_cast<float>(i) / nSegment;
 		float x = glm::mix(-pi, pi, a);
 		float y = 1.0f / gr * glm::sin(x);
-		float t = (glm::cos(x / 2.0f) - 1.0f) * thickness;
+		float t = (glm::cos(x / 2.0f) - 1.0f) * radius;
 		position.push_back(x, y);
-		thicknessOffset.push_back(t);
+		radiusOffset.push_back(t);
 	}
 	PreviewStroke.Position = position;
-	PreviewStroke.Radius = thickness;
-	PreviewStroke.ThicknessOffset = thicknessOffset;
+	PreviewStroke.Radius = radius;
+	PreviewStroke.RadiusOffset = radiusOffset;
 	PreviewStroke.UpdateBuffers();
 }
 

@@ -17,6 +17,7 @@ void Painter::OnDragStart(ClickOrDragStart event)
 	s.Position = {event.MousePos};
 	s.BrushE = BrushE;
 	s.Radius = Radius;
+	s.RadiusOffset.push_back(event.Pressure * 0.005f);
 	s.Color = Color;
 	s.FillColor = FillColor;
 	s.UpdateBuffers();

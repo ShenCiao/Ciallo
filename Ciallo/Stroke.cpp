@@ -19,7 +19,7 @@ Stroke& Stroke::operator=(Stroke&& other) noexcept
 		return *this;
 	Position = std::move(other.Position);
 	Radius = other.Radius;
-	ThicknessOffset = other.ThicknessOffset;
+	RadiusOffset = other.RadiusOffset;
 	Color = other.Color;
 	BrushE = other.BrushE;
 	FillColor = other.FillColor;
@@ -40,7 +40,7 @@ Stroke::~Stroke()
 void Stroke::UpdateBuffers(int stampMode)
 {
 	UpdatePositionBuffer();
-	UpdateThicknessOffsetBuffer();
+	UpdateRadiusOffsetBuffer();
 	UpdateDistanceBuffer(stampMode);
 }
 
@@ -70,16 +70,16 @@ void Stroke::UpdatePositionBuffer()
 	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
 }
 
-void Stroke::UpdateThicknessOffsetBuffer()
+void Stroke::UpdateRadiusOffsetBuffer()
 {
-	if (ThicknessOffset.size() <= 1)
+	if (RadiusOffset.size() <= 1)
 	{
-		float v = ThicknessOffset.empty() ? 0.0f : ThicknessOffset.at(0);
+		float v = RadiusOffset.empty() ? 0.0f : RadiusOffset.at(0);
 		std::vector<float> values(Position.size(), v);
 		glNamedBufferData(VertexBuffers[1], values.size() * sizeof(float), values.data(), GL_DYNAMIC_DRAW);
 		return;
 	}
-	glNamedBufferData(VertexBuffers[1], ThicknessOffset.size() * sizeof(float), ThicknessOffset.data(),
+	glNamedBufferData(VertexBuffers[1], RadiusOffset.size() * sizeof(float), RadiusOffset.data(),
 	                  GL_DYNAMIC_DRAW);
 }
 
@@ -103,13 +103,13 @@ void Stroke::LineDrawCall()
 	{
 		glm::vec2 p = Position[0];
 		float offset = 0.0f;
-		if (!ThicknessOffset.empty()) offset = ThicknessOffset[0];
+		if (!RadiusOffset.empty()) offset = RadiusOffset[0];
 
 		glm::vec2 paddedPos = {p.x + 0.01f * (Radius + offset), p.y};
 		Position.push_back(paddedPos);
 
 		UpdatePositionBuffer();
-		UpdateThicknessOffsetBuffer();
+		UpdateRadiusOffsetBuffer();
 
 		Position.pop_back();
 

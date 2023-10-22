@@ -80,7 +80,7 @@ void Canvas::DrawUI()
 				IsDragging = false;
 				auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 				EventDispatcher.trigger(DragEnd{
-					mousePos, mousePosPixel, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration, pressure
+					mousePos, mousePosPixel, pressure, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration
 				});
 			}
 			StartDraggingTimePoint = chrono::high_resolution_clock::now();
@@ -94,7 +94,7 @@ void Canvas::DrawUI()
 			IsDragging = true;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(Dragging{
-				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration, pressure
+				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
 			PrevMousePos = mousePos;
 			return;
@@ -105,7 +105,7 @@ void Canvas::DrawUI()
 			IsDragging = false;
 			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
 			EventDispatcher.trigger(DragEnd{
-				mousePos, mousePosPixel, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration, pressure
+				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
 			PrevMousePos = mousePos;
 			return;

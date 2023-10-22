@@ -4,8 +4,8 @@ class Stroke
 {
 public:
 	Geom::Polyline Position{};
-	float Radius = 0.0f; // This is half thickness (radius).
-	std::vector<float> ThicknessOffset{}; // empty is allowed, values in shader are zero
+	float Radius = 0.0f;
+	std::vector<float> RadiusOffset{}; // empty is allowed, values in shader are zero
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	entt::entity BrushE = entt::null;
 
@@ -14,7 +14,7 @@ public:
 	/*
 	 * Index----Attribute
 	 * 0:	position
-	 * 1:	thickness offset
+	 * 1:	radius offset
 	 * 2:	distance to the first vertex(prefix sum result)
 	 */
 	std::array<GLuint, 3> VertexBuffers{};
@@ -30,7 +30,7 @@ public:
 	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this parameter
 	void GenBuffers();
 	void UpdatePositionBuffer();
-	void UpdateThicknessOffsetBuffer();
+	void UpdateRadiusOffsetBuffer();
 	void UpdateDistanceBuffer(int stampMode = 1); 
 	void LineDrawCall();
 	void FillDrawCall();

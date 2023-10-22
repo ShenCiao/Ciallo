@@ -6,7 +6,7 @@ layout(std430, binding = 0) readonly buffer PosInput{
     vec2[] position;
 };
 
-layout(std430, binding = 1) readonly buffer ThicknessInput{
+layout(std430, binding = 1) readonly buffer RadiusInput{
     float[] radiusOffset;
 };
 layout(location = 2) uniform float uniRadius;

@@ -10,7 +10,7 @@
 #include "Painter.h"
 #include "ArrangementManager.h"
 
-void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThickness)
+void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 {
 	// Warning: memory leak! (not trying to remove unused stroke)
 	R.ctx().get<StrokeContainer>().StrokeEs.clear();
@@ -70,15 +70,15 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetThicknes
 		c = c.Scale({factor, factor}, mid);
 		c = c.Translate(-mid + canvas.Viewport.GetSize() / 2.0f);
 		auto& offset = pressures[i];
-		for (float& t : offset) t = -(1.0f - t/maxPressure) * targetThickness;
+		for (float& t : offset) t = -(1.0f - t/maxPressure) * targetRadius;
 
 		entt::entity strokeE = R.create();
 		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
 		R.ctx().get<StrokeContainer>().StrokeEs.push_back(strokeE);
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
-		stroke.ThicknessOffset = offset;
-		stroke.Radius = targetThickness;
+		stroke.RadiusOffset = offset;
+		stroke.Radius = targetRadius;
 
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
 		stroke.UpdateBuffers();

@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "PrefixSumPosition.h"
+#include "ArticulatedLineComp.h"
 
 #include "ShaderUtilities.h"
 
-PrefixSumPosition::PrefixSumPosition()
+ArticulatedLineComp::ArticulatedLineComp()
 {
 	std::filesystem::path root = "./shaders";
 	GLuint compShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.comp", GL_COMPUTE_SHADER);
@@ -15,7 +15,7 @@ PrefixSumPosition::PrefixSumPosition()
 	glDeleteShader(compShader);
 }
 
-PrefixSumPosition::~PrefixSumPosition()
+ArticulatedLineComp::~ArticulatedLineComp()
 {
 	glDeleteProgram(Program);
 }

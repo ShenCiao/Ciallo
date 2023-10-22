@@ -81,7 +81,7 @@
     <ClCompile Include="ColorFace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrefixSumPosition.cpp">
+    <ClCompile Include="ArticulatedLineComp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TextureManager.cpp">
@@ -209,7 +209,7 @@
     <ClInclude Include="ColorFace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrefixSumPosition.h">
+    <ClInclude Include="ArticulatedLineComp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visiblity.h">

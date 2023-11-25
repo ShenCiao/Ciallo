@@ -77,7 +77,7 @@ void Application::GenDefaultProject()
 	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
 	brush2.Stamp->StampTexture = TextureManager::Textures[2];
-	brush2.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	brush2.Stamp->StampIntervalRatio = 1.0f / 10.0f;
 	brush2.Stamp->NoiseFactor = 1.7f;
 
 	brushes.push_back(R.create());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CanvasEvent.h"
+#include "CubicBezier.h"
 
 enum class StrokeUsageFlags
 {
@@ -22,12 +23,18 @@ class Painter
 public:
 	chrono::duration<float> SampleInterval{ 0.01f }; // 10ms
 	entt::entity BrushE = entt::null;
+
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
-	float Radius = 0.001f;
+	float MinRadius = 0.001f;
+	float MaxRadius = 0.001f;
+	Geom::CubicBezier RaidusMappingCurve = glm::mat4x2{{0.0f, 0.0f}, {0.5f, 0.0f}, {0.5f, 1.0f}, {1.0f, 1.0f}};
+
 	glm::vec4 FillColor = {0.0f, 0.0f, 0.0f, 1.0f};
 	StrokeUsageFlags Usage = StrokeUsageFlags::Zero;
 
 	void OnDragStart(ClickOrDragStart event);
 	void OnDragging(Dragging event);
 	void DrawProperties();
+
+	float PressureToRadiusOffset(float pressure);
 };

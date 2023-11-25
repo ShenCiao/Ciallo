@@ -26,7 +26,8 @@ FillTool::FillTool()
 	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone;
 	Painter.FillColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
-	Painter.Radius = 0.0008f;
+	Painter.MinRadius = 0.0008f;
+	Painter.MaxRadius = 0.0008f;
 	Painter.Color = glm::vec4(18, 18, 129, 255) / 255.0f;
 }
 
@@ -95,7 +96,7 @@ void FillTool::OnHovering(Hovering event)
 
 		Brush& brush = R.ctx().get<InnerBrush>().Get("vanilla");
 		brush.Use();
-		glUniform1f(2, Painter.Radius);
+		glUniform1f(2, Painter.MinRadius);
 		glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor));
 		face.LineDrawCall();
 	}

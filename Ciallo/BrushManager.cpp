@@ -8,7 +8,7 @@
 
 BrushManager::BrushManager()
 {
-	GenPreviewStroke(nSegment);
+	GenPreviewStroke(SegmentCount);
 	auto gr = glm::golden_ratio<float>();
 	PreviewPort = {{-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f}};
 	PreviewPort.UploadMVP();
@@ -63,7 +63,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	auto& brush = R.get<Brush>(brushE);
 	if(brush.Stamp)
 	{
-		PreviewStroke.UpdateDistanceBuffer(brush.Stamp->StampMode);
+		PreviewStroke.UpdateBuffers(brush.Stamp->StampMode);
 	}
 	brush.PreviewTexture = RenderableTexture(width, height, 0);
 	brush.PreviewTexture.BindFramebuffer();
@@ -104,9 +104,9 @@ void BrushManager::DrawUI()
 		ImGui::BeginChild("right panel", ImVec2(w, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {w, w / 2.0f / glm::golden_ratio<float>()});
-		if(ImGui::DragInt("number of segments", &nSegment, 1.0f, 2, 256))
+		if(ImGui::DragInt("number of segments", &SegmentCount, 1.0f, 2, 256))
 		{
-			GenPreviewStroke(nSegment);
+			GenPreviewStroke(SegmentCount);
 		}
 		ImGui::ColorEdit4("stroke preview color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::ColorEdit4("background color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);

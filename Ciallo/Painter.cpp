@@ -48,6 +48,7 @@ void Painter::OnDragging(Dragging event)
 		entt::entity e = strokes.back();
 		auto& s = R.get<Stroke>(e);
 		s.Position.push_back(event.MousePos);
+		s.RadiusOffset.push_back(event.Pressure * 0.005f);
 		s.UpdateBuffers();
 
 		auto& arm = R.ctx().get<ArrangementManager>();
@@ -75,8 +76,12 @@ void Painter::DrawProperties()
 	if (ImGui::Button("Edit Brush"))
 		R.ctx().get<BrushManager>().OpenBrushEditor(&BrushE);
 
-	ImGui::ColorPicker4("Line Color##0", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
+	ImGui::ColorEdit4("Line Color##0", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
 	if (!!(Usage & StrokeUsageFlags::Fill) || !!(Usage & StrokeUsageFlags::Zone))
 		ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::DragFloat("Radius", &Radius, 0.0001f, 0.0001f, 0.030f, "%.4f", ImGuiSliderFlags_ClampOnInput);
+	float radiusUI = Radius * 1000.0f;
+	if (ImGui::DragFloat("Radius(milimeter)", &radiusUI, 0.01f, 0.1f, 30.0f, "%.2f", ImGuiSliderFlags_ClampOnInput))
+	{
+		Radius = radiusUI/1000.0f;
+	}
 }

@@ -31,4 +31,3 @@ public:
 	void OnDragging(Dragging event);
 	void DrawProperties();
 };
-

@@ -28,14 +28,14 @@ public:
 	~Stroke();
 
 	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this parameter
-	void GenBuffers();
-	void UpdatePositionBuffer();
-	void UpdateRadiusOffsetBuffer();
-	void UpdateDistanceBuffer(int stampMode = 1); 
 	void LineDrawCall();
 	void FillDrawCall();
 	void SetUniforms();
 
 private:
 	void Zeroize();
+	void GenBuffers();
+	void UpdatePositionBuffer();
+	void UpdateRadiusOffsetBuffer();
+	void UpdateDistanceBuffer(int stampMode = 1);
 };

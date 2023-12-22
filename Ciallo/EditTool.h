@@ -16,8 +16,6 @@ class EditTool : public Tool
 	int DraggingControlPointIndex = -1;
 	CubicBezierBone Bone;
 public:
-	RenderableTexture SelectionTexture;
-
 	EditTool();
 
 	void OnClickOrDragStart(ClickOrDragStart) override;
@@ -32,8 +30,6 @@ public:
 
 private:
 	entt::entity SelectedStrokeE = entt::null;
-	void GenSelectionTexture();
-	void RenderSelectionTexture();
 	glm::vec4 IndexToColor(uint32_t index) const;
 	uint32_t ColorToIndex(glm::vec4 color) const;
 };

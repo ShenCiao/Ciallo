@@ -7,10 +7,13 @@
 #include "BrushManager.h"
 #include "Brush.h"
 #include "implot.h"
+#include "TimelineManager.h"
 
 void Painter::OnDragStart(ClickOrDragStart event)
 {
-	auto& strokes = R.ctx().get<StrokeContainer>().StrokeEs;
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (drawingE == entt::null) return;
+	auto& strokes = R.get<StrokeContainer>(drawingE).StrokeEs;
 	entt::entity e = R.create();
 	auto& s = R.emplace<Stroke>(e);
 	R.emplace<StrokeUsageFlags>(e, Usage);
@@ -45,7 +48,9 @@ void Painter::OnDragging(Dragging event)
 
 	if (event.DragDuration - LastSampleDuration > SampleInterval && delta.x + delta.y >= 6.0f)
 	{
-		auto& strokes = R.ctx().get<StrokeContainer>().StrokeEs;
+		entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (drawingE == entt::null) return;
+		auto& strokes = R.get<StrokeContainer>(drawingE).StrokeEs;
 		entt::entity e = strokes.back();
 		auto& s = R.get<Stroke>(e);
 		s.Position.push_back(event.MousePos);

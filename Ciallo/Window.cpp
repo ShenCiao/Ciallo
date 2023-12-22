@@ -51,7 +51,6 @@ Window::Window()
 	io.FontGlobalScale = 1.5f;
 	ImGui_ImplGlfw_InitForOpenGL(GlfwWindow, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
-	ImGui::StyleColorsLight();
 
 	// Get Windows pen pressure events
 	EasyTab_Load(glfwGetWin32Window(GlfwWindow));

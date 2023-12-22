@@ -9,6 +9,7 @@
 #include "ArrangementManager.h"
 #include "Painter.h"
 #include "InnerBrush.h"
+#include "TimelineManager.h"
 
 #include <glm/gtx/transform.hpp>
 
@@ -79,7 +80,9 @@ void TempLayers::RenderDrawing()
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+	if (drawingE == entt::null) return;
+	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);

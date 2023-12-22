@@ -3,7 +3,7 @@
 #include "RenderableTexture.h"
 #include "Stroke.h"
 
-// Used to catch up the siggraph DDL
+// Used to catch up the siggraph
 class TempLayers
 {
 public:

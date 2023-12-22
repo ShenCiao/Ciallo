@@ -11,7 +11,7 @@
 #include "Painter.h"
 #include "ArrangementManager.h"
 #include "BrushManager.h"
-
+#include "SelectionManager.h"
 
 EditTool::EditTool()
 {
@@ -36,6 +36,7 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 			DraggingControlPointIndex = -1;
 			Bone.Reset();
 		}
+		auto& SelectionTexture = R.ctx().get<SelectionManager>().SelectionTexture;
 		SelectionTexture.BindFramebuffer();
 		int x = static_cast<int>(event.MousePosPixel.x);
 		int y = static_cast<int>(event.MousePosPixel.y);
@@ -128,11 +129,6 @@ void EditTool::OnDragging(Dragging event)
 
 void EditTool::OnDragEnd(DragEnd event)
 {
-	if (!BezierDrawingMode)
-	{
-		RenderSelectionTexture();
-	}
-
 	if (BezierDrawingMode && DrawingFirstHandle)
 	{
 		Bone.Curve.ControlPoints[1] = event.MousePos;
@@ -153,8 +149,7 @@ void EditTool::OnDragEnd(DragEnd event)
 
 void EditTool::Activate()
 {
-	GenSelectionTexture();
-	RenderSelectionTexture();
+
 }
 
 void EditTool::DrawProperties()
@@ -206,39 +201,6 @@ void EditTool::OnHovering(Hovering event)
 		Bone.Curve.ControlPoints[3] = event.MousePos;
 		Bone.Update();
 	}
-}
-
-void EditTool::GenSelectionTexture()
-{
-	// Create textures used for selection
-	auto& canvas = R.ctx().get<Canvas>();
-
-	glm::ivec2 size = canvas.GetSizePixel();
-	SelectionTexture = RenderableTexture(size.x, size.y);
-}
-
-void EditTool::RenderSelectionTexture()
-{
-	SelectionTexture.BindFramebuffer();
-	glDisable(GL_BLEND);
-	glDisable(GL_STENCIL_TEST);
-	glDisable(GL_DEPTH_TEST);
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-	auto& canvas = R.ctx().get<Canvas>();
-	canvas.Viewport.UploadMVP();
-	canvas.Viewport.BindMVPBuffer();
-	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
-	brush.Use();
-	for (auto& e : strokeEs)
-	{
-		brush.SetUniforms();
-		auto& s = R.get<Stroke>(e);
-		s.SetUniforms();
-		glm::vec4 color = IndexToColor(static_cast<uint32_t>(e));
-		glUniform4fv(1, 1, glm::value_ptr(color));
-		s.LineDrawCall();
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 std::string EditTool::GetName()

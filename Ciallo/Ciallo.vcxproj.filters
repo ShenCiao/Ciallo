@@ -147,6 +147,12 @@
     <ClCompile Include="..\dlib\dlib\all\source.cpp">
       <Filter>dlib</Filter>
     </ClCompile>
+    <ClCompile Include="TimelineManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SelectionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -276,6 +282,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="easytab.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TimelineManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectionManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

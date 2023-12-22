@@ -27,7 +27,7 @@ public:
 	Stroke& operator=(Stroke&& other) noexcept;
 	~Stroke();
 
-	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this parameter
+	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this stampMode parameter
 	void LineDrawCall();
 	void FillDrawCall();
 	void SetUniforms();

@@ -13,8 +13,8 @@
 #include "Toolbox.h"
 #include "InnerBrush.h"
 #include "ArrangementManager.h"
-
-#include <implot.h>
+#include "TimelineManager.h"
+#include "SelectionManager.h"
 
 Application::Application()
 {
@@ -35,6 +35,7 @@ void Application::Run()
 		R.ctx().get<Canvas>().DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
+		R.ctx().get<TimelineManager>().DrawUI();
 		R.ctx().get<ArrangementManager>().Run();
 		auto& layers = R.ctx().get<TempLayers>();
 		layers.RenderOverlay();
@@ -42,6 +43,7 @@ void Application::Run()
 		layers.RenderFill();
 		layers.BlendAll();
 		layers.ClearOverlay();
+		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		Window->EndFrame();
 	}
 }
@@ -106,4 +108,6 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<ArrangementManager>();
+	R.ctx().emplace<TimelineManager>();
+	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
 }

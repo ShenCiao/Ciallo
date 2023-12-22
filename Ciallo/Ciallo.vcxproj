@@ -130,12 +130,14 @@
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
+    <ClCompile Include="SelectionManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
     <ClCompile Include="Stroke.cpp" />
     <ClCompile Include="StrokeContainer.cpp" />
     <ClCompile Include="TempLayers.cpp" />
     <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="TimelineManager.cpp" />
     <ClCompile Include="Tool.cpp" />
     <ClCompile Include="Toolbox.cpp" />
     <ClCompile Include="Viewport.cpp" />
@@ -166,10 +168,12 @@
     <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />
+    <ClInclude Include="SelectionManager.h" />
     <ClInclude Include="StampBrushData.h" />
     <ClInclude Include="StrokeContainer.h" />
     <ClInclude Include="TempLayers.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="TimelineManager.h" />
     <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Viewport.h" />
     <ClInclude Include="Visiblity.h" />

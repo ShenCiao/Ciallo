@@ -12,6 +12,7 @@
 #include "ArrangementManager.h"
 #include "BrushManager.h"
 #include "SelectionManager.h"
+#include "TimelineManager.h"
 
 EditTool::EditTool()
 {
@@ -88,6 +89,8 @@ void EditTool::OnDragging(Dragging event)
 		else if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
 		{
 			auto& stroke = R.get<Stroke>(SelectedStrokeE);
+			entt::entity currentDrawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+			if(currentDrawingE == entt::null) return;
 			for (auto& p : stroke.Position)
 			{
 				p += event.DeltaMousePos;
@@ -95,9 +98,9 @@ void EditTool::OnDragging(Dragging event)
 			stroke.UpdateBuffers();
 			auto usage = R.get<StrokeUsageFlags>(SelectedStrokeE);
 			if (!!(usage & StrokeUsageFlags::Arrange))
-				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
+				R.get<ArrangementManager>(currentDrawingE).AddOrUpdate(SelectedStrokeE);
 			if (!!(usage & StrokeUsageFlags::Zone))
-				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
+				R.get<ArrangementManager>(currentDrawingE).AddOrUpdateQuery(SelectedStrokeE);
 
 			if (Bone.BoundStrokeE == SelectedStrokeE)
 			{

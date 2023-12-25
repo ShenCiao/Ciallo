@@ -4,6 +4,8 @@
 #include "imgui_neo_sequencer.h"
 #include "StrokeContainer.h"
 #include "ArrangementManager.h"
+#include "Painter.h"
+#include "Stroke.h"
 
 TimelineManager::TimelineManager()
 {
@@ -34,9 +36,38 @@ void TimelineManager::DrawUI()
     ImGui::End();
 }
 
+void TimelineManager::Clear()
+{
+	DrawingEs.clear();
+	KeyFrames.clear();
+}
+
+void TimelineManager::CopyFillMarker(entt::entity drawingE)
+{
+    if (drawingE == entt::null) return;
+    CopiedStrokeEs.clear();
+    auto& strokeContainer = R.get<StrokeContainer>(drawingE);
+    for (entt::entity strokeE : strokeContainer.StrokeEs) {
+        if (!!(R.get<StrokeUsageFlags>(strokeE) & StrokeUsageFlags::Zone)) {
+            CopiedStrokeEs.push_back(strokeE);
+		}
+	}
+}
+
+void TimelineManager::PasteFillMarker(entt::entity drawingE)
+{
+    if(drawingE == entt::null) return;
+    for (entt::entity e : CopiedStrokeEs) {
+        entt::entity newE = R.create();
+        R.emplace<Stroke>(newE, R.get<Stroke>(e).Copy());
+        R.emplace<StrokeUsageFlags>(newE, StrokeUsageFlags::Zone);
+        R.get<StrokeContainer>(drawingE).StrokeEs.push_back(newE);
+        R.get<ArrangementManager>(drawingE).AddOrUpdateQuery(newE);
+    }
+}
+
 entt::entity TimelineManager::GetRenderDrawing()
 {
-
     if (entt::entity e = GetCurrentDrawing(); e != entt::null) {
         return e;
     }

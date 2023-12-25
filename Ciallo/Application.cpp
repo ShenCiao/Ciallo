@@ -36,7 +36,11 @@ void Application::Run()
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
 		R.ctx().get<TimelineManager>().DrawUI();
-		R.ctx().get<ArrangementManager>().Run();
+		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (currentE != entt::null)
+		{
+			R.get<ArrangementManager>(currentE).Run();
+		}
 		auto& layers = R.ctx().get<TempLayers>();
 		layers.RenderOverlay();
 		layers.RenderDrawing();
@@ -106,8 +110,7 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<StrokeContainer>();
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
-	R.ctx().emplace<Toolbox>();
-	R.ctx().emplace<ArrangementManager>();
+	R.ctx().emplace<Toolbox>(); 
 	R.ctx().emplace<TimelineManager>();
 	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
 }

@@ -32,6 +32,8 @@ public:
 	void FillDrawCall();
 	void SetUniforms();
 
+	Stroke Copy();
+
 private:
 	void Zeroize();
 	void GenBuffers();

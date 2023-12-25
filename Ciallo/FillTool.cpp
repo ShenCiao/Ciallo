@@ -7,10 +7,13 @@
 #include "Canvas.h"
 #include "InnerBrush.h"
 #include "TempLayers.h"
+#include "TimelineManager.h"
 
 void FillTool::PadVisRim()
 {
-	auto& vis = R.ctx().get<ArrangementManager>().Visibility;
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	auto& arm = R.get<ArrangementManager>(drawingE);
+	auto& vis = arm.Visibility;
 	auto& canvas = R.ctx().get<Canvas>();
 
 	glm::vec2 min = canvas.Viewport.Min;
@@ -26,8 +29,8 @@ FillTool::FillTool()
 	Painter.BrushE = brushM.Brushes[0];
 	Painter.Usage = StrokeUsageFlags::Zone;
 	Painter.FillColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.5f);
-	Painter.MinRadius = 0.0008f;
-	Painter.MaxRadius = 0.0008f;
+	Painter.MinRadius = 0.002f;
+	Painter.MaxRadius = 0.002f;
 	Painter.Color = glm::vec4(18, 18, 129, 255) / 255.0f;
 }
 
@@ -48,7 +51,9 @@ void FillTool::OnDragging(Dragging event)
 
 void FillTool::Activate()
 {
-	auto& arm = R.ctx().get<ArrangementManager>();
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (drawingE == entt::null) return;
+	auto& arm = R.get<ArrangementManager>(drawingE);
 	auto& vis = arm.Visibility;
 	auto& arr = arm.Arrangement;
 
@@ -58,14 +63,23 @@ void FillTool::Activate()
 
 void FillTool::Deactivate()
 {
-	auto& vis = R.ctx().get<ArrangementManager>().Visibility;
+	entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (currentE == entt::null) return;
+	auto& arm = R.get<ArrangementManager>(currentE);
 
-	vis.detach();
+	arm.Visibility.detach();
 }
 
 void FillTool::DrawProperties()
 {
-	Painter.DrawProperties();
+	ImGui::ColorEdit4("Marker Color##0", glm::value_ptr(Painter.Color), ImGuiColorEditFlags_DisplayRGB);
+	ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(Painter.FillColor), ImGuiColorEditFlags_DisplayRGB);
+	const float ratio = 1000.0f;
+	float minRadiusUI = Painter.MinRadius * ratio;
+	if (ImGui::DragFloat("Min Radius(milimeter)##2", &minRadiusUI, 0.01f, 0.1f, 10.0f, "%.2f", ImGuiSliderFlags_ClampOnInput))
+	{
+		Painter.MinRadius = minRadiusUI / ratio;
+	}
 }
 
 void FillTool::OnHovering(Hovering event)
@@ -80,9 +94,11 @@ void FillTool::OnHovering(Hovering event)
 	glEnable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
 
-	auto& arm = R.ctx().get<ArrangementManager>();
+	entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (currentE == entt::null) return;
+	auto& arm = R.get<ArrangementManager>(currentE);
 	// In vis mode
-	if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
+	if (false)
 	{
 		auto polygon = arm.PointQueryVisibility(event.MousePos);
 
@@ -101,7 +117,7 @@ void FillTool::OnHovering(Hovering event)
 		face.LineDrawCall();
 	}
 	// In fill preview mode
-	else
+	if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
 	{
 		auto polygonWithHoles = arm.PointQuery(event.MousePos);
 		if (!polygonWithHoles.empty())

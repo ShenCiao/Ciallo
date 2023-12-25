@@ -11,7 +11,7 @@
 
 namespace CGAL
 {
-	using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+	using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 	using Segment_traits = CGAL::Arr_segment_traits_2<Kernel>;
 	using Geom_traits = CGAL::Arr_polyline_traits_2<Segment_traits>;
 

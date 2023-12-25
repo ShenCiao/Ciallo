@@ -8,6 +8,7 @@
 #include "TextureManager.h"
 #include "TempLayers.h"
 #include "Loader.h"
+#include "TimelineManager.h"
 
 #include <glm/gtx/transform.hpp>
 
@@ -23,6 +24,7 @@ void Canvas::DrawUI()
 
 	ImGui::PopStyleVar();
 	ImGui::BeginMenuBar();
+
 	if (ImGui::BeginMenu("Load Model"))
 	{
 		if (ImGui::MenuItem("Monkey"))
@@ -35,6 +37,8 @@ void Canvas::DrawUI()
 			Loader::LoadCsv("./models/totoro.csv", 0.001f);
 		if (ImGui::MenuItem("Grid"))
 			Loader::LoadCsv("./models/grid.csv");
+		if (ImGui::MenuItem("Cat"))
+			Loader::LoadAnimation("./models/cat");
 		ImGui::EndMenu();
 	}
 
@@ -46,12 +50,20 @@ void Canvas::DrawUI()
 		ImGui::EndMenu();
 	}
 
+	if (ImGui::Button("Copy Markers")) {
+		auto& tm = R.ctx().get<TimelineManager>();
+		tm.CopyFillMarker(tm.GetRenderDrawing());
+	}
+
+	if (ImGui::Button("Paste Markers")) {
+		auto& tm = R.ctx().get<TimelineManager>();
+		tm.PasteFillMarker(tm.GetCurrentDrawing());
+	}
+
 	if (ImGui::Button("Export")) Export();
 	static int n = 1;
 	ImGui::PushItemWidth(200);
-	ImGui::DragInt("n", &n, 10, 1, 10000, "%d");
 	ImGui::PopItemWidth();
-	if (ImGui::Button("TestSpeed")) RenderContentNTimes(n);
 	ImGui::EndMenuBar();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});

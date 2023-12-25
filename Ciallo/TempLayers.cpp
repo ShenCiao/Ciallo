@@ -90,9 +90,13 @@ void TempLayers::RenderDrawing()
 		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
 		if (!skip)
 		{
-			auto& brush = R.get<Brush>(stroke.BrushE);
-			brush.Use();
-			brush.SetUniforms();
+			Brush* brush;
+			if(!!(strokeUsage & StrokeUsageFlags::Zone))
+				brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+			else
+				brush = &R.get<Brush>(stroke.BrushE);
+			brush->Use();
+			brush->SetUniforms();
 			stroke.SetUniforms();
 			stroke.LineDrawCall();
 		}
@@ -111,8 +115,9 @@ void TempLayers::RenderFill()
 	canvas.Viewport.BindMVPBuffer();
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
-	auto& arm = R.ctx().get<ArrangementManager>();
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+	auto& arm = R.get<ArrangementManager>(drawingE);
+	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 	glUseProgram(RenderingSystem::Polygon->Program);
 	glEnable(GL_STENCIL_TEST);
 	for (entt::entity e : strokeEs)

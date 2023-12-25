@@ -38,6 +38,16 @@ void ArrangementManager::Run()
 	{
 		std::vector<ColorFace> vecPolygons;
 		std::vector<CGAL::Face_const_handle> allFaces;
+
+		if (monoCurves.size() == 0) {
+			glm::vec2 p = R.get<Stroke>(e).Position[0];
+			auto polygonWithHoles = PointQuery(p);
+			if (polygonWithHoles.size() == 0) continue;
+			vecPolygons.emplace_back(polygonWithHoles);
+			QueryResultsContainer[e] = std::move(vecPolygons);
+			continue;
+		}
+
 		for (auto& c : monoCurves)
 		{
 			auto resultFaces = ZoneQueryFace(c);
@@ -71,8 +81,9 @@ void ArrangementManager::AddOrUpdateQuery(entt::entity strokeE)
 {
 	auto& stroke = R.get<Stroke>(strokeE);
 	auto pos = RemoveConsecutiveOverlappingPoint(stroke.Position);
+	// Use empty vector to indicate it's a single point.
 	if (pos.size() <= 1)
-		return;
+		CachedQueryCurves[strokeE] = {};
 
 	CachedQueryCurves[strokeE] = ConstructXMonotoneCurve(pos);
 }
@@ -248,13 +259,19 @@ std::vector<CGAL::X_monotone_curve> ArrangementManager::ConstructXMonotoneCurve(
 	std::list<Make_x_monotone_result> x_objects;
 	XMonoMaker(curve, std::back_inserter(x_objects));
 
+	// test if X_monotone_curve 
+
 	std::vector<CGAL::X_monotone_curve> result;
-	for (const auto& x_obj : x_objects) 
+	for (const auto& x_obj : x_objects)
 	{
 		const auto* x_curve = boost::get<CGAL::X_monotone_curve>(&x_obj);
-		if (x_curve != nullptr) 
+		if (x_curve != nullptr)
 		{
 			result.push_back(*x_curve);
+		}
+		if (auto* x_point = boost::get<CGAL::Point>(&x_obj); x_point)
+		{
+			spdlog::warn("Point in X_monotone_curve");
 		}
 	}
 	return result;

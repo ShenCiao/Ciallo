@@ -25,7 +25,9 @@ void Painter::OnDragStart(ClickOrDragStart event)
 	s.Color = Color;
 	s.FillColor = FillColor;
 	s.UpdateBuffers();
-	auto& arm = R.ctx().get<ArrangementManager>();
+	entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (currentE == entt::null) return;
+	auto& arm = R.get<ArrangementManager>(currentE);
 	if (!!(Usage & StrokeUsageFlags::Arrange))
 	{
 		arm.AddOrUpdate(e);
@@ -57,7 +59,9 @@ void Painter::OnDragging(Dragging event)
 		s.RadiusOffset.push_back(PressureToRadiusOffset(event.Pressure));
 		s.UpdateBuffers();
 
-		auto& arm = R.ctx().get<ArrangementManager>();
+		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (currentE == entt::null) return;
+		auto& arm = R.get<ArrangementManager>(currentE);
 		if (!!(Usage & StrokeUsageFlags::Arrange))
 		{
 			arm.AddOrUpdate(e);

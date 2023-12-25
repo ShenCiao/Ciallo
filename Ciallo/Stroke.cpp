@@ -96,6 +96,19 @@ void Stroke::UpdateDistanceBuffer(int stampMode)
 	glDispatchCompute(1, 1, 1);
 }
 
+Stroke Stroke::Copy()
+{
+	Stroke s;
+	s.BrushE = BrushE;
+	s.Color = Color;
+	s.FillColor = FillColor;
+	s.Position = Position;
+	s.Radius = Radius;
+	s.RadiusOffset = RadiusOffset;
+	s.UpdateBuffers();
+	return s;
+}
+
 void Stroke::LineDrawCall()
 {
 	int count = Position.size();

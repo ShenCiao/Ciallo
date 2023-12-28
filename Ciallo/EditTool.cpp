@@ -183,6 +183,10 @@ void EditTool::DrawProperties()
 		ImGui::ColorEdit4("Fill", glm::value_ptr(stroke.FillColor), ImGuiColorEditFlags_InputRGB);
 		ImGui::DragFloat("Radius", &stroke.Radius, 0.0001f, 0.0001f, 0.030f, "%.4f",
 		                 ImGuiSliderFlags_ClampOnInput);
+		if (ImGui::Button("Remove Stroke") || ImGui::IsKeyPressed(ImGuiKey_X))
+			RemoveSelectedStroke();
+		if (ImGui::Button("CopyPaste Stroke") || ImGui::IsKeyPressed(ImGuiKey_C))
+			CopyPasteSelectedStroke();
 	}
 	else
 	{
@@ -232,4 +236,44 @@ uint32_t EditTool::ColorToIndex(glm::vec4 color) const
 		bits += b.to_string();
 	}
 	return std::bitset<32>(bits).to_ulong();
+}
+
+void EditTool::RemoveSelectedStroke()
+{
+	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
+	{
+		auto& stroke = R.get<Stroke>(SelectedStrokeE);
+		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
+		auto currentDrawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if(currentDrawingE == entt::null) return;
+		if (!!(strokeUsage & StrokeUsageFlags::Arrange))
+			R.get<ArrangementManager>(currentDrawingE).Remove(SelectedStrokeE);
+		if (!!(strokeUsage & StrokeUsageFlags::Zone))
+			R.get<ArrangementManager>(currentDrawingE).RemoveQuery(SelectedStrokeE);
+		
+		auto& es = R.get<StrokeContainer>(currentDrawingE).StrokeEs;
+		es.erase(std::find(es.begin(), es.end(), SelectedStrokeE));
+		SelectedStrokeE = entt::null;
+	}
+}
+
+void EditTool::CopyPasteSelectedStroke()
+{
+	if (SelectedStrokeE != entt::null && SelectedStrokeE != static_cast<entt::entity>(0))
+	{
+		auto& stroke = R.get<Stroke>(SelectedStrokeE);
+		auto& strokeUsage = R.get<StrokeUsageFlags>(SelectedStrokeE);
+		entt::entity newE = R.create();
+		R.emplace<Stroke>(newE, stroke.Copy());
+		R.emplace<StrokeUsageFlags>(newE, strokeUsage);
+		auto currentDrawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (currentDrawingE == entt::null) return;
+		if (!!(strokeUsage & StrokeUsageFlags::Arrange))
+			R.get<ArrangementManager>(currentDrawingE).AddOrUpdate(newE);
+		if (!!(strokeUsage & StrokeUsageFlags::Zone))
+			R.get<ArrangementManager>(currentDrawingE).AddOrUpdateQuery(newE);
+
+		auto& es = R.get<StrokeContainer>(currentDrawingE).StrokeEs;
+		es.push_back(newE);
+	}
 }

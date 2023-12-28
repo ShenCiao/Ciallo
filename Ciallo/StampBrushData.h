@@ -15,5 +15,10 @@ public:
 
 	void SetUniforms();
 	void DrawProperties();
+
+	template<class Archive>
+	void serialize(Archive& archive) {
+		archive(StampTexture, StampIntervalRatio, NoiseFactor, RotationRand, StampMode);
+	}
 };
 

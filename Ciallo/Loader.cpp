@@ -10,13 +10,18 @@
 #include "Painter.h"
 #include "ArrangementManager.h"
 #include "TimelineManager.h"
+#include "TempLayers.h"
+#include "Toolbox.h"
+#include "Brush.h"
+#include "InnerBrush.h"
+#include "SelectionManager.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 {
 	// Warning: memory leak! (not trying to remove unused stroke)
-	R.ctx().get<StrokeContainer>().StrokeEs.clear();
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
 	if (drawingE == entt::null) return;
+	R.get<StrokeContainer>(drawingE).StrokeEs.clear();
 	auto& arm = R.get<ArrangementManager>(drawingE);
 	arm.Arrangement.clear();
 
@@ -178,18 +183,19 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 				std::string s(value.begin(), value.end());
 				values.push_back(std::stof(s));
 			}
-			curve.push_back(values[0], -values[1]);
+			curve.push_back(values[0], values[1]);
 			pressure.push_back(values[2]);
 		}
 
-		float targetRadius = 0.002f;
+		float minRadius = 0.0005f;
+		float RadiusFactor = 0.001f;
 		for (int i = 0; i < curves.size(); ++i)
 		{
 			auto& c = curves[i];
 			c = c.Scale({ scaleFactor, scaleFactor }, pivot);
 			c = c.Translate(translate);
 			auto& offset = pressures[i];
-			for (float& t : offset) t = -(1.0f - t / maxPressure) * targetRadius;
+			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * RadiusFactor;
 
 			entt::entity strokeE = R.create();
 			R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
@@ -197,7 +203,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 			auto& stroke = R.emplace<Stroke>(strokeE);
 			stroke.Position = c;
 			stroke.RadiusOffset = offset;
-			stroke.Radius = targetRadius;
+			stroke.Radius = minRadius;
 
 			// I intented to use create a event system, but I'm lazy.
 			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
@@ -206,4 +212,59 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 			arm.AddOrUpdate(strokeE);
 		}
 	}
+}
+
+void Loader::LoadProject(const std::filesystem::path& filePath)
+{
+	entt::registry newR{};
+	{
+		auto storage = std::ifstream{ filePath, std::ios::binary };
+		cereal::BinaryInputArchive archive{ storage };
+		entt::snapshot_loader loader{ newR };
+		loader.get<entt::entity>(archive)
+			.get<Stroke>(archive)
+			.get<StrokeUsageFlags>(archive)
+			.get<StrokeContainer>(archive)
+			.get<Brush>(archive);
+
+		archive(newR.ctx().emplace<BrushManager>());
+		archive(newR.ctx().emplace<TimelineManager>());
+	}
+	
+	R = std::move(newR);
+	
+	auto& canvas = R.ctx().emplace<Canvas>();
+	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
+	R.ctx().emplace<Toolbox>();
+	R.ctx().emplace<OverlayContainer>();
+	R.ctx().emplace<InnerBrush>();
+	R.ctx().emplace<SelectionManager>();
+
+	auto view = R.view<StrokeContainer>();
+	for (entt::entity drawingE : view) {
+		auto& arm = R.emplace<ArrangementManager>(drawingE);
+		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+		for (entt::entity e : strokeEs) {
+			auto usage = R.get<StrokeUsageFlags>(e);
+			if (!!(usage & StrokeUsageFlags::Arrange))
+				arm.AddOrUpdate(e);
+			if (!!(usage & StrokeUsageFlags::Zone))
+				arm.AddOrUpdateQuery(e);
+		}
+	}
+}
+
+void Loader::SaveProject(const std::filesystem::path& filePath)
+{
+	std::ofstream storage{ filePath, std::ios::binary };
+	cereal::BinaryOutputArchive archive{ storage };
+
+	entt::snapshot{ R }.get<entt::entity>(archive)
+		.get<Stroke>(archive)
+		.get<StrokeUsageFlags>(archive)
+		.get<StrokeContainer>(archive)
+		.get<Brush>(archive);
+
+	archive(R.ctx().get<BrushManager>());
+	archive(R.ctx().get<TimelineManager>());
 }

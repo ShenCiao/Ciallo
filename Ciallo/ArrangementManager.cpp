@@ -91,6 +91,7 @@ void ArrangementManager::AddOrUpdateQuery(entt::entity strokeE)
 void ArrangementManager::RemoveQuery(entt::entity strokeE)
 {
 	CachedQueryCurves.erase(strokeE);
+	QueryResultsContainer.erase(strokeE);
 }
 
 Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const

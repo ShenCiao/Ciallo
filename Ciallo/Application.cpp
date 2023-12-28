@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-#include "Project.h"
+#include "BrushManager.h"
 #include "RenderingSystem.h"
 #include "Brush.h"
 #include "TextureManager.h"
@@ -15,6 +15,7 @@
 #include "ArrangementManager.h"
 #include "TimelineManager.h"
 #include "SelectionManager.h"
+#include "Loader.h"
 
 Application::Application()
 {
@@ -49,6 +50,21 @@ void Application::Run()
 		layers.ClearOverlay();
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		Window->EndFrame();
+
+		if (Loader::ShouldLoadProject)
+		{
+			Loader::LoadProject("./project/project");
+			Loader::ShouldLoadProject = false;
+		}
+
+		if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0) {
+			
+			auto& canvas = R.ctx().get<Canvas>();
+			TextureManager::SaveTexture(canvas.Image.ColorTexture, std::to_string(R.ctx().get<TimelineManager>().CurrentFrame));
+			if (tm.ExportingIndex >= tm.KeyFrames.size()) {
+				tm.ExportingIndex = -1;
+			}
+		}
 	}
 }
 
@@ -56,10 +72,6 @@ void Application::GenDefaultProject()
 {
 	// user's project level "singleton" are managed by ctx()
 	auto& canvas = R.ctx().emplace<Canvas>();
-	canvas.Viewport.Min = {0.0f, 0.0f};
-	canvas.Viewport.Max = {0.297f, 0.21f};
-	canvas.Dpi = 144.0f;
-	canvas.GenRenderTarget();
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 
 	std::vector<entt::entity> brushes;
@@ -107,7 +119,6 @@ void Application::GenDefaultProject()
 	brushManager.Brushes = std::move(brushes);
 	brushManager.RenderAllPreview();
 
-	R.ctx().emplace<StrokeContainer>();
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>(); 

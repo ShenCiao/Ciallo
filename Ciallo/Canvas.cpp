@@ -12,6 +12,14 @@
 
 #include <glm/gtx/transform.hpp>
 
+Canvas::Canvas()
+{
+	Viewport.Min = { 0.0f, 0.0f };
+	Viewport.Max = { 0.297f, 0.21f };
+	Dpi = 144.0f;
+	GenRenderTarget();
+}
+
 void Canvas::DrawUI()
 {
 	const ImGuiWindowFlags flags =
@@ -42,6 +50,16 @@ void Canvas::DrawUI()
 		ImGui::EndMenu();
 	}
 
+	if (ImGui::Button("Save Project"))
+	{
+		Loader::SaveProject("./project/project");
+	}
+
+	if (ImGui::Button("Load Project"))
+	{
+		Loader::ShouldLoadProject = true;
+	}
+
 	if (ImGui::BeginMenu("Layers"))
 	{
 		auto& layers = R.ctx().get<TempLayers>();
@@ -61,6 +79,11 @@ void Canvas::DrawUI()
 	}
 
 	if (ImGui::Button("Export")) Export();
+
+	if (ImGui::Button("ExportFrames")) {
+		R.ctx().get<TimelineManager>().ExportAllFrames();
+	}
+
 	static int n = 1;
 	ImGui::PushItemWidth(200);
 	ImGui::PopItemWidth();

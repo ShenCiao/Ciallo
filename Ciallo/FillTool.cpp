@@ -8,6 +8,7 @@
 #include "InnerBrush.h"
 #include "TempLayers.h"
 #include "TimelineManager.h"
+#include "StrokeContainer.h"
 
 void FillTool::PadVisRim()
 {
@@ -80,6 +81,19 @@ void FillTool::DrawProperties()
 	{
 		Painter.MinRadius = minRadiusUI / ratio;
 	}
+	if(ImGui::IsKeyPressed(ImGuiKey_Z)) {
+		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (currentE == entt::null) return;
+		auto& arm = R.get<ArrangementManager>(currentE);
+		auto& strokeEs = R.get<StrokeContainer>(currentE).StrokeEs;
+		entt::entity strokeE = strokeEs.back();
+		auto& usage = R.get<StrokeUsageFlags>(strokeEs.back());
+		strokeEs.pop_back();
+		if (!!(usage & StrokeUsageFlags::Arrange))
+			R.get<ArrangementManager>(currentE).Remove(strokeE);
+		if (!!(usage & StrokeUsageFlags::Zone))
+			R.get<ArrangementManager>(currentE).RemoveQuery(strokeE);
+	}
 }
 
 void FillTool::OnHovering(Hovering event)
@@ -98,7 +112,7 @@ void FillTool::OnHovering(Hovering event)
 	if (currentE == entt::null) return;
 	auto& arm = R.get<ArrangementManager>(currentE);
 	// In vis mode
-	if (false)
+	if (ImGui::IsKeyDown(ImGuiKey_Space))
 	{
 		auto polygon = arm.PointQueryVisibility(event.MousePos);
 

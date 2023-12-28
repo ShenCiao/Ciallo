@@ -164,3 +164,4 @@ void Stroke::Zeroize()
 	VertexBuffers.fill(0);
 	VertexArray = 0;
 }
+

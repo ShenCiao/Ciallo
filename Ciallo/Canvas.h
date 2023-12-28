@@ -7,7 +7,9 @@ class Canvas
 {
 public:
 	RenderableTexture Image{};
-	entt::dispatcher EventDispatcher;
+	entt::dispatcher EventDispatcher{};
+
+	Canvas();
 
 	float DrawingRotation = 0.0f;
 	float Zoom = 1.0f;

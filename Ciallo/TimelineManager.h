@@ -8,6 +8,8 @@ public:
 	std::vector<entt::entity> DrawingEs;
 	std::vector<int> KeyFrames;
 
+	int ExportingIndex = -1;
+
 	TimelineManager();
 	entt::entity GenKeyFrame(int keyNumber);
 	void RemoveKeyFrame(int keyNumber);
@@ -22,4 +24,10 @@ public:
 
 	void DrawUI();
 	void Clear();
+	void ExportAllFrames();
+
+	template<class Archive>
+	void serialize(Archive& archive) {
+		archive(CurrentFrame, StartFrame, EndFrame, DrawingEs, KeyFrames);
+	}
 };

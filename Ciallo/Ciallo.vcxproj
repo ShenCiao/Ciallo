@@ -126,7 +126,6 @@
     <ClCompile Include="PolygonEngine.cpp" />
     <ClCompile Include="Polyline.cpp" />
     <ClCompile Include="ArticulatedLineComp.cpp" />
-    <ClCompile Include="Project.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
@@ -183,7 +182,6 @@
     <ClInclude Include="PolygonEngine.h" />
     <ClInclude Include="Polyline.h" />
     <ClInclude Include="ArticulatedLineComp.h" />
-    <ClInclude Include="Project.h" />
     <ClInclude Include="RenderingSystem.h" />
     <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />

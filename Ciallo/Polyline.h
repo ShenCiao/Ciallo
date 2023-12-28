@@ -29,6 +29,11 @@ namespace Geom
 		auto end() const { return Points.end(); }
 		void resize(size_t size);
 		float Length() const;
+
+		template<class Archive>
+		void serialize(Archive& archive) {
+			archive(Points);
+		}
 	};
 }
 

@@ -9,8 +9,8 @@ PaintTool::PaintTool()
 	Painter.BrushE = brushM.Brushes[2];
 	Painter.Usage = StrokeUsageFlags::Arrange | StrokeUsageFlags::Final;
 	Painter.SampleInterval =  chrono::duration<float>(0.01f);
-	Painter.MinRadius = 0.25e-3f;
-	Painter.MaxRadius = 0.5e-3f;
+	Painter.MinRadius = 0.5e-3f;
+	Painter.MaxRadius = 1e-3f;
 }
 
 void PaintTool::OnClickOrDragStart(ClickOrDragStart event)

@@ -45,9 +45,6 @@
     <ClCompile Include="ShaderUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Project.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RenderingSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -174,9 +171,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderUtilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EntityObject.h">

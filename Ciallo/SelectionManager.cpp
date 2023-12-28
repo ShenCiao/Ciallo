@@ -29,6 +29,10 @@ void SelectionManager::RenderSelectionTexture()
 	glDisable(GL_BLEND);
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_DEPTH_TEST);
+
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
 	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 	auto& canvas = R.ctx().get<Canvas>();

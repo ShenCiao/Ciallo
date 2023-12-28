@@ -6,6 +6,8 @@
 #include "ArrangementManager.h"
 #include "Painter.h"
 #include "Stroke.h"
+#include "TextureManager.h"
+#include "Canvas.h"
 
 TimelineManager::TimelineManager()
 {
@@ -34,12 +36,22 @@ void TimelineManager::DrawUI()
         ImGui::EndNeoSequencer();
     }
     ImGui::End();
+
+    if (ExportingIndex >= 0) {
+        CurrentFrame = KeyFrames[ExportingIndex];
+        ExportingIndex += 1;
+    }
 }
 
 void TimelineManager::Clear()
 {
 	DrawingEs.clear();
 	KeyFrames.clear();
+}
+
+void TimelineManager::ExportAllFrames()
+{
+    ExportingIndex = 0;
 }
 
 void TimelineManager::CopyFillMarker(entt::entity drawingE)

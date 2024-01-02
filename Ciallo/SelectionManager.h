@@ -15,4 +15,3 @@ public:
 	glm::vec4 IndexToColor(uint32_t index) const;
 	uint32_t ColorToIndex(glm::vec4 color) const;
 };
-

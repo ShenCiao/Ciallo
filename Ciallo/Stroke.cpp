@@ -72,13 +72,6 @@ void Stroke::UpdatePositionBuffer()
 
 void Stroke::UpdateRadiusOffsetBuffer()
 {
-	if (RadiusOffset.size() <= 1)
-	{
-		float v = RadiusOffset.empty() ? 0.0f : RadiusOffset.at(0);
-		std::vector<float> values(Position.size(), v);
-		glNamedBufferData(VertexBuffers[1], values.size() * sizeof(float), values.data(), GL_DYNAMIC_DRAW);
-		return;
-	}
 	glNamedBufferData(VertexBuffers[1], RadiusOffset.size() * sizeof(float), RadiusOffset.data(),
 	                  GL_DYNAMIC_DRAW);
 }
@@ -128,7 +121,6 @@ void Stroke::LineDrawCall()
 
 		count = 2;
 	}
-
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }

@@ -86,6 +86,7 @@ void TempLayers::RenderDrawing()
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);
+		stroke.UpdateBuffers();
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
 		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
 		if (!skip)

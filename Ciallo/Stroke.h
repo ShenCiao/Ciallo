@@ -37,11 +37,6 @@ public:
 	void serialize(Archive& archive) {
 		archive(Position, Radius, RadiusOffset, Color, BrushE, FillColor);
 	}
-	template<class Archive>
-	void epilogue(Archive& archive) {
-		GenBuffers();
-		UpdateBuffers();
-	}
 
 private:
 	void Zeroize();

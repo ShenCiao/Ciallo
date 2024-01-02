@@ -4,9 +4,9 @@
 
 class Window
 {
+public:
 	GLFWwindow* GlfwWindow = nullptr;
 
-public:
 	Window();
 	~Window();
 

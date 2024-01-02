@@ -6,12 +6,10 @@
 #include "ArrangementManager.h"
 #include "Painter.h"
 #include "Stroke.h"
-#include "TextureManager.h"
-#include "Canvas.h"
 
 TimelineManager::TimelineManager()
 {
-    GenKeyFrame(1);
+    
 }
 
 void TimelineManager::DrawUI()

@@ -245,6 +245,8 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 		auto& arm = R.emplace<ArrangementManager>(drawingE);
 		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 		for (entt::entity e : strokeEs) {
+			auto& stroke = R.get<Stroke>(e);
+			stroke.UpdateBuffers();
 			auto usage = R.get<StrokeUsageFlags>(e);
 			if (!!(usage & StrokeUsageFlags::Arrange))
 				arm.AddOrUpdate(e);

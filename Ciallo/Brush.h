@@ -27,6 +27,6 @@ public:
 
 	template<class Archive>
 	void serialize(Archive& archive) {
-		archive(Program, Name);
+		archive(Program, Name, Stamp);
 	}
 };

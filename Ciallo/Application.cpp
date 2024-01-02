@@ -53,6 +53,7 @@ void Application::Run()
 
 		if (Loader::ShouldLoadProject)
 		{
+			glfwSwapBuffers(Window->GlfwWindow);
 			Loader::LoadProject("./project/project");
 			Loader::ShouldLoadProject = false;
 		}
@@ -87,7 +88,6 @@ void Application::GenDefaultProject()
 	brush1.Stamp = std::make_unique<StampBrushData>();
 	brush1.Stamp->StampTexture = TextureManager::Textures[1];
 	brush1.Stamp->StampIntervalRatio = 1.0f / 5.0f;
-	
 
 	brushes.push_back(R.create());
 	auto& brush2 = R.emplace<Brush>(brushes.back());
@@ -122,6 +122,7 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>(); 
-	R.ctx().emplace<TimelineManager>();
+	auto& tm = R.ctx().emplace<TimelineManager>();
+	tm.GenKeyFrame(1);
 	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
 }

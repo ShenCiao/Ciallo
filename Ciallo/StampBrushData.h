@@ -18,7 +18,7 @@ public:
 
 	template<class Archive>
 	void serialize(Archive& archive) {
-		archive(StampTexture, StampIntervalRatio, NoiseFactor, RotationRand, StampMode);
+		archive(StampTexture, StampIntervalRatio, NoiseFactor, RotationRand);
 	}
 };
 

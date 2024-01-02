@@ -28,12 +28,5 @@ public:
 	void serialize(Archive& archive) {
 		archive(EditorActiveBrushE, PreviewBackgroundColor, SegmentCount, Brushes);
 	}
-	template<class Archive>
-	void epilogue(Archive& archive) {
-		GenPreviewStroke(SegmentCount);
-		auto gr = glm::golden_ratio<float>();
-		PreviewPort = { {-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f} };
-		PreviewPort.UploadMVP();
-	}
 };
 

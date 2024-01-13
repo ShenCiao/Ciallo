@@ -77,19 +77,36 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 		c = c.Scale({factor, factor}, mid);
 		c = c.Translate(-mid + canvas.Viewport.GetSize() / 2.0f);
 		auto& offset = pressures[i];
-		for (float& t : offset) t = -(1.0f - t/maxPressure) * targetRadius;
+		for (float& t : offset) t = - (1.0f - t / maxPressure) * targetRadius;
 
 		entt::entity strokeE = R.create();
 		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
 		R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
+
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
 		stroke.RadiusOffset = offset;
 		stroke.Radius = targetRadius;
 
 		// I intented to use create a event system, but I'm lazy.
-		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
 		stroke.UpdateBuffers();
+
+		//{
+		//	entt::entity strokeE = R.create();
+		//	R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final);
+		//	R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
+
+		//	auto& stroke = R.emplace<Stroke>(strokeE);
+		//	stroke.Position = c;
+		//	stroke.RadiusOffset = std::vector<float>{0.0};
+		//	stroke.Radius = targetRadius/25.0;
+		//	stroke.Color = { 82.f/255, 125.f/255, 255.f/255, 1.0f };
+
+		//	// I intented to use create a event system, but I'm lazy.
+		//	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
+		//	stroke.UpdateBuffers();
+		//}
 
 		arm.AddOrUpdate(strokeE);
 	}
@@ -101,7 +118,7 @@ void Loader::SaveCsv(const std::filesystem::path& filePath)
 	
 }
 
-void Loader::LoadAnimation(const std::filesystem::path& filePath)
+void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRadius)
 {
 	// Get transformation parameters
 	const auto& entry = *std::filesystem::directory_iterator(filePath)++;
@@ -188,14 +205,13 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 		}
 
 		float minRadius = 0.0005f;
-		float RadiusFactor = 0.001f;
 		for (int i = 0; i < curves.size(); ++i)
 		{
 			auto& c = curves[i];
 			c = c.Scale({ scaleFactor, scaleFactor }, pivot);
 			c = c.Translate(translate);
 			auto& offset = pressures[i];
-			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * RadiusFactor;
+			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * targetRadius;
 
 			entt::entity strokeE = R.create();
 			R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);

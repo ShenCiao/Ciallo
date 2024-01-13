@@ -27,7 +27,7 @@ public:
 	Stroke& operator=(Stroke&& other) noexcept;
 	~Stroke();
 
-	void UpdateBuffers(int stampMode = 1); // I never expect I need to add this stampMode parameter
+	void UpdateBuffers(int stampMode = 0); // I never expect I need to add this stampMode parameter
 	void LineDrawCall();
 	void FillDrawCall();
 	void SetUniforms();
@@ -43,5 +43,5 @@ private:
 	void GenBuffers();
 	void UpdatePositionBuffer();
 	void UpdateRadiusOffsetBuffer();
-	void UpdateDistanceBuffer(int stampMode = 1);
+	void UpdateDistanceBuffer(int stampMode = 0);
 };

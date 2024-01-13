@@ -112,24 +112,24 @@ void FillTool::OnHovering(Hovering event)
 	if (currentE == entt::null) return;
 	auto& arm = R.get<ArrangementManager>(currentE);
 	// In vis mode
-	if (ImGui::IsKeyDown(ImGuiKey_Space))
-	{
-		auto polygon = arm.PointQueryVisibility(event.MousePos);
+	//if (ImGui::IsKeyDown(ImGuiKey_Space))
+	//{
+	//	auto polygon = arm.PointQueryVisibility(event.MousePos);
 
-		glUseProgram(RenderingSystem::Polygon->Program);
-		glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor)); // color
-		ColorFace face{{polygon}};
-		face.GenUploadBuffers();
-		face.FillDrawCall();
+	//	glUseProgram(RenderingSystem::Polygon->Program);
+	//	glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor)); // color
+	//	ColorFace face{{polygon}};
+	//	face.GenUploadBuffers();
+	//	face.FillDrawCall();
 
-		glDisable(GL_STENCIL_TEST);
+	//	glDisable(GL_STENCIL_TEST);
 
-		Brush& brush = R.ctx().get<InnerBrush>().Get("vanilla");
-		brush.Use();
-		glUniform1f(2, Painter.MinRadius);
-		glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor));
-		face.LineDrawCall();
-	}
+	//	Brush& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+	//	brush.Use();
+	//	glUniform1f(2, Painter.MinRadius);
+	//	glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor));
+	//	face.LineDrawCall();
+	//}
 	// In fill preview mode
 	if (ImGui::IsKeyDown(ImGuiKey_LeftAlt))
 	{

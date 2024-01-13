@@ -9,7 +9,7 @@ public:
 	float RotationRand = 1.0f;
 
 	enum StampMode { EquiDistant, RatioDistant };
-	StampMode StampMode = RatioDistant;
+	StampMode StampMode = EquiDistant;
 
 	StampBrushData() = default;
 

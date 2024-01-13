@@ -5,6 +5,7 @@
 #include "TextureManager.h"
 #include "Brush.h"
 #include "Viewport.h"
+#include "InnerBrush.h"
 
 BrushManager::BrushManager()
 {
@@ -73,6 +74,18 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	brush.SetUniforms();
 	PreviewStroke.SetUniforms();
 	PreviewStroke.LineDrawCall();
+	/*{
+		Stroke stroke = PreviewStroke.Copy();
+		stroke.RadiusOffset = std::vector<float>(stroke.RadiusOffset.size(), 0.0f);
+		stroke.Radius = stroke.Radius / 20.0f;
+		stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+		stroke.UpdateBuffers();
+		auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+		brush.Use();
+		brush.SetUniforms();
+		stroke.SetUniforms();
+		stroke.LineDrawCall();
+	} */
 	brush.PreviewTexture.CopyMS();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

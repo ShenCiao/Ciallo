@@ -10,6 +10,7 @@
 #include "Painter.h"
 #include "InnerBrush.h"
 #include "TimelineManager.h"
+#include "TextureManager.h"
 
 #include <glm/gtx/transform.hpp>
 
@@ -89,11 +90,18 @@ void TempLayers::RenderDrawing()
 		stroke.UpdateBuffers();
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
 		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
+		//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
 		if (!skip)
 		{
 			Brush* brush;
-			if(!!(strokeUsage & StrokeUsageFlags::Zone))
-				brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+			if (!!(strokeUsage & StrokeUsageFlags::Zone)) {
+				if (stroke.Position.size() <= 1) {
+					brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+				}
+				else {
+					brush = &R.ctx().get<InnerBrush>().Get("vanilla");
+				}
+			}
 			else
 				brush = &R.get<Brush>(stroke.BrushE);
 			brush->Use();
@@ -102,6 +110,43 @@ void TempLayers::RenderDrawing()
 			stroke.LineDrawCall();
 		}
 	}
+
+	//// Dirty thing to draw the middle axis
+	//for (entt::entity e : strokeEs) {
+	//	auto stroke = R.get<Stroke>(e).Copy();
+	//	auto strokeUsage = R.get<StrokeUsageFlags>(e);
+	//	if (!!(strokeUsage & StrokeUsageFlags::Zone)) continue;
+	//	stroke.RadiusOffset = std::vector<float>{ 0.0 };
+	//	stroke.Radius = 0.005f / 25.0f;
+	//	stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+	//	stroke.UpdateBuffers();
+
+	//	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+	//	brush.Use();
+	//	brush.SetUniforms();
+	//	stroke.SetUniforms();
+	//	stroke.LineDrawCall();
+	//}
+
+	//for (entt::entity e : strokeEs) {
+	//	auto stroke = R.get<Stroke>(e).Copy();
+	//	auto strokeUsage = R.get<StrokeUsageFlags>(e);
+	//	if (!!(strokeUsage & StrokeUsageFlags::Zone)) continue;
+	//	for (glm::vec2 p : stroke.Position) {
+	//		Stroke s{};
+	//		s.Position = std::vector<glm::vec2>{ p };
+	//		s.RadiusOffset = std::vector<float>{ 0.0 };
+	//		s.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+	//		s.Radius = 0.015f / 25.0f;
+	//		s.UpdateBuffers();
+	//		auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+	//		brush.Use();
+	//		brush.SetUniforms();
+	//		s.SetUniforms();
+	//		s.LineDrawCall();
+	//	}
+	//}
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

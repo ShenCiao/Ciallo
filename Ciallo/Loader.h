@@ -12,7 +12,7 @@ public:
 	static inline bool ShouldLoadProject = false;
 	static void LoadCsv(const std::filesystem::path& filePath, float targetRadius = 0.002f);
 	static void SaveCsv(const std::filesystem::path& filePath);
-	static void LoadAnimation(const std::filesystem::path& filePath);
+	static void LoadAnimation(const std::filesystem::path& filePath, float targetRadius = 0.001f);
 	static void LoadProject(const std::filesystem::path& filePath);
 	static void SaveProject(const std::filesystem::path& filePath);
 };

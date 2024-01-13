@@ -319,5 +319,14 @@
     <CopyFileToFolders Include="shaders\dot.vert">
       <Filter>Resource Files\shaders</Filter>
     </CopyFileToFolders>
+    <CopyFileToFolders Include="images\stamp3.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\myaamori.jpg">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\fill_marker.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
   </ItemGroup>
 </Project>

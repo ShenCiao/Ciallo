@@ -20,7 +20,7 @@ Window::Window()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	GlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo Lab Version", nullptr, nullptr);
+	GlfwWindow = glfwCreateWindow(1000, 1000, "Anonymous", nullptr, nullptr);
 	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");
@@ -104,6 +104,12 @@ void Window::EndFrame() const
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	int dims[] = {0, 0, 0, 0};
+	glfwGetFramebufferSize(GlfwWindow, &dims[2], &dims[3]);
+	int x = static_cast<int>(ImGui::GetMousePos().x);
+	int y = static_cast<int>(dims[3] - ImGui::GetMousePos().y);
+	glm::vec3 color;
+	glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, &color);
 	glfwSwapBuffers(GlfwWindow);
 }
 

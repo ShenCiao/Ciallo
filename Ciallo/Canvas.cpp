@@ -47,6 +47,14 @@ void Canvas::DrawUI()
 			Loader::LoadCsv("./models/grid.csv");
 		if (ImGui::MenuItem("Cat"))
 			Loader::LoadAnimation("./models/cat");
+		if (ImGui::MenuItem("Butterfly"))
+			Loader::LoadAnimation("./models/butterfly", 0.005f);
+		if (ImGui::MenuItem("1"))
+			Loader::LoadCsv("./models/1.csv", 0.004f);
+		if (ImGui::MenuItem("2"))
+			Loader::LoadCsv("./models/2.csv", 0.004f);
+		if (ImGui::MenuItem("3"))
+			Loader::LoadCsv("./models/3.csv", 0.004f);
 		ImGui::EndMenu();
 	}
 
@@ -101,13 +109,15 @@ void Canvas::DrawUI()
 
 	// Invisible button for interaction
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
-	ImGui::InvisibleButton("CanvasInteraction", panel->InnerRect.GetSize(),
+	ImGui::InvisibleButton("CanvasInteractor", panel->InnerRect.GetSize(),
 	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
 	                       ImGuiButtonFlags_MouseButtonMiddle);
 	EventDispatcher.trigger(BeforeInteraction{});
 
+
 	auto interact = [&]()
 	{
+		// Active item is the invisible button, "CanvasInteractor".
 		if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
 		{
 			if (IsDragging)
@@ -121,6 +131,7 @@ void Canvas::DrawUI()
 			StartDraggingTimePoint = chrono::high_resolution_clock::now();
 			EventDispatcher.trigger(ClickOrDragStart{mousePos, mousePosPixel});
 			PrevMousePos = mousePos;
+			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
 
@@ -132,6 +143,7 @@ void Canvas::DrawUI()
 				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
 			PrevMousePos = mousePos;
+			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
 
@@ -143,12 +155,22 @@ void Canvas::DrawUI()
 				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
 			});
 			PrevMousePos = mousePos;
+			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
 
-		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0))
+		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && !ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			EventDispatcher.trigger(Hovering{mousePos, mousePosPixel});
+			PrevMousePosPixel = ImGui::GetMousePos();
+		}
+
+		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
+		{
+			glm::vec2 delta = ImGui::GetMousePos() - PrevMousePosPixel;
+			ImGui::SetScrollX(ImGui::GetScrollX() - delta.x);
+			ImGui::SetScrollY(ImGui::GetScrollY() - delta.y);
+			PrevMousePosPixel = ImGui::GetMousePos();
 		}
 	};
 
@@ -218,4 +240,17 @@ glm::ivec2 Canvas::GetSizePixel() const
 void Canvas::Export() const
 {
 	TextureManager::SaveTexture(Image.ColorTexture, "canvas");
+}
+
+void Canvas::Run()
+{
+	if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+		if(Dpi < 1000.0f)
+			Dpi *= 1.1f;
+		GenRenderTarget();
+	}
+	if (ImGui::IsKeyPressed(ImGuiKey_S)) {
+		Dpi /= 1.1f;
+		GenRenderTarget();
+	}
 }

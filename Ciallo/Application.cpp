@@ -51,6 +51,8 @@ void Application::Run()
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		Window->EndFrame();
 
+		R.ctx().get<Canvas>().Run();
+
 		if (Loader::ShouldLoadProject)
 		{
 			glfwSwapBuffers(Window->GlfwWindow);
@@ -95,8 +97,8 @@ void Application::GenDefaultProject()
 	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
 	brush2.Stamp->StampTexture = TextureManager::Textures[2];
-	brush2.Stamp->StampIntervalRatio = 1.0f / 10.0f;
-	brush2.Stamp->NoiseFactor = 1.7f;
+	brush2.Stamp->StampIntervalRatio = 1.0f / 25.0f;
+	brush2.Stamp->NoiseFactor = 1.9f;
 
 	brushes.push_back(R.create());
 	auto& brush3 = R.emplace<Brush>(brushes.back());
@@ -115,12 +117,12 @@ void Application::GenDefaultProject()
 	brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
 	brush4.Stamp->RotationRand = 0.0f;
 
+	R.ctx().emplace<InnerBrush>();
 	auto& brushManager = R.ctx().emplace<BrushManager>();
 	brushManager.Brushes = std::move(brushes);
 	brushManager.RenderAllPreview();
 
 	R.ctx().emplace<OverlayContainer>();
-	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<Toolbox>(); 
 	auto& tm = R.ctx().emplace<TimelineManager>();
 	tm.GenKeyFrame(1);

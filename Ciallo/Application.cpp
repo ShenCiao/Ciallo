@@ -16,6 +16,7 @@
 #include "TimelineManager.h"
 #include "SelectionManager.h"
 #include "Loader.h"
+#include "EyedropperInfo.h"
 
 Application::Application()
 {
@@ -34,6 +35,7 @@ void Application::Run()
 		Window->BeginFrame();
 		ImGui::ShowMetricsWindow();
 		R.ctx().get<Canvas>().DrawUI();
+		
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
 		R.ctx().get<TimelineManager>().DrawUI();
@@ -43,10 +45,11 @@ void Application::Run()
 			R.get<ArrangementManager>(currentE).Run();
 		}
 		auto& layers = R.ctx().get<TempLayers>();
-		layers.RenderOverlay();
-		layers.RenderDrawing();
+		
 		layers.RenderFill();
-		layers.BlendAll();
+		layers.RenderDrawing();
+		layers.RenderOverlay();
+		
 		layers.ClearOverlay();
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		Window->EndFrame();
@@ -97,7 +100,7 @@ void Application::GenDefaultProject()
 	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
 	brush2.Stamp->StampTexture = TextureManager::Textures[2];
-	brush2.Stamp->StampIntervalRatio = 1.0f / 25.0f;
+	brush2.Stamp->StampIntervalRatio = 1.0f / 50.0f;
 	brush2.Stamp->NoiseFactor = 1.9f;
 
 	brushes.push_back(R.create());
@@ -113,7 +116,7 @@ void Application::GenDefaultProject()
 	brush4.Name = "Dot";
 	brush4.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush4.Stamp = std::make_unique<StampBrushData>();
-	brush4.Stamp->StampTexture = TextureManager::Textures[3];
+	brush4.Stamp->StampTexture = TextureManager::Textures[6];
 	brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
 	brush4.Stamp->RotationRand = 0.0f;
 
@@ -127,4 +130,5 @@ void Application::GenDefaultProject()
 	auto& tm = R.ctx().emplace<TimelineManager>();
 	tm.GenKeyFrame(1);
 	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
+	R.ctx().emplace<EyedropperInfo>();
 }

@@ -35,26 +35,8 @@ void Canvas::DrawUI()
 
 	if (ImGui::BeginMenu("Load Model"))
 	{
-		if (ImGui::MenuItem("Monkey"))
-			Loader::LoadCsv("./models/monkey.csv");
-		if (ImGui::MenuItem("Bear"))
-			Loader::LoadCsv("./models/bear.csv");
-		if (ImGui::MenuItem("Dango"))
-			Loader::LoadCsv("./models/dango.csv", 0.003f);
-		if (ImGui::MenuItem("Totoro"))
-			Loader::LoadCsv("./models/totoro.csv", 0.001f);
-		if (ImGui::MenuItem("Grid"))
-			Loader::LoadCsv("./models/grid.csv");
-		if (ImGui::MenuItem("Cat"))
-			Loader::LoadAnimation("./models/cat");
-		if (ImGui::MenuItem("Butterfly"))
-			Loader::LoadAnimation("./models/butterfly", 0.005f);
-		if (ImGui::MenuItem("1"))
-			Loader::LoadCsv("./models/1.csv", 0.004f);
-		if (ImGui::MenuItem("2"))
-			Loader::LoadCsv("./models/2.csv", 0.004f);
-		if (ImGui::MenuItem("3"))
-			Loader::LoadCsv("./models/3.csv", 0.004f);
+		if (ImGui::MenuItem("Girl"))
+			Loader::LoadCsv("./models/girl.csv", 0.001f);
 		ImGui::EndMenu();
 	}
 
@@ -184,6 +166,11 @@ void Canvas::GenRenderTarget()
 {
 	auto size = Viewport.GetSizePixel(Dpi);
 	Image = RenderableTexture(size.x, size.y);
+
+	int w, h;
+	int miplevel = 0;
+	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_WIDTH, &w);
+	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_HEIGHT, &h);
 }
 
 void Canvas::RenderContentNTimes(int n)
@@ -248,9 +235,11 @@ void Canvas::Run()
 		if(Dpi < 1000.0f)
 			Dpi *= 1.1f;
 		GenRenderTarget();
+		R.ctx().get<TempLayers>().GenLayers(Image.Size());
 	}
 	if (ImGui::IsKeyPressed(ImGuiKey_S)) {
 		Dpi /= 1.1f;
 		GenRenderTarget();
+		R.ctx().get<TempLayers>().GenLayers(Image.Size());
 	}
 }

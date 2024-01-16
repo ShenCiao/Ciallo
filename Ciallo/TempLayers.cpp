@@ -75,21 +75,22 @@ void TempLayers::RenderDrawing()
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
-	Drawing.BindFramebuffer();
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
+	/*Drawing.BindFramebuffer();
+	glClearColor(1, 1, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT);*/
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
+	canvas.Image.BindFramebuffer();
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
 	if (drawingE == entt::null) return;
 	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);
-		stroke.UpdateBuffers();
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
+		bool skip = (FinalOnly && !(strokeUsage & StrokeUsageFlags::Final)) || !!(strokeUsage & StrokeUsageFlags::Fill);
 		//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
 		if (!skip)
 		{
@@ -152,14 +153,17 @@ void TempLayers::RenderDrawing()
 
 void TempLayers::RenderFill()
 {
-	Fill.BindFramebuffer();
+	//Fill.BindFramebuffer();
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
-	glClearColor(0, 0, 0, 0);
+
+	canvas.Image.BindFramebuffer();
+	
+	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
 	auto& arm = R.get<ArrangementManager>(drawingE);
@@ -244,6 +248,13 @@ void TempLayers::ClearOverlay()
 	glClearColor(0, 0, 0, 0);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void TempLayers::GenLayers(glm::ivec2 size)
+{
+	Overlay = RenderableTexture{ size.x, size.y };
+	Drawing = RenderableTexture{ size.x, size.y };
+	Fill = RenderableTexture{ size.x, size.y };
 }
 
 void TempLayers::GenCircleStroke()

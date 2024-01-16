@@ -9,6 +9,8 @@
 #define EASYTAB_IMPLEMENTATION
 #include "easytab.h"
 
+#include "EyedropperInfo.h"
+
 Window::Window()
 {
 	glfwInit();
@@ -104,12 +106,18 @@ void Window::EndFrame() const
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	int dims[] = {0, 0, 0, 0};
-	glfwGetFramebufferSize(GlfwWindow, &dims[2], &dims[3]);
-	int x = static_cast<int>(ImGui::GetMousePos().x);
-	int y = static_cast<int>(dims[3] - ImGui::GetMousePos().y);
-	glm::vec3 color;
-	glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, &color);
+
+	auto& info = R.ctx().get<EyedropperInfo>();
+	if (info.IsPicking) {
+		int dims[] = { 0, 0, 0, 0 };
+		glfwGetFramebufferSize(GlfwWindow, &dims[2], &dims[3]);
+		int x = static_cast<int>(ImGui::GetMousePos().x);
+		int y = static_cast<int>(dims[3] - ImGui::GetMousePos().y);
+		glm::vec3 color;
+		glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, &color);
+		info.Color = color;
+	}
+	
 	glfwSwapBuffers(GlfwWindow);
 }
 

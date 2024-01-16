@@ -19,6 +19,9 @@
     <Filter Include="dlib">
       <UniqueIdentifier>{455fcf12-b322-4aa9-91f1-4e222a6b8833}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\csv">
+      <UniqueIdentifier>{322aa37b-6d37-44a6-88c0-9083e18a90a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ciallo.cpp">
@@ -284,6 +287,9 @@
     <ClInclude Include="SelectionManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="EyedropperInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">
@@ -326,6 +332,15 @@
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
     <CopyFileToFolders Include="images\fill_marker.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\girl.jpg">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="models\girl.csv">
+      <Filter>Resource Files\csv</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\dot2.png">
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
   </ItemGroup>

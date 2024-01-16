@@ -21,7 +21,7 @@ void StampBrushData::DrawProperties()
 	ImGui::Image(reinterpret_cast<ImTextureID>(StampTexture), {128, 128 });
 	ImGui::RadioButton("Equi-distant", reinterpret_cast<int*>(&StampMode), EquiDistant); ImGui::SameLine();
 	ImGui::RadioButton("Ratio-distant", reinterpret_cast<int*>(&StampMode), RatioDistant);
-	ImGui::DragFloat("Interval", &StampIntervalRatio, 0.002f, 0.005f, 3.0f, "%.2f");
+	ImGui::DragFloat("Interval", &StampIntervalRatio, 0.002f, 0.02f, 3.0f, "%.2f");
 	ImGui::DragFloat("Noise factor", &NoiseFactor, 0.01f, 0.0f, 3.0f, "%.2f");
 	ImGui::DragFloat("Rotation randomness", &RotationRand, 0.01f, 0.0f, 2.0f, "%.2f");
 }

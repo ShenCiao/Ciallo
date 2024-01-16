@@ -15,6 +15,7 @@
 #include "Brush.h"
 #include "InnerBrush.h"
 #include "SelectionManager.h"
+#include "EyedropperInfo.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 {
@@ -24,6 +25,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 	R.get<StrokeContainer>(drawingE).StrokeEs.clear();
 	auto& arm = R.get<ArrangementManager>(drawingE);
 	arm.Arrangement.clear();
+	arm.LogSpeed = true;
 
 	std::ifstream file(filePath);
 	std::string line;
@@ -89,7 +91,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 		stroke.Radius = targetRadius;
 
 		// I intented to use create a event system, but I'm lazy.
-		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
+		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
 		stroke.UpdateBuffers();
 
 		//{
@@ -255,6 +257,7 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<SelectionManager>();
+	R.ctx().emplace<EyedropperInfo>();
 
 	auto view = R.view<StrokeContainer>();
 	for (entt::entity drawingE : view) {
@@ -268,6 +271,7 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 				arm.AddOrUpdate(e);
 			if (!!(usage & StrokeUsageFlags::Zone))
 				arm.AddOrUpdateQuery(e);
+			usage = usage | StrokeUsageFlags::Line;
 		}
 	}
 }

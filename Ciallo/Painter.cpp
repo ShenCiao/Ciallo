@@ -81,14 +81,17 @@ void Painter::DrawProperties()
 {
 	auto& brush = R.get<Brush>(BrushE);
 	const float width = ImGui::GetWindowContentRegionWidth();
+
+	if (!!(Usage & StrokeUsageFlags::Fill) || !!(Usage & StrokeUsageFlags::Zone)) {
+		ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
+		return;
+	}
+
 	ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
-	             {width, width / 2.0f / glm::golden_ratio<float>()});
+		{ width, width / 2.0f / glm::golden_ratio<float>() });
 	if (ImGui::Button("Edit Brush"))
 		R.ctx().get<BrushManager>().OpenBrushEditor(&BrushE);
-
 	ImGui::ColorEdit4("Line Color##0", glm::value_ptr(Color), ImGuiColorEditFlags_DisplayRGB);
-	if (!!(Usage & StrokeUsageFlags::Fill) || !!(Usage & StrokeUsageFlags::Zone))
-		ImGui::ColorEdit4("Fill Color##1", glm::value_ptr(FillColor), ImGuiColorEditFlags_DisplayRGB);
 	const float ratio = 1000.0f;
 	float minRadiusUI = MinRadius * ratio;
 	float maxRadiusUI = MaxRadius * ratio;

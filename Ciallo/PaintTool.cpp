@@ -6,6 +6,7 @@
 #include "StrokeContainer.h"
 #include "ArrangementManager.h"
 #include "TextureManager.h"
+#include "EyedropperInfo.h"
 
 PaintTool::PaintTool()
 {
@@ -37,8 +38,16 @@ void PaintTool::DrawProperties()
 	ImGui::CheckboxFlags("Show in final image", reinterpret_cast<unsigned*>(&Painter.Usage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Final));
 
-	ImGui::CheckboxFlags("Fill color", reinterpret_cast<unsigned*>(&Painter.Usage),
+	bool clicked = ImGui::CheckboxFlags("Fill color", reinterpret_cast<unsigned*>(&Painter.Usage),
 		                     static_cast<unsigned>(StrokeUsageFlags::Fill));
+	if (clicked) {
+		if (!!(Painter.Usage & StrokeUsageFlags::Fill)) {
+			Painter.Usage = Painter.Usage & ~StrokeUsageFlags::Arrange;
+		}
+		else {
+			Painter.Usage = Painter.Usage | StrokeUsageFlags::Arrange;
+		}
+	}
 	Painter.DrawProperties();
 	if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
 		entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
@@ -62,6 +71,18 @@ void PaintTool::DrawProperties()
 	int miplevel = 0;
 	glGetTextureLevelParameteriv(TextureManager::Textures[5], miplevel, GL_TEXTURE_WIDTH, &w);
 	glGetTextureLevelParameteriv(TextureManager::Textures[5], miplevel, GL_TEXTURE_HEIGHT, &h);
+	const float width = ImGui::GetWindowContentRegionWidth();
 
-	ImGui::Image(reinterpret_cast<ImTextureID>(TextureManager::Textures[5]), {float(w), float(h)});
+	ImGui::Image(reinterpret_cast<ImTextureID>(TextureManager::Textures[5]), { width, width * float(h)/float(w)});
+
+	auto& info = R.ctx().get<EyedropperInfo>();
+	if(ImGui::IsKeyDown(ImGuiKey_I)) {
+		info.IsPicking = true;
+		Painter.FillColor = glm::vec4(info.Color, 1.0);
+		ImGui::ColorTooltip("Color", glm::value_ptr(info.Color), 0);
+	}
+
+	if (ImGui::IsKeyReleased(ImGuiKey_I)) {
+		info.IsPicking = false;
+	}
 }

@@ -34,7 +34,7 @@ void TextureManager::LoadTextures()
 	}
 	Textures.push_back(ColorTexture);
 
-	std::vector<std::string> fileNames{ "stamp1.png", "stamp2.png", "stamp3.png", "fill_marker.png", "girl.jpg"};
+	std::vector<std::string> fileNames{ "stamp1.png", "stamp2.png", "stamp3.png", "fill_marker.png", "girl.jpg", "dot2.png"};
 	std::filesystem::path root{ "./images" };
 	for(auto& file: fileNames)
 	{

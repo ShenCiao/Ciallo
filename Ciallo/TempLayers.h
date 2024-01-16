@@ -20,6 +20,7 @@ public:
 	void RenderFill();
 	void BlendAll();
 	void ClearOverlay();
+	void GenLayers(glm::ivec2 size);
 private:
 	// Used by overlay, shitty design
 	Stroke Circle;

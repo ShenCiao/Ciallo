@@ -93,6 +93,7 @@ void FillTool::DrawProperties()
 			R.get<ArrangementManager>(currentE).Remove(strokeE);
 		if (!!(usage & StrokeUsageFlags::Zone))
 			R.get<ArrangementManager>(currentE).RemoveQuery(strokeE);
+		R.destroy(strokeE);
 	}
 }
 

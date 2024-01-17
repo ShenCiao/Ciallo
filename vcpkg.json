@@ -1,19 +1,4 @@
 {
-<<<<<<< HEAD
-  "name": "ciallo",
-  "version": "0.0.2",
-  "dependencies": [
-    "spdlog",
-    "glfw3",
-    "glad",
-    "stb",
-    "entt",
-    "glm",
-    "cgal"
-  ],
-  "builtin-baseline": "4a600e9fea71bd7872080cbb716797e04d30e6d3"
-}
-=======
     "name": "ciallo",
     "version": "0.0.2",
     "dependencies": [
@@ -27,4 +12,3 @@
       "cereal"
     ]
   }
->>>>>>> 42024b9a0433da43e6391d7b351638c29507b4bf

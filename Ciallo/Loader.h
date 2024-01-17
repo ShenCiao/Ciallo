@@ -35,18 +35,12 @@ class Loader
 	inline static glm::vec4 DetailColor = {0.25f, 0.25f, 0.0f, 1.0f};
 
 public:
-<<<<<<< HEAD
-	static void LoadCsv(const std::filesystem::path& filePath, int brushNum = 0, float rotateRandom = 1.0, float intervalRatio = 0.02, float noiseFactor = 0.01, float targetThickness = 0.001f); //, int brush = 0, int iterate = 0
-	static void SaveCsv(const std::filesystem::path& filePath);
-	static void DrawUI();
-=======
 	static inline bool ShouldLoadProject = false;
 	static void LoadCsv(const std::filesystem::path& filePath, float targetRadius = 0.002f);
 	static void SaveCsv(const std::filesystem::path& filePath);
 	static void LoadAnimation(const std::filesystem::path& filePath, float targetRadius = 0.001f);
 	static void LoadProject(const std::filesystem::path& filePath);
 	static void SaveProject(const std::filesystem::path& filePath);
->>>>>>> 42024b9a0433da43e6391d7b351638c29507b4bf
 };
 
 namespace glm

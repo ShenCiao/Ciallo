@@ -72,7 +72,8 @@ void Canvas::DrawUI()
 
 	if (ImGui::Button("Load Model"))
 	{
-		Loader::LoadCsv("./models/girl.csv", 0.001f);
+
+		Loader::LoadCsv("./models/girl.csv", 0.005f);
 	}
 
 	if (ImGui::Button("Save Project"))

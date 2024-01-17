@@ -31,11 +31,14 @@ Application::Application()
 	RenderingSystem::Init();
 	TextureManager::LoadTextures();
 
+	//my_version
 	// collect all file name and save in one vector
-	AReadFile::ReadFile();
+	// AReadFile::ReadFile();
 
 	// load stamp image
-	AStamp::LoadStamp(AReadFile::file_names);
+	// AStamp::LoadStamp(AReadFile::file_names);
+	
+
 	
 	// load vector image
 

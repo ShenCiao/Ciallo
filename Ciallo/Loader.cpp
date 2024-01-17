@@ -71,8 +71,8 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 		if (values[2] >= maxPressure) maxPressure = values[2];
 	}
 
-	spdlog::info("Number of strokes: {}", nStroke);
-	spdlog::info("Number of vertices: {}", nVertex);
+	// spdlog::info("Number of strokes: {}", nStroke);
+	// spdlog::info("Number of vertices: {}", nVertex);
 
 // scale here!!!
 	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
@@ -118,8 +118,8 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 	{
 
 	// for random values
-		std::random_device rd;
-		std::mt19937 gen(rd());
+		// std::random_device rd;
+		// std::mt19937 gen(rd());
 		int randomInt;
 
 	// scale here!!!
@@ -150,6 +150,8 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 
 		// I intented to use create a event system, but I'm lazy.
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+		float stampInterval = 0.0f;
+		spdlog::info("Stamp interval: {}", stampInterval);
 		stroke.UpdateBuffers();
 
 		//{
@@ -317,7 +319,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRa
 			stroke.Radius = minRadius;
 
 			// I intented to use create a event system, but I'm lazy.
-			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[1];
 			stroke.UpdateBuffers();
 
 			arm.AddOrUpdate(strokeE);

@@ -15,6 +15,9 @@ void Painter::OnDragStart(ClickOrDragStart event)
 	R.emplace<StrokeUsageFlags>(e, Usage);
 
 	s.Position = {event.MousePos};
+	std::cout << "painter" << std::endl;
+	std::cout << event.MousePos[0] << "," << event.MousePos[1] << std::endl;
+
 	s.BrushE = BrushE;
 	s.Thickness = Thickness;
 	s.Color = Color;
@@ -47,6 +50,9 @@ void Painter::OnDragging(Dragging event)
 		entt::entity e = strokes.back();
 		auto& s = R.get<Stroke>(e);
 		s.Position.push_back(event.MousePos);
+		
+		std::cout << event.MousePos[0] << "," << event.MousePos[1] << std::endl;
+		
 		s.UpdateBuffers();
 
 		auto& arm = R.ctx().get<ArrangementManager>();
@@ -63,6 +69,7 @@ void Painter::OnDragging(Dragging event)
 		LastSampleMousePosPixel = event.MousePosPixel;
 		LastSampleDuration = event.DragDuration;
 	}
+
 }
 
 void Painter::DrawProperties()

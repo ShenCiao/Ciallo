@@ -73,8 +73,17 @@ float fbm (in vec2 st) {
 // ---------------- Noise end ------------------
 
 #ifdef STAMP
+
+// Physical distance x -> Normalized distance n for a brush stamp
+
+// x: the physical distance
+// r: the brush radius
+// t1 and t2: two parameters that control the shape of the brush stroke
+// L: the length of the brush stroke
+
 float x2n(float x, float r, float t1, float t2, float L){
     // I screw the code up.
+    // RatioDistance: out of consideration
     if(stampMode == RatioDistance){
         const float tolerance = 1e-5;
         if(t1 <= 0 || t1/t2 < tolerance){
@@ -96,6 +105,7 @@ float x2n(float x, float r, float t1, float t2, float L){
     }
 }
 
+// Normalized distance n -> Physical distance x for a brush stamp
 float n2x(float n, float r, float t1, float t2, float L){
     if(stampMode == RatioDistance){
         const float tolerance = 1e-5;
@@ -185,24 +195,34 @@ void main() {
     endIndex = endIndex < backIndex ? endIndex : backIndex;
     if(startIndex > endIndex) discard;
 
-    int MAX_i = 128; float currIndex = startIndex;
-    float A = 0.0;
+    int MAX_i = 256; float currIndex = startIndex;
+    float A = 1e-10;
+    vec4 currColor = vec4(1e-10);
     for(int i = 0; i < MAX_i; i++){
         float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
         float r = r0 - cosTheta * currStampLocalX;
         vec2 pToStamp = pLocal - vec2(currStampLocalX, 0);
-        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));
+        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0)); // here
         pToStamp *= rotate(angle);
         vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
         vec4 color = texture(footprint, textureCoordinate);
+        vec4 colorOut;
+        // fbm: noise generation, 50.0 -> scale
         float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
-        A = A * (1.0-alpha) + alpha;
+        // color.a -> stamp, fragColor -> settings, noiseFactor muptiple
+        // A = clamp((A * (1.0 - alpha) + alpha) * r0 * 800.0, 0.0, 1.0);
+        A = A * (1.0 - alpha) + alpha;
+        colorOut.a = A;
+        colorOut.rgb = (color.rgb * color.a + currColor.rgb * currColor.a * (1.0 - color.a))/colorOut.a;
+        currColor = colorOut;
 
         currIndex += 1.0;
         if(currIndex > endIndex) break;
     }
+
     if(A < 1e-4) discard;
-    outColor = vec4(fragColor.rgb, A);
+    // outColor = vec4(fragColor.rgb, A);
+    outColor = currColor;
     return;
 #endif
 

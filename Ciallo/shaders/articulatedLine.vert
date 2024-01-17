@@ -9,6 +9,7 @@ layout(location = 1) out float outSummedLength;
 
 void main() {
     gl_Position = vec4(inPos, 0.0, 1.0);
-    outRadiusOffset = inRadiusOffset;
+    // here
+    outRadiusOffset = inRadiusOffset; // should be pen pressure in theory
     outSummedLength = inSummedLength;
 }

@@ -1,6 +1,9 @@
 #include "pch.hpp"
 #include "Application.h"
 
+#include "TextureManager.h"
+#include "RenderingSystem.h"
+
 extern "C" {
 
 __declspec(dllexport) DWORD NvOptimusEnablement = 1;

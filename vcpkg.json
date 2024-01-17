@@ -1,13 +1,14 @@
 {
-    "name": "ciallo",
-    "version": "0.0.2",
-    "dependencies": [
-      "spdlog",
-      "glfw3",
-      "glad",
-      "stb",
-      "entt",
-      "glm",
-      "cgal"
-    ]
-  }
+  "name": "ciallo",
+  "version": "0.0.2",
+  "dependencies": [
+    "spdlog",
+    "glfw3",
+    "glad",
+    "stb",
+    "entt",
+    "glm",
+    "cgal"
+  ],
+  "builtin-baseline": "4a600e9fea71bd7872080cbb716797e04d30e6d3"
+}

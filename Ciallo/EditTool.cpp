@@ -93,8 +93,11 @@ void EditTool::OnDragging(Dragging event)
 			}
 			stroke.UpdateBuffers();
 			auto usage = R.get<StrokeUsageFlags>(SelectedStrokeE);
-			if (!!(usage & StrokeUsageFlags::Arrange))
-				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);
+			if (!!(usage & StrokeUsageFlags::Arrange)){
+				R.ctx().get<ArrangementManager>().AddOrUpdate(SelectedStrokeE);\
+				std::cout << "edittool" << std::endl;
+			}
+				
 			if (!!(usage & StrokeUsageFlags::Zone))
 				R.ctx().get<ArrangementManager>().AddOrUpdateQuery(SelectedStrokeE);
 

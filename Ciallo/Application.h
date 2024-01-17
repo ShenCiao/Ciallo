@@ -5,7 +5,7 @@
 class Application
 {
 public:
-	std::unique_ptr<Window> Window;
+	std::unique_ptr<Window> Window; //?
 
 	Application();
 

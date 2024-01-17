@@ -169,10 +169,10 @@ std::vector<Geom::Polyline> ArrangementManager::GetConvexPolygonsFromQueryResult
 		else
 		{
 			// TODO: deal with holes
-			std::vector<CGAL::Polygon> simplePolygonWithHole = FaceToPolygon(face);
+			std::vector<CGAL::Poly_gon> simplePolygonWithHole = FaceToPolygon(face);
 			auto& outer = simplePolygonWithHole[0];
 
-			std::list<CGAL::Polygon> partitionResult;
+			std::list<CGAL::Poly_gon> partitionResult;
 			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
 			                                std::back_inserter(partitionResult));
 
@@ -196,6 +196,7 @@ std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::
 	for (auto& p : vec)
 	{
 		points.emplace_back(p.x, p.y);
+		// std::cout << p.x << " " << p.y << std::endl;
 	}
 	return points;
 }
@@ -208,9 +209,9 @@ std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::
  * \param face Face handle to get polygon from.
  * \return index 0 is the boundary, others are holes. Hole is not implemented yet.
  */
-std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_handle face)
+std::vector<CGAL::Poly_gon> ArrangementManager::FaceToPolygon(CGAL::Face_const_handle face)
 {
-	std::vector<CGAL::Polygon> result;
+	std::vector<CGAL::Poly_gon> result;
 
 	std::vector<CGAL::Arrangement::Ccb_halfedge_const_circulator> starters;
 	starters.push_back(face->outer_ccb());
@@ -294,7 +295,7 @@ std::vector<CGAL::Polygon> ArrangementManager::FaceToPolygon(CGAL::Face_const_ha
 std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handle face)
 {
 	std::vector<Geom::Polyline> result;
-	std::vector<CGAL::Polygon> polygonWithHoles = FaceToPolygon(face);
+	std::vector<CGAL::Poly_gon> polygonWithHoles = FaceToPolygon(face);
 
 	for (auto& polygon : polygonWithHoles)
 	{
@@ -303,7 +304,7 @@ std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handl
 	return result;
 }
 
-Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Polygon& polygon)
+Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Poly_gon& polygon)
 {
 	Geom::Polyline result;
 	for (auto it = polygon.begin(); it != polygon.end(); ++it)

@@ -22,7 +22,7 @@ void TextureManager::LoadTextures()
 	glCreateTextures(GL_TEXTURE_2D, 1, &ColorTexture);
 	setTextureParameter(ColorTexture);
 	glTextureStorage2D(ColorTexture, 1, GL_RGBA8, 256, 256);
-	glCreateFramebuffers(1, &Framebuffer);
+	glCreateFramebuffers(1, &Framebuffer);												//Framebuffer?
 	glNamedFramebufferTexture(Framebuffer, GL_COLOR_ATTACHMENT0, ColorTexture, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, Framebuffer);
 	glClearColor(1, 1, 1, 1);
@@ -40,10 +40,10 @@ void TextureManager::LoadTextures()
 	for(auto& file: fileNames)
 	{
 		int width, height, channel;
-		unsigned char* data = stbi_load((root/file).string().c_str(), &width, &height, &channel, 4);
+		unsigned char* data = stbi_load((root/file).string().c_str(), &width, &height, &channel, 4); // extract features from stamp image
 		if (!data) throw std::runtime_error("cannot load images");
 		GLuint tex;
-		glCreateTextures(GL_TEXTURE_2D, 1, &tex);
+		glCreateTextures(GL_TEXTURE_2D, 1, &tex);													// new texture object 
 		glTextureStorage2D(tex, 1, GL_RGBA8, width, height);
 		glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -61,7 +61,7 @@ void TextureManager::SaveTexture(GLuint dsa2DTexture, std::string name)
 	glGetTextureLevelParameteriv(dsa2DTexture, 0, GL_TEXTURE_HEIGHT, &height);
 	std::vector<char> imageData(width*height*4);
 	glGetTextureImage(dsa2DTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData.size(), imageData.data());
-	std::filesystem::path root{ "./images/output" };
+	std::filesystem::path root{ "./ciallo-rendering" };
 	name.append(".png");
 	stbi_write_png((root/name).string().c_str(), width, height, 4, imageData.data(), 0);
 }

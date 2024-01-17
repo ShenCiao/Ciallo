@@ -147,6 +147,15 @@
     <ClCompile Include="..\dlib\dlib\all\source.cpp">
       <Filter>dlib</Filter>
     </ClCompile>
+    <ClCompile Include="AReadFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AStamp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -273,6 +282,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CubicBezierBone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AStamp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AReadFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

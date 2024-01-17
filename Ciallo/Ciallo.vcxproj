@@ -61,7 +61,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/bigobj /utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -96,8 +96,10 @@
     </ClCompile>
     <ClCompile Include="AirBrushData.cpp" />
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="AReadFile.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
+    <ClCompile Include="AStamp.cpp" />
     <ClCompile Include="CubicBezierBone.cpp" />
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="BrushManager.cpp" />
@@ -133,6 +135,7 @@
     <ClCompile Include="Stroke.cpp" />
     <ClCompile Include="StrokeContainer.cpp" />
     <ClCompile Include="TempLayers.cpp" />
+    <ClCompile Include="TestLoader.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="Tool.cpp" />
     <ClCompile Include="Toolbox.cpp" />
@@ -142,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="AirBrushData.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="AReadFile.h" />
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
@@ -160,6 +164,7 @@
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerManager.h" />
     <ClInclude Include="Loader.h" />
+    <ClInclude Include="AStamp.h" />
     <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />

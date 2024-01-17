@@ -5,6 +5,7 @@
 #include "TextureManager.h"
 #include "Brush.h"
 #include "Viewport.h"
+#include "Loader.h"
 
 BrushManager::BrushManager()
 {
@@ -58,7 +59,7 @@ void BrushManager::SetContext() const
 void BrushManager::RenderPreview(entt::entity brushE)
 {
 	auto gr = glm::golden_ratio<float>();
-	const int height = 256, width = static_cast<int>(height * 2 * gr);
+	const int height = 512, width = static_cast<int>(height * 2 * gr);
 
 	auto& brush = R.get<Brush>(brushE);
 	if(brush.Stamp)
@@ -132,6 +133,7 @@ void BrushManager::DrawUI()
 		if (ImGui::Button("Export Demo"))
 		{
 			ExportDemo();
+			
 		}
 		ImGui::EndGroup();
 		ImGui::EndPopup();

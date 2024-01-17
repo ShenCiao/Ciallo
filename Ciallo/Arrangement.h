@@ -1,4 +1,6 @@
 ﻿#pragma once
+#ifndef _ARRANGEMENT_H_
+#define _ARRANGEMENT_H_
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
@@ -6,12 +8,19 @@
 #include <CGAL/Arr_walk_along_line_point_location.h>
 #include <CGAL/Arrangement_with_history_2.h>
 #include <CGAL/partition_2.h>
+
+// #include "include/CGAL/Exact_predicates_inexact_constructions_kernel.h"
+// #include "include/CGAL/Exact_predicates_exact_constructions_kernel.h"
+// #include "include/CGAL/Arr_polyline_traits_2.h"
+// #include "include/CGAL/Arr_walk_along_line_point_location.h"
+// #include "include/CGAL/Arrangement_with_history_2.h"
+// #include "include/CGAL/partition_2.h"
 #include "Visiblity.h"
 
 
 namespace CGAL
 {
-	using Kernel = CGAL::Exact_predicates_inexact_constructions_kernel;
+	using Kernel = CGAL::Exact_predicates_exact_constructions_kernel;
 	using Segment_traits = CGAL::Arr_segment_traits_2<Kernel>;
 	using Geom_traits = CGAL::Arr_polyline_traits_2<Segment_traits>;
 
@@ -32,5 +41,7 @@ namespace CGAL
 	using Curve_handle = Arrangement::Curve_handle;
 
 	using Partition_traits = CGAL::Partition_traits_2<Kernel>;
-	using Polygon = Partition_traits::Polygon_2;
+	using Poly_gon = Partition_traits::Polygon_2;
 }
+
+#endif

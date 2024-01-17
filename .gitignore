@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 vcpkg_installed/
 ./Ciallo/imgui.ini
 
@@ -395,3 +396,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+=======
+*.png
+*.jpg
+data
+__pycache__
+>>>>>>> 945c799d11341f18d60554be9bc1c3e3e1eced48

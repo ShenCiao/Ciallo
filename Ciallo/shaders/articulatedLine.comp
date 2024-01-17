@@ -6,8 +6,8 @@ layout(std430, binding = 0) readonly buffer PosInput{
     vec2[] position;
 };
 
-layout(std430, binding = 1) readonly buffer ThicknessInput{
-    float[] thicknessOffset;
+layout(std430, binding = 1) readonly buffer RadiusInput{
+    float[] radiusOffset;
 };
 layout(location = 2) uniform float uniRadius;
 layout(location = 3) uniform int stampMode;
@@ -32,8 +32,8 @@ void main(){
         segmentLengths[id] = L/uniRadius/2.0;
     }
     else if (stampMode == RatioDistance){
-        float t2 = 2.0 * (uniRadius + thicknessOffset[id]);
-        float t1 = id == 0 ? t2 : 2.0 * (uniRadius + thicknessOffset[id-1]); // yeah I'm misusing half thickness (radius) as real thickness
+        float t2 = 2.0 * (uniRadius + radiusOffset[id]);
+        float t1 = id == 0 ? t2 : 2.0 * (uniRadius + radiusOffset[id-1]); // yeah I'm misusing half thickness (radius) as real thickness
 
         float stretchedL = 0;
         const float tolerance = 1e-5;

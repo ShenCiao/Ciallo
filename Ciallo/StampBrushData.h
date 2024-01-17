@@ -9,11 +9,16 @@ public:
 	float RotationRand = 1.0f;
 
 	enum StampMode { EquiDistant, RatioDistant };
-	StampMode StampMode = RatioDistant;
+	StampMode StampMode = EquiDistant;
 
 	StampBrushData() = default;
 
 	void SetUniforms();
 	void DrawProperties();
+
+	template<class Archive>
+	void serialize(Archive& archive) {
+		archive(StampTexture, StampIntervalRatio, NoiseFactor, RotationRand);
+	}
 };
 

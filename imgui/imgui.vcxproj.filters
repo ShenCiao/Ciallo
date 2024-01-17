@@ -43,6 +43,12 @@
     <ClInclude Include="imgui_stdlib.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="imgui_neo_sequencer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_neo_internal.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="imgui_demo.cpp">
@@ -76,6 +82,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="imgui_stdlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_neo_internal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_neo_sequencer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

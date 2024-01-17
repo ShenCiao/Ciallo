@@ -7,6 +7,7 @@
 #include "ArrangementManager.h"
 
 #include <dlib/optimization.h>
+#include "TimelineManager.h"
 
 void CubicBezierBone::UpdateOverlay()
 {
@@ -43,10 +44,15 @@ void CubicBezierBone::UpdateBoundStroke()
 
 		stroke.UpdateBuffers();
 		auto& usage = R.get<StrokeUsageFlags>(BoundStrokeE);
-		if (!!(usage & StrokeUsageFlags::Arrange))
-			R.ctx().get<ArrangementManager>().AddOrUpdate(BoundStrokeE);
-		if (!!(usage & StrokeUsageFlags::Zone))
-			R.ctx().get<ArrangementManager>().AddOrUpdateQuery(BoundStrokeE);
+		entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (drawingE == entt::null) return;
+		auto& arm = R.get<ArrangementManager>(drawingE);
+		if (!!(usage & StrokeUsageFlags::Arrange)) {
+			arm.AddOrUpdate(BoundStrokeE);
+		}
+		if (!!(usage & StrokeUsageFlags::Zone)) {
+			arm.AddOrUpdateQuery(BoundStrokeE);
+		}
 	}
 }
 

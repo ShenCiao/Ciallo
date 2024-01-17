@@ -54,14 +54,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS;CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)dlib;$(SolutionDir)imgui</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalOptions>/bigobj /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -81,6 +82,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -125,11 +127,11 @@
     <ClCompile Include="ColorFace.cpp" />
     <ClCompile Include="PolygonEngine.cpp" />
     <ClCompile Include="Polyline.cpp" />
-    <ClCompile Include="PrefixSumPosition.cpp" />
-    <ClCompile Include="Project.cpp" />
+    <ClCompile Include="ArticulatedLineComp.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
+    <ClCompile Include="SelectionManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
     <ClCompile Include="Stroke.cpp" />
@@ -137,6 +139,7 @@
     <ClCompile Include="TempLayers.cpp" />
     <ClCompile Include="TestLoader.cpp" />
     <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="TimelineManager.cpp" />
     <ClCompile Include="Tool.cpp" />
     <ClCompile Include="Toolbox.cpp" />
     <ClCompile Include="Viewport.cpp" />
@@ -159,7 +162,9 @@
     <ClInclude Include="DotEngine.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
+    <ClInclude Include="EyedropperInfo.h" />
     <ClInclude Include="FillTool.h" />
+    <ClInclude Include="easytab.h" />
     <ClInclude Include="InnerBrush.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="LayerManager.h" />
@@ -168,10 +173,12 @@
     <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />
+    <ClInclude Include="SelectionManager.h" />
     <ClInclude Include="StampBrushData.h" />
     <ClInclude Include="StrokeContainer.h" />
     <ClInclude Include="TempLayers.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="TimelineManager.h" />
     <ClInclude Include="Toolbox.h" />
     <ClInclude Include="Viewport.h" />
     <ClInclude Include="Visiblity.h" />
@@ -180,8 +187,7 @@
     <ClInclude Include="ColorFace.h" />
     <ClInclude Include="PolygonEngine.h" />
     <ClInclude Include="Polyline.h" />
-    <ClInclude Include="PrefixSumPosition.h" />
-    <ClInclude Include="Project.h" />
+    <ClInclude Include="ArticulatedLineComp.h" />
     <ClInclude Include="RenderingSystem.h" />
     <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />
@@ -243,14 +249,48 @@
     <CopyFileToFolders Include="shaders\dot.frag">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="shaders\dot.geom">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
     </CopyFileToFolders>
     <CopyFileToFolders Include="shaders\dot.vert">
       <FileType>Document</FileType>
       <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="images\fill_marker.png">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\myaamori.jpg">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\stamp3.png">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="images\girl.jpg">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="models\girl.csv">
+      <FileType>Document</FileType>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/models</DestinationFolders>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="images\dot2.png">
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
     </CopyFileToFolders>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

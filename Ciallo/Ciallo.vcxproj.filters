@@ -19,6 +19,9 @@
     <Filter Include="dlib">
       <UniqueIdentifier>{455fcf12-b322-4aa9-91f1-4e222a6b8833}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\csv">
+      <UniqueIdentifier>{322aa37b-6d37-44a6-88c0-9083e18a90a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Ciallo.cpp">
@@ -43,9 +46,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ShaderUtilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Project.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderingSystem.cpp">
@@ -81,7 +81,7 @@
     <ClCompile Include="ColorFace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PrefixSumPosition.cpp">
+    <ClCompile Include="ArticulatedLineComp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TextureManager.cpp">
@@ -147,13 +147,10 @@
     <ClCompile Include="..\dlib\dlib\all\source.cpp">
       <Filter>dlib</Filter>
     </ClCompile>
-    <ClCompile Include="AReadFile.cpp">
+    <ClCompile Include="TimelineManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AStamp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TestLoader.cpp">
+    <ClCompile Include="SelectionManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -177,9 +174,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderUtilities.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Project.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="EntityObject.h">
@@ -218,7 +212,7 @@
     <ClInclude Include="ColorFace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PrefixSumPosition.h">
+    <ClInclude Include="ArticulatedLineComp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Visiblity.h">
@@ -284,10 +278,16 @@
     <ClInclude Include="CubicBezierBone.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AStamp.h">
+    <ClInclude Include="easytab.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AReadFile.h">
+    <ClInclude Include="TimelineManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectionManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EyedropperInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -324,6 +324,24 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="shaders\dot.vert">
       <Filter>Resource Files\shaders</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\stamp3.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\myaamori.jpg">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\fill_marker.png">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\girl.jpg">
+      <Filter>Resource Files</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="models\girl.csv">
+      <Filter>Resource Files\csv</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="images\dot2.png">
+      <Filter>Resource Files</Filter>
     </CopyFileToFolders>
   </ItemGroup>
 </Project>

@@ -38,6 +38,16 @@ void ArrangementManager::Run()
 	{
 		std::vector<ColorFace> vecPolygons;
 		std::vector<CGAL::Face_const_handle> allFaces;
+
+		if (monoCurves.size() == 0) {
+			glm::vec2 p = R.get<Stroke>(e).Position[0];
+			auto polygonWithHoles = PointQuery(p);
+			if (polygonWithHoles.size() == 0) continue;
+			vecPolygons.emplace_back(polygonWithHoles);
+			QueryResultsContainer[e] = std::move(vecPolygons);
+			continue;
+		}
+
 		for (auto& c : monoCurves)
 		{
 			auto resultFaces = ZoneQueryFace(c);
@@ -71,8 +81,9 @@ void ArrangementManager::AddOrUpdateQuery(entt::entity strokeE)
 {
 	auto& stroke = R.get<Stroke>(strokeE);
 	auto pos = RemoveConsecutiveOverlappingPoint(stroke.Position);
+	// Use empty vector to indicate it's a single point.
 	if (pos.size() <= 1)
-		return;
+		CachedQueryCurves[strokeE] = {};
 
 	CachedQueryCurves[strokeE] = ConstructXMonotoneCurve(pos);
 }
@@ -80,6 +91,7 @@ void ArrangementManager::AddOrUpdateQuery(entt::entity strokeE)
 void ArrangementManager::RemoveQuery(entt::entity strokeE)
 {
 	CachedQueryCurves.erase(strokeE);
+	QueryResultsContainer.erase(strokeE);
 }
 
 Geom::Polyline ArrangementManager::PointQueryVisibility(glm::vec2 p) const
@@ -120,22 +132,6 @@ std::vector<Geom::Polyline> ArrangementManager::PointQuery(glm::vec2 p) const
 	return {};
 }
 
-// For test usage only
-std::vector<std::vector<glm::vec2>> ArrangementManager::ZoneQuery(const CGAL::X_monotone_curve& monoCurve)
-{
-	std::vector<CGAL::PointLocation::Result_type> output(256);
-	auto beginIt = output.begin();
-	auto endIt = CGAL::zone(Arrangement, monoCurve, output.begin(), PointLocation);
-
-	std::vector<std::vector<glm::vec2>> result;
-	for (auto it = beginIt; it < endIt; ++it)
-	{
-		auto polygons = GetConvexPolygonsFromQueryResult(*it);
-		result.insert(result.end(), polygons.begin(), polygons.end());
-	}
-	return result;
-}
-
 // Only unbounded face returned
 std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGAL::X_monotone_curve& monoCurve)
 {
@@ -155,41 +151,6 @@ std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGA
 	return result;
 }
 
-std::vector<Geom::Polyline> ArrangementManager::GetConvexPolygonsFromQueryResult(
-	const CGAL::PointLocation::Result_type& queryResult)
-{
-	// TODO: deal with hole
-	if (auto faceHandlePtr = boost::get<CGAL::Face_const_handle>(&queryResult))
-	{
-		CGAL::Face_const_handle face = *faceHandlePtr;
-		if (face->is_unbounded())
-		{
-			return {};
-		}
-		else
-		{
-			// TODO: deal with holes
-			std::vector<CGAL::Poly_gon> simplePolygonWithHole = FaceToPolygon(face);
-			auto& outer = simplePolygonWithHole[0];
-
-			std::list<CGAL::Poly_gon> partitionResult;
-			CGAL::approx_convex_partition_2(outer.vertices_begin(), outer.vertices_end(),
-			                                std::back_inserter(partitionResult));
-
-			std::vector<Geom::Polyline> result;
-			for (auto& poly : partitionResult)
-			{
-				result.push_back(PolygonToVec(poly));
-			}
-			return result;
-		}
-	}
-	else
-	{
-		return {};
-	}
-}
-
 std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::vec2>& vec)
 {
 	std::vector<CGAL::Point> points;
@@ -201,17 +162,17 @@ std::vector<CGAL::Point> ArrangementManager::VecToPoints(const std::vector<glm::
 	return points;
 }
 
-
 /**
- * \brief Get the polygon from face.
+ * \brief Get the polygon vector from face.
  * If there is a line inserted into a face but not across it, CGAL will return vertices associated with this line.
  * So we need to eliminate it with a palindromic detection.
  * \param face Face handle to get polygon from.
- * \return index 0 is the boundary, others are holes. Hole is not implemented yet.
+ * \return index 0 is the boundary, others are holes.
  */
-std::vector<CGAL::Poly_gon> ArrangementManager::FaceToPolygon(CGAL::Face_const_handle face)
+std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handle face)
 {
-	std::vector<CGAL::Poly_gon> result;
+	std::vector<Geom::Polyline> result;
+	// std::vector<CGAL::Polygon> polygonWithHoles = FaceToPolygon(face);
 
 	std::vector<CGAL::Arrangement::Ccb_halfedge_const_circulator> starters;
 	starters.push_back(face->outer_ccb());
@@ -219,7 +180,6 @@ std::vector<CGAL::Poly_gon> ArrangementManager::FaceToPolygon(CGAL::Face_const_h
 	{
 		starters.push_back(*hole);
 	}
-
 
 	for (auto start : starters)
 	{
@@ -266,14 +226,14 @@ std::vector<CGAL::Poly_gon> ArrangementManager::FaceToPolygon(CGAL::Face_const_h
 			{
 				for (auto it = beginIt; it != --halfEdge->curve().points_end(); ++it)
 				{
-					result.back().push_back(*it);
+					result.back().push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 				}
 			}
 			else if (halfEdge->source()->point() == *--halfEdge->curve().points_end())
 			{
 				for (auto it = --halfEdge->curve().points_end(); it != beginIt; --it)
 				{
-					result.back().push_back(*it);
+					result.back().push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
 				}
 			}
 			else
@@ -283,34 +243,6 @@ std::vector<CGAL::Poly_gon> ArrangementManager::FaceToPolygon(CGAL::Face_const_h
 		}
 	}
 
-	return result;
-}
-
-/**
- * \brief Get the polygon vector from face.
- *  Dealing with the line inserted. Member function `FaceToPolygon` is dealing with it too.
- * \param face Face handle to get polygon from.
- * \return index 0 is the boundary, others are holes. Hole is not implemented yet.
- */
-std::vector<Geom::Polyline> ArrangementManager::FaceToVec(CGAL::Face_const_handle face)
-{
-	std::vector<Geom::Polyline> result;
-	std::vector<CGAL::Poly_gon> polygonWithHoles = FaceToPolygon(face);
-
-	for (auto& polygon : polygonWithHoles)
-	{
-		result.push_back(PolygonToVec(polygon));
-	}
-	return result;
-}
-
-Geom::Polyline ArrangementManager::PolygonToVec(const CGAL::Poly_gon& polygon)
-{
-	Geom::Polyline result;
-	for (auto it = polygon.begin(); it != polygon.end(); ++it)
-	{
-		result.push_back({CGAL::to_double(it->x()), CGAL::to_double(it->y())});
-	}
 	return result;
 }
 
@@ -329,13 +261,19 @@ std::vector<CGAL::X_monotone_curve> ArrangementManager::ConstructXMonotoneCurve(
 	std::list<Make_x_monotone_result> x_objects;
 	XMonoMaker(curve, std::back_inserter(x_objects));
 
+	// test if X_monotone_curve 
+
 	std::vector<CGAL::X_monotone_curve> result;
-	for (const auto& x_obj : x_objects) 
+	for (const auto& x_obj : x_objects)
 	{
 		const auto* x_curve = boost::get<CGAL::X_monotone_curve>(&x_obj);
-		if (x_curve != nullptr) 
+		if (x_curve != nullptr)
 		{
 			result.push_back(*x_curve);
+		}
+		if (auto* x_point = boost::get<CGAL::Point>(&x_obj); x_point)
+		{
+			spdlog::warn("Point in X_monotone_curve");
 		}
 	}
 	return result;

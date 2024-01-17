@@ -12,16 +12,21 @@
 #include "StrokeContainer.h"
 #include "Painter.h"
 #include "ArrangementManager.h"
+#include "TimelineManager.h"
+#include "TempLayers.h"
+#include "Toolbox.h"
 #include "Brush.h"
-#include <random>
-#include <algorithm>
+#include "InnerBrush.h"
+#include "SelectionManager.h"
+#include "EyedropperInfo.h"
 
-
-void Loader::LoadCsv(const std::filesystem::path& filePath, int brushNum, float rotateRandom, float intervalRatio, float noiseFactor, float targetThickness) //, int brushNum, int iterate, entt::entity brushE
+void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 {
 	// Warning: memory leak! (not trying to remove unused stroke)
-	R.ctx().get<StrokeContainer>().StrokeEs.clear();
-	auto& arm = R.ctx().get<ArrangementManager>();
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+	if (drawingE == entt::null) return;
+	R.get<StrokeContainer>(drawingE).StrokeEs.clear();
+	auto& arm = R.get<ArrangementManager>(drawingE);
 	arm.Arrangement.clear();
 	arm.LogSpeed = true;
 
@@ -74,7 +79,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, int brushNum, float 
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
 	float factor = 1.0f / glm::max(factorXY.x, factorXY.y);
-	factor *= 0.8f;
+	factor *= 1.0f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 
 	srand((unsigned) time(0));
@@ -132,293 +137,37 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, int brushNum, float 
 
 	// original thickness offset
 		auto& offset = pressures[i];
-
-		float maxPressureOnStroke = 0.0f;
-		for (float& t : offset){
-			if(t > maxPressureOnStroke){
-				maxPressureOnStroke = t;
-			}
-		}
-
-		std::cout << std::to_string(NumPoints) << std::endl;
-
-		// for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * TargetThickness;
-		// for (float& t : offset) t = -((t/maxPressure - 0.75) * (t/maxPressure - 0.75)) * targetThickness;
-
-		
-	// (my) no thickness offset
-		// std::vector<float> noOffset(offset.size()); 
-		// for(float& s: noOffset) s = 0.0f; 
+		for (float& t : offset) t = - (1.0f - t / maxPressure) * targetRadius;
 
 		entt::entity strokeE = R.create();
 		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
-		R.ctx().get<StrokeContainer>().StrokeEs.push_back(strokeE);
+		R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
+
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
-		
-		// stroke.ThicknessOffset = noOffset;
+		stroke.RadiusOffset = offset;
+		stroke.Radius = targetRadius;
 
-	// random thickness
-		// std::uniform_int_distribution<int> thicknessDis(0, 50);
-		// randomInt = thicknessDis(gen);
-		// float randomThickness = randomInt * 0.0001f + 0.0001f;
-		
-		
-		// stroke.Thickness = randomThickness;
-
-	// render random colors to strokes
-		// R_value = (float)rand() / RAND_MAX;
-		// G_value = (float)rand() / RAND_MAX;
-		// B_value = (float)rand() / RAND_MAX;
-		// A_value = (float)rand() / RAND_MAX;
-		
-
-		// stroke.BrushE = brushE;
-		float pressureThreshold = 0.8;
-		float orderThreshold = 0.6;
-
-		int curvesSize = curves.size();
-
-		// for(int j = 0; j < unique_type.size(); j++){
-		// 	if(all_type[i] == unique_type[j]){
-		// 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[unique_type[j] + 3];
-		// 		stroke.Color = {0.78, std::clamp(1.0 - (0.14 * j),0.0,1.0), std::clamp(0.14 * j,0.0,1.0), std::clamp(1.0 - 0.08 * j,0.0,1.0)};
-		// 	}
-		// }
-		
-		// OpenSketch: presentation
-
-		// if(all_type[i] <= 2 || all_type[i] == 24){
-		// 	stroke.Color = ContourColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[ContourIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * ContourThickness;
-		// 	stroke.Thickness = ContourThickness;
-		// }else if(all_type[i] == 22){
-		// 	stroke.Color = HatchingColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[HatchingIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * HatchingThickness;
-		// 	stroke.Thickness = HatchingThickness;
-		// }else if(all_type[i] == 25){
-		// 	stroke.Color = HatchingOutlineColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[HatchingOutlineIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * HatchingOutlineThickness;
-		// 	stroke.Thickness = HatchingOutlineThickness;
-		// }else{
-		// 	stroke.Color = DetailColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[DetailIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * DetailThickness;
-		// 	stroke.Thickness = DetailThickness;
-		// }
-
-		// OpenSketch: concept
-
-		// if(all_type[i] <= 2){
-		// 	stroke.Color = ContourColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[ContourIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * ContourThickness;
-		// 	stroke.Thickness = ContourThickness;
-		// }else if(all_type[i] >= 3 && all_type[i] <= 5){
-		// 	stroke.Color = HatchingColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[HatchingIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * HatchingThickness;
-		// 	stroke.Thickness = HatchingThickness;
-		// }else if(all_type[i] == 21){
-		// 	stroke.Color = HatchingOutlineColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[HatchingOutlineIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * HatchingOutlineThickness;
-		// 	stroke.Thickness = HatchingOutlineThickness;
-		// }else{
-		// 	stroke.Color = DetailColor;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[DetailIndex];
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * DetailThickness;
-		// 	stroke.Thickness = DetailThickness;
-		// }
-
-		// normal
-
-		stroke.Color = DetailColor;
-		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[DetailIndex];
-		for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * DetailThickness;
-		stroke.Thickness = DetailThickness;
-
-
-
-		// if(NumPoints < PointsThreshold || i < OrderThreshold * curvesSize){
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * ContourThickness;
-			
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[ContourIndex];
-		// 	stroke.Color = ContourColor;
-		// 	// stroke.Color = {0.16, 0.47, 0.71, ContourAlpha};
-		// 	stroke.Thickness = ContourThickness; //targetThickness
-		// }else{
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * DetailThickness;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[DetailIndex];
-		// 	stroke.Color = DetailColor;
-		// 	// stroke.Color = {0.78, 0.14, 0.14, DetailAlpha};
-		// 	stroke.Thickness = DetailThickness; //targetThickness
-		// }
-
-		// if(maxPressureOnStroke > PressureThreshold * maxPressure || i < OrderThreshold * curvesSize){
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * ContourThickness;
-			
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[ContourIndex];
-		// 	stroke.Color = ContourColor;
-		// 	// stroke.Color = {0.16, 0.47, 0.71, ContourAlpha};
-		// 	stroke.Thickness = ContourThickness; //targetThickness
-		// }else{
-		// 	for (float& t : offset) t = -(0.8f - (t/maxPressure) * (t/maxPressure)) * DetailThickness;
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[DetailIndex];
-		// 	stroke.Color = DetailColor;
-		// 	// stroke.Color = {0.78, 0.14, 0.14, DetailAlpha};
-		// 	stroke.Thickness = DetailThickness; //targetThickness
-		// }
-
-		stroke.ThicknessOffset = offset;
-		// stroke.BrushE = R.ctx().get<BrushManager>().Brushes[6]; //render random brushes to strokes brushNum
-		// if(brushNum < 109){
-		// 	auto& brushT = R.get<Brush>(stroke.BrushE);
-
-		// 	brushT.Stamp->NoiseFactor = noiseFactor;
-		// 	brushT.Stamp->RotationRand = rotateRandom;
-		// 	brushT.Stamp->StampIntervalRatio = intervalRatio;
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::EquiDistant;
-		// }
-		
-		// if(i < curves.size()/3){
-
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[9]; //render random brushes to strokes
-
-		// 	auto& brushT = R.get<Brush>(stroke.BrushE);
-
-		// 	brushT.Stamp->NoiseFactor = 0.0;
-		// 	brushT.Stamp->RotationRand = 2.0;
-		// 	brushT.Stamp->StampIntervalRatio = 0.06;
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::RatioDistant;
-
-		// }else if (i < curves.size()/2){
-		// 	// brushNum = rand() % ( R.ctx().get<BrushManager>().Brushes.size() );
-
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[4]; //render random brushes to strokes
-
-		// 	auto& brushT = R.get<Brush>(stroke.BrushE);
-
-		// 	brushT.Stamp->NoiseFactor = 0;
-		// 	brushT.Stamp->RotationRand = 1.14;
-		// 	brushT.Stamp->StampIntervalRatio = 0.05;
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::RatioDistant;
-
-		// 	// brushT.Stamp->NoiseFactor = 0.15;
-		// 	// brushT.Stamp->RotationRand = 0.97;
-		// 	// brushT.Stamp->StampIntervalRatio = 0.13;
-		// 	// brushT.Stamp->StampMode = StampBrushData::StampMode::EquiDistant;
-
-		// }
-		// else if (i < curves.size()*3/4){
-		// 	// stroke.Thickness = 0.001;
-		// 	// brushNum = rand() % ( R.ctx().get<BrushManager>().Brushes.size() );
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0]; //render random brushes to strokes
-
-		// 	auto& brushT = R.get<Brush>(stroke.BrushE);
-
-		// 	brushT.Stamp->NoiseFactor = 0;
-		// 	brushT.Stamp->RotationRand = 1.14;
-		// 	brushT.Stamp->StampIntervalRatio = 0.2;
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::RatioDistant;
-
-		// }
-		// else{
-		// 	// brushNum = rand() % ( R.ctx().get<BrushManager>().Brushes.size() );
-
-		// 	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[13]; //render random brushes to strokes
-
-		// 	auto& brushT = R.get<Brush>(stroke.BrushE);
-
-		// 	brushT.Stamp->NoiseFactor = 0.0;
-		// 	brushT.Stamp->RotationRand = 1.2;
-		// 	brushT.Stamp->StampIntervalRatio = 0.1;
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::EquiDistant;
-		// }
-
-		// stroke.Color = {R_value, G_value, B_value, A_value}; 
-
-		// std::uniform_int_distribution<int> noiseDis(0, 100);
-		// randomInt = noiseDis(gen);
-		// float randomNoise = randomInt * 0.01f + 0.01f;
-
-		// std::uniform_int_distribution<int> rotationDis(0, 199);
-		// randomInt = rotationDis(gen);
-		// float randomRotation = randomInt * 0.01f + 0.01f;
-
-		// std::uniform_int_distribution<int> intervalDis(0, 50);
-		// randomInt = intervalDis(gen);
-		// float randomInterval = randomInt * 0.01f + 0.01f;
-
-		// std::uniform_int_distribution<int> distantDis(0, 2);
-		// int randomDistant = distantDis(gen);
-
-		
-		// if(brushT.Name == "Vanilla"){
-		// 	strokeData = {};
-		// 	strokeData.push_back(std::to_string(i));
-		// 	strokeData.push_back(pathData); //path
-		// 	strokeData.push_back(std::to_string(stroke.Thickness));
-		// 	strokeData.push_back(std::to_string(stroke.Color[0]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[1]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[2]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[3]));
-		// 	strokeData.push_back("Vanilla");
-
-		// 	// std::cout << filePath << " stroke " << std::to_string(i) << " thickness: " << std::to_string(stroke.Thickness) 
-		// 	// 			<< " R: " << stroke.Color[0] << " G: " << stroke.Color[1] << " B: " << stroke.Color[2] << " A: " << stroke.Color[3] 
-		// 	// 			<< " brushName: " << brushT.Name << std::endl;
-		// }else if(brushT.Name == "Airbrush"){
-		// 	strokeData = {};
-		// 	strokeData.push_back(std::to_string(i));
-		// 	strokeData.push_back(pathData); //path
-		// 	strokeData.push_back(std::to_string(stroke.Thickness));
-		// 	strokeData.push_back(std::to_string(stroke.Color[0]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[1]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[2]));
-		// 	strokeData.push_back(std::to_string(stroke.Color[3]));
-		// 	strokeData.push_back("Airbrush");
-
-		// 	// std::cout << filePath << " stroke " << std::to_string(i) << " thickness: " << std::to_string(stroke.Thickness) 
-		// 	// 			<< " R: " << stroke.Color[0] << " G: " << stroke.Color[1] << " B: " << stroke.Color[2] << " A: " << stroke.Color[3] 
-		// 	// 			<< " brushName: " << brushT.Name << std::endl;
-		// }
-		// else{
-		// brushT.Stamp->NoiseFactor = randomNoise;
-		// brushT.Stamp->RotationRand = randomRotation;
-		// brushT.Stamp->StampIntervalRatio = randomInterval;
-		// if(randomDistant == 0){
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::EquiDistant;
-		// }else{
-		// 	brushT.Stamp->StampMode = StampBrushData::StampMode::RatioDistant;
-		// }
-
-		// strokeData = {};
-		// strokeData.push_back(pngName);
-		// strokeData.push_back(std::to_string(stroke.Thickness));
-		// strokeData.push_back(std::to_string(stroke.Color[0]));
-		// strokeData.push_back(std::to_string(stroke.Color[1]));
-		// strokeData.push_back(std::to_string(stroke.Color[2]));
-		// strokeData.push_back(std::to_string(stroke.Color[3]));
-
-		// std::string brushName = brushT.Name;
-		// int stampNum = std::stoi(brushName.substr(5));
-		// strokeData.push_back(std::to_string(stampNum));
-
-		// strokeData.push_back(std::to_string(brushT.Stamp->NoiseFactor));
-		// strokeData.push_back(std::to_string(brushT.Stamp->RotationRand));
-		// strokeData.push_back(std::to_string(brushT.Stamp->StampIntervalRatio));
-		// strokeData.push_back(std::to_string(brushT.Stamp->StampMode));
-		
-
-		// pngData.push_back(strokeData);
-		strokeData.push_back(pathData);
-		// std::cout << pathData << std::endl;
-
+		// I intented to use create a event system, but I'm lazy.
+		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
 		stroke.UpdateBuffers();
+
+		//{
+		//	entt::entity strokeE = R.create();
+		//	R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final);
+		//	R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
+
+		//	auto& stroke = R.emplace<Stroke>(strokeE);
+		//	stroke.Position = c;
+		//	stroke.RadiusOffset = std::vector<float>{0.0};
+		//	stroke.Radius = targetRadius/25.0;
+		//	stroke.Color = { 82.f/255, 125.f/255, 255.f/255, 1.0f };
+
+		//	// I intented to use create a event system, but I'm lazy.
+		//	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
+		//	stroke.UpdateBuffers();
+		//}
+
 		arm.AddOrUpdate(strokeE);
 	}
 
@@ -464,33 +213,173 @@ void Loader::SaveCsv(const std::filesystem::path& filePath)
 	
 }
 
-void Loader::DrawUI()
+void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRadius)
 {
-	ImGui::Begin("Loader");
+	// Get transformation parameters
+	const auto& entry = *std::filesystem::directory_iterator(filePath)++;
+	std::ifstream file(entry.path());
+	file.exceptions(std::ifstream::badbit);
 
-	// ImGui::DragInt("Brush Index", &BrushIndex, 1.0f, 0, 115);
-	// ImGui::DragFloat("Thickness", &TargetThickness, 0.002f, 0.0f, 0.5f);
-	// ImGui::DragFloat("Alpha", &TargetAlpha, 0.002f, 0.0f, 1.f);
-	ImGui::DragFloat("pressureThresholod", &PressureThreshold, 0.01f, 0.0f, 1.0f);
-	ImGui::DragFloat("orderThreshold", &OrderThreshold, 0.01f, 0.0f, 1.0f);
-	ImGui::DragInt("Contour Index", &ContourIndex, 1.0f, 0, 115);
-	// ImGui::DragInt("Occluded Index", &OccludedIndex, 1.0f, 0, 115);
-	ImGui::DragInt("Hatching Index", &HatchingIndex, 1.0f, 0, 115);
-	ImGui::DragInt("Hatching Outline Index", &HatchingOutlineIndex, 1.0f, 0, 115);
-	ImGui::DragInt("Detail Index", &DetailIndex, 1.0f, 0, 115);
+	Geom::Polyline curve, allPoints;
+	std::vector<Geom::Polyline> curves;
+	std::vector<std::vector<float>> pressures;
+	std::vector<float> pressure;
+	float maxPressure = 0.0f;
 
-	ImGui::DragInt("pointsThreshold", &PointsThreshold, 1.0f, 0, 115);
+	std::string line;
+	while (std::getline(file, line))
+	{
+		if (line.empty())
+		{
+			curves.push_back(std::move(curve));
+			pressures.push_back(std::move(pressure));
+			curve = Geom::Polyline{};
+			pressure.clear();
+			continue;
+		}
 
-	ImGui::DragFloat("Contour Thickness", &ContourThickness, 0.002f, 0.0f, 0.5f);
-	// ImGui::DragFloat("Occluded Thickness", &OccludedThickness, 0.002f, 0.0f, 0.5f);
-	ImGui::DragFloat("Hatching Thickness", &HatchingThickness, 0.002f, 0.0f, 0.5f);
-	ImGui::DragFloat("Hatching Outline Thickness", &HatchingOutlineThickness, 0.002f, 0.0f, 0.5f);
-	ImGui::DragFloat("Detail Thickness", &DetailThickness, 0.002f, 0.0f, 0.5f);
+		std::vector<float> values;
+		for (auto value : views::split(line, ','))
+		{
+			std::string s(value.begin(), value.end());
+			values.push_back(std::stof(s));
+		}
+		curve.push_back(values[0], values[1]);
+		allPoints.push_back(values[0], values[1]);
+		pressure.push_back(values[2]);
+		if (values[2] >= maxPressure) maxPressure = values[2];
+	}
 
-	ImGui::ColorPicker4("Conctour Color##0", glm::value_ptr(ContourColor), ImGuiColorEditFlags_DisplayRGB);
-	// ImGui::ColorPicker4("Occluded Color##1", glm::value_ptr(OccludedColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::ColorPicker4("Hatching Color##1", glm::value_ptr(HatchingColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::ColorPicker4("Hatching Outline Color##2", glm::value_ptr(HatchingOutlineColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::ColorPicker4("Detail Color##3", glm::value_ptr(DetailColor), ImGuiColorEditFlags_DisplayRGB);
-	ImGui::End();
+	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
+	auto& canvas = R.ctx().get<Canvas>();
+	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
+	float scaleFactor = 1.0f / glm::max(factorXY.x, factorXY.y);
+	scaleFactor *= 0.8f;
+	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
+
+	// Transformation paramers
+	glm::vec2 scale = { scaleFactor, scaleFactor };
+	glm::vec2 pivot = mid;
+	glm::vec2 translate = -mid + canvas.Viewport.GetSize() / 2.0f;
+
+	// Import files
+	R.ctx().get<TimelineManager>().Clear();
+
+	for (const auto& entry : std::filesystem::directory_iterator(filePath))
+	{
+		curves.clear();
+		pressures.clear();
+		if (entry.path().extension() != ".csv")
+			continue;
+		std::ifstream file(entry.path());
+		// filename without extension is the frame number
+		auto frameNumberString = entry.path().filename().replace_extension().string();
+		int frameNumber = std::stoi(frameNumberString);
+		entt::entity drawingE = R.ctx().get<TimelineManager>().GenKeyFrame(frameNumber);
+		auto& arm = R.get<ArrangementManager>(drawingE);
+
+		while (std::getline(file, line))
+		{
+			if (line.empty())
+			{
+				curves.push_back(std::move(curve));
+				pressures.push_back(std::move(pressure));
+				curve = Geom::Polyline{};
+				pressure.clear();
+				continue;
+			}
+
+			std::vector<float> values;
+			for (auto value : views::split(line, ','))
+			{
+				std::string s(value.begin(), value.end());
+				values.push_back(std::stof(s));
+			}
+			curve.push_back(values[0], values[1]);
+			pressure.push_back(values[2]);
+		}
+
+		float minRadius = 0.0005f;
+		for (int i = 0; i < curves.size(); ++i)
+		{
+			auto& c = curves[i];
+			c = c.Scale({ scaleFactor, scaleFactor }, pivot);
+			c = c.Translate(translate);
+			auto& offset = pressures[i];
+			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * targetRadius;
+
+			entt::entity strokeE = R.create();
+			R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
+			R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
+			auto& stroke = R.emplace<Stroke>(strokeE);
+			stroke.Position = c;
+			stroke.RadiusOffset = offset;
+			stroke.Radius = minRadius;
+
+			// I intented to use create a event system, but I'm lazy.
+			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+			stroke.UpdateBuffers();
+
+			arm.AddOrUpdate(strokeE);
+		}
+	}
+}
+
+void Loader::LoadProject(const std::filesystem::path& filePath)
+{
+	entt::registry newR{};
+	{
+		auto storage = std::ifstream{ filePath, std::ios::binary };
+		cereal::BinaryInputArchive archive{ storage };
+		entt::snapshot_loader loader{ newR };
+		loader.get<entt::entity>(archive)
+			.get<Stroke>(archive)
+			.get<StrokeUsageFlags>(archive)
+			.get<StrokeContainer>(archive)
+			.get<Brush>(archive);
+
+		archive(newR.ctx().emplace<BrushManager>());
+		archive(newR.ctx().emplace<TimelineManager>());
+	}
+	
+	R = std::move(newR);
+	
+	auto& canvas = R.ctx().emplace<Canvas>();
+	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
+	R.ctx().emplace<Toolbox>();
+	R.ctx().emplace<OverlayContainer>();
+	R.ctx().emplace<InnerBrush>();
+	R.ctx().emplace<SelectionManager>();
+	R.ctx().emplace<EyedropperInfo>();
+
+	auto view = R.view<StrokeContainer>();
+	for (entt::entity drawingE : view) {
+		auto& arm = R.emplace<ArrangementManager>(drawingE);
+		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+		for (entt::entity e : strokeEs) {
+			auto& stroke = R.get<Stroke>(e);
+			stroke.UpdateBuffers();
+			auto usage = R.get<StrokeUsageFlags>(e);
+			if (!!(usage & StrokeUsageFlags::Arrange))
+				arm.AddOrUpdate(e);
+			if (!!(usage & StrokeUsageFlags::Zone))
+				arm.AddOrUpdateQuery(e);
+			usage = usage | StrokeUsageFlags::Line;
+		}
+	}
+}
+
+void Loader::SaveProject(const std::filesystem::path& filePath)
+{
+	std::ofstream storage{ filePath, std::ios::binary };
+	cereal::BinaryOutputArchive archive{ storage };
+
+	entt::snapshot{ R }.get<entt::entity>(archive)
+		.get<Stroke>(archive)
+		.get<StrokeUsageFlags>(archive)
+		.get<StrokeContainer>(archive)
+		.get<Brush>(archive);
+
+	archive(R.ctx().get<BrushManager>());
+	archive(R.ctx().get<TimelineManager>());
 }

@@ -11,6 +11,7 @@ struct Hovering
 
 struct ClickOrDragStart : Hovering
 {
+	float Pressure = 0.0f;
 };
 
 struct Dragging : ClickOrDragStart

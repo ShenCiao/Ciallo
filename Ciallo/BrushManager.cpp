@@ -5,11 +5,11 @@
 #include "TextureManager.h"
 #include "Brush.h"
 #include "Viewport.h"
-#include "Loader.h"
+#include "InnerBrush.h"
 
 BrushManager::BrushManager()
 {
-	GenPreviewStroke(nSegment);
+	GenPreviewStroke(SegmentCount);
 	auto gr = glm::golden_ratio<float>();
 	PreviewPort = {{-2.0f * gr, -1.0f}, {2.0f * gr, 1.0f}};
 	PreviewPort.UploadMVP();
@@ -20,20 +20,20 @@ void BrushManager::GenPreviewStroke(int nSegment)
 	auto gr = glm::golden_ratio<float>();
 	auto pi = glm::pi<float>();
 	Geom::Polyline position;
-	const float thickness = 0.33f;
-	std::vector<float> thicknessOffset;
+	const float radius = 0.33f;
+	std::vector<float> radiusOffset;
 	for (int i = 0; i <= nSegment; ++i)
 	{
 		float a = static_cast<float>(i) / nSegment;
 		float x = glm::mix(-pi, pi, a);
 		float y = 1.0f / gr * glm::sin(x);
-		float t = (glm::cos(x / 2.0f) - 1.0f) * thickness;
+		float t = (glm::cos(x / 2.0f) - 1.0f) * radius;
 		position.push_back(x, y);
-		thicknessOffset.push_back(t);
+		radiusOffset.push_back(t);
 	}
 	PreviewStroke.Position = position;
-	PreviewStroke.Thickness = thickness;
-	PreviewStroke.ThicknessOffset = thicknessOffset;
+	PreviewStroke.Radius = radius;
+	PreviewStroke.RadiusOffset = radiusOffset;
 	PreviewStroke.UpdateBuffers();
 }
 
@@ -64,7 +64,7 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	auto& brush = R.get<Brush>(brushE);
 	if(brush.Stamp)
 	{
-		PreviewStroke.UpdateDistanceBuffer(brush.Stamp->StampMode);
+		PreviewStroke.UpdateBuffers(brush.Stamp->StampMode);
 	}
 	brush.PreviewTexture = RenderableTexture(width, height, 0);
 	brush.PreviewTexture.BindFramebuffer();
@@ -74,6 +74,18 @@ void BrushManager::RenderPreview(entt::entity brushE)
 	brush.SetUniforms();
 	PreviewStroke.SetUniforms();
 	PreviewStroke.LineDrawCall();
+	/*{
+		Stroke stroke = PreviewStroke.Copy();
+		stroke.RadiusOffset = std::vector<float>(stroke.RadiusOffset.size(), 0.0f);
+		stroke.Radius = stroke.Radius / 20.0f;
+		stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+		stroke.UpdateBuffers();
+		auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+		brush.Use();
+		brush.SetUniforms();
+		stroke.SetUniforms();
+		stroke.LineDrawCall();
+	} */
 	brush.PreviewTexture.CopyMS();
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -105,9 +117,9 @@ void BrushManager::DrawUI()
 		ImGui::BeginChild("right panel", ImVec2(w, -ImGui::GetFrameHeightWithSpacing()));
 		ImGui::Image(reinterpret_cast<ImTextureID>(brush.PreviewTexture.ColorTexture),
 		             {w, w / 2.0f / glm::golden_ratio<float>()});
-		if(ImGui::DragInt("number of segments", &nSegment, 1.0f, 2, 256))
+		if(ImGui::DragInt("number of segments", &SegmentCount, 1.0f, 2, 256))
 		{
-			GenPreviewStroke(nSegment);
+			GenPreviewStroke(SegmentCount);
 		}
 		ImGui::ColorEdit4("stroke preview color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::ColorEdit4("background color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);

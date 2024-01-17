@@ -18,8 +18,8 @@ Stroke& Stroke::operator=(Stroke&& other) noexcept
 	if (this == &other)
 		return *this;
 	Position = std::move(other.Position);
-	Thickness = other.Thickness;
-	ThicknessOffset = other.ThicknessOffset;
+	Radius = other.Radius;
+	RadiusOffset = other.RadiusOffset;
 	Color = other.Color;
 	BrushE = other.BrushE;
 	FillColor = other.FillColor;
@@ -40,7 +40,7 @@ Stroke::~Stroke()
 void Stroke::UpdateBuffers(int stampMode)
 {
 	UpdatePositionBuffer();
-	UpdateThicknessOffsetBuffer();
+	UpdateRadiusOffsetBuffer();
 	UpdateDistanceBuffer(stampMode);
 }
 
@@ -70,16 +70,9 @@ void Stroke::UpdatePositionBuffer()
 	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
 }
 
-void Stroke::UpdateThicknessOffsetBuffer()
+void Stroke::UpdateRadiusOffsetBuffer()
 {
-	if (ThicknessOffset.size() <= 1)
-	{
-		float v = ThicknessOffset.empty() ? 0.0f : ThicknessOffset.at(0);
-		std::vector<float> values(Position.size(), v);
-		glNamedBufferData(VertexBuffers[1], values.size() * sizeof(float), values.data(), GL_DYNAMIC_DRAW);
-		return;
-	}
-	glNamedBufferData(VertexBuffers[1], ThicknessOffset.size() * sizeof(float), ThicknessOffset.data(),
+	glNamedBufferData(VertexBuffers[1], RadiusOffset.size() * sizeof(float), RadiusOffset.data(),
 	                  GL_DYNAMIC_DRAW);
 }
 
@@ -91,9 +84,22 @@ void Stroke::UpdateDistanceBuffer(int stampMode)
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, VertexBuffers[2]);
-	glUniform1f(2, Thickness);
+	glUniform1f(2, Radius);
 	glUniform1i(3, stampMode);
 	glDispatchCompute(1, 1, 1);
+}
+
+Stroke Stroke::Copy()
+{
+	Stroke s;
+	s.BrushE = BrushE;
+	s.Color = Color;
+	s.FillColor = FillColor;
+	s.Position = Position;
+	s.Radius = Radius;
+	s.RadiusOffset = RadiusOffset;
+	s.UpdateBuffers();
+	return s;
 }
 
 void Stroke::LineDrawCall()
@@ -103,19 +109,18 @@ void Stroke::LineDrawCall()
 	{
 		glm::vec2 p = Position[0];
 		float offset = 0.0f;
-		if (!ThicknessOffset.empty()) offset = ThicknessOffset[0];
+		if (!RadiusOffset.empty()) offset = RadiusOffset[0];
 
-		glm::vec2 paddedPos = {p.x + 0.01f * (Thickness + offset), p.y};
+		glm::vec2 paddedPos = {p.x + 0.01f * (Radius + offset), p.y};
 		Position.push_back(paddedPos);
 
 		UpdatePositionBuffer();
-		UpdateThicknessOffsetBuffer();
+		UpdateRadiusOffsetBuffer();
 
 		Position.pop_back();
 
 		count = 2;
 	}
-
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }
@@ -142,7 +147,7 @@ void Stroke::FillDrawCall()
 
 void Stroke::SetUniforms()
 {
-	glUniform1f(2, Thickness);
+	glUniform1f(2, Radius);
 	glUniform4fv(1, 1, glm::value_ptr(Color));
 }
 
@@ -151,3 +156,4 @@ void Stroke::Zeroize()
 	VertexBuffers.fill(0);
 	VertexArray = 0;
 }
+

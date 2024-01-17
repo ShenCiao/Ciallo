@@ -155,13 +155,13 @@ void main() {
     }
 
 #if !defined(AIRBRUSH) && !defined(STAMP)
-    if(d0 < r0 && d1 < r1){
-        discard;
-    }
+    // if(d0 < r0 && d1 < r1 && fragColor.a <= 0.9999999){
+    //     discard;
+    // }
     float A = fragColor.a;
-    if(d0 < r0 || d1 < r1){
-        A = 1.0 - sqrt(1.0 - fragColor.a);
-    }
+    // if(d0 < r0 || d1 < r1){
+    //     A = 1.0 - sqrt(1.0 - fragColor.a);
+    // }
     outColor = vec4(fragColor.rgb, A);
     return;
 #endif

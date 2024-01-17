@@ -5,12 +5,12 @@
 
 class BrushManager
 {
-	entt::entity EditorActiveBrushE = entt::null;
 	entt::entity* TargetBrushE;
 	Stroke PreviewStroke;
 	glm::vec4 PreviewBackgroundColor = {1.0f, 1.0f, 1.0f, 1.0f};
-	int nSegment = 16;
+	int SegmentCount = 32;
 public:
+	entt::entity EditorActiveBrushE = entt::null;
 	std::vector<entt::entity> Brushes;
 	Viewport PreviewPort;
 
@@ -23,5 +23,10 @@ public:
 	void DrawUI();
 	void OpenBrushEditor(entt::entity* brushE);
 	void ExportDemo();
+
+	template<class Archive>
+	void serialize(Archive& archive) {
+		archive(EditorActiveBrushE, PreviewBackgroundColor, SegmentCount, Brushes);
+	}
 };
 

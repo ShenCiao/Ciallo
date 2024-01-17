@@ -11,6 +11,7 @@ RenderableTexture::RenderableTexture(int width, int height, int multiSample):
 
 RenderableTexture::RenderableTexture(const RenderableTexture& other)
 {
+	// not clearing original buffer.
 	Width = other.Width;
 	Height = other.Height;
 	MultiSample = other.MultiSample;
@@ -27,6 +28,8 @@ RenderableTexture::RenderableTexture(const RenderableTexture& other)
 
 RenderableTexture::RenderableTexture(RenderableTexture&& other) noexcept
 {
+	DelBuffers();
+
 	Width = other.Width;
 	Height = other.Height;
 	MultiSample = other.MultiSample;

@@ -59,12 +59,13 @@ void AirBrushData::SetUniforms()
 
 void AirBrushData::DrawProperties()
 {
+	// This is despairingly messy.
 	ImGui::TextUnformatted("Alpha gradient");
 	ImPlotAxisFlags axFlags = ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoTickMarks | ImPlotAxisFlags_Lock;
 	if (ImPlot::BeginPlot("Alpha Gradient##Bezier", ImVec2(-1, 0), ImPlotFlags_CanvasOnly))
 	{
 		// This stupid thing only accept double.
-		ImPlot::SetupAxes(0, 0, axFlags, axFlags);
+		ImPlot::SetupAxes(nullptr, nullptr, axFlags, axFlags);
 		ImPlot::SetupAxesLimits(0, 1, 0, 1);
 		auto& cps = Curve.ControlPoints;
 		ImPlotPoint P[] = {

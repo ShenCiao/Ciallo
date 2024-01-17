@@ -3,7 +3,7 @@
 #include "RenderableTexture.h"
 #include "Stroke.h"
 
-// Used to catch up the siggraph DDL
+// Used to catch up the siggraph
 class TempLayers
 {
 public:
@@ -20,6 +20,7 @@ public:
 	void RenderFill();
 	void BlendAll();
 	void ClearOverlay();
+	void GenLayers(glm::ivec2 size);
 private:
 	// Used by overlay, shitty design
 	Stroke Circle;

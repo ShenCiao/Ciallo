@@ -39,9 +39,6 @@ namespace CGAL
 	using Face_const_handle = Arrangement::Face_const_handle; 
 	using Halfedge_const_handle = Arrangement::Halfedge_const_handle;
 	using Curve_handle = Arrangement::Curve_handle;
-
-	using Partition_traits = CGAL::Partition_traits_2<Kernel>;
-	using Poly_gon = Partition_traits::Polygon_2;
 }
 
 #endif

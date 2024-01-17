@@ -33,6 +33,5 @@ namespace chrono = std::chrono;
 namespace views = std::views;
 namespace ranges = std::ranges;
 // -----------------------------------------------------------------------------
-#include "Arrangement.h"
 #include "Polyline.h"
 #include "Registry.h"

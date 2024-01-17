@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "ColorFace.h"
+#include "Arrangement.h"
 
 class ArrangementManager
 {
@@ -28,14 +29,10 @@ public:
 
 	Geom::Polyline PointQueryVisibility(glm::vec2 p) const;
 	std::vector<Geom::Polyline> PointQuery(glm::vec2 p) const;
-	std::vector<std::vector<glm::vec2>> ZoneQuery(const CGAL::X_monotone_curve& monoCurve);
 	std::vector<CGAL::Face_const_handle> ZoneQueryFace(const CGAL::X_monotone_curve& monoCurve);
 
-	static std::vector<Geom::Polyline> GetConvexPolygonsFromQueryResult(const CGAL::PointLocation::Result_type& queryResult);
 	static std::vector<CGAL::Point> VecToPoints(const std::vector<glm::vec2>& vec);
-	static std::vector<CGAL::Poly_gon> FaceToPolygon(CGAL::Face_const_handle face);
 	static std::vector<Geom::Polyline> FaceToVec(CGAL::Face_const_handle face);
-	static Geom::Polyline PolygonToVec(const CGAL::Poly_gon& polygon);
 	static std::vector<CGAL::X_monotone_curve> ConstructXMonotoneCurve(const std::vector<glm::vec2>& polyline);
 	static std::vector<glm::vec2> RemoveConsecutiveOverlappingPoint(std::vector<glm::vec2> polyline);
 	inline static const CGAL::Geom_traits::Construct_curve_2 CurveConstructor =

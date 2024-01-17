@@ -1,22 +1,26 @@
 #include "pch.hpp"
 #include "Window.h"
 
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <implot.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
+#define EASYTAB_IMPLEMENTATION
+#include "easytab.h"
+
+#include "EyedropperInfo.h"
 
 Window::Window()
 {
 	glfwInit();
 	glfwSetErrorCallback(GlfwErrorCallback);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	GlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo Lab Version", nullptr, nullptr);
+	GlfwWindow = glfwCreateWindow(1920, 1080, "Anonymous", nullptr, nullptr);
 	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");
@@ -47,7 +51,9 @@ Window::Window()
 	io.FontGlobalScale = 1.5f;
 	ImGui_ImplGlfw_InitForOpenGL(GlfwWindow, true);
 	ImGui_ImplOpenGL3_Init("#version 460");
-	ImGui::StyleColorsLight();
+
+	// Get Windows pen pressure events
+	EasyTab_Load(glfwGetWin32Window(GlfwWindow));
 }
 
 Window::~Window()
@@ -56,6 +62,8 @@ Window::~Window()
 	ImGui_ImplGlfw_Shutdown();
 	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
+
+	EasyTab_Unload();
 
 	glfwDestroyWindow(GlfwWindow);
 	glfwTerminate();
@@ -68,21 +76,46 @@ bool Window::ShouldClose() const
 
 void Window::BeginFrame() const
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	const ImVec4 clearColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+	MSG msg;
+	float pressure = 0.0f;
+	if (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		if (EasyTab_HandleEvent(msg.hwnd, msg.message, msg.lParam, msg.wParam) == EASYTAB_OK)
+		{
+			pressure = EasyTab->Pressure;
+		}
+		else pressure = ImGui::GetIO().PenPressure;
+	}
+	else pressure = ImGui::GetIO().PenPressure;
+
 	glfwPollEvents();
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::DockSpaceOverViewport();
+	
+	ImGui::GetIO().PenPressure = pressure;
 }
 
 void Window::EndFrame() const
-{
-	const ImVec4 clearColor{ .0f, .0f, 0.0f, 1.00f };
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+{	
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	auto& info = R.ctx().get<EyedropperInfo>();
+	if (info.IsPicking) {
+		int dims[] = { 0, 0, 0, 0 };
+		glfwGetFramebufferSize(GlfwWindow, &dims[2], &dims[3]);
+		int x = static_cast<int>(ImGui::GetMousePos().x);
+		int y = static_cast<int>(dims[3] - ImGui::GetMousePos().y);
+		glm::vec3 color;
+		glReadPixels(x, y, 1, 1, GL_RGB, GL_FLOAT, &color);
+		info.Color = color;
+	}
+	
 	glfwSwapBuffers(GlfwWindow);
 }
 

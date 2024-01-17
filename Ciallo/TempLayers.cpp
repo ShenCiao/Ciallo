@@ -9,6 +9,8 @@
 #include "ArrangementManager.h"
 #include "Painter.h"
 #include "InnerBrush.h"
+#include "TimelineManager.h"
+#include "TextureManager.h"
 
 #include <glm/gtx/transform.hpp>
 
@@ -17,7 +19,7 @@ TempLayers::TempLayers(glm::ivec2 size)
 	Overlay = RenderableTexture{size.x, size.y};
 	Drawing = RenderableTexture{size.x, size.y};
 	Fill = RenderableTexture{size.x, size.y};
-	GenCircleStroke(); 
+	GenCircleStroke();
 }
 
 void TempLayers::RenderOverlay()
@@ -39,7 +41,7 @@ void TempLayers::RenderOverlay()
 		if (l.size() == 0) continue;
 		Stroke s{};
 		s.Position = l;
-		s.Thickness = 0.0003f;
+		s.Radius = 0.0003f;
 		s.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
 		s.UpdateBuffers();
 		Lines.push_back(std::move(s));
@@ -73,43 +75,61 @@ void TempLayers::RenderDrawing()
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_STENCIL_TEST);
-	Drawing.BindFramebuffer();
-	glClearColor(0, 0, 0, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	canvas.Image.BindFramebuffer();
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+	if (drawingE == entt::null) return;
+	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+
 	for (entt::entity e : strokeEs)
 	{
 		auto& stroke = R.get<Stroke>(e);
 		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		bool skip = FinalOnly && !(strokeUsage & StrokeUsageFlags::Final);
+		bool skip = (FinalOnly && !(strokeUsage & StrokeUsageFlags::Final)) || !!(strokeUsage & StrokeUsageFlags::Fill);
+		//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
 		if (!skip)
 		{
-			auto& brush = R.get<Brush>(stroke.BrushE);
-			brush.Use();
-			brush.SetUniforms();
+			Brush* brush;
+			if (!!(strokeUsage & StrokeUsageFlags::Zone)) {
+				if (stroke.Position.size() <= 1) {
+					brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+				}
+				else {
+					brush = &R.ctx().get<InnerBrush>().Get("vanilla");
+				}
+			}
+			else
+				brush = &R.get<Brush>(stroke.BrushE);
+			brush->Use();
+			brush->SetUniforms();
 			stroke.SetUniforms();
 			stroke.LineDrawCall();
 		}
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void TempLayers::RenderFill()
 {
-	Fill.BindFramebuffer();
+	//Fill.BindFramebuffer();
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
 	auto& canvas = R.ctx().get<Canvas>();
 	canvas.Viewport.UploadMVP();
 	canvas.Viewport.BindMVPBuffer();
-	glClearColor(0, 0, 0, 0);
+
+	canvas.Image.BindFramebuffer();
+	
+	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
-	auto& arm = R.ctx().get<ArrangementManager>();
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
+	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+	auto& arm = R.get<ArrangementManager>(drawingE);
+	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 	glUseProgram(RenderingSystem::Polygon->Program);
 	glEnable(GL_STENCIL_TEST);
 	for (entt::entity e : strokeEs)
@@ -192,6 +212,13 @@ void TempLayers::ClearOverlay()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void TempLayers::GenLayers(glm::ivec2 size)
+{
+	Overlay = RenderableTexture{ size.x, size.y };
+	Drawing = RenderableTexture{ size.x, size.y };
+	Fill = RenderableTexture{ size.x, size.y };
+}
+
 void TempLayers::GenCircleStroke()
 {
 	const int nSeg = 32;
@@ -205,7 +232,7 @@ void TempLayers::GenCircleStroke()
 	}
 	line[nSeg] = line[0];
 	Circle.Position = line;
-	Circle.Thickness = 0.0003f;
+	Circle.Radius = 0.0003f;
 	Circle.Color = {135.0f / 255, 206.0f / 255, 235.0f / 255, 1.0f};
 	Circle.UpdateBuffers();
 }

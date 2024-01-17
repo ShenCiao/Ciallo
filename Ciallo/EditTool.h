@@ -6,7 +6,7 @@
 
 class EditTool : public Tool
 {
-	bool AutoBezierEdit = true;
+	bool AutoBezierEdit = false;
 
 	bool BezierDrawingMode = false; // Shitty design, suppose to be a state mechine, rework for further change.
 	bool DrawingFirstHandle = false;
@@ -16,8 +16,6 @@ class EditTool : public Tool
 	int DraggingControlPointIndex = -1;
 	CubicBezierBone Bone;
 public:
-	RenderableTexture SelectionTexture;
-
 	EditTool();
 
 	void OnClickOrDragStart(ClickOrDragStart) override;
@@ -32,8 +30,8 @@ public:
 
 private:
 	entt::entity SelectedStrokeE = entt::null;
-	void GenSelectionTexture();
-	void RenderSelectionTexture();
 	glm::vec4 IndexToColor(uint32_t index) const;
 	uint32_t ColorToIndex(glm::vec4 color) const;
+	void RemoveSelectedStroke();
+	void CopyPasteSelectedStroke();
 };

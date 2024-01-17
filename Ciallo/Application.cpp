@@ -3,7 +3,7 @@
 
 #include <filesystem>
 
-#include "Project.h"
+#include "BrushManager.h"
 #include "RenderingSystem.h"
 #include "Brush.h"
 #include "TextureManager.h"
@@ -13,12 +13,11 @@
 #include "Toolbox.h"
 #include "InnerBrush.h"
 #include "ArrangementManager.h"
-
-#include "AReadFile.h"
-#include "AStamp.h"
+#include "TimelineManager.h"
+#include "SelectionManager.h"
 #include "Loader.h"
-
-#include <implot.h>
+#include "EyedropperInfo.h"
+#include "Painter.h"
 
 #include <iostream>
 #include <fstream>
@@ -236,18 +235,78 @@ void Application::Run()
 		Window->BeginFrame();
 		ImGui::ShowMetricsWindow();
 		R.ctx().get<Canvas>().DrawUI();
-		R.ctx().get<BrushManager>().DrawUI();
-		R.ctx().get<Toolbox>().DrawUI();
-		// R.ctx().get<ArrangementManager>().Run();
+		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+		if (currentE != entt::null)
+		{
+			R.get<ArrangementManager>(currentE).Run();
+		}
 		auto& layers = R.ctx().get<TempLayers>();
-		layers.RenderOverlay();
-		layers.RenderDrawing();
-		layers.RenderFill();
-		layers.BlendAll();
-		layers.ClearOverlay();
-		Loader::DrawUI();
-		Window->EndFrame();
 		
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1, 1, 1, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		Viewport viewport{ { 0.0f, 0.0f }, { 0.297f, 0.21f } };
+
+		auto& canvas = R.ctx().get<Canvas>();
+		canvas.Viewport.UploadMVP();
+		canvas.Viewport.BindMVPBuffer();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		int w, h;
+		glfwGetFramebufferSize(Window->GlfwWindow, &w, &h);
+		glViewport(0, 0, w, h);
+		entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+		if (drawingE == entt::null) return;
+		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+
+		for (entt::entity e : strokeEs)
+		{
+			auto& stroke = R.get<Stroke>(e);
+			auto strokeUsage = R.get<StrokeUsageFlags>(e);
+			bool skip = false;
+			//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
+			if (!skip)
+			{
+				Brush* brush;
+				if (!!(strokeUsage & StrokeUsageFlags::Zone)) {
+					if (stroke.Position.size() <= 1) {
+						brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+					}
+					else {
+						brush = &R.ctx().get<InnerBrush>().Get("vanilla");
+					}
+				}
+				else
+					brush = &R.get<Brush>(stroke.BrushE);
+				brush->Use();
+				brush->SetUniforms();
+				stroke.SetUniforms();
+				stroke.LineDrawCall();
+			}
+		}
+
+
+		Window->EndFrame();
+
+		if (Loader::ShouldLoadProject)
+		{
+			glfwSwapBuffers(Window->GlfwWindow);
+			Loader::LoadProject("./project/project");
+			Loader::ShouldLoadProject = false;
+		}
+
+		if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0) {
+			
+			auto& canvas = R.ctx().get<Canvas>();
+			TextureManager::SaveTexture(canvas.Image.ColorTexture, std::to_string(R.ctx().get<TimelineManager>().CurrentFrame));
+			if (tm.ExportingIndex >= tm.KeyFrames.size()) {
+				tm.ExportingIndex = -1;
+			}
+		}
 	}
 }
 
@@ -286,13 +345,11 @@ void Application::GenDefaultProject()
     // paraFile.close();
 
 	// user's project level "singleton" are managed by ctx()
-	auto& canvas = R.ctx().emplace<Canvas>();
-	canvas.Viewport.Min = {0.0f, 0.0f};
-	// canvas.Viewport.Max = {0.053f, 0.053f};
-	canvas.Viewport.Max = {0.297f, 0.21f}; //orginal
-	// canvas.Viewport.Max = {0.297f * 0.4, 0.21f * 0.4};
-	canvas.Dpi = 288.0f;
-	canvas.GenRenderTarget();
+	float ratio = 0.21 / 9.0;
+	glm::vec2 min = { 0.0f, 0.0f };
+	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
+	float dpi = 100.0f;
+	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 
 	std::vector<entt::entity> brushes;
@@ -308,52 +365,20 @@ void Application::GenDefaultProject()
 
 	brushes.push_back(R.create());
 	auto& brush1 = R.emplace<Brush>(brushes.back());
-	brush1.Name = "Airbrush"; //+ std::to_string(i);;
-	brush1.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Airbrush);
-	brush1.AirBrush = std::make_unique<AirBrushData>();
-	brush1.AirBrush->Curve = glm::mat4x2{ {0.0f, 1.0f}, {0.30f, 0.7f}, {0.5f, 0.0f}, {1.0f, 0.0f} };
-	brush1.AirBrush->UpdateGradient();
+	brush1.Name = "Splatter";
+	brush1.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush1.Stamp = std::make_unique<StampBrushData>();
+	brush1.Stamp->StampTexture = TextureManager::Textures[1];
+	brush1.Stamp->StampIntervalRatio = 1.0f / 5.0f;
 
-	// all brushes should be built here. airbrushes with 11 thicknesses, 410 for each, vanilla with 11 thicknesses, 410 for each
-	// int stampCount = 1;
-	for (int i = 1; i <= stampNum; i++){
-	// for (int i = 0; i < brush_stamp.size(); i++){
-		// for (int j = 0; j < stampNum; j++){
-			// if(brush_stamp[j] == (i-1)){
-				brushes.push_back(R.create());
-				auto& eachBrush = R.emplace<Brush>(brushes.back());
-				eachBrush.Name = "Stamp" + std::to_string(i);
-				// eachBrush.Name = "Stamp" + std::to_string(brush_stamp[i]);
-	
-				eachBrush.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
-				eachBrush.Stamp = std::make_unique<StampBrushData>();
-				// brush1.Stamp->StampTexture = TextureManager::Textures[1];
-				eachBrush.Stamp->StampTexture = AStamp::Stamps[i];
-				eachBrush.Stamp->StampIntervalRatio = 0.5f / 5.0f;
-				eachBrush.Stamp->NoiseFactor = 0.2;
-				eachBrush.Stamp->RotationRand = 1.5;
-				eachBrush.Stamp->StampMode = StampBrushData::EquiDistant;
-				// eachBrush.Stamp->NoiseFactor = noise;
-				// eachBrush.Stamp->RotationRand = rotation;
-				// if(distant){
-				// 	eachBrush.Stamp->StampMode = StampBrushData::EquiDistant;
-				// }else{
-				// 	eachBrush.Stamp->StampMode = StampBrushData::RatioDistant;
-				// }
-				// stampCount++;
-			// }
-		// }
-		
-	}
-
-	// brushes.push_back(R.create());
-	// auto& brush2 = R.emplace<Brush>(brushes.back());
-	// brush2.Name = "Splatter";
-	// brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
-	// brush2.Stamp = std::make_unique<StampBrushData>();
-	// // brush1.Stamp->StampTexture = TextureManager::Textures[1];
-	// brush2.Stamp->StampTexture = AStamp::Stamps[1];
-	// brush2.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	brushes.push_back(R.create());
+	auto& brush2 = R.emplace<Brush>(brushes.back());
+	brush2.Name = "Pencil";
+	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush2.Stamp = std::make_unique<StampBrushData>();
+	brush2.Stamp->StampTexture = TextureManager::Textures[2];
+	brush2.Stamp->StampIntervalRatio = 0.25f;
+	brush2.Stamp->NoiseFactor = 1.9f;
 
 	// brushes.push_back(R.create());
 	// auto& brush3 = R.emplace<Brush>(brushes.back());
@@ -365,25 +390,24 @@ void Application::GenDefaultProject()
 	// brush3.Stamp->StampIntervalRatio = 1.0f / 5.0f;
 	// brush3.Stamp->NoiseFactor = 1.7f;
 
-	// brushes.push_back(R.create());
-	// auto& brush4 = R.emplace<Brush>(brushes.back());
-	// brush4.Name = "Dot";
-	// brush4.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
-	// brush4.Stamp = std::make_unique<StampBrushData>();
-	// // brush4.Stamp->StampTexture = TextureManager::Textures[3];
-	// brush4.Stamp->StampTexture = AStamp::Stamps[3];
-	// brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
-	// brush4.Stamp->RotationRand = 0.0f;
+	brushes.push_back(R.create());
+	auto& brush4 = R.emplace<Brush>(brushes.back());
+	brush4.Name = "Dot";
+	brush4.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush4.Stamp = std::make_unique<StampBrushData>();
+	brush4.Stamp->StampTexture = TextureManager::Textures[6];
+	brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
+	brush4.Stamp->RotationRand = 0.0f;
 
+	R.ctx().emplace<InnerBrush>();
 	auto& brushManager = R.ctx().emplace<BrushManager>();
 	brushManager.Brushes = std::move(brushes);
 	brushManager.RenderAllPreview();
 
-	R.ctx().emplace<StrokeContainer>();
 	R.ctx().emplace<OverlayContainer>();
-	R.ctx().emplace<InnerBrush>();
-	R.ctx().emplace<Toolbox>();
-	R.ctx().emplace<ArrangementManager>();
-
-	// R.ctx().get<Canvas>().Export();
+	R.ctx().emplace<Toolbox>(); 
+	auto& tm = R.ctx().emplace<TimelineManager>();
+	tm.GenKeyFrame(1);
+	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
+	R.ctx().emplace<EyedropperInfo>();
 }

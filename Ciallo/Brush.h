@@ -24,4 +24,9 @@ public:
 	void SetUniforms() const;
 	void Use() const;
 	void DrawProperties();
+
+	template<class Archive>
+	void serialize(Archive& archive) {
+		archive(Program, Name, Stamp);
+	}
 };

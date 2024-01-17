@@ -71,7 +71,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
 	float factor = 1.0f / glm::max(factorXY.x, factorXY.y);
-	factor *= 0.8f;
+	factor *= 1.0f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 	for (int i = 0; i < curves.size(); ++i)
 	{

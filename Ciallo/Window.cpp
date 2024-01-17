@@ -16,13 +16,11 @@ Window::Window()
 	glfwInit();
 	glfwSetErrorCallback(GlfwErrorCallback);
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	GlfwWindow = glfwCreateWindow(1000, 1000, "Anonymous", nullptr, nullptr);
+	GlfwWindow = glfwCreateWindow(1920, 1080, "Anonymous", nullptr, nullptr);
 	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");
@@ -78,6 +76,10 @@ bool Window::ShouldClose() const
 
 void Window::BeginFrame() const
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	const ImVec4 clearColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 	MSG msg;
 	float pressure = 0.0f;
 	if (PeekMessageW(&msg, NULL, 0, 0, PM_NOREMOVE))
@@ -94,16 +96,12 @@ void Window::BeginFrame() const
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	ImGui::DockSpaceOverViewport();
+	
 	ImGui::GetIO().PenPressure = pressure;
 }
 
 void Window::EndFrame() const
-{
-	const ImVec4 clearColor{.0f, .0f, 0.0f, 1.00f};
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-	glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+{	
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

@@ -20,6 +20,14 @@ Canvas::Canvas()
 	GenRenderTarget();
 }
 
+Canvas::Canvas(glm::vec2 min, glm::vec2 max, float dpi)
+{
+	Viewport.Min = min;
+	Viewport.Max = max;
+	Dpi = dpi;
+	GenRenderTarget();
+}
+
 void Canvas::DrawUI()
 {
 	const ImGuiWindowFlags flags =
@@ -31,13 +39,10 @@ void Canvas::DrawUI()
 	ImGui::Begin("Canvas", nullptr, flags);
 
 	ImGui::PopStyleVar();
-	ImGui::BeginMenuBar();
 
-	if (ImGui::BeginMenu("Load Model"))
+	if (ImGui::Button("Load Model"))
 	{
-		if (ImGui::MenuItem("Girl"))
-			Loader::LoadCsv("./models/girl.csv", 0.001f);
-		ImGui::EndMenu();
+		Loader::LoadCsv("./models/girl.csv", 0.001f);
 	}
 
 	if (ImGui::Button("Save Project"))
@@ -50,116 +55,7 @@ void Canvas::DrawUI()
 		Loader::ShouldLoadProject = true;
 	}
 
-	if (ImGui::BeginMenu("Layers"))
-	{
-		auto& layers = R.ctx().get<TempLayers>();
-		ImGui::Checkbox("Final only", &layers.FinalOnly);
-		ImGui::Checkbox("Hide Fill", &layers.HideFill);
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::Button("Copy Markers")) {
-		auto& tm = R.ctx().get<TimelineManager>();
-		tm.CopyFillMarker(tm.GetRenderDrawing());
-	}
-
-	if (ImGui::Button("Paste Markers")) {
-		auto& tm = R.ctx().get<TimelineManager>();
-		tm.PasteFillMarker(tm.GetCurrentDrawing());
-	}
-
-	if (ImGui::Button("Export")) Export();
-
-	if (ImGui::Button("ExportFrames")) {
-		R.ctx().get<TimelineManager>().ExportAllFrames();
-	}
-
-	static int n = 1;
-	ImGui::PushItemWidth(200);
-	ImGui::PopItemWidth();
-	ImGui::EndMenuBar();
-
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
-	auto panel = ImGui::GetCurrentWindow();
-	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
-
-	ImGui::Image(ImTextureID(Image.ColorTexture), Image.Size());
-	// mouse position relative to image
-	glm::vec2 mousePosPixel = ImGui::GetMousePos() - drawingScreenOrigin;
-	glm::vec2 mousePos = mousePosPixel / (Viewport.GetSizePixelFloat(Dpi) * Zoom) * Viewport.GetSize();
-	float pressure = ImGui::GetIO().PenPressure;
-
-	// Invisible button for interaction
-	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
-	ImGui::InvisibleButton("CanvasInteractor", panel->InnerRect.GetSize(),
-	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
-	                       ImGuiButtonFlags_MouseButtonMiddle);
-	EventDispatcher.trigger(BeforeInteraction{});
-
-
-	auto interact = [&]()
-	{
-		// Active item is the invisible button, "CanvasInteractor".
-		if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
-		{
-			if (IsDragging)
-			{
-				IsDragging = false;
-				auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
-				EventDispatcher.trigger(DragEnd{
-					mousePos, mousePosPixel, pressure, PrevMousePos - mousePos, ImGui::GetMouseDragDelta(), duration
-				});
-			}
-			StartDraggingTimePoint = chrono::high_resolution_clock::now();
-			EventDispatcher.trigger(ClickOrDragStart{mousePos, mousePosPixel});
-			PrevMousePos = mousePos;
-			PrevMousePosPixel = ImGui::GetMousePos();
-			return;
-		}
-
-		if (ImGui::IsMouseDragging(0) && !ImGui::IsItemActivated() && ImGui::IsItemActive())
-		{
-			IsDragging = true;
-			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
-			EventDispatcher.trigger(Dragging{
-				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
-			});
-			PrevMousePos = mousePos;
-			PrevMousePosPixel = ImGui::GetMousePos();
-			return;
-		}
-
-		if (IsDragging && !ImGui::IsMouseDragging(0))
-		{
-			IsDragging = false;
-			auto duration = chrono::high_resolution_clock::now() - StartDraggingTimePoint;
-			EventDispatcher.trigger(DragEnd{
-				mousePos, mousePosPixel, pressure, mousePos - PrevMousePos, ImGui::GetMouseDragDelta(), duration
-			});
-			PrevMousePos = mousePos;
-			PrevMousePosPixel = ImGui::GetMousePos();
-			return;
-		}
-
-		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && !ImGui::IsKeyDown(ImGuiKey_Space))
-		{
-			EventDispatcher.trigger(Hovering{mousePos, mousePosPixel});
-			PrevMousePosPixel = ImGui::GetMousePos();
-		}
-
-		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
-		{
-			glm::vec2 delta = ImGui::GetMousePos() - PrevMousePosPixel;
-			ImGui::SetScrollX(ImGui::GetScrollX() - delta.x);
-			ImGui::SetScrollY(ImGui::GetScrollY() - delta.y);
-			PrevMousePosPixel = ImGui::GetMousePos();
-		}
-	};
-
-	interact();
-	EventDispatcher.trigger(AfterInteraction{});
 	ImGui::End();
-	ImGui::PopStyleVar();
 }
 
 void Canvas::GenRenderTarget()

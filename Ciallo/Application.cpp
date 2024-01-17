@@ -17,6 +17,7 @@
 #include "SelectionManager.h"
 #include "Loader.h"
 #include "EyedropperInfo.h"
+#include "Painter.h"
 
 Application::Application()
 {
@@ -35,10 +36,6 @@ void Application::Run()
 		Window->BeginFrame();
 		ImGui::ShowMetricsWindow();
 		R.ctx().get<Canvas>().DrawUI();
-		
-		R.ctx().get<BrushManager>().DrawUI();
-		R.ctx().get<Toolbox>().DrawUI();
-		R.ctx().get<TimelineManager>().DrawUI();
 		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
 		if (currentE != entt::null)
 		{
@@ -46,15 +43,55 @@ void Application::Run()
 		}
 		auto& layers = R.ctx().get<TempLayers>();
 		
-		layers.RenderFill();
-		layers.RenderDrawing();
-		layers.RenderOverlay();
-		
-		layers.ClearOverlay();
-		R.ctx().get<SelectionManager>().RenderSelectionTexture();
-		Window->EndFrame();
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(1, 1, 1, 1);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-		R.ctx().get<Canvas>().Run();
+		Viewport viewport{ { 0.0f, 0.0f }, { 0.297f, 0.21f } };
+
+		auto& canvas = R.ctx().get<Canvas>();
+		canvas.Viewport.UploadMVP();
+		canvas.Viewport.BindMVPBuffer();
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		int w, h;
+		glfwGetFramebufferSize(Window->GlfwWindow, &w, &h);
+		glViewport(0, 0, w, h);
+		entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+		if (drawingE == entt::null) return;
+		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+
+		for (entt::entity e : strokeEs)
+		{
+			auto& stroke = R.get<Stroke>(e);
+			auto strokeUsage = R.get<StrokeUsageFlags>(e);
+			bool skip = false;
+			//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
+			if (!skip)
+			{
+				Brush* brush;
+				if (!!(strokeUsage & StrokeUsageFlags::Zone)) {
+					if (stroke.Position.size() <= 1) {
+						brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
+					}
+					else {
+						brush = &R.ctx().get<InnerBrush>().Get("vanilla");
+					}
+				}
+				else
+					brush = &R.get<Brush>(stroke.BrushE);
+				brush->Use();
+				brush->SetUniforms();
+				stroke.SetUniforms();
+				stroke.LineDrawCall();
+			}
+		}
+
+
+		Window->EndFrame();
 
 		if (Loader::ShouldLoadProject)
 		{
@@ -77,7 +114,11 @@ void Application::Run()
 void Application::GenDefaultProject()
 {
 	// user's project level "singleton" are managed by ctx()
-	auto& canvas = R.ctx().emplace<Canvas>();
+	float ratio = 0.21 / 9.0;
+	glm::vec2 min = { 0.0f, 0.0f };
+	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
+	float dpi = 100.0f;
+	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 
 	std::vector<entt::entity> brushes;
@@ -100,7 +141,7 @@ void Application::GenDefaultProject()
 	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
 	brush2.Stamp->StampTexture = TextureManager::Textures[2];
-	brush2.Stamp->StampIntervalRatio = 1.0f / 50.0f;
+	brush2.Stamp->StampIntervalRatio = 0.25f;
 	brush2.Stamp->NoiseFactor = 1.9f;
 
 	brushes.push_back(R.create());

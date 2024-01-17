@@ -10,6 +10,7 @@ public:
 	entt::dispatcher EventDispatcher{};
 
 	Canvas();
+	Canvas(glm::vec2 min, glm::vec2 max, float dpi);
 
 	float DrawingRotation = 0.0f;
 	float Zoom = 1.0f;

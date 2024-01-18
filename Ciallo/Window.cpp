@@ -20,7 +20,7 @@ Window::Window()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	GlfwWindow = glfwCreateWindow(1920, 1080, "Anonymous", nullptr, nullptr);
+	GlfwWindow = glfwCreateWindow(2560, 1440, "Anonymous", nullptr, nullptr);
 	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");

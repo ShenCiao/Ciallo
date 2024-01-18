@@ -20,7 +20,7 @@
 #include "SelectionManager.h"
 #include "EyedropperInfo.h"
 
-void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
+void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius, float intervalRatio)
 {
 	// Warning: memory leak! (not trying to remove unused stroke)
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
@@ -29,6 +29,8 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 	auto& arm = R.get<ArrangementManager>(drawingE);
 	arm.Arrangement.clear();
 	arm.LogSpeed = true;
+	// spdlog::info("Arrangement Time: {}", arm.arrangementTime);
+	
 
 	std::ifstream file(filePath);
 	std::string line;
@@ -150,10 +152,15 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 
 		// I intented to use create a event system, but I'm lazy.
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
-		float stampInterval = 0.0f;
-		spdlog::info("Stamp interval: {}", stampInterval);
-		stroke.UpdateBuffers();
 
+		auto& brushT = R.get<Brush>(stroke.BrushE);
+
+		brushT.Stamp->NoiseFactor = 0.0f;
+		brushT.Stamp->RotationRand = 0.0f;
+		brushT.Stamp->StampIntervalRatio = 1 / intervalRatio;
+		brushT.Stamp->StampMode = StampBrushData::StampMode::EquiDistant;
+
+		stroke.UpdateBuffers();
 		//{
 		//	entt::entity strokeE = R.create();
 		//	R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final);

@@ -18,6 +18,7 @@ public:
 	std::unordered_map<entt::entity, CGAL::Curve> UpdateQueue{};
 
 	bool LogSpeed = false;
+	float arrangementTime = 0.0f;
 
 	void Run();
 

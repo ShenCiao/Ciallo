@@ -13,6 +13,10 @@
 
 #include <glm/gtx/transform.hpp>
 #include <chrono>
+#include <imgui.h>  
+#include <dos.h> //for delay
+#include <thread>
+#include "Timer.h"
 
 // #include <filesystem>
 // namespace fs = std::filesystem;
@@ -72,8 +76,25 @@ void Canvas::DrawUI()
 
 	if (ImGui::Button("Load Model"))
 	{
+		// for(float i = 0.0001f; i < 0.001; i+=0.0001){
+		// 	for(float r = 0.002; r < 0.007; r += 0.002){
+				float i = 0.01f;
+				float r = 0.001f;
+				spdlog::info("Stamp interval: {}", i);
+				spdlog::info("Target Radius: {}", r);
+				Loader::LoadCsv("./models/girl.csv", r, i);
+				auto& currTime = R.ctx().get<Timer>();
+				currTime.timestamp = std::chrono::high_resolution_clock::now();
 
-		Loader::LoadCsv("./models/girl.csv", 0.005f);
+				// std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+				// ImGuiIO io = ImGui::GetIO();
+				// spdlog::info("ImGui FPS: {}", io.Framerate);
+				
+				
+
+		// 	}
+		// }
 	}
 
 	if (ImGui::Button("Save Project"))
@@ -84,6 +105,24 @@ void Canvas::DrawUI()
 	if (ImGui::Button("Load Project"))
 	{
 		Loader::ShouldLoadProject = true;
+	}
+	if (ImGui::Button("Print FPS")){
+
+		
+
+		auto start = std::chrono::steady_clock::now(); // Start the timer
+
+		for (int count = 0; count < 5; count++) {
+			std::this_thread::sleep_for(std::chrono::seconds(1)); // Wait for 1 second
+
+			auto end = std::chrono::steady_clock::now(); // Stop the timer
+			auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count(); // Calculate the duration in milliseconds
+			float fps = 1000.0f / duration; // Calculate the FPS
+
+			spdlog::info("Counted FPS: {}", fps);
+
+			start = std::chrono::steady_clock::now(); // Restart the timer
+		}
 	}
 
 	ImGui::End();

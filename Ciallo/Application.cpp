@@ -218,7 +218,7 @@ void Application::GenDefaultProject()
 	float ratio = 0.21 / 9.0;
 	glm::vec2 min = { 0.0f, 0.0f };
 	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
-	float dpi = 174.17142857142858f;
+	float dpi = 174.1714285714286f;
 	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 

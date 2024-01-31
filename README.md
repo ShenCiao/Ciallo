@@ -45,11 +45,11 @@ The final draft version of the [paper](./paper) (two-page abstract). The researc
 
 ### GPU-rendered Brushes
 
-Render stylized strokes on vector lines using Graphic Processing Unit (GPU). 
+Render stylized strokes on vector lines using Graphic Processing Unit (GPU).
 
-Existing vector paint software restricts the type of brushes available and tends to be laggy - our program enables rendering of most digital brushes with unprecedented efficiency. 
+Existing vector paint software restricts the type of brushes available and tends to be laggy - our program enables rendering of most digital brushes with unprecedented efficiency.
 
-Check out the [web demo](https://shenciao.github.io/Ciallo).
+Check out the [tutorial](https://shenciao.github.io/brush-rendering-tutorial/) if you are interested in the rendering technique.
 
 <img src=".\articles\six.gif" alt="naiive brush engine" style="zoom:100%;" />
 

@@ -122,7 +122,7 @@ void BrushManager::DrawUI()
 			GenPreviewStroke(SegmentCount);
 		}
 		ImGui::ColorEdit4("stroke preview color", glm::value_ptr(PreviewStroke.Color), ImGuiColorEditFlags_DisplayRGB);
-		ImGui::ColorEdit4("background color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);
+		ImGui::ColorEdit4("background preview color", glm::value_ptr(PreviewBackgroundColor), ImGuiColorEditFlags_DisplayRGB);
 		ImGui::Separator();
 		brush.DrawProperties();
 		ImGui::EndChild();

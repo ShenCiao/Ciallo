@@ -36,7 +36,13 @@ void Canvas::DrawUI()
 	if (ImGui::BeginMenu("Load Model"))
 	{
 		if (ImGui::MenuItem("Girl"))
-			Loader::LoadCsv("./models/girl.csv", 0.001f);
+			Loader::LoadCsv("./models/girl.csv");
+		if (ImGui::MenuItem("Fish"))
+			Loader::LoadAnimation("./models/fish");
+		ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
+		ImGui::PushItemWidth(100.0f);
+		ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");
+		ImGui::PopItemWidth();
 		ImGui::EndMenu();
 	}
 
@@ -45,9 +51,17 @@ void Canvas::DrawUI()
 		Loader::SaveProject("./project/project");
 	}
 
-	if (ImGui::Button("Load Project"))
+	if (ImGui::BeginMenu("Load Project"))
 	{
-		Loader::ShouldLoadProject = true;
+		std::string path = "./project";
+		for (auto& entry : std::filesystem::directory_iterator(path)) {
+			std::string name = entry.path().filename().string();
+			if (ImGui::MenuItem(name.c_str())) {
+				Loader::ShouldLoadProject = true;
+				Loader::ProjectName = name;
+			}
+		}
+		ImGui::EndMenu();
 	}
 
 	if (ImGui::BeginMenu("Layers"))
@@ -73,6 +87,8 @@ void Canvas::DrawUI()
 	if (ImGui::Button("ExportFrames")) {
 		R.ctx().get<TimelineManager>().ExportAllFrames();
 	}
+
+	ImGui::ColorEdit4("Background Color", glm::value_ptr(R.ctx().get<TempLayers>().BackgroundColor), ImGuiColorEditFlags_NoInputs|ImGuiColorEditFlags_NoLabel);
 
 	static int n = 1;
 	ImGui::PushItemWidth(200);
@@ -147,13 +163,24 @@ void Canvas::DrawUI()
 			PrevMousePosPixel = ImGui::GetMousePos();
 		}
 
-		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
+		/*if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			glm::vec2 delta = ImGui::GetMousePos() - PrevMousePosPixel;
 			ImGui::SetScrollX(ImGui::GetScrollX() - delta.x);
 			ImGui::SetScrollY(ImGui::GetScrollY() - delta.y);
 			PrevMousePosPixel = ImGui::GetMousePos();
+		}*/
+
+		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
+		{
+			glm::vec2 delta = mousePos - PrevMousePos;
+			
+			Viewport.Min -= delta;
+			Viewport.Max -= delta;
+			Viewport.UploadMVP();
+			PrevMousePosPixel = ImGui::GetMousePos();
 		}
+		PrevMousePos = mousePos;
 	};
 
 	interact();
@@ -241,5 +268,21 @@ void Canvas::Run()
 		Dpi /= 1.1f;
 		GenRenderTarget();
 		R.ctx().get<TempLayers>().GenLayers(Image.Size());
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_A)) {
+		glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
+		glm::vec2 size = Viewport.GetSize() * 0.9;
+		Viewport.Min = mid - size / 2.0f;
+		Viewport.Max = mid + size / 2.0f;
+		Viewport.UploadMVP();
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+		glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
+		glm::vec2 size = Viewport.GetSize() /0.9;
+		Viewport.Min = mid - size / 2.0f;
+		Viewport.Max = mid + size / 2.0f;
+		Viewport.UploadMVP();
 	}
 }

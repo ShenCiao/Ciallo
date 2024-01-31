@@ -73,7 +73,7 @@ void PaintTool::DrawProperties()
 	glGetTextureLevelParameteriv(TextureManager::Textures[5], miplevel, GL_TEXTURE_HEIGHT, &h);
 	const float width = ImGui::GetWindowContentRegionWidth();
 
-	ImGui::Image(reinterpret_cast<ImTextureID>(TextureManager::Textures[5]), { width, width * float(h)/float(w)});
+	/*ImGui::Image(reinterpret_cast<ImTextureID>(TextureManager::Textures[5]), { width, width * float(h)/float(w)});*/
 
 	auto& info = R.ctx().get<EyedropperInfo>();
 	if(ImGui::IsKeyDown(ImGuiKey_I)) {

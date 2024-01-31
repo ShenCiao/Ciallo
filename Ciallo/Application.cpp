@@ -46,11 +46,25 @@ void Application::Run()
 		}
 		auto& layers = R.ctx().get<TempLayers>();
 		
+		glEnable(GL_BLEND);
+		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_DEPTH_TEST);
+		auto& canvas = R.ctx().get<Canvas>();
+		canvas.Viewport.UploadMVP();
+		canvas.Viewport.BindMVPBuffer();
+
+		canvas.Image.BindFramebuffer();
+
+		auto backgroundColor = layers.BackgroundColor;
+		glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+		glClear(GL_COLOR_BUFFER_BIT);
+
 		layers.RenderFill();
 		layers.RenderDrawing();
 		layers.RenderOverlay();
 		
 		layers.ClearOverlay();
+		R.ctx().get<SelectionManager>().GenSelectionTexture();
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		Window->EndFrame();
 
@@ -59,7 +73,8 @@ void Application::Run()
 		if (Loader::ShouldLoadProject)
 		{
 			glfwSwapBuffers(Window->GlfwWindow);
-			Loader::LoadProject("./project/project");
+			std::filesystem::path path = "./project";
+			Loader::LoadProject(path/Loader::ProjectName);
 			Loader::ShouldLoadProject = false;
 		}
 

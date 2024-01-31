@@ -9,10 +9,13 @@
 class Loader
 {
 public:
+	static inline glm::vec4 StrokeColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	static inline bool ShouldLoadProject = false;
-	static void LoadCsv(const std::filesystem::path& filePath, float targetRadius = 0.002f);
+	static inline float TargetRadius = 0.0005f;
+	static inline std::string ProjectName;
+	static void LoadCsv(const std::filesystem::path& filePath);
 	static void SaveCsv(const std::filesystem::path& filePath);
-	static void LoadAnimation(const std::filesystem::path& filePath, float targetRadius = 0.001f);
+	static void LoadAnimation(const std::filesystem::path& filePath);
 	static void LoadProject(const std::filesystem::path& filePath);
 	static void SaveProject(const std::filesystem::path& filePath);
 };
@@ -42,5 +45,4 @@ namespace glm
 
 	template<class Archive> void serialize(Archive& archive, glm::quat& q) { archive(q.x, q.y, q.z, q.w); }
 	template<class Archive> void serialize(Archive& archive, glm::dquat& q) { archive(q.x, q.y, q.z, q.w); }
-
 }

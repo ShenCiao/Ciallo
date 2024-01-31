@@ -4,7 +4,7 @@ class TimelineManager
 public:
 	int CurrentFrame = 1;
 	int StartFrame = 1;
-	int EndFrame = 32;
+	int EndFrame = 64;
 	std::vector<entt::entity> DrawingEs;
 	std::vector<int> KeyFrames;
 

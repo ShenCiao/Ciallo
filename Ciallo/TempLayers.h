@@ -7,6 +7,7 @@
 class TempLayers
 {
 public:
+	glm::vec4 BackgroundColor = {1.0f, 1.0f, 1.0f, 1.0f};
 	RenderableTexture Overlay;
 	RenderableTexture Drawing;
 	RenderableTexture Fill;

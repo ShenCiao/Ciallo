@@ -17,7 +17,7 @@
 #include "SelectionManager.h"
 #include "EyedropperInfo.h"
 
-void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
+void Loader::LoadCsv(const std::filesystem::path& filePath)
 {
 	// Warning: memory leak! (not trying to remove unused stroke)
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
@@ -71,7 +71,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
 	float factor = 1.0f / glm::max(factorXY.x, factorXY.y);
-	factor *= 0.8f;
+	factor *= 0.95f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 	for (int i = 0; i < curves.size(); ++i)
 	{
@@ -79,7 +79,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 		c = c.Scale({factor, factor}, mid);
 		c = c.Translate(-mid + canvas.Viewport.GetSize() / 2.0f);
 		auto& offset = pressures[i];
-		for (float& t : offset) t = - (1.0f - t / maxPressure) * targetRadius;
+		for (float& t : offset) t = - (1.0f - t / maxPressure) * TargetRadius;
 
 		entt::entity strokeE = R.create();
 		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
@@ -87,8 +87,9 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 
 		auto& stroke = R.emplace<Stroke>(strokeE);
 		stroke.Position = c;
+		stroke.Color = StrokeColor;
 		stroke.RadiusOffset = offset;
-		stroke.Radius = targetRadius;
+		stroke.Radius = TargetRadius;
 
 		// I intented to use create a event system, but I'm lazy.
 		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
@@ -102,7 +103,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath, float targetRadius)
 		//	auto& stroke = R.emplace<Stroke>(strokeE);
 		//	stroke.Position = c;
 		//	stroke.RadiusOffset = std::vector<float>{0.0};
-		//	stroke.Radius = targetRadius/25.0;
+		//	stroke.Radius = TargetRadius/25.0;
 		//	stroke.Color = { 82.f/255, 125.f/255, 255.f/255, 1.0f };
 
 		//	// I intented to use create a event system, but I'm lazy.
@@ -120,7 +121,7 @@ void Loader::SaveCsv(const std::filesystem::path& filePath)
 	
 }
 
-void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRadius)
+void Loader::LoadAnimation(const std::filesystem::path& filePath)
 {
 	// Get transformation parameters
 	const auto& entry = *std::filesystem::directory_iterator(filePath)++;
@@ -133,35 +134,43 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRa
 	std::vector<float> pressure;
 	float maxPressure = 0.0f;
 
-	std::string line;
-	while (std::getline(file, line))
-	{
-		if (line.empty())
-		{
-			curves.push_back(std::move(curve));
-			pressures.push_back(std::move(pressure));
-			curve = Geom::Polyline{};
-			pressure.clear();
-			continue;
-		}
+	for (const auto& entry : std::filesystem::directory_iterator(filePath)) {
+		std::ifstream file(entry.path());
+		file.exceptions(std::ifstream::badbit);
 
-		std::vector<float> values;
-		for (auto value : views::split(line, ','))
+		std::string line;
+		while (std::getline(file, line))
 		{
-			std::string s(value.begin(), value.end());
-			values.push_back(std::stof(s));
+			if (line.empty())
+			{
+				curves.push_back(std::move(curve));
+				pressures.push_back(std::move(pressure));
+				curve = Geom::Polyline{};
+				pressure.clear();
+				continue;
+			}
+
+			std::vector<float> values;
+			for (auto value : views::split(line, ','))
+			{
+				std::string s(value.begin(), value.end());
+				values.push_back(std::stof(s));
+			}
+			curve.push_back(values[0], values[1]);
+			allPoints.push_back(values[0], values[1]);
+			pressure.push_back(values[2]);
+			if (values[2] >= maxPressure) maxPressure = values[2];
 		}
-		curve.push_back(values[0], values[1]);
-		allPoints.push_back(values[0], values[1]);
-		pressure.push_back(values[2]);
-		if (values[2] >= maxPressure) maxPressure = values[2];
 	}
 
+	spdlog::info("#strokes: {}", curves.size());
+	spdlog::info("#vertices: {}", allPoints.size());
+	
 	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
 	float scaleFactor = 1.0f / glm::max(factorXY.x, factorXY.y);
-	scaleFactor *= 0.8f;
+	scaleFactor *= 0.95f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 
 	// Transformation paramers
@@ -185,6 +194,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRa
 		entt::entity drawingE = R.ctx().get<TimelineManager>().GenKeyFrame(frameNumber);
 		auto& arm = R.get<ArrangementManager>(drawingE);
 
+		std::string line;
 		while (std::getline(file, line))
 		{
 			if (line.empty())
@@ -213,18 +223,19 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath, float targetRa
 			c = c.Scale({ scaleFactor, scaleFactor }, pivot);
 			c = c.Translate(translate);
 			auto& offset = pressures[i];
-			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * targetRadius;
+			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * TargetRadius;
 
 			entt::entity strokeE = R.create();
 			R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
 			R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
 			auto& stroke = R.emplace<Stroke>(strokeE);
 			stroke.Position = c;
+			stroke.Color = StrokeColor;
 			stroke.RadiusOffset = offset;
 			stroke.Radius = minRadius;
 
 			// I intented to use create a event system, but I'm lazy.
-			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
 			stroke.UpdateBuffers();
 
 			arm.AddOrUpdate(strokeE);

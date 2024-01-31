@@ -1,5 +1,6 @@
 # Ciallo ～(∠・ω< )⌒★!
 
+[Tutorial](https://shenciao.github.io/brush-rendering-tutorial/) |
 [Paper](./paper) |
 [Web Demo](https://shenciao.github.io/Ciallo/) |
 [SIGGRAPH 2023 Talk](https://youtu.be/KkwW6M16O3c) |

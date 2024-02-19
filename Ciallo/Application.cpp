@@ -28,6 +28,8 @@ Application::Application()
 
 void Application::Run()
 {
+	// My current design uses ImGui, so GUI code is coupling with the data itself
+	// Decouple the code after switch to another GUI framework.
 	GenDefaultProject();
 	
 	while (!Window->ShouldClose())
@@ -66,10 +68,10 @@ void Application::Run()
 		layers.ClearOverlay();
 		R.ctx().get<SelectionManager>().GenSelectionTexture();
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
-		Window->EndFrame();
 
 		R.ctx().get<Canvas>().Run();
-
+		Window->EndFrame();
+		
 		if (Loader::ShouldLoadProject)
 		{
 			glfwSwapBuffers(Window->GlfwWindow);

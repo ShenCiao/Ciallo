@@ -10,6 +10,7 @@ __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 
 int main()
 {
+	
 	Application app;
 
 	app.Run();

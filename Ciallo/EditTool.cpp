@@ -77,7 +77,7 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 	}
 }
 
-void EditTool::OnDragging(Dragging event)
+void EditTool::OnDragging(const Dragging event)
 {
 	if (!BezierDrawingMode)
 	{

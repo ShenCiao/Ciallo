@@ -19,11 +19,11 @@ public:
 
 	void DrawUI();
 	void GenRenderTarget();
-	void RenderContentNTimes(int n); // used for speed test
 	glm::ivec2 GetSizePixel() const;
 	void Export() const;
 	void Run();
 private:
+	ImGuiID InteractionButtonID;
 	chrono::time_point<chrono::high_resolution_clock> StartDraggingTimePoint{};
 	bool IsDragging = false;
 	glm::vec2 PrevMousePos{}; // used for dragging

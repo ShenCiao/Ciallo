@@ -89,33 +89,57 @@ void Canvas::DrawUI()
 	}
 
 	ImGui::ColorEdit4("Background Color", glm::value_ptr(R.ctx().get<TempLayers>().BackgroundColor), ImGuiColorEditFlags_NoInputs|ImGuiColorEditFlags_NoLabel);
-
-	static int n = 1;
-	ImGui::PushItemWidth(200);
-	ImGui::PopItemWidth();
 	ImGui::EndMenuBar();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	auto panel = ImGui::GetCurrentWindow();
-	glm::vec2 drawingScreenOrigin = ImGui::GetCursorScreenPos();
+	ImGui::Image(reinterpret_cast<ImTextureID>(Image.ColorTexture), Image.Size());
+	
+	ImGui::End();
+	ImGui::PopStyleVar();
+}
 
-	ImGui::Image(ImTextureID(Image.ColorTexture), Image.Size());
-	// mouse position relative to image
-	glm::vec2 mousePosPixel = ImGui::GetMousePos() - drawingScreenOrigin;
-	glm::vec2 mousePos = mousePosPixel / (Viewport.GetSizePixelFloat(Dpi) * Zoom) * Viewport.GetSize();
-	float pressure = ImGui::GetIO().PenPressure;
+void Canvas::GenRenderTarget()
+{
+	auto size = Viewport.GetSizePixel(Dpi);
+	Image = RenderableTexture(size.x, size.y);
 
+	int w, h;
+	int miplevel = 0;
+	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_WIDTH, &w);
+	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_HEIGHT, &h);
+}
+
+glm::ivec2 Canvas::GetSizePixel() const
+{
+	return Viewport.GetSizePixel(Dpi);
+}
+
+void Canvas::Export() const
+{
+	TextureManager::SaveTexture(Image.ColorTexture, "canvas");
+}
+
+void Canvas::Run()
+{
+	ImGui::Begin("Canvas");
+	auto panel = ImGui::GetCurrentWindow();
 	// Invisible button for interaction
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
-	ImGui::InvisibleButton("CanvasInteractor", panel->InnerRect.GetSize(),
+	InteractionButtonID = ImGui::GetID("CanvasInteraction");
+	ImGui::InvisibleButton("CanvasInteraction", panel->InnerRect.GetSize(),
 	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
 	                       ImGuiButtonFlags_MouseButtonMiddle);
 	EventDispatcher.trigger(BeforeInteraction{});
 
-
+	// mouse position relative to image
+	glm::vec2 mousePosPixel = ImGui::GetMousePos() - panel->InnerRect.Min;
+	glm::vec2 mousePos = mousePosPixel / (Viewport.GetSizePixelFloat(Dpi) * Zoom) * Viewport.GetSize();
+	float pressure = ImGui::GetIO().PenPressure;
+	
 	auto interact = [&]()
 	{
-		// Active item is the invisible button, "CanvasInteractor".
+		// Active item is the invisible button, "CanvasInteraction".
 		if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
 		{
 			if (IsDragging)
@@ -132,7 +156,7 @@ void Canvas::DrawUI()
 			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
-
+	
 		if (ImGui::IsMouseDragging(0) && !ImGui::IsItemActivated() && ImGui::IsItemActive())
 		{
 			IsDragging = true;
@@ -144,7 +168,7 @@ void Canvas::DrawUI()
 			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
-
+	
 		if (IsDragging && !ImGui::IsMouseDragging(0))
 		{
 			IsDragging = false;
@@ -156,13 +180,13 @@ void Canvas::DrawUI()
 			PrevMousePosPixel = ImGui::GetMousePos();
 			return;
 		}
-
+	
 		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && !ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			EventDispatcher.trigger(Hovering{mousePos, mousePosPixel});
 			PrevMousePosPixel = ImGui::GetMousePos();
 		}
-
+	
 		/*if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			glm::vec2 delta = ImGui::GetMousePos() - PrevMousePosPixel;
@@ -170,7 +194,7 @@ void Canvas::DrawUI()
 			ImGui::SetScrollY(ImGui::GetScrollY() - delta.y);
 			PrevMousePosPixel = ImGui::GetMousePos();
 		}*/
-
+	
 		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			glm::vec2 delta = mousePos - PrevMousePos;
@@ -182,82 +206,13 @@ void Canvas::DrawUI()
 		}
 		PrevMousePos = mousePos;
 	};
-
+	
 	interact();
 	EventDispatcher.trigger(AfterInteraction{});
+	
 	ImGui::End();
-	ImGui::PopStyleVar();
-}
-
-void Canvas::GenRenderTarget()
-{
-	auto size = Viewport.GetSizePixel(Dpi);
-	Image = RenderableTexture(size.x, size.y);
-
-	int w, h;
-	int miplevel = 0;
-	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_WIDTH, &w);
-	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_HEIGHT, &h);
-}
-
-void Canvas::RenderContentNTimes(int n)
-{
-	// RenderableTexture& target = Image;
-	// glEnable(GL_BLEND);
-	// glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-	// target.BindFramebuffer();
-	// glClearColor(1, 1, 1, 1);
-	// glClear(GL_COLOR_BUFFER_BIT);
-	//
-	// std::vector<Stroke*> strokes;
-	// auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-	// for (entt::entity strokeE : strokeEs)
-	// {
-	// 	strokes.push_back(&R.get<Stroke>(strokeE));
-	// }
-	// auto& brush = R.get<Brush>(strokes[0]->BrushE);
-	//
-	// std::default_random_engine rng;
-	// std::uniform_real dist(-1.0f, 1.0f);
-	// auto& canvas = R.ctx().get<Canvas>();
-	//
-	// brush.Use();
-	// auto start = chrono::high_resolution_clock::now();
-	// for (int i = 0; i < n; ++i)
-	// {
-	// 	glm::vec2 randOffset = glm::vec2(dist(rng), dist(rng)) * canvas.Viewport.GetSize() / 2.0f;
-	// 	Viewport.UploadMVP(glm::translate(glm::vec3{randOffset, 0.f}));
-	// 	Viewport.BindMVPBuffer();
-	// 	for (auto* stroke : strokes)
-	// 	{
-	// 		brush.SetUniforms();
-	// 		stroke->SetUniforms();
-	// 		stroke->LineDrawCall();
-	// 	}
-	// }
-	// chrono::duration<double, std::milli> duration = chrono::high_resolution_clock::now() - start;
-	// spdlog::info("{}ms", duration.count());
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	auto& strokeEs = R.ctx().get<StrokeContainer>().StrokeEs;
-	auto dup = strokeEs;
-	for (int i = 0; i < n; ++i)
-	{
-		std::copy(dup.begin(), dup.end(), std::back_inserter(strokeEs));
-	}
-}
-
-glm::ivec2 Canvas::GetSizePixel() const
-{
-	return Viewport.GetSizePixel(Dpi);
-}
-
-void Canvas::Export() const
-{
-	TextureManager::SaveTexture(Image.ColorTexture, "canvas");
-}
-
-void Canvas::Run()
-{
+	
+	// Quick dirty hack to catch up the deadline of SIG24 
 	if (ImGui::IsKeyPressed(ImGuiKey_W)) {
 		if(Dpi < 1000.0f)
 			Dpi *= 1.1f;

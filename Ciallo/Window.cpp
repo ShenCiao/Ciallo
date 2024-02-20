@@ -23,6 +23,7 @@ Window::Window()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	GlfwWindow = glfwCreateWindow(1000, 1000, "Anonymous", nullptr, nullptr);
+	glfwSetWindowIconifyCallback(GlfwWindow, WindowIconifyCallback);
 	if (!GlfwWindow)
 	{
 		throw std::runtime_error("Fail on init window");
@@ -91,6 +92,7 @@ void Window::BeginFrame() const
 	else pressure = ImGui::GetIO().PenPressure;
 
 	glfwPollEvents();
+	
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -119,6 +121,11 @@ void Window::EndFrame() const
 	}
 	
 	glfwSwapBuffers(GlfwWindow);
+}
+bool Window::IsMinimized() const
+{
+	// Iconified means minimized
+	return glfwGetWindowAttrib(GlfwWindow, GLFW_ICONIFIED);
 }
 
 void Window::GlfwErrorCallback(int error, const char* description)

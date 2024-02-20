@@ -6,7 +6,7 @@ RenderableTexture::RenderableTexture(int width, int height, int multiSample):
 	Height(height),
 	MultiSample(multiSample)
 {
-	GenBuffers();
+	GenBuffers ();
 }
 
 RenderableTexture::RenderableTexture(const RenderableTexture& other)

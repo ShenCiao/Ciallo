@@ -14,11 +14,8 @@
 
 #include <glm/gtx/transform.hpp>
 
-TempLayers::TempLayers(glm::ivec2 size)
+TempLayers::TempLayers()
 {
-	Overlay = RenderableTexture{size.x, size.y};
-	Drawing = RenderableTexture{size.x, size.y};
-	Fill = RenderableTexture{size.x, size.y};
 	GenCircleStroke();
 }
 

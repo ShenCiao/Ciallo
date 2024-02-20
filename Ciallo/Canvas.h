@@ -1,5 +1,9 @@
 #pragma once
 
+#include "Application.h"
+#include "Application.h"
+#include "Application.h"
+#include "Application.h"
 #include "Viewport.h"
 #include "RenderableTexture.h"
 
@@ -12,18 +16,15 @@ public:
 	Canvas();
 
 	float DrawingRotation = 0.0f;
-	float Zoom = 1.0f;
 	glm::vec2 Scroll{0.0f, 0.0f};
 	Viewport Viewport{};
-	float Dpi = 0.0f;
+	float Dpi;
 
 	void DrawUI();
-	void GenRenderTarget();
 	glm::ivec2 GetSizePixel() const;
 	void Export() const;
 	void Run();
 private:
-	ImGuiID InteractionButtonID;
 	chrono::time_point<chrono::high_resolution_clock> StartDraggingTimePoint{};
 	bool IsDragging = false;
 	glm::vec2 PrevMousePos{}; // used for dragging

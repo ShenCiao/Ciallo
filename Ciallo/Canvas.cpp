@@ -2,8 +2,6 @@
 #include "Canvas.h"
 #include "CanvasEvent.h"
 
-#include "StrokeContainer.h"
-#include "Stroke.h"
 #include "Brush.h"
 #include "TextureManager.h"
 #include "TempLayers.h"
@@ -14,22 +12,17 @@
 
 Canvas::Canvas()
 {
-	Viewport.Min = { 0.0f, 0.0f };
-	Viewport.Max = { 0.297f, 0.21f };
 	Dpi = 144.0f;
-	GenRenderTarget();
 }
 
 void Canvas::DrawUI()
 {
 	const ImGuiWindowFlags flags =
-		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_HorizontalScrollbar |
-		ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_MenuBar;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	ImGui::Begin("Canvas", nullptr, flags);
-
 	ImGui::PopStyleVar();
 	ImGui::BeginMenuBar();
 
@@ -91,23 +84,20 @@ void Canvas::DrawUI()
 	ImGui::ColorEdit4("Background Color", glm::value_ptr(R.ctx().get<TempLayers>().BackgroundColor), ImGuiColorEditFlags_NoInputs|ImGuiColorEditFlags_NoLabel);
 	ImGui::EndMenuBar();
 
+	// Canvas content
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	auto panel = ImGui::GetCurrentWindow();
-	ImGui::Image(reinterpret_cast<ImTextureID>(Image.ColorTexture), Image.Size());
+	glm::vec2 contentSize = glm::vec2(panel->InnerRect.GetSize());
+	Image = RenderableTexture(static_cast<int>(contentSize.x), static_cast<int>(contentSize.y));
+	ImGui::Image(reinterpret_cast<ImTextureID>(Image.ColorTexture), panel->InnerRect.GetSize());
+
+	// Set viewport
+	glm::vec2 worldSize = contentSize / Dpi * 0.0254f; // in meter
+	Viewport.Max = Viewport.Min + worldSize;
+	Viewport.UploadMVP();
 	
 	ImGui::End();
 	ImGui::PopStyleVar();
-}
-
-void Canvas::GenRenderTarget()
-{
-	auto size = Viewport.GetSizePixel(Dpi);
-	Image = RenderableTexture(size.x, size.y);
-
-	int w, h;
-	int miplevel = 0;
-	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_WIDTH, &w);
-	glGetTextureLevelParameteriv(Image.ColorTexture, miplevel, GL_TEXTURE_HEIGHT, &h);
 }
 
 glm::ivec2 Canvas::GetSizePixel() const
@@ -126,7 +116,6 @@ void Canvas::Run()
 	auto panel = ImGui::GetCurrentWindow();
 	// Invisible button for interaction
 	ImGui::SetCursorScreenPos(panel->InnerRect.Min);
-	InteractionButtonID = ImGui::GetID("CanvasInteraction");
 	ImGui::InvisibleButton("CanvasInteraction", panel->InnerRect.GetSize(),
 	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
 	                       ImGuiButtonFlags_MouseButtonMiddle);
@@ -134,7 +123,7 @@ void Canvas::Run()
 
 	// mouse position relative to image
 	glm::vec2 mousePosPixel = ImGui::GetMousePos() - panel->InnerRect.Min;
-	glm::vec2 mousePos = mousePosPixel / (Viewport.GetSizePixelFloat(Dpi) * Zoom) * Viewport.GetSize();
+	glm::vec2 mousePos = mousePosPixel / panel->InnerRect.GetSize() * Viewport.GetSize() + Viewport.Min;
 	float pressure = ImGui::GetIO().PenPressure;
 	
 	auto interact = [&]()
@@ -213,31 +202,31 @@ void Canvas::Run()
 	ImGui::End();
 	
 	// Quick dirty hack to catch up the deadline of SIG24 
-	if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-		if(Dpi < 1000.0f)
-			Dpi *= 1.1f;
-		GenRenderTarget();
-		R.ctx().get<TempLayers>().GenLayers(Image.Size());
-	}
-	if (ImGui::IsKeyPressed(ImGuiKey_S)) {
-		Dpi /= 1.1f;
-		GenRenderTarget();
-		R.ctx().get<TempLayers>().GenLayers(Image.Size());
-	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_A)) {
-		glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
-		glm::vec2 size = Viewport.GetSize() * 0.9;
-		Viewport.Min = mid - size / 2.0f;
-		Viewport.Max = mid + size / 2.0f;
-		Viewport.UploadMVP();
-	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-		glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
-		glm::vec2 size = Viewport.GetSize() /0.9;
-		Viewport.Min = mid - size / 2.0f;
-		Viewport.Max = mid + size / 2.0f;
-		Viewport.UploadMVP();
-	}
+	// if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+	// 	if(Dpi < 1000.0f)
+	// 		Dpi *= 1.1f;
+	// 	GenRenderTarget(TODO);
+	// 	R.ctx().get<TempLayers>().GenLayers(Image.Size());
+	// }
+	// if (ImGui::IsKeyPressed(ImGuiKey_S)) {
+	// 	Dpi /= 1.1f;
+	// 	GenRenderTarget(TODO);
+	// 	R.ctx().get<TempLayers>().GenLayers(Image.Size());
+	// }
+	//
+	// if (ImGui::IsKeyPressed(ImGuiKey_A)) {
+	// 	glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
+	// 	glm::vec2 size = Viewport.GetSize() * 0.9;
+	// 	Viewport.Min = mid - size / 2.0f;
+	// 	Viewport.Max = mid + size / 2.0f;
+	// 	Viewport.UploadMVP();
+	// }
+	//
+	// if (ImGui::IsKeyPressed(ImGuiKey_D)) {
+	// 	glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
+	// 	glm::vec2 size = Viewport.GetSize() /0.9;
+	// 	Viewport.Min = mid - size / 2.0f;
+	// 	Viewport.Max = mid + size / 2.0f;
+	// 	Viewport.UploadMVP();
+	// }
 }

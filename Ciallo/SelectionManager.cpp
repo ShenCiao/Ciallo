@@ -11,15 +11,10 @@
 
 SelectionManager::SelectionManager()
 {
-	GenSelectionTexture();
 }
 
-void SelectionManager::GenSelectionTexture()
+void SelectionManager::GenSelectionTexture(glm::ivec2 size)
 {
-	// Create textures used for selection
-	auto& canvas = R.ctx().get<Canvas>();
-
-	glm::ivec2 size = canvas.GetSizePixel();
 	SelectionTexture = RenderableTexture(size.x, size.y);
 }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Application.h"
+#include "Application.h"
 #include "RenderableTexture.h"
 
 class SelectionManager
@@ -9,7 +11,7 @@ public:
 
 	SelectionManager();
 
-	void GenSelectionTexture();
+	void GenSelectionTexture(glm::ivec2 size);
 	void RenderSelectionTexture();
 
 	glm::vec4 IndexToColor(uint32_t index) const;

@@ -263,7 +263,7 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 	R = std::move(newR);
 	
 	auto& canvas = R.ctx().emplace<Canvas>();
-	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
+	R.ctx().emplace<TempLayers>();
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();

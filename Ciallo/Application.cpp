@@ -28,16 +28,23 @@ Application::Application()
 
 void Application::Run()
 {
-	// My current design uses ImGui, so GUI code is coupling with the data itself
+	// The current design uses ImGui, so GUI code is coupling with the data itself
 	// Decouple the code after switch to another GUI framework.
 	GenDefaultProject();
 	
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
+		// I have to add this annoying if statement.
+		// Because iconify callback is not always called in the same frame that the window is minimized.
+		// The callback can be called a frame delayed .
+		if(Window->IsMinimized())
+		{
+			Window->EndFrame();
+			continue;
+		}
 		ImGui::ShowMetricsWindow();
 		R.ctx().get<Canvas>().DrawUI();
-		
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
 		R.ctx().get<TimelineManager>().DrawUI();
@@ -52,7 +59,6 @@ void Application::Run()
 		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		glDisable(GL_DEPTH_TEST);
 		auto& canvas = R.ctx().get<Canvas>();
-		canvas.Viewport.UploadMVP();
 		canvas.Viewport.BindMVPBuffer();
 
 		canvas.Image.BindFramebuffer();
@@ -61,12 +67,13 @@ void Application::Run()
 		glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		layers.GenLayers(canvas.GetSizePixel());
 		layers.RenderFill();
 		layers.RenderDrawing();
 		layers.RenderOverlay();
 		
 		layers.ClearOverlay();
-		R.ctx().get<SelectionManager>().GenSelectionTexture();
+		R.ctx().get<SelectionManager>().GenSelectionTexture(canvas.GetSizePixel());
 		R.ctx().get<SelectionManager>().RenderSelectionTexture();
 
 		R.ctx().get<Canvas>().Run();
@@ -95,7 +102,7 @@ void Application::GenDefaultProject()
 {
 	// user's project level "singleton" are managed by ctx()
 	auto& canvas = R.ctx().emplace<Canvas>();
-	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
+	R.ctx().emplace<TempLayers>();
 
 	std::vector<entt::entity> brushes;
 	brushes.push_back(R.create());

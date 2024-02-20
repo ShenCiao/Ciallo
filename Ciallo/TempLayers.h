@@ -15,7 +15,7 @@ public:
 	bool FinalOnly = false;
 	bool HideFill = false;
 
-	TempLayers(glm::ivec2 size);
+	TempLayers();
 	void RenderOverlay();
 	void RenderDrawing();
 	void RenderFill();

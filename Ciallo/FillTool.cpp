@@ -10,19 +10,6 @@
 #include "TimelineManager.h"
 #include "StrokeContainer.h"
 
-void FillTool::PadVisRim()
-{
-	entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
-	auto& arm = R.get<ArrangementManager>(drawingE);
-	auto& vis = arm.Visibility;
-	auto& canvas = R.ctx().get<Canvas>();
-
-	glm::vec2 min = canvas.Viewport.Min;
-	glm::vec2 max = canvas.Viewport.Max;
-	auto points = ArrangementManager::VecToPoints({min, {max.x, min.y}, max, {min.x, max.y}, min});
-	vis.insert(points);
-}
-
 FillTool::FillTool()
 {
 	// TODO:should change Radius, Label, delta threshold, SampleInterval
@@ -57,9 +44,6 @@ void FillTool::Activate()
 	auto& arm = R.get<ArrangementManager>(drawingE);
 	auto& vis = arm.Visibility;
 	auto& arr = arm.Arrangement;
-
-	vis.attach(arr);
-	PadVisRim();
 }
 
 void FillTool::Deactivate()

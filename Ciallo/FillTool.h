@@ -8,7 +8,6 @@ class FillTool : public Tool
 {
 private:
 	Painter Painter{};
-	void PadVisRim();
 public:
 	FillTool();
 

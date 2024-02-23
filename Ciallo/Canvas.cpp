@@ -21,6 +21,7 @@ void Canvas::DrawUI()
 		ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_MenuBar;
 
+	// Begin canvas
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {.0f, .0f});
 	ImGui::Begin("Canvas", nullptr, flags);
 	ImGui::PopStyleVar();
@@ -112,6 +113,7 @@ void Canvas::Export() const
 
 void Canvas::Run()
 {
+	// Begin canvas
 	ImGui::Begin("Canvas");
 	auto panel = ImGui::GetCurrentWindow();
 	// Invisible button for interaction
@@ -120,13 +122,12 @@ void Canvas::Run()
 	                       ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight |
 	                       ImGuiButtonFlags_MouseButtonMiddle);
 	EventDispatcher.trigger(BeforeInteraction{});
-
 	// mouse position relative to image
 	glm::vec2 mousePosPixel = ImGui::GetMousePos() - panel->InnerRect.Min;
 	glm::vec2 mousePos = mousePosPixel / panel->InnerRect.GetSize() * Viewport.GetSize() + Viewport.Min;
 	float pressure = ImGui::GetIO().PenPressure;
-	
-	auto interact = [&]()
+	// Tool interaction
+	auto interaction = [&]()
 	{
 		// Active item is the invisible button, "CanvasInteraction".
 		if (ImGui::IsMouseClicked(0) && ImGui::IsItemActivated())
@@ -176,14 +177,6 @@ void Canvas::Run()
 			PrevMousePosPixel = ImGui::GetMousePos();
 		}
 	
-		/*if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
-		{
-			glm::vec2 delta = ImGui::GetMousePos() - PrevMousePosPixel;
-			ImGui::SetScrollX(ImGui::GetScrollX() - delta.x);
-			ImGui::SetScrollY(ImGui::GetScrollY() - delta.y);
-			PrevMousePosPixel = ImGui::GetMousePos();
-		}*/
-	
 		if (ImGui::IsItemHovered() && !IsDragging && !ImGui::IsMouseClicked(0) && ImGui::IsKeyDown(ImGuiKey_Space))
 		{
 			glm::vec2 delta = mousePos - PrevMousePos;
@@ -195,38 +188,26 @@ void Canvas::Run()
 		}
 		PrevMousePos = mousePos;
 	};
-	
-	interact();
+	interaction();
 	EventDispatcher.trigger(AfterInteraction{});
+
+	// Deal with zoom in and out
+	// Theoretically, zoom in and out canvas is another type of tool, but it's more convenient to put it here.
+	float mouseWheelScroll = ImGui::GetIO().MouseWheel;
 	
+	if (ImGui::IsItemHovered() && mouseWheelScroll != 0.0f) {
+		float zoomFactor = glm::pow(1.1f, mouseWheelScroll);
+		Dpi *= zoomFactor;
+		Viewport.Min = (Viewport.Min - mousePos) / zoomFactor + mousePos;
+		Viewport.Max = (Viewport.Max - mousePos) / zoomFactor + mousePos;
+	}
+	
+	if (ImGui::IsItemHovered() && ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+		glm::vec2 delta = ImGui::GetIO().MouseDelta;
+		glm::vec2 contentSize = panel->InnerRect.GetSize();
+		Viewport.Min -= delta / contentSize * Viewport.GetSize();
+		Viewport.Max -= delta / contentSize * Viewport.GetSize();
+	}
+	// End canvas
 	ImGui::End();
-	
-	// Quick dirty hack to catch up the deadline of SIG24 
-	// if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-	// 	if(Dpi < 1000.0f)
-	// 		Dpi *= 1.1f;
-	// 	GenRenderTarget(TODO);
-	// 	R.ctx().get<TempLayers>().GenLayers(Image.Size());
-	// }
-	// if (ImGui::IsKeyPressed(ImGuiKey_S)) {
-	// 	Dpi /= 1.1f;
-	// 	GenRenderTarget(TODO);
-	// 	R.ctx().get<TempLayers>().GenLayers(Image.Size());
-	// }
-	//
-	// if (ImGui::IsKeyPressed(ImGuiKey_A)) {
-	// 	glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
-	// 	glm::vec2 size = Viewport.GetSize() * 0.9;
-	// 	Viewport.Min = mid - size / 2.0f;
-	// 	Viewport.Max = mid + size / 2.0f;
-	// 	Viewport.UploadMVP();
-	// }
-	//
-	// if (ImGui::IsKeyPressed(ImGuiKey_D)) {
-	// 	glm::vec2 mid = (Viewport.Min + Viewport.Max) / 2.0;
-	// 	glm::vec2 size = Viewport.GetSize() /0.9;
-	// 	Viewport.Min = mid - size / 2.0f;
-	// 	Viewport.Max = mid + size / 2.0f;
-	// 	Viewport.UploadMVP();
-	// }
 }

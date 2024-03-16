@@ -16,6 +16,7 @@
 #include "InnerBrush.h"
 #include "SelectionManager.h"
 #include "EyedropperInfo.h"
+#include "PaintTool.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath)
 {
@@ -71,7 +72,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
 	float factor = 1.0f / glm::max(factorXY.x, factorXY.y);
-	factor *= 0.95f;
+	factor *= 0.8f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 	for (int i = 0; i < curves.size(); ++i)
 	{
@@ -91,25 +92,10 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 		stroke.RadiusOffset = offset;
 		stroke.Radius = TargetRadius;
 
-		// I intented to use create a event system, but I'm lazy.
-		stroke.BrushE = R.ctx().get<BrushManager>().Brushes[2];
+		// I intended to use create a event system, but I'm lazy.
+		auto* paintTool = dynamic_cast<PaintTool*>(R.ctx().get<Toolbox>().Tools[0].get());
+		stroke.BrushE = paintTool->Painter.BrushE;
 		stroke.UpdateBuffers();
-
-		//{
-		//	entt::entity strokeE = R.create();
-		//	R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final);
-		//	R.get<StrokeContainer>(drawingE).StrokeEs.push_back(strokeE);
-
-		//	auto& stroke = R.emplace<Stroke>(strokeE);
-		//	stroke.Position = c;
-		//	stroke.RadiusOffset = std::vector<float>{0.0};
-		//	stroke.Radius = TargetRadius/25.0;
-		//	stroke.Color = { 82.f/255, 125.f/255, 255.f/255, 1.0f };
-
-		//	// I intented to use create a event system, but I'm lazy.
-		//	stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
-		//	stroke.UpdateBuffers();
-		//}
 
 		arm.AddOrUpdate(strokeE);
 	}
@@ -173,7 +159,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 	scaleFactor *= 0.95f;
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 
-	// Transformation paramers
+	// Transformation parameters
 	glm::vec2 scale = { scaleFactor, scaleFactor };
 	glm::vec2 pivot = mid;
 	glm::vec2 translate = -mid + canvas.Viewport.GetSize() / 2.0f;
@@ -234,7 +220,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 			stroke.RadiusOffset = offset;
 			stroke.Radius = minRadius;
 
-			// I intented to use create a event system, but I'm lazy.
+			// I intended to create a event system, but I'm lazy.
 			stroke.BrushE = R.ctx().get<BrushManager>().Brushes[0];
 			stroke.UpdateBuffers();
 

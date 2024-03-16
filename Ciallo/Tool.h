@@ -32,6 +32,7 @@ public:
 	{
 	}
 
+	Tool() = default;
 	virtual ~Tool() = default;
 
 	virtual std::string GetName() = 0;

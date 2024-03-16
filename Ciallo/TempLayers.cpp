@@ -111,43 +111,47 @@ void TempLayers::RenderDrawing()
 		}
 	}
 
-	// Dirty thing to draw the middle axis
-	/*for (entt::entity e : strokeEs) {
-		auto stroke = R.get<Stroke>(e).Copy();
-		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		if (!!(strokeUsage & StrokeUsageFlags::Zone )) continue;
-		if (!!(strokeUsage & StrokeUsageFlags::Fill)) continue;
-		stroke.RadiusOffset = std::vector<float>{ 0.0 };
-		stroke.Radius = 0.001f / 25.0f;
-		stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
-		stroke.UpdateBuffers();
-
-		auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
-		brush.Use();
-		brush.SetUniforms();
-		stroke.SetUniforms();
-		stroke.LineDrawCall();
-	}
-
-	for (entt::entity e : strokeEs) {
-		auto stroke = R.get<Stroke>(e).Copy();
-		auto strokeUsage = R.get<StrokeUsageFlags>(e);
-		if (!!(strokeUsage & StrokeUsageFlags::Zone)) continue;
-		if (!!(strokeUsage & StrokeUsageFlags::Fill)) continue;
-		for (glm::vec2 p : stroke.Position) {
-			Stroke s{};
-			s.Position = std::vector<glm::vec2>{ p };
-			s.RadiusOffset = std::vector<float>{ 0.0 };
-			s.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
-			s.Radius = 0.003f / 25.0f;
-			s.UpdateBuffers();
-			auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
-			brush.Use();
-			brush.SetUniforms();
-			s.SetUniforms();
-			s.LineDrawCall();
-		}
-	}*/
+	// // Dirty thing to draw the middle axis
+	// for (entt::entity e : strokeEs) {
+	// 	auto& oldBrush = R.get<Brush>(R.get<Stroke>(e).BrushE);
+	// 	// if (oldBrush.Stamp->StampTexture != TextureManager::Textures[6]) continue;
+	// 	auto stroke = R.get<Stroke>(e).Copy();
+	// 	auto strokeUsage = R.get<StrokeUsageFlags>(e);
+	// 	if (!!(strokeUsage & StrokeUsageFlags::Zone )) continue;
+	// 	if (!!(strokeUsage & StrokeUsageFlags::Fill)) continue;
+	// 	stroke.RadiusOffset = std::vector<float>{ 0.0 };
+	// 	stroke.Radius = 0.001f / 25.0f;
+	// 	stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+	// 	stroke.UpdateBuffers();
+	//
+	// 	auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+	// 	brush.Use();
+	// 	brush.SetUniforms();
+	// 	stroke.SetUniforms();
+	// 	stroke.LineDrawCall();
+	// }
+	//
+	// for (entt::entity e : strokeEs) {
+	// 	auto& oldBrush = R.get<Brush>(R.get<Stroke>(e).BrushE);
+	// 	// if (oldBrush.Stamp->StampTexture != TextureManager::Textures[6]) continue;
+	// 	auto stroke = R.get<Stroke>(e).Copy();
+	// 	auto strokeUsage = R.get<StrokeUsageFlags>(e);
+	// 	if (!!(strokeUsage & StrokeUsageFlags::Zone)) continue;
+	// 	if (!!(strokeUsage & StrokeUsageFlags::Fill)) continue;
+	// 	for (glm::vec2 p : stroke.Position) {
+	// 		Stroke s{};
+	// 		s.Position = std::vector<glm::vec2>{ p };
+	// 		s.RadiusOffset = std::vector<float>{ 0.0 };
+	// 		s.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
+	// 		s.Radius = 0.003f / 25.0f;
+	// 		s.UpdateBuffers();
+	// 		auto& brush = R.ctx().get<InnerBrush>().Get("vanilla");
+	// 		brush.Use();
+	// 		brush.SetUniforms();
+	// 		s.SetUniforms();
+	// 		s.LineDrawCall();
+	// 	}
+	// }
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

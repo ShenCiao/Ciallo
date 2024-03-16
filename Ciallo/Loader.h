@@ -6,6 +6,7 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/memory.hpp>
 
+// This class is far away from a good design. It's a total trash in fact.
 class Loader
 {
 public:

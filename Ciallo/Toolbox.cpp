@@ -8,43 +8,39 @@
 
 Toolbox::Toolbox()
 {
-	Tools.push_back(R.create());
-	auto& paintTool = R.emplace<std::unique_ptr<Tool>>(Tools.back(), std::make_unique<PaintTool>());
-	ActiveTool = Tools.back();
+	auto paintTool = std::make_unique<PaintTool>();
+	ActiveTool = paintTool.get();
 	auto& canvas = R.ctx().get<Canvas>();
-	paintTool->Connect(canvas.EventDispatcher);
-	paintTool->Activate();
+	ActiveTool->Connect(canvas.EventDispatcher);
+	ActiveTool->Activate();
+	Tools.push_back(std::move(paintTool));
 
-	Tools.push_back(R.create());
-	R.emplace<std::unique_ptr<Tool>>(Tools.back(), std::make_unique<EditTool>());
+	auto editTool = std::make_unique<EditTool>();
+	Tools.push_back(std::move(editTool));
 
-	Tools.push_back(R.create());
-	R.emplace<std::unique_ptr<Tool>>(Tools.back(), std::make_unique<FillTool>());
+	auto fillTool = std::make_unique<FillTool>();
+	Tools.push_back(std::move(fillTool));
 }
 
 void Toolbox::DrawUI()
 {
 	ImGui::Begin("Toolbox");
-	entt::entity prevActive = ActiveTool;
-	for (auto toolE : Tools)
+	Tool* prevActive = ActiveTool;
+	for (auto& tool : Tools)
 	{
-		auto& tool = R.get<std::unique_ptr<Tool>>(toolE);
-		if (ImGui::Selectable(tool->GetName().c_str(), ActiveTool == toolE))
-			ActiveTool = toolE;
+		if (ImGui::Selectable(tool->GetName().c_str(), ActiveTool == tool.get()))
+			ActiveTool = tool.get();
 	}
-
+	
 	if (prevActive != ActiveTool)
 	{
 		auto& canvas = R.ctx().get<Canvas>();
-		auto& prevTool = R.get<std::unique_ptr<Tool>>(prevActive);
-		auto& tool = R.get<std::unique_ptr<Tool>>(ActiveTool);
-		prevTool->Deactivate();
-		prevTool->Disconnect(canvas.EventDispatcher);
-		tool->Connect(canvas.EventDispatcher);
-		tool->Activate();
+		prevActive->Deactivate();
+		prevActive->Disconnect(canvas.EventDispatcher);
+		ActiveTool->Connect(canvas.EventDispatcher);
+		ActiveTool->Activate();
 	}
 	ImGui::Separator();
-	auto& tool = R.get<std::unique_ptr<Tool>>(ActiveTool);
-	tool->DrawProperties();
+	ActiveTool->DrawProperties();
 	ImGui::End();
 }

@@ -31,6 +31,8 @@ void Canvas::DrawUI()
 	{
 		if (ImGui::MenuItem("Girl"))
 			Loader::LoadCsv("./models/girl.csv");
+		if (ImGui::MenuItem("Triangle"))
+			Loader::LoadCsv("./models/triangle.csv");
 		if (ImGui::MenuItem("Fish"))
 			Loader::LoadAnimation("./models/fish");
 		ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
@@ -113,7 +115,6 @@ void Canvas::Export() const
 
 void Canvas::Run()
 {
-	// Begin canvas
 	ImGui::Begin("Canvas");
 	auto panel = ImGui::GetCurrentWindow();
 	// Invisible button for interaction
@@ -208,6 +209,5 @@ void Canvas::Run()
 		Viewport.Min -= delta / contentSize * Viewport.GetSize();
 		Viewport.Max -= delta / contentSize * Viewport.GetSize();
 	}
-	// End canvas
 	ImGui::End();
 }

@@ -150,7 +150,7 @@ void Application::GenDefaultProject()
 	brushManager.RenderAllPreview();
 
 	R.ctx().emplace<OverlayContainer>();
-	R.ctx().emplace<Toolbox>(); 
+	R.ctx().emplace<Toolbox>();
 	auto& tm = R.ctx().emplace<TimelineManager>();
 	tm.GenKeyFrame(1);
 	R.ctx().emplace<SelectionManager>(); // Depend on Canvas

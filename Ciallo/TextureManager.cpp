@@ -45,10 +45,7 @@ void TextureManager::LoadTextures()
 		glCreateTextures(GL_TEXTURE_2D, 1, &tex);
 		glTextureStorage2D(tex, 1, GL_RGBA8, width, height);
 		glTextureSubImage2D(tex, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glTextureParameteri(tex, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTextureParameteri(tex, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTextureParameteri(tex, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTextureParameteri(tex, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		setTextureParameter(tex);
 		Textures.push_back(tex);
 	}
 }

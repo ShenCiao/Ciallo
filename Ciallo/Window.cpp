@@ -22,7 +22,7 @@ Window::Window()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	GlfwWindow = glfwCreateWindow(1000, 1000, "Anonymous", nullptr, nullptr);
+	GlfwWindow = glfwCreateWindow(1000, 1000, "Ciallo", nullptr, nullptr);
 	glfwSetWindowIconifyCallback(GlfwWindow, WindowIconifyCallback);
 	if (!GlfwWindow)
 	{

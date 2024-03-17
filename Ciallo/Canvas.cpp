@@ -27,39 +27,6 @@ void Canvas::DrawUI()
 	ImGui::PopStyleVar();
 	ImGui::BeginMenuBar();
 
-	if (ImGui::BeginMenu("Load Model"))
-	{
-		if (ImGui::MenuItem("Girl"))
-			Loader::LoadCsv("./models/girl.csv");
-		if (ImGui::MenuItem("Triangle"))
-			Loader::LoadCsv("./models/triangle.csv");
-		if (ImGui::MenuItem("Fish"))
-			Loader::LoadAnimation("./models/fish");
-		ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
-		ImGui::PushItemWidth(100.0f);
-		ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");
-		ImGui::PopItemWidth();
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::Button("Save Project"))
-	{
-		Loader::SaveProject("./project/project");
-	}
-
-	if (ImGui::BeginMenu("Load Project"))
-	{
-		std::string path = "./project";
-		for (auto& entry : std::filesystem::directory_iterator(path)) {
-			std::string name = entry.path().filename().string();
-			if (ImGui::MenuItem(name.c_str())) {
-				Loader::ShouldLoadProject = true;
-				Loader::ProjectName = name;
-			}
-		}
-		ImGui::EndMenu();
-	}
-
 	if (ImGui::BeginMenu("Layers"))
 	{
 		auto& layers = R.ctx().get<TempLayers>();

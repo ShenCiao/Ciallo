@@ -11,10 +11,6 @@ public:
 	{
 		archive(StrokeEs);
 	}
-	template<class Archive>
-	void epilogue(Archive& archive)
-	{
-	}
 };
 
 // 2023 March. Dirtiest thing in this project. It sicks me.

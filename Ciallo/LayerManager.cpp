@@ -15,6 +15,7 @@ void LayerManager::DrawUI()
 	DrawMenuButton();
 	ImGui::EndMenuBar();
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, framePad));
+	ImGui::Separator();
 
 	auto drawDragTarget = []()
 	{
@@ -103,12 +104,13 @@ void LayerManager::DrawUI()
 		}
 
 		ImGui::SameLine();
-		// layer preview 
-		float imageRatio = static_cast<float>(layer.Content.Width) / layer.Content.Height;
-		ImGui::Image(reinterpret_cast<ImTextureID>(layer.Content.ColorTexture), {
-			             imageRatio * ImGui::GetFrameHeight(), ImGui::GetFrameHeight()
-		             });
-		ImGui::SameLine();
+		// // Layer preview, disable it for using infinite canvas
+		// float imageRatio = static_cast<float>(layer.Content.Width) / layer.Content.Height;
+		// ImGui::Image(reinterpret_cast<ImTextureID>(layer.Content.ColorTexture), {
+		// 	             imageRatio * ImGui::GetFrameHeight(), ImGui::GetFrameHeight()
+		//              });
+		// ImGui::SameLine();
+		
 		// name or rename
 		glm::vec2 nameStart = ImGui::GetCursorPos();
 		ImGui::TextUnformatted(layer.Name.c_str());

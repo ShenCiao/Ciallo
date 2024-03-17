@@ -17,6 +17,7 @@
 #include "SelectionManager.h"
 #include "Loader.h"
 #include "EyedropperInfo.h"
+#include "LayerManager.h"
 
 Application::Application()
 {
@@ -37,44 +38,51 @@ void Application::Run()
 		Window->BeginFrame();
 		// I have to add this annoying if statement.
 		// Because iconify callback is not always called in the same frame that the window is minimized.
-		// The callback can be called a frame delayed .
+		// The callback can be called a frame delayed.
 		if(Window->IsMinimized())
 		{
 			Window->EndFrame();
 			continue;
 		}
+		DrawMainMenu();
 		ImGui::ShowMetricsWindow();
 		R.ctx().get<Canvas>().DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
-		R.ctx().get<TimelineManager>().DrawUI();
-		entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
-		if (currentE != entt::null)
+		if(Mode == PaintMode::Animation)
 		{
-			R.get<ArrangementManager>(currentE).Run();
+			R.ctx().get<TimelineManager>().DrawUI();
+			entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+			if (currentE != entt::null)
+			{
+				R.get<ArrangementManager>(currentE).Run();
+			}
+			auto& layers = R.ctx().get<TempLayers>();
+		
+			glEnable(GL_BLEND);
+			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			glDisable(GL_DEPTH_TEST);
+		
+			auto& canvas = R.ctx().get<Canvas>();
+			canvas.Viewport.BindMVPBuffer();
+			canvas.Image.BindFramebuffer();
+
+			auto backgroundColor = layers.BackgroundColor;
+			glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			layers.GenLayers(canvas.GetSizePixel());
+			layers.RenderFill();
+			layers.RenderDrawing();
+			layers.RenderOverlay();
+		
+			layers.ClearOverlay();
+			R.ctx().get<SelectionManager>().GenSelectionTexture(canvas.GetSizePixel());
+			R.ctx().get<SelectionManager>().RenderSelectionTexture();
 		}
-		auto& layers = R.ctx().get<TempLayers>();
-		
-		glEnable(GL_BLEND);
-		glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		glDisable(GL_DEPTH_TEST);
-		auto& canvas = R.ctx().get<Canvas>();
-		canvas.Viewport.BindMVPBuffer();
 
-		canvas.Image.BindFramebuffer();
-
-		auto backgroundColor = layers.BackgroundColor;
-		glClearColor(backgroundColor.r, backgroundColor.g, backgroundColor.b, backgroundColor.a);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		layers.GenLayers(canvas.GetSizePixel());
-		layers.RenderFill();
-		layers.RenderDrawing();
-		layers.RenderOverlay();
-		
-		layers.ClearOverlay();
-		R.ctx().get<SelectionManager>().GenSelectionTexture(canvas.GetSizePixel());
-		R.ctx().get<SelectionManager>().RenderSelectionTexture();
+		if(Mode == PaintMode::Illustration)
+			R.ctx().get<LayerManager>().DrawUI();
 
 		R.ctx().get<Canvas>().Run();
 		Window->EndFrame();
@@ -153,6 +161,49 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<Toolbox>();
 	auto& tm = R.ctx().emplace<TimelineManager>();
 	tm.GenKeyFrame(1);
+	R.ctx().emplace<LayerManager>();
 	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
 	R.ctx().emplace<EyedropperInfo>();
+}
+
+void Application::DrawMainMenu()
+{
+	ImGui::BeginMainMenuBar();
+	if (ImGui::BeginMenu("File"))
+	{
+		if (ImGui::BeginMenu("Load Model"))
+		{
+			if (ImGui::MenuItem("Girl"))
+				Loader::LoadCsv("./models/girl.csv");
+			if (ImGui::MenuItem("Triangle"))
+				Loader::LoadCsv("./models/triangle.csv");
+			if (ImGui::MenuItem("Fish"))
+				Loader::LoadAnimation("./models/fish");
+			ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
+			ImGui::PushItemWidth(100.0f);
+			ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");
+			ImGui::PopItemWidth();
+			ImGui::EndMenu();
+		}
+
+		if (ImGui::Button("Save Project"))
+		{
+			Loader::SaveProject("./project/project");
+		}
+
+		if (ImGui::BeginMenu("Load Project"))
+		{
+			std::string path = "./project";
+			for (auto& entry : std::filesystem::directory_iterator(path)) {
+				std::string name = entry.path().filename().string();
+				if (ImGui::MenuItem(name.c_str())) {
+					Loader::ShouldLoadProject = true;
+					Loader::ProjectName = name;
+				}
+			}
+			ImGui::EndMenu();
+		}
+		ImGui::EndMenu();
+	}
+	ImGui::EndMainMenuBar();
 }

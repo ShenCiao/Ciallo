@@ -36,7 +36,7 @@ void Application::Run()
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
-		// I have to add this annoying if statement.
+		// I have to add this annoying `if` statement.
 		// Because iconify callback is not always called in the same frame that the window is minimized.
 		// The callback can be called a frame delayed.
 		if(Window->IsMinimized())
@@ -45,7 +45,7 @@ void Application::Run()
 			continue;
 		}
 		DrawMainMenu();
-		ImGui::ShowMetricsWindow();
+		if(ShowMetricsWindow) ImGui::ShowMetricsWindow(&ShowMetricsWindow);
 		R.ctx().get<Canvas>().DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
@@ -171,6 +171,12 @@ void Application::DrawMainMenu()
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("File"))
 	{
+		if(ImGui::MenuItem("New Project"))
+		{
+			entt::registry newR{};
+			R = std::move(newR);
+			GenDefaultProject();
+		}
 		if (ImGui::BeginMenu("Load Model"))
 		{
 			if (ImGui::MenuItem("Girl"))
@@ -179,6 +185,10 @@ void Application::DrawMainMenu()
 				Loader::LoadCsv("./models/triangle.csv");
 			if (ImGui::MenuItem("Fish"))
 				Loader::LoadAnimation("./models/fish");
+			if (ImGui::MenuItem("Neutral Face"))
+				Loader::LoadCsv("./models/neutral.csv");
+			if (ImGui::MenuItem("Smile Face"))
+				Loader::LoadCsv("./models/smile.csv");
 			ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
 			ImGui::PushItemWidth(100.0f);
 			ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");
@@ -186,7 +196,7 @@ void Application::DrawMainMenu()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::Button("Save Project"))
+		if (ImGui::MenuItem("Save Project"))
 		{
 			Loader::SaveProject("./project/project");
 		}
@@ -204,6 +214,11 @@ void Application::DrawMainMenu()
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenu();
+	}
+
+	if(ImGui::MenuItem("Metrics Window"))
+	{
+		ShowMetricsWindow = !ShowMetricsWindow;
 	}
 	ImGui::EndMainMenuBar();
 }

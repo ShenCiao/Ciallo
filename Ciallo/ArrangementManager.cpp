@@ -132,7 +132,7 @@ std::vector<Geom::Polyline> ArrangementManager::PointQuery(glm::vec2 p) const
 	return {};
 }
 
-// Only unbounded face returned
+// Only bounded faces are returned
 std::vector<CGAL::Face_const_handle> ArrangementManager::ZoneQueryFace(const CGAL::X_monotone_curve& monoCurve)
 {
 	std::vector<CGAL::Face_const_handle> result;
@@ -260,7 +260,7 @@ std::vector<CGAL::X_monotone_curve> ArrangementManager::ConstructXMonotoneCurve(
 	std::list<Make_x_monotone_result> x_objects;
 	XMonoMaker(curve, std::back_inserter(x_objects));
 
-	// test if X_monotone_curve 
+	// test if X_monotone_curve
 
 	std::vector<CGAL::X_monotone_curve> result;
 	for (const auto& x_obj : x_objects)

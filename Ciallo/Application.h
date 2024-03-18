@@ -13,6 +13,7 @@ class Application
 public:
 	std::unique_ptr<Window> Window;
 	PaintMode Mode = PaintMode::Animation;
+	bool ShowMetricsWindow = false;
 
 	Application();
 

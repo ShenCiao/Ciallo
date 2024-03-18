@@ -88,7 +88,7 @@ void Application::Run()
 	while (!Window->ShouldClose())
 	{	
 		for(float ra = 0.00175f; ra < 0.004; ra += 0.001){
-			for(float nof = 5.0f; nof < 51.0; nof += 5.0){
+			for(float nof = 50.0; nof < 51.0; nof += 5.0){
 				shouldClose = true;
 				Loader::LoadCsv("./models/girl.csv", ra, nof);
 				auto& currTime = R.ctx().get<Timer>();
@@ -127,31 +127,66 @@ void Application::Run()
 					if (drawingE == entt::null) return;
 					auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
 
-					for (entt::entity e : strokeEs)
-					{
-						auto& stroke = R.get<Stroke>(e);
-						auto strokeUsage = R.get<StrokeUsageFlags>(e);
-						bool skip = false;
-						//bool skip = !(strokeUsage & StrokeUsageFlags::Zone);// marker only
-						if (!skip)
+					enum { OurMethod, NaiveMethod};
+					int method = OurMethod;
+					if (method == OurMethod) {
+						for (entt::entity e : strokeEs) {
+							auto& stroke = R.get<Stroke>(e);
+							stroke.UpdatePositionBuffer();
+							stroke.UpdateRadiusOffsetBuffer();
+						}
+
+						for (entt::entity e : strokeEs)
 						{
+							auto& stroke = R.get<Stroke>(e);
 							Brush* brush;
-							if (!!(strokeUsage & StrokeUsageFlags::Zone)) {
-								if (stroke.Position.size() <= 1) {
-									brush = &R.ctx().get<InnerBrush>().Get("fill_marker");
-								}
-								else {
-									brush = &R.ctx().get<InnerBrush>().Get("vanilla");
-								}
-							}
-							else
-								brush = &R.get<Brush>(stroke.BrushE);
+
+							brush = &R.get<Brush>(stroke.BrushE);
 							brush->Use();
 							brush->SetUniforms();
 							stroke.SetUniforms();
 							stroke.LineDrawCall();
 						}
 					}
+
+					if (method == NaiveMethod) {
+						// CPU calculation and update buffers
+
+						for (entt::entity e : strokeEs) {
+							auto& stroke = R.get<Stroke>(e);
+							std::vector<glm::vec2> newPositions = { stroke.Position[0] };
+							std::vector<float> newRadius = { stroke.RadiusOffset[0] + stroke.Radius };
+							float interval = stroke.Radius * 2.0f/nof;
+							float nextStampToBeginPointDistance = interval;
+							float accumlatedDistance = 0.0f;
+							int count = stroke.Position.size();
+							for (int i = 1; i < count; ++i) {
+								glm::vec2 p0 = stroke.Position[i - 1];
+								glm::vec2 p1 = stroke.Position[i];
+								float r0 = stroke.RadiusOffset[i - 1] + stroke.Radius;
+								float r1 = stroke.RadiusOffset[i] + stroke.Radius;
+								float segmentLength = glm::distance(p0, p1);
+								accumlatedDistance += segmentLength;
+								while (accumlatedDistance >= nextStampToBeginPointDistance) {
+									float ratio = (accumlatedDistance - nextStampToBeginPointDistance) / segmentLength;
+									newPositions.push_back(glm::mix(p1, p0, ratio));
+									newRadius.push_back(glm::mix(r1, r0, ratio));
+									
+									nextStampToBeginPointDistance += interval;
+								}
+							}
+							int newCount = newPositions.size();
+							glNamedBufferData(stroke.VertexBuffers[0], newCount * sizeof(glm::vec2), newPositions.data(), GL_STREAM_DRAW);
+							glNamedBufferData(stroke.VertexBuffers[1], newCount * sizeof(float), newRadius.data(), GL_STREAM_DRAW);
+
+							glUseProgram(RenderingSystem::Dot->Program);
+							glUniform4fv(1, 1, glm::value_ptr(stroke.Color));
+							glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[1]);
+							glBindVertexArray(stroke.VertexArray);
+							glDrawArrays(GL_POINTS, 0, newCount);
+						}
+					}
+					
 
 					Window->EndFrame();
 

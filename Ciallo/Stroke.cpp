@@ -67,19 +67,19 @@ void Stroke::GenBuffers()
 
 void Stroke::UpdatePositionBuffer()
 {
-	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_DYNAMIC_DRAW);
+	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_STREAM_DRAW);
 }
 
 void Stroke::UpdateRadiusOffsetBuffer()
 {
 	glNamedBufferData(VertexBuffers[1], RadiusOffset.size() * sizeof(float), RadiusOffset.data(),
-	                  GL_DYNAMIC_DRAW);
+	                  GL_STREAM_DRAW);
 }
 
 // Using position buffer, be careful about the calling order.
 void Stroke::UpdateDistanceBuffer(int stampMode)
 {
-	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
 	glUseProgram(RenderingSystem::PrefixSum->Program);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);

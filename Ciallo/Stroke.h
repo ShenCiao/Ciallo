@@ -39,7 +39,6 @@ public:
 		archive(Position, Radius, RadiusOffset, Color, BrushE, FillColor);
 	}
 
-private:
 	void Zeroize();
 	void GenBuffers();
 	void UpdatePositionBuffer();

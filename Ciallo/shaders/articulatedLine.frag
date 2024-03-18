@@ -107,25 +107,7 @@ float x2n(float x, float r, float t1, float t2, float L){
 
 // Normalized distance n -> Physical distance x for a brush stamp
 float n2x(float n, float r, float t1, float t2, float L){
-    if(stampMode == RatioDistance){
-        const float tolerance = 1e-5;
-        if(t1 <= 0 || t1/t2 < tolerance){
-            t1 = tolerance*t2;
-        }
-        else if(t2 <= 0 || t2/t1 < tolerance){
-            t2 = tolerance*t1;
-        }
-        t1 = 2.0*t1; t2 = 2.0*t2;
-        if(t1 == t2){
-            return n * r * t1;
-        }
-        else{
-            return L * (1.0-exp(-(t1-t2)*n*r/L)) / (1.0-t2/t1);
-        }
-    }
-    else{
-        return n * uniRadius * 2.0 * r;
-    }
+    return n * uniRadius * 2.0 * r;
 }
 #endif
 
@@ -202,13 +184,11 @@ void main() {
         float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
         float r = r0 - cosTheta * currStampLocalX;
         vec2 pToStamp = pLocal - vec2(currStampLocalX, 0);
-        float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0)); // here
-        pToStamp *= rotate(angle);
         vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
         vec4 color = texture(footprint, textureCoordinate);
         vec4 colorOut;
         // fbm: noise generation, 50.0 -> scale
-        float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
+        float alpha = 1.0;
         // color.a -> stamp, fragColor -> settings, noiseFactor muptiple
         // A = clamp((A * (1.0 - alpha) + alpha) * r0 * 800.0, 0.0, 1.0);
         A = A * (1.0 - alpha) + alpha;

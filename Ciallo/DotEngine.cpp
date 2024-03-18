@@ -6,9 +6,9 @@
 DotEngine::DotEngine()
 {
 	std::filesystem::path root = "./shaders";
-	GLuint vertShader = ShaderUtilities::CreateFromFile(root / "dot.vert", GL_VERTEX_SHADER);
-	GLuint geomShader = ShaderUtilities::CreateFromFile(root / "dot.geom", GL_GEOMETRY_SHADER);
-	GLuint fragShader = ShaderUtilities::CreateFromFile(root / "dot.frag", GL_FRAGMENT_SHADER);
+	GLuint vertShader = ShaderUtilities::CreateFromFile(root / "naiveStamp.vert", GL_VERTEX_SHADER);
+	GLuint geomShader = ShaderUtilities::CreateFromFile(root / "naiveStamp.geom", GL_GEOMETRY_SHADER);
+	GLuint fragShader = ShaderUtilities::CreateFromFile(root / "naiveStamp.frag", GL_FRAGMENT_SHADER);
 	Program = glCreateProgram();
 	glAttachShader(Program, vertShader);
 	glAttachShader(Program, geomShader);

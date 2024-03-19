@@ -14,7 +14,7 @@
 #include "Toolbox.h"
 #include "Brush.h"
 #include "InnerBrush.h"
-#include "SelectionManager.h"
+#include "CanvasSelectionTextureManager.h"
 #include "EyedropperInfo.h"
 #include "PaintTool.h"
 
@@ -253,7 +253,7 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 	R.ctx().emplace<Toolbox>();
 	R.ctx().emplace<OverlayContainer>();
 	R.ctx().emplace<InnerBrush>();
-	R.ctx().emplace<SelectionManager>();
+	R.ctx().emplace<CanvasSelectionTextureManager>();
 	R.ctx().emplace<EyedropperInfo>();
 
 	auto view = R.view<StrokeContainer>();

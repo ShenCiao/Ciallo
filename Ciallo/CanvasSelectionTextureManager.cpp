@@ -1,5 +1,5 @@
 #include "pch.hpp"
-#include "SelectionManager.h"
+#include "CanvasSelectionTextureManager.h"
 
 #include <bitset>
 
@@ -9,16 +9,15 @@
 #include "Stroke.h"
 #include "TimelineManager.h"
 
-SelectionManager::SelectionManager()
-{
-}
+CanvasSelectionTextureManager::CanvasSelectionTextureManager()
+= default;
 
-void SelectionManager::GenSelectionTexture(glm::ivec2 size)
+void CanvasSelectionTextureManager::GenSelectionTexture(glm::ivec2 size)
 {
 	SelectionTexture = RenderableTexture(size.x, size.y);
 }
 
-void SelectionManager::RenderSelectionTexture()
+void CanvasSelectionTextureManager::RenderSelectionTexture()
 {
 	SelectionTexture.BindFramebuffer();
 	glDisable(GL_BLEND);
@@ -47,7 +46,7 @@ void SelectionManager::RenderSelectionTexture()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-glm::vec4 SelectionManager::IndexToColor(uint32_t index) const
+glm::vec4 CanvasSelectionTextureManager::IndexToColor(uint32_t index)
 {
 	std::bitset<32> bits{ index };
 	glm::vec4 color;
@@ -58,12 +57,12 @@ glm::vec4 SelectionManager::IndexToColor(uint32_t index) const
 	return color;
 }
 
-uint32_t SelectionManager::ColorToIndex(glm::vec4 color) const
+uint32_t CanvasSelectionTextureManager::ColorToIndex(glm::vec4 color)
 {
 	std::string bits;
 	for (int i = 0; i < 4; ++i)
 	{
-		auto v = (uint32_t)glm::round(color[3 - i] * 255.f);
+		auto v = static_cast<uint32_t>(glm::round(color[3 - i] * 255.f));
 		std::bitset<8> b(v);
 		bits += b.to_string();
 	}

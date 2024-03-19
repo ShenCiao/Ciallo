@@ -100,12 +100,12 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
     <ClCompile Include="ArticulatedLineEngine.cpp" />
+    <ClCompile Include="Context.cpp" />
     <ClCompile Include="CubicBezierBone.cpp" />
     <ClCompile Include="Brush.cpp" />
     <ClCompile Include="BrushManager.cpp" />
     <ClCompile Include="Canvas.cpp" />
     <ClCompile Include="CanvasEvent.cpp" />
-    <ClCompile Include="CanvasPanel.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
     <ClCompile Include="DotEngine.cpp" />
@@ -129,7 +129,7 @@
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
-    <ClCompile Include="SelectionManager.cpp" />
+    <ClCompile Include="CanvasSelectionTextureManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
     <ClCompile Include="Stroke.cpp" />
@@ -148,12 +148,12 @@
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
     <ClInclude Include="ArticulatedLineEngine.h" />
+    <ClInclude Include="Context.h" />
     <ClInclude Include="CubicBezierBone.h" />
     <ClInclude Include="Brush.h" />
     <ClInclude Include="BrushManager.h" />
     <ClInclude Include="Canvas.h" />
     <ClInclude Include="CanvasEvent.h" />
-    <ClInclude Include="CanvasPanel.h" />
     <ClInclude Include="CubicBezier.h" />
     <ClInclude Include="DotEngine.h" />
     <ClInclude Include="EditTool.h" />
@@ -168,7 +168,7 @@
     <ClInclude Include="Painter.h" />
     <ClInclude Include="Registry.h" />
     <ClInclude Include="RenderableTexture.h" />
-    <ClInclude Include="SelectionManager.h" />
+    <ClInclude Include="CanvasSelectionTextureManager.h" />
     <ClInclude Include="StampBrushData.h" />
     <ClInclude Include="StrokeContainer.h" />
     <ClInclude Include="TempLayers.h" />

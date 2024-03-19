@@ -14,7 +14,7 @@
 #include "InnerBrush.h"
 #include "ArrangementManager.h"
 #include "TimelineManager.h"
-#include "SelectionManager.h"
+#include "CanvasSelectionTextureManager.h"
 #include "Loader.h"
 #include "EyedropperInfo.h"
 #include "LayerManager.h"
@@ -77,8 +77,8 @@ void Application::Run()
 			layers.RenderOverlay();
 		
 			layers.ClearOverlay();
-			R.ctx().get<SelectionManager>().GenSelectionTexture(canvas.GetSizePixel());
-			R.ctx().get<SelectionManager>().RenderSelectionTexture();
+			R.ctx().get<CanvasSelectionTextureManager>().GenSelectionTexture(canvas.GetSizePixel());
+			R.ctx().get<CanvasSelectionTextureManager>().RenderSelectionTexture();
 		}
 
 		if(Mode == PaintMode::Illustration)
@@ -162,7 +162,7 @@ void Application::GenDefaultProject()
 	auto& tm = R.ctx().emplace<TimelineManager>();
 	tm.GenKeyFrame(1);
 	R.ctx().emplace<LayerManager>();
-	R.ctx().emplace<SelectionManager>(); // Depend on Canvas
+	R.ctx().emplace<CanvasSelectionTextureManager>(); // Depend on Canvas
 	R.ctx().emplace<EyedropperInfo>();
 }
 

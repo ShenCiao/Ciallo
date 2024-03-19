@@ -11,7 +11,7 @@
 #include "Painter.h"
 #include "ArrangementManager.h"
 #include "BrushManager.h"
-#include "SelectionManager.h"
+#include "CanvasSelectionTextureManager.h"
 #include "TimelineManager.h"
 
 EditTool::EditTool()
@@ -37,7 +37,7 @@ void EditTool::OnClickOrDragStart(ClickOrDragStart event)
 			DraggingControlPointIndex = -1;
 			Bone.Reset();
 		}
-		auto& SelectionTexture = R.ctx().get<SelectionManager>().SelectionTexture;
+		auto& SelectionTexture = R.ctx().get<CanvasSelectionTextureManager>().SelectionTexture;
 		SelectionTexture.BindFramebuffer();
 		int x = static_cast<int>(event.MousePosPixel.x);
 		int y = static_cast<int>(event.MousePosPixel.y);

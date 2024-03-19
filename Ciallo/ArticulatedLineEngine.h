@@ -1,5 +1,6 @@
 #pragma once
 
+// A bad design for historical reasons.
 class ArticulatedLineEngine
 {
 public:

@@ -25,9 +25,8 @@ void Painter::OnDragStart(ClickOrDragStart event)
 	s.Color = Color;
 	s.FillColor = FillColor;
 	s.UpdateBuffers();
-	entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
-	if (currentE == entt::null) return;
-	auto& arm = R.get<ArrangementManager>(currentE);
+	
+	auto& arm = R.get<ArrangementManager>(drawingE);
 	if (!!(Usage & StrokeUsageFlags::Arrange))
 	{
 		arm.AddOrUpdate(e);

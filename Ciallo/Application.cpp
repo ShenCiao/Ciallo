@@ -18,6 +18,7 @@
 #include "Loader.h"
 #include "EyedropperInfo.h"
 #include "LayerManager.h"
+#include "SelectionManager.h"
 
 Application::Application()
 {
@@ -164,6 +165,7 @@ void Application::GenDefaultProject()
 	R.ctx().emplace<LayerManager>();
 	R.ctx().emplace<CanvasSelectionTextureManager>(); // Depend on Canvas
 	R.ctx().emplace<EyedropperInfo>();
+	R.ctx().emplace<SelectionManager>();
 }
 
 void Application::DrawMainMenu()

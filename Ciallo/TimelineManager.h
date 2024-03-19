@@ -23,6 +23,7 @@ public:
 	void PasteFillMarker(entt::entity drawingE);
 
 	void DrawUI();
+	void Run();
 	void Clear();
 	void ExportAllFrames();
 

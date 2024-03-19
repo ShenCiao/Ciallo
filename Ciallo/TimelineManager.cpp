@@ -6,6 +6,7 @@
 #include "ArrangementManager.h"
 #include "Painter.h"
 #include "Stroke.h"
+#include "SelectionManager.h"
 
 TimelineManager::TimelineManager()
 {
@@ -39,6 +40,14 @@ void TimelineManager::DrawUI()
         CurrentFrame = KeyFrames[ExportingIndex];
         ExportingIndex += 1;
     }
+
+    // This is a hack should be in `Run()` function.
+    auto& sm = R.ctx().get<SelectionManager>();
+    sm.StrokeContainerE = GetCurrentDrawing();
+}
+void TimelineManager::Run()
+{
+    
 }
 
 void TimelineManager::Clear()

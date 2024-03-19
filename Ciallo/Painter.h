@@ -22,12 +22,13 @@ class Painter
 	glm::vec2 LastSampleMousePosPixel{};
 public:
 	chrono::duration<float> SampleInterval{ 0.01f }; // 10ms
+	float MinPixelDistance = 2.0f; // minimum distance between samples in pixels
 	entt::entity BrushE = entt::null;
 
 	glm::vec4 Color = {0.0f, 0.0f, 0.0f, 1.0f};
 	float MinRadius = 0.001f;
 	float MaxRadius = 0.001f;
-	Geom::CubicBezier RaidusMappingCurve = glm::mat4x2{{0.0f, 0.0f}, {0.5f, 0.0f}, {0.5f, 1.0f}, {1.0f, 1.0f}};
+	Geom::CubicBezier RadiusMappingCurve = glm::mat4x2{{0.0f, 0.0f}, {0.5f, 0.0f}, {0.5f, 1.0f}, {1.0f, 1.0f}};
 
 	glm::vec4 FillColor = {0.0f, 0.0f, 0.0f, 1.0f};
 	StrokeUsageFlags Usage = StrokeUsageFlags::Zero;

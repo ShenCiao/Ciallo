@@ -7,6 +7,7 @@
 #include "ArrangementManager.h"
 #include "TextureManager.h"
 #include "EyedropperInfo.h"
+#include "SelectionManager.h"
 
 PaintTool::PaintTool()
 {
@@ -50,9 +51,9 @@ void PaintTool::DrawProperties()
 	}
 	Painter.DrawProperties();
 	if (ImGui::IsKeyPressed(ImGuiKey_Z)) {
-		entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
-		if (drawingE == entt::null) return;
-		auto& strokes = R.get<StrokeContainer>(drawingE).StrokeEs;
+		entt::entity e = R.ctx().get<SelectionManager>().StrokeContainerE;
+		if (e == entt::null) return;
+		auto& strokes = R.get<StrokeContainer>(e).StrokeEs;
 
 		entt::entity strokeE = strokes.back();
 

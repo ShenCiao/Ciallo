@@ -47,7 +47,7 @@ void Painter::OnDragging(Dragging event)
 {
 	glm::vec2 delta = glm::abs(glm::vec2(event.MousePosPixel - LastSampleMousePosPixel));
 
-	if (event.DragDuration - LastSampleDuration > SampleInterval && delta.x + delta.y >= 6.0f)
+	if (event.DragDuration - LastSampleDuration > SampleInterval && delta.x + delta.y >= MinPixelDistance)
 	{
 		entt::entity drawingE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
 		if (drawingE == entt::null) return;
@@ -111,7 +111,7 @@ void Painter::DrawProperties()
 		// This stupid thing only accept double.
 		ImPlot::SetupAxes("Pressure", "Radius", axFlags, axFlags);
 		ImPlot::SetupAxesLimits(0, 1, 0, 1);
-		auto& cps = RaidusMappingCurve.ControlPoints;
+		auto& cps = RadiusMappingCurve.ControlPoints;
 		ImPlotPoint P[] = {
 			{cps[0].x, cps[0].y}, {cps[1].x, cps[1].y}, {cps[2].x, cps[2].y}, {cps[3].x, cps[3].y}
 		};
@@ -139,7 +139,7 @@ void Painter::DrawProperties()
 			glm::vec2 p = {P[i].x, P[i].y};
 			cps[i] = glm::clamp(p, {0.0f, 0.0f}, {1.0f, 1.0f});
 		}
-		RaidusMappingCurve.EvalLUT();
+		RadiusMappingCurve.EvalLUT();
 
 		ImPlot::SetNextLineStyle(ImVec4(1, 0.5f, 1, 1));
 		ImPlot::PlotLine("##h1", &P[0].x, &P[0].y, 2, 0, 0, sizeof(ImPlotPoint));
@@ -154,6 +154,6 @@ void Painter::DrawProperties()
 
 float Painter::PressureToRadiusOffset(float pressure)
 {
-	float t = RaidusMappingCurve.FindT(pressure);
-	return (MaxRadius - MinRadius) * RaidusMappingCurve(t).y;
+	float t = RadiusMappingCurve.FindT(pressure);
+	return (MaxRadius - MinRadius) * RadiusMappingCurve(t).y;
 }

@@ -88,7 +88,7 @@ void Application::Run()
 	while (!Window->ShouldClose())
 	{	
 		for(float ra = 0.00175f; ra < 0.004; ra += 0.001){
-			for(float nof = 50.0; nof < 51.0; nof += 5.0){
+			for(float nof = 5.0; nof < 51.0; nof += 5.0){
 				shouldClose = true;
 				Loader::LoadCsv("./models/girl.csv", ra, nof);
 				auto& currTime = R.ctx().get<Timer>();
@@ -253,7 +253,10 @@ void Application::GenDefaultProject()
 	float ratio = 0.21 / 9.0;
 	glm::vec2 min = { 0.0f, 0.0f };
 	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
-	float dpi = 174.1714285714286f;
+	// resolution
+	float dpi = 130.62857142857143f;
+	// float dpi = 174.1714285714286f;
+	// float dpi = 261.25714285714287f;
 	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 

@@ -188,7 +188,8 @@ void main() {
         vec4 color = texture(footprint, textureCoordinate);
         vec4 colorOut;
         // fbm: noise generation, 50.0 -> scale
-        float alpha = 1.0;
+        float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
+        // float alpha = 1.0;
         // color.a -> stamp, fragColor -> settings, noiseFactor muptiple
         // A = clamp((A * (1.0 - alpha) + alpha) * r0 * 800.0, 0.0, 1.0);
         A = A * (1.0 - alpha) + alpha;

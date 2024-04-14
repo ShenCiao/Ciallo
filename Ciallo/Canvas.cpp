@@ -24,7 +24,7 @@
 Canvas::Canvas()
 {
 	Viewport.Min = { 0.0f, 0.0f };
-	Viewport.Max = { 0.297f, 0.21f };
+	Viewport.Max = { 0.297f, 0.21f };	// resolution
 	Dpi = 144.0f;
 	GenRenderTarget();
 }

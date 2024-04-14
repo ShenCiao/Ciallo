@@ -153,6 +153,15 @@
     <ClCompile Include="SelectionManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AReadFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AStamp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TestLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.hpp">
@@ -290,6 +299,12 @@
     <ClInclude Include="EyedropperInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AReadFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AStamp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="shaders\articulatedLine.frag">
@@ -343,5 +358,10 @@
     <CopyFileToFolders Include="images\dot2.png">
       <Filter>Resource Files</Filter>
     </CopyFileToFolders>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\naiveStamp.frag" />
+    <None Include="shaders\naiveStamp.geom" />
+    <None Include="shaders\naiveStamp.vert" />
   </ItemGroup>
 </Project>

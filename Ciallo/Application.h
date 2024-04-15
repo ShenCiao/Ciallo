@@ -12,7 +12,7 @@ class Application
 {
 public:
 	std::unique_ptr<Window> Window;
-	PaintMode Mode = PaintMode::Animation;
+	PaintMode Mode = PaintMode::Illustration;
 	bool ShowMetricsWindow = false;
 
 	Application();

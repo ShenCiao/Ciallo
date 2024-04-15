@@ -82,6 +82,7 @@ void Canvas::Export() const
 
 void Canvas::Run()
 {
+	// Dealing with interaction events.
 	ImGui::Begin("Canvas");
 	auto panel = ImGui::GetCurrentWindow();
 	// Invisible button for interaction

@@ -3,9 +3,7 @@
 
 #include "implot.h"
 
-AirBrushData::AirBrushData()
-{
-}
+AirBrushData::AirBrushData() = default;
 
 AirBrushData::AirBrushData(const AirBrushData& other): Curve(other.Curve)
 {

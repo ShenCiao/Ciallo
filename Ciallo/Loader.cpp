@@ -17,6 +17,7 @@
 #include "CanvasSelectionTextureManager.h"
 #include "EyedropperInfo.h"
 #include "PaintTool.h"
+#include "SelectionManager.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath)
 {
@@ -255,6 +256,7 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 	R.ctx().emplace<InnerBrush>();
 	R.ctx().emplace<CanvasSelectionTextureManager>();
 	R.ctx().emplace<EyedropperInfo>();
+	R.ctx().emplace<SelectionManager>();
 
 	auto view = R.view<StrokeContainer>();
 	for (entt::entity drawingE : view) {

@@ -4,7 +4,22 @@
 #include "Layer.h"
 #include "StrokeContainer.h"
 #include <algorithm>
+#include <boost/graph/visitors.hpp>
+#include <boost/graph/depth_first_search.hpp>
 
+LayerManager::LayerManager()
+{
+	LayerTree[0] = entt::null; // root node
+	auto v0 = boost::add_vertex(LayerTree);
+	LayerTree[v0] = R.create();
+	boost::add_edge(0, v0, LayerTree);
+	auto v1 = boost::add_vertex(LayerTree);
+	LayerTree[v1] = R.create();
+	boost::add_edge(0, v1, LayerTree);
+	auto v2 = boost::add_vertex(LayerTree);
+	LayerTree[v2] = R.create();
+	boost::add_edge(v0, v2, LayerTree);
+}
 void LayerManager::DrawUI()
 {
 	ImGui::Begin("LayerManager", nullptr, ImGuiWindowFlags_MenuBar);
@@ -133,6 +148,28 @@ void LayerManager::DrawUI()
 	ImGui::PopStyleVar();
 	ImGui::End();
 }
+void LayerManager::Run()
+{
+	// DFS to get the order of layers
+	class DFSVisitor : public boost::default_dfs_visitor
+	{
+	public:
+		std::vector<entt::entity>& Layers;
+		DFSVisitor(std::vector<entt::entity>& layers) : Layers(layers) {}
+		void discover_vertex(LayerGraph::vertex_descriptor v, const LayerGraph& g)
+		{
+			Layers.push_back(g[v]);
+		}
+	};
+	std::vector<entt::entity> layers;
+	DFSVisitor visitor{layers};
+	// Color_map is a just dummy variable used to mark the visited vertices.
+	// Why do I need to specify this redundant thing?
+	std::vector<boost::default_color_type> color_map(boost::num_vertices(LayerTree));
+	boost::depth_first_visit(LayerTree, 0, visitor,
+		boost::make_iterator_property_map(color_map.begin(), boost::get(boost::vertex_index, LayerTree))
+	);
+}
 
 void LayerManager::DrawMenuButton()
 {
@@ -169,13 +206,12 @@ entt::entity LayerManager::CreateLayer() const
 	entt::entity e = R.create();
 	auto& l = R.emplace<Layer>(e);
 	l.Name.reserve(128);
-	l.Name = fmt::format("Layer {}", Layers.size() + 1);
-	l.Content = std::move(RenderableTexture(500, 250));
-	l.Content.BindFramebuffer();
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	l.Name = fmt::format("Layer {}", boost::num_vertices(LayerTree));
 	return e;
+}
+void LayerManager::GenChildLayer(entt::entity parent)
+{
+	
 }
 
 void LayerManager::MoveSelection(entt::entity target)

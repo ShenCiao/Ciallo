@@ -20,4 +20,3 @@ public:
 	void SetUniforms();
 	void DrawProperties();
 };
-

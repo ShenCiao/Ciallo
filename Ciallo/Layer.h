@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "RenderableTexture.h"
+#include <boost/graph/adjacency_list.hpp>
 
 enum class LayerFlags
 {
@@ -14,5 +14,4 @@ class Layer
 public:
 	LayerFlags Flags = LayerFlags::Visible;
 	std::string Name = {};
-	RenderableTexture Content;
 };

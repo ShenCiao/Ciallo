@@ -83,7 +83,12 @@ void Application::Run()
 		}
 
 		if(Mode == PaintMode::Illustration)
-			R.ctx().get<LayerManager>().DrawUI();
+		{
+			auto& lm = R.ctx().get<LayerManager>();
+			lm.DrawUI();
+			lm.Run();
+		}
+			
 
 		R.ctx().get<Canvas>().Run();
 		Window->EndFrame();

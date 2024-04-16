@@ -159,7 +159,6 @@ void Application::Run()
 					canvas.Viewport.BindMVPBuffer();
 					glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-					
 					if (method == OurMethod) {
 						for (entt::entity e : strokeEs) {
 							auto& stroke = R.get<Stroke>(e);
@@ -191,7 +190,6 @@ void Application::Run()
 						}
 					}
 					
-
 					Window->EndFrame();
 
 					if (Loader::ShouldLoadProject)
@@ -258,8 +256,8 @@ void Application::GenDefaultProject()
 	glm::vec2 min = { 0.0f, 0.0f };
 	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
 	// resolution
-	float dpi = 130.62857142857143f;
-	// float dpi = 174.1714285714286f;
+	// float dpi = 130.62857142857143f;
+	float dpi = 174.1714285714286f;
 	// float dpi = 261.25714285714287f;
 	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());

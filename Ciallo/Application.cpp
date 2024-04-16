@@ -161,12 +161,6 @@ void Application::Run()
 
 					
 					if (method == OurMethod) {
-						for (entt::entity e : strokeEs) {
-							auto& stroke = R.get<Stroke>(e);
-							stroke.UpdatePositionBuffer();
-							stroke.UpdateRadiusOffsetBuffer();
-						}
-
 						for (entt::entity e : strokeEs)
 						{
 							auto& stroke = R.get<Stroke>(e);

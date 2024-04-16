@@ -160,12 +160,6 @@ void Application::Run()
 					glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 					if (method == OurMethod) {
-						for (entt::entity e : strokeEs) {
-							auto& stroke = R.get<Stroke>(e);
-							stroke.UpdatePositionBuffer();
-							stroke.UpdateRadiusOffsetBuffer();
-						}
-
 						for (entt::entity e : strokeEs)
 						{
 							auto& stroke = R.get<Stroke>(e);

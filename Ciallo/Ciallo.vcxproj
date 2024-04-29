@@ -99,7 +99,7 @@
     <ClCompile Include="AirBrushData.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="ArrangementManager.cpp" />
-    <ClCompile Include="ArticulatedLineEngine.cpp" />
+    <ClCompile Include="ArticulatedLineShader.cpp" />
     <ClCompile Include="SelectionManager.cpp" />
     <ClCompile Include="CubicBezierBone.cpp" />
     <ClCompile Include="Brush.cpp" />
@@ -108,7 +108,7 @@
     <ClCompile Include="CanvasEvent.cpp" />
     <ClCompile Include="Ciallo.cpp" />
     <ClCompile Include="CubicBezier.cpp" />
-    <ClCompile Include="DotEngine.cpp" />
+    <ClCompile Include="DotShader.cpp" />
     <ClCompile Include="EditTool.cpp" />
     <ClCompile Include="EntityObject.cpp" />
     <ClCompile Include="FillTool.cpp" />
@@ -123,12 +123,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ColorFace.cpp" />
-    <ClCompile Include="PolygonEngine.cpp" />
+    <ClCompile Include="PolygonShader.cpp" />
     <ClCompile Include="Polyline.cpp" />
     <ClCompile Include="ArticulatedLineComp.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RenderableTexture.cpp" />
-    <ClCompile Include="RenderingSystem.cpp" />
+    <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="CanvasSelectionTextureManager.cpp" />
     <ClCompile Include="ShaderUtilities.cpp" />
     <ClCompile Include="StampBrushData.cpp" />
@@ -147,7 +147,7 @@
     <ClInclude Include="Application.h" />
     <ClInclude Include="Arrangement.h" />
     <ClInclude Include="ArrangementManager.h" />
-    <ClInclude Include="ArticulatedLineEngine.h" />
+    <ClInclude Include="ArticulatedLineShader.h" />
     <ClInclude Include="SelectionManager.h" />
     <ClInclude Include="CubicBezierBone.h" />
     <ClInclude Include="Brush.h" />
@@ -155,7 +155,7 @@
     <ClInclude Include="Canvas.h" />
     <ClInclude Include="CanvasEvent.h" />
     <ClInclude Include="CubicBezier.h" />
-    <ClInclude Include="DotEngine.h" />
+    <ClInclude Include="DotShader.h" />
     <ClInclude Include="EditTool.h" />
     <ClInclude Include="EntityObject.h" />
     <ClInclude Include="EyedropperInfo.h" />
@@ -180,10 +180,10 @@
     <ClInclude Include="PaintTool.h" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="ColorFace.h" />
-    <ClInclude Include="PolygonEngine.h" />
+    <ClInclude Include="PolygonShader.h" />
     <ClInclude Include="Polyline.h" />
     <ClInclude Include="ArticulatedLineComp.h" />
-    <ClInclude Include="RenderingSystem.h" />
+    <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="ShaderUtilities.h" />
     <ClInclude Include="Stroke.h" />
     <ClInclude Include="Tool.h" />

@@ -183,12 +183,12 @@ void main() {
     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
     float backIndex = x2n(backEdge, stampIntervalRatio, r0, r1, len);
     endIndex = endIndex < backIndex ? endIndex : backIndex;
-    if(startIndex > endIndex) discard;
+    // if(startIndex > endIndex) discard;
 
-    int MAX_i = 128; float currIndex = startIndex;
+    int MAX_i = 1; float currIndex = startIndex;
     float A = 0.0;
     for(int i = 0; i < MAX_i; i++){
-        float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
+        float currStampLocalX = 0.0;
         float r = r0 - cosTheta * currStampLocalX;
         vec2 pToStamp = pLocal - vec2(currStampLocalX, 0);
         float angle = rotationRand*radians(360*fract(sin(summedIndex+currIndex)*1.0));

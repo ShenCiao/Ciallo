@@ -4,7 +4,7 @@
 #include <filesystem>
 
 #include "BrushManager.h"
-#include "RenderingSystem.h"
+#include "ShaderProgram.h"
 #include "Brush.h"
 #include "TextureManager.h"
 #include "Canvas.h"
@@ -24,7 +24,7 @@ Application::Application()
 {
 	// window with opengl context
 	Window = std::make_unique<class Window>();
-	RenderingSystem::Init();
+	ShaderProgram::Init();
 	TextureManager::LoadTextures();
 }
 
@@ -122,12 +122,12 @@ void Application::GenDefaultProject()
 	brushes.push_back(R.create());
 	auto& brush0 = R.emplace<Brush>(brushes.back());
 	brush0.Name = "Vanilla";
-	brush0.Program = RenderingSystem::ArticulatedLine->Program();
+	brush0.Program = ShaderProgram::ArticulatedLine->Program();
 
 	brushes.push_back(R.create());
 	auto& brush1 = R.emplace<Brush>(brushes.back());
 	brush1.Name = "Splatter";
-	brush1.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush1.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Stamp);
 	brush1.Stamp = std::make_unique<StampBrushData>();
 	brush1.Stamp->StampTexture = TextureManager::Textures[1];
 	brush1.Stamp->StampIntervalRatio = 1.0f / 5.0f;
@@ -135,7 +135,7 @@ void Application::GenDefaultProject()
 	brushes.push_back(R.create());
 	auto& brush2 = R.emplace<Brush>(brushes.back());
 	brush2.Name = "Pencil";
-	brush2.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush2.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Stamp);
 	brush2.Stamp = std::make_unique<StampBrushData>();
 	brush2.Stamp->StampTexture = TextureManager::Textures[2];
 	brush2.Stamp->StampIntervalRatio = 1.0f / 50.0f;
@@ -144,7 +144,7 @@ void Application::GenDefaultProject()
 	brushes.push_back(R.create());
 	auto& brush3 = R.emplace<Brush>(brushes.back());
 	brush3.Name = "Airbrush";
-	brush3.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Airbrush);
+	brush3.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Airbrush);
 	brush3.AirBrush = std::make_unique<AirBrushData>();
 	brush3.AirBrush->Curve = glm::mat4x2{ {0.0f, 1.0f}, {0.2f, 1.0f}, {0.5f, 0.0f}, {1.0f, 0.0f} };
 	brush3.AirBrush->UpdateGradient();
@@ -152,7 +152,7 @@ void Application::GenDefaultProject()
 	brushes.push_back(R.create());
 	auto& brush4 = R.emplace<Brush>(brushes.back());
 	brush4.Name = "Dot";
-	brush4.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	brush4.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Stamp);
 	brush4.Stamp = std::make_unique<StampBrushData>();
 	brush4.Stamp->StampTexture = TextureManager::Textures[6];
 	brush4.Stamp->StampIntervalRatio = 1.0f / 5.0f;
@@ -192,10 +192,9 @@ void Application::DrawMainMenu()
 				Loader::LoadCsv("./models/triangle.csv");
 			if (ImGui::MenuItem("Fish"))
 				Loader::LoadAnimation("./models/fish");
-			if (ImGui::MenuItem("Neutral Face"))
-				Loader::LoadCsv("./models/neutral.csv");
-			if (ImGui::MenuItem("Smile Face"))
-				Loader::LoadCsv("./models/smile.csv");
+			if (ImGui::MenuItem("Flower"))
+				Loader::LoadCsv("./models/flower.csv");
+			
 			ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
 			ImGui::PushItemWidth(100.0f);
 			ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");

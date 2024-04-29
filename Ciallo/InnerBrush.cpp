@@ -1,18 +1,18 @@
 #include "pch.hpp"
 #include "InnerBrush.h"
-#include "RenderingSystem.h"
+#include "ShaderProgram.h"
 #include "TextureManager.h"
 
 InnerBrush::InnerBrush()
 {
 	Brush b;
 	b.Name = "vanilla";
-	b.Program = RenderingSystem::ArticulatedLine->Program();
+	b.Program = ShaderProgram::ArticulatedLine->Program();
 	Add(std::move(b));
 
 	Brush fillMarker;
 	fillMarker.Name = "fill_marker";
-	fillMarker.Program = RenderingSystem::ArticulatedLine->Program(ArticulatedLineEngine::Type::Stamp);
+	fillMarker.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Stamp);
 	fillMarker.Stamp = std::make_unique<StampBrushData>();
 	fillMarker.Stamp->StampTexture = TextureManager::Textures[4];
 	fillMarker.Stamp->StampIntervalRatio = 0.75f;

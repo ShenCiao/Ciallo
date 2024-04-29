@@ -1,7 +1,7 @@
 #include "pch.hpp"
 #include "Stroke.h"
 
-#include "RenderingSystem.h"
+#include "ShaderProgram.h"
 
 Stroke::Stroke()
 {
@@ -80,7 +80,7 @@ void Stroke::UpdateRadiusOffsetBuffer()
 void Stroke::UpdateDistanceBuffer(int stampMode)
 {
 	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
-	glUseProgram(RenderingSystem::PrefixSum->Program);
+	glUseProgram(ShaderProgram::PrefixSum->Program);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, VertexBuffers[2]);

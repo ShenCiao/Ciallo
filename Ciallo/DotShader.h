@@ -1,12 +1,12 @@
 #pragma once
 
 
-class DotEngine
+class DotShader
 {
 public:
 	GLuint Program;
 
-	DotEngine();
-	~DotEngine();
+	DotShader();
+	~DotShader();
 };
 

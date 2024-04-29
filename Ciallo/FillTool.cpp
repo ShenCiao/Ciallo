@@ -3,7 +3,7 @@
 
 #include "BrushManager.h"
 #include "ArrangementManager.h"
-#include "RenderingSystem.h"
+#include "ShaderProgram.h"
 #include "Canvas.h"
 #include "InnerBrush.h"
 #include "TempLayers.h"
@@ -121,7 +121,7 @@ void FillTool::OnHovering(Hovering event)
 		auto polygonWithHoles = arm.PointQuery(event.MousePos);
 		if (!polygonWithHoles.empty())
 		{
-			glUseProgram(RenderingSystem::Polygon->Program);
+			glUseProgram(ShaderProgram::Polygon->Program);
 			glUniform4fv(1, 1, glm::value_ptr(Painter.FillColor)); // color
 			ColorFace face{polygonWithHoles};
 			face.GenUploadBuffers();

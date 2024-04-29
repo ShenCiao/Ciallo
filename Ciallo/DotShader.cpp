@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "DotEngine.h"
+#include "DotShader.h"
 
 #include "ShaderUtilities.h"
 
-DotEngine::DotEngine()
+DotShader::DotShader()
 {
 	std::filesystem::path root = "./shaders";
 	GLuint vertShader = ShaderUtilities::CreateFromFile(root / "dot.vert", GL_VERTEX_SHADER);
@@ -20,7 +20,7 @@ DotEngine::DotEngine()
 	glDeleteShader(fragShader);
 }
 
-DotEngine::~DotEngine()
+DotShader::~DotShader()
 {
 	glDeleteProgram(Program);
 }

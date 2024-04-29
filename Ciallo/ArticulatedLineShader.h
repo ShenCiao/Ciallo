@@ -1,7 +1,7 @@
 #pragma once
 
 // A bad design for historical reasons.
-class ArticulatedLineEngine
+class ArticulatedLineShader
 {
 public:
 	enum class Type
@@ -14,8 +14,8 @@ public:
 
 	std::unordered_map<Type, GLuint> Programs;
 
-	ArticulatedLineEngine();
-	~ArticulatedLineEngine();
+	ArticulatedLineShader();
+	~ArticulatedLineShader();
 
 	GLuint Program(Type type = Type::Vanilla);
 };

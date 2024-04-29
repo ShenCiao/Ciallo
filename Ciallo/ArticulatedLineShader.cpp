@@ -1,9 +1,9 @@
 #include "pch.hpp"
-#include "ArticulatedLineEngine.h"
+#include "ArticulatedLineShader.h"
 
 #include "ShaderUtilities.h"
 
-ArticulatedLineEngine::ArticulatedLineEngine()
+ArticulatedLineShader::ArticulatedLineShader()
 {
 	std::filesystem::path root = "./shaders";
 	GLuint vertShader = ShaderUtilities::CreateFromFile(root / "articulatedLine.vert", GL_VERTEX_SHADER);
@@ -42,7 +42,7 @@ ArticulatedLineEngine::ArticulatedLineEngine()
 	Programs[Type::Airbrush] = program;
 }
 
-ArticulatedLineEngine::~ArticulatedLineEngine()
+ArticulatedLineShader::~ArticulatedLineShader()
 {
 	for(auto& it : Programs)
 	{
@@ -50,7 +50,7 @@ ArticulatedLineEngine::~ArticulatedLineEngine()
 	}
 }
 
-GLuint ArticulatedLineEngine::Program(Type type)
+GLuint ArticulatedLineShader::Program(Type type)
 {
 	return Programs[type];
 }

@@ -4,7 +4,7 @@
 #include "StrokeContainer.h"
 #include "Stroke.h"
 #include "Brush.h"
-#include "RenderingSystem.h"
+#include "ShaderProgram.h"
 #include "Canvas.h"
 #include "ArrangementManager.h"
 #include "Painter.h"
@@ -111,7 +111,7 @@ void TempLayers::RenderDrawing()
 		}
 	}
 
-	// Dirty thing to draw the middle axis
+	// // Dirty thing to draw the middle axis
 	// for (entt::entity e : strokeEs) {
 	// 	auto& oldBrush = R.get<Brush>(R.get<Stroke>(e).BrushE);
 	// 	// if (oldBrush.Stamp->StampTexture != TextureManager::Textures[6]) continue;
@@ -120,7 +120,7 @@ void TempLayers::RenderDrawing()
 	// 	if (!!(strokeUsage & StrokeUsageFlags::Zone )) continue;
 	// 	if (!!(strokeUsage & StrokeUsageFlags::Fill)) continue;
 	// 	stroke.RadiusOffset = std::vector<float>{ 0.0 };
-	// 	stroke.Radius = 0.004f / 25.0f;
+	// 	stroke.Radius = 0.002f / 25.0f;
 	// 	stroke.Color = { 82.f / 255, 125.f / 255, 255.f / 255, 1.0f };
 	// 	stroke.UpdateBuffers();
 	//
@@ -152,8 +152,8 @@ void TempLayers::RenderDrawing()
 	// 		s.LineDrawCall();
 	// 	}
 	// }
-	//
-	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void TempLayers::RenderFill()
@@ -163,7 +163,7 @@ void TempLayers::RenderFill()
 	entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
 	auto& arm = R.get<ArrangementManager>(drawingE);
 	auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
-	glUseProgram(RenderingSystem::Polygon->Program);
+	glUseProgram(ShaderProgram::Polygon->Program);
 	glEnable(GL_STENCIL_TEST);
 	for (entt::entity e : strokeEs)
 	{
@@ -217,7 +217,7 @@ void TempLayers::BlendAll()
 	glClearColor(1, 1, 1, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	glUseProgram(RenderingSystem::Dot->Program);
+	glUseProgram(ShaderProgram::Dot->Program);
 	port.UploadMVP();
 	port.BindMVPBuffer();
 	glBindVertexArray(vao);

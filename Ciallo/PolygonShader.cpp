@@ -1,9 +1,9 @@
 ﻿#include "pch.hpp"
-#include "PolygonEngine.h"
+#include "PolygonShader.h"
 
 #include "ShaderUtilities.h"
 
-PolygonEngine::PolygonEngine()
+PolygonShader::PolygonShader()
 {
 	std::filesystem::path root = "./shaders";
 	GLuint vertShader = ShaderUtilities::CreateFromFile(root / "polygon.vert", GL_VERTEX_SHADER);
@@ -17,7 +17,7 @@ PolygonEngine::PolygonEngine()
 	glDeleteShader(fragShader);
 }
 
-PolygonEngine::~PolygonEngine()
+PolygonShader::~PolygonShader()
 {
 	glDeleteProgram(Program);
 }

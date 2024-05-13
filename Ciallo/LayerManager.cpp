@@ -1,110 +1,146 @@
 ﻿#include "pch.hpp"
 #include "LayerManager.h"
 
-#include "Layer.h"
 #include "StrokeContainer.h"
-#include <algorithm>
-#include <boost/graph/visitors.hpp>
-#include <boost/graph/depth_first_search.hpp>
 
 LayerManager::LayerManager()
 {
-	LayerTree[0] = entt::null; // root node
-	auto v0 = boost::add_vertex(LayerTree);
-	LayerTree[v0] = R.create();
-	boost::add_edge(0, v0, LayerTree);
-	auto v1 = boost::add_vertex(LayerTree);
-	LayerTree[v1] = R.create();
-	boost::add_edge(0, v1, LayerTree);
-	auto v2 = boost::add_vertex(LayerTree);
-	LayerTree[v2] = R.create();
-	boost::add_edge(v0, v2, LayerTree);
+	LayerTree.set_head(entt::null);
+	SelectedLayerIt = LayerTree.begin();
+	auto t = LayerTree.append_child(LayerTree.begin(), CreateLayer());
+	LayerTree.append_child(LayerTree.begin(), CreateLayer());
+	LayerTree.append_child(t, CreateLayer());
+	t = LayerTree.append_child(t, CreateLayer());
+	t = LayerTree.append_child(t, CreateLayer());
 }
 void LayerManager::DrawUI()
 {
 	ImGui::Begin("LayerManager", nullptr, ImGuiWindowFlags_MenuBar);
 	float framePad = 25.f;
-	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_Leaf |
-		ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap;
+
 	ImGui::BeginMenuBar();
 	DrawMenuButton();
 	ImGui::EndMenuBar();
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.f, framePad));
+	ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFrameHeight() / 2);
 	ImGui::Separator();
 
-	auto drawDragTarget = []()
+	DropTargetIt = LayerTree.end();
+	Insertion = InsertionType::None;
+	RecursivelyDrawTreeNodes(LayerTree.begin());
+	// Pad a final drop target
+	if (DrawDropTarget(DropTargetType::UpperHalf))
 	{
-		bool dropped = false;
-		glm::vec2 nextStart = ImGui::GetCursorPos();
-		ImGui::SetCursorPos(ImGui::GetCursorPos() - ImVec2(0, ImGui::GetFrameHeight() / 2));
-		ImGui::Dummy({1000.f, ImGui::GetFrameHeight()});
-		ImGui::SetCursorPos(nextStart);
-		if (ImGui::BeginDragDropTarget())
+		DropTargetIt = LayerTree.begin();
+		Insertion = InsertionType::AppendChild;
+	}
+
+	tree<entt::entity>::iterator tempIt;
+	switch (Insertion)
+	{
+	case InsertionType::None:
+		break;
+	case InsertionType::PreviousSibling:
+		LayerTree.move_before(DropTargetIt, DragSourceIt);
+		break;
+	case InsertionType::NextSibling:
+		LayerTree.move_after(DropTargetIt, DragSourceIt);
+		break;
+	case InsertionType::PrependChild:
+		tempIt = LayerTree.append_child(DragSourceIt, entt::null);
+		LayerTree.move_ontop(tempIt, DragSourceIt);
+		break;
+	case InsertionType::AppendChild:
+		tempIt = LayerTree.append_child(DragSourceIt, entt::null);
+		LayerTree.move_ontop(tempIt, DragSourceIt);
+		break;
+	}
+
+	ImGui::PopStyleVar();
+	ImGui::PopStyleVar();
+	ImGui::End();
+}
+void LayerManager::Run()
+{
+}
+
+void LayerManager::DrawMenuButton()
+{
+	if (ImGui::Button("Add"))
+	{
+		entt::entity e = CreateLayer();
+		// if (SelectedLayerIt == LayerTree.begin())
+		LayerTree.append_child(LayerTree.begin(), e);
+		// else
+		// 	LayerTree.insert_after(SelectedLayerIt, e);
+	}
+
+	if (ImGui::Button("Add Mask"))
+	{
+		entt::entity e = CreateLayer(LayerType::Mask);
+		// if (SelectedLayerIt == LayerTree.begin())
+		LayerTree.append_child(LayerTree.begin(), e);
+		// else
+		// 	LayerTree.insert_after(SelectedLayerIt, e);
+	}
+
+	if (ImGui::Button("Remove"))
+	{
+		LayerTree.erase(SelectedLayerIt);
+	}
+}
+
+entt::entity LayerManager::CreateLayer(LayerType type) const
+{
+	entt::entity e = R.create();
+	auto& l = R.emplace<Layer>(e);
+	l.Name.reserve(128);
+	l.Name = fmt::format("Layer {}", LayerTree.size());
+	l.Type = type;
+	R.emplace<StrokeContainer>(e);
+	return e;
+}
+
+// I tend to create this function as a lambda function. But lambda function doesn't support recursion. 
+void LayerManager::RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it)
+{
+	// Draw current node
+	entt::entity e = *it;
+	bool isRootNode = e == entt::null;
+	bool isNodeOpen = true;
+	if (!isRootNode)
+	{
+		// Draw drop targets, make sure call these functions before checkbox
+		if (DrawDropTarget(DropTargetType::UpperHalf))
 		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-				"LayerMove", ImGuiDragDropFlags_AcceptPeekOnly))
-			{
-				ImGui::Separator();
-				if (payload->IsDelivery())
-				{
-					dropped = true;
-				}
-			}
-			ImGui::EndDragDropTarget();
+			DropTargetIt = it;
+			Insertion = InsertionType::PreviousSibling;
 		}
-		return dropped;
-	};
-	bool dragMove = false;
-	entt::entity dropTarget = entt::null;
-	for (auto e : Layers)
-	{
+		if (DrawDropTarget(DropTargetType::LowerHalf))
+		{
+			DropTargetIt = it;
+			Insertion = isNodeOpen ? InsertionType::PrependChild : InsertionType::NextSibling;
+		}
+		// Draw tree node
 		auto& layer = R.get<Layer>(e);
-		// Drag target
-		if (drawDragTarget())
-		{
-			dropTarget = e;
-			dragMove = true;
-		}
-		// Visibility checkbox
 		ImGui::CheckboxFlags(fmt::format("##vis{}", e).c_str(),
 		                     reinterpret_cast<unsigned*>(&layer.Flags),
 		                     static_cast<unsigned>(LayerFlags::Visible));
 		ImGui::SameLine();
-		// Tree node
-		ImGuiTreeNodeFlags extraFlag = 0;
-		if (SelectedLayers.contains(e))
-			extraFlag |= ImGuiTreeNodeFlags_Selected;
-		ImGui::TreeNodeEx(fmt::format("##node{}", e).c_str(), flag | extraFlag, "");
+		ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap |
+		ImGuiTreeNodeFlags_OpenOnArrow;
+		if (*SelectedLayerIt == e)
+			flag |= ImGuiTreeNodeFlags_Selected;
+		if (layer.Type == LayerType::Normal)
+			flag |= ImGuiTreeNodeFlags_Leaf;
+		isNodeOpen = ImGui::TreeNodeEx(fmt::format("##node{}", e).c_str(), flag, "");
 
 		// selection gesture
-		// MultiSelGesture is the gesture of the nodes that have been selected.
-		bool IsMultiSelGesture = IsMultiSelecting() && SelectedLayers.contains(e);
-		if (!IsMultiSelGesture && ImGui::IsItemClicked() && !ImGui::IsDragDropActive() && !IsRenaming)
+		if (ImGui::IsItemClicked() && !ImGui::IsDragDropActive() && !IsRenaming)
 		{
-			if (!ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) SelectedLayers.clear();
-			SelectedLayers.insert(e);
+			SelectedLayerIt = it;
 			IsRenaming = false;
 		}
-
-		// detect release instead of click to avoid conflict with drag and drop
-		if (IsMultiSelGesture && ImGui::IsItemClicked() && !ImGui::IsDragDropActive())
-		{
-			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-			{
-				SelectedLayers.erase(e);
-			}
-			IsRenaming = false;
-		}
-
-		if (IsMultiSelGesture && ImGui::IsItemHovered() && ImGui::IsMouseReleased(0) && !ImGui::IsDragDropActive())
-		{
-			if (!ImGui::IsKeyDown(ImGuiKey_LeftCtrl))
-			{
-				SelectedLayers.clear();
-				SelectedLayers.insert(e);
-			}
-		}
-
 
 		// renaming gesture
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && !IsRenaming)
@@ -116,20 +152,17 @@ void LayerManager::DrawUI()
 			ImGui::SetDragDropPayload("LayerMove", nullptr, 0);
 			ImGui::TextUnformatted(layer.Name.c_str());
 			ImGui::EndDragDropSource();
+			DragSourceIt = it;
+			IsRenaming = false;
 		}
 
 		ImGui::SameLine();
-		// // Layer preview, disable it for using infinite canvas
-		// float imageRatio = static_cast<float>(layer.Content.Width) / layer.Content.Height;
-		// ImGui::Image(reinterpret_cast<ImTextureID>(layer.Content.ColorTexture), {
-		// 	             imageRatio * ImGui::GetFrameHeight(), ImGui::GetFrameHeight()
-		//              });
-		// ImGui::SameLine();
-		
+
 		// name or rename
 		glm::vec2 nameStart = ImGui::GetCursorPos();
 		ImGui::TextUnformatted(layer.Name.c_str());
-		if (IsRenaming && !IsMultiSelecting() && SelectedLayers.contains(e))
+
+		if (IsRenaming && *SelectedLayerIt == e)
 		{
 			ImGui::SetCursorPos(nameStart);
 			bool done = ImGui::InputText(fmt::format("##nameInput{}", e).c_str(), &layer.Name,
@@ -138,109 +171,47 @@ void LayerManager::DrawUI()
 				IsRenaming = false;
 		}
 	}
-	// pad one drop target
-	if (drawDragTarget())
-		dragMove = true;
 
-	if (dragMove)
-		MoveSelection(dropTarget);
-
-	ImGui::PopStyleVar();
-	ImGui::End();
-}
-void LayerManager::Run()
-{
-	// DFS to get the order of layers
-	class DFSVisitor : public boost::default_dfs_visitor
+	if (isNodeOpen || isRootNode)
 	{
-	public:
-		std::vector<entt::entity>& Layers;
-		DFSVisitor(std::vector<entt::entity>& layers) : Layers(layers) {}
-		void discover_vertex(LayerGraph::vertex_descriptor v, const LayerGraph& g)
+		// Draw children
+		for (auto childrenIt = LayerTree.begin(it); childrenIt != LayerTree.end(it); ++childrenIt)
 		{
-			Layers.push_back(g[v]);
-		}
-	};
-	std::vector<entt::entity> layers;
-	DFSVisitor visitor{layers};
-	// Color_map is a just dummy variable used to mark the visited vertices.
-	// Why do I need to specify this redundant thing?
-	std::vector<boost::default_color_type> color_map(boost::num_vertices(LayerTree));
-	boost::depth_first_visit(LayerTree, 0, visitor,
-		boost::make_iterator_property_map(color_map.begin(), boost::get(boost::vertex_index, LayerTree))
-	);
-}
-
-void LayerManager::DrawMenuButton()
-{
-	if (ImGui::Button("Add"))
-	{
-		entt::entity e = CreateLayer();
-		R.emplace<StrokeContainer>(e);
-		Layers.push_back(e);
-	}
-
-	if (ImGui::Button("Remove"))
-	{
-		RemoveSelection();
-	}
-}
-
-void LayerManager::RemoveSelection()
-{
-	for (auto it = Layers.begin(); it != Layers.end();)
-	{
-		if (SelectedLayers.contains(*it))
-		{
-			it = Layers.erase(it);
-		}
-		else
-		{
-			++it;
+			RecursivelyDrawTreeNodes(childrenIt);
 		}
 	}
+	if (isNodeOpen && !isRootNode) ImGui::TreePop();
 }
-
-entt::entity LayerManager::CreateLayer() const
+bool LayerManager::DrawDropTarget(DropTargetType type, bool indent)
 {
-	entt::entity e = R.create();
-	auto& l = R.emplace<Layer>(e);
-	l.Name.reserve(128);
-	l.Name = fmt::format("Layer {}", boost::num_vertices(LayerTree));
-	return e;
-}
-void LayerManager::GenChildLayer(entt::entity parent)
-{
-	
-}
+	bool dropped = false;
+	glm::vec2 nextPos = ImGui::GetCursorPos(); // start position of the next tree node.
 
-void LayerManager::MoveSelection(entt::entity target)
-{
-	std::vector<entt::entity> selInOrder;
+	if (type == DropTargetType::LowerHalf)
+		ImGui::SetCursorPos(nextPos + glm::vec2(0, ImGui::GetFrameHeightWithSpacing() / 2));
 
-	auto insertIt = std::find(Layers.begin(), Layers.end(), target);
-	while (insertIt != Layers.end() && SelectedLayers.contains(*insertIt))
+	ImGui::Dummy({1000.f, ImGui::GetFrameHeight() / 2});
+	ImGui::SetCursorPos(nextPos);
+	if (indent) ImGui::Indent();
+	glm::vec2 screenPos = ImGui::GetCursorScreenPos();
+	if (indent) ImGui::Unindent();
+	if (ImGui::BeginDragDropTarget())
 	{
-		++insertIt;
-	}
-
-	for (auto it = Layers.begin(); it != Layers.end();)
-	{
-		if (SelectedLayers.contains(*it))
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+			"LayerMove", ImGuiDragDropFlags_AcceptPeekOnly))
 		{
-			selInOrder.push_back(*it);
-			it = Layers.erase(it);
+			float lineThickness = 2.0f;
+			auto* drawList = ImGui::GetWindowDrawList();
+			glm::vec2 pos;
+			if (type == DropTargetType::UpperHalf)
+				pos = screenPos - glm::vec2(0.0, lineThickness / 2);
+			else
+				pos = screenPos + glm::vec2(0.0, ImGui::GetFrameHeightWithSpacing()) - glm::vec2(0.0, lineThickness / 2);
+
+			drawList->AddLine(pos, pos + glm::vec2(1000.f, 0), IM_COL32(240, 240, 210, 255), lineThickness);
+			dropped = payload->IsDelivery();
 		}
-		else
-		{
-			++it;
-		}
+		ImGui::EndDragDropTarget();
 	}
-
-	Layers.insert(insertIt, selInOrder.begin(), selInOrder.end());
-}
-
-bool LayerManager::IsMultiSelecting() const
-{
-	return SelectedLayers.size() > 1;
+	return dropped;
 }

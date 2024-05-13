@@ -1,6 +1,10 @@
 ﻿#pragma once
 
-#include <boost/graph/adjacency_list.hpp>
+enum class LayerType
+{
+	Normal,
+	Mask,
+};
 
 enum class LayerFlags
 {
@@ -13,5 +17,6 @@ class Layer
 {
 public:
 	LayerFlags Flags = LayerFlags::Visible;
+	LayerType Type = LayerType::Normal;
 	std::string Name = {};
 };

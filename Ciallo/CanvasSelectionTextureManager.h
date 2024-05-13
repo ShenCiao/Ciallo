@@ -2,7 +2,7 @@
 
 #include "RenderableTexture.h"
 
-// Move into `class Canvas` perhaps?
+// Move this into `class Canvas` perhaps?
 class CanvasSelectionTextureManager
 {
 public:
@@ -15,4 +15,4 @@ public:
 
 	static glm::vec4 IndexToColor(uint32_t index);
 	static uint32_t ColorToIndex(glm::vec4 color);
-}; 
+};

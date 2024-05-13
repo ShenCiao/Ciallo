@@ -9,6 +9,7 @@
       "entt",
       "glm",
       "cgal",
-      "cereal"
+      "cereal",
+      "treehh"
     ]
   }

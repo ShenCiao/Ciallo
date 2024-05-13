@@ -1,294 +1,296 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
-      <Platform>x64</Platform>
-    </ProjectConfiguration>
-  </ItemGroup>
-  <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
-    <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{03c5582d-45d3-498d-b43d-9aef3af04f46}</ProjectGuid>
-    <RootNamespace>Ciallo</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
-    <VcpkgEnabled>true</VcpkgEnabled>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS;CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)dlib;$(SolutionDir)imgui</AdditionalIncludeDirectories>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)dlib;$(SolutionDir)imgui</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
-    </ClCompile>
-    <Link>
-      <SubSystem>Console</SubSystem>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\dlib\dlib\all\source.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="AirBrushData.cpp" />
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="ArrangementManager.cpp" />
-    <ClCompile Include="ArticulatedLineShader.cpp" />
-    <ClCompile Include="SelectionManager.cpp" />
-    <ClCompile Include="CubicBezierBone.cpp" />
-    <ClCompile Include="Brush.cpp" />
-    <ClCompile Include="BrushManager.cpp" />
-    <ClCompile Include="Canvas.cpp" />
-    <ClCompile Include="CanvasEvent.cpp" />
-    <ClCompile Include="Ciallo.cpp" />
-    <ClCompile Include="CubicBezier.cpp" />
-    <ClCompile Include="DotShader.cpp" />
-    <ClCompile Include="EditTool.cpp" />
-    <ClCompile Include="EntityObject.cpp" />
-    <ClCompile Include="FillTool.cpp" />
-    <ClCompile Include="InnerBrush.cpp" />
-    <ClCompile Include="Layer.cpp" />
-    <ClCompile Include="LayerManager.cpp" />
-    <ClCompile Include="Loader.cpp" />
-    <ClCompile Include="Painter.cpp" />
-    <ClCompile Include="PaintTool.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="ColorFace.cpp" />
-    <ClCompile Include="PolygonShader.cpp" />
-    <ClCompile Include="Polyline.cpp" />
-    <ClCompile Include="ArticulatedLineComp.cpp" />
-    <ClCompile Include="Registry.cpp" />
-    <ClCompile Include="RenderableTexture.cpp" />
-    <ClCompile Include="ShaderProgram.cpp" />
-    <ClCompile Include="CanvasSelectionTextureManager.cpp" />
-    <ClCompile Include="ShaderUtilities.cpp" />
-    <ClCompile Include="StampBrushData.cpp" />
-    <ClCompile Include="Stroke.cpp" />
-    <ClCompile Include="StrokeContainer.cpp" />
-    <ClCompile Include="TempLayers.cpp" />
-    <ClCompile Include="TextureManager.cpp" />
-    <ClCompile Include="TimelineManager.cpp" />
-    <ClCompile Include="Tool.cpp" />
-    <ClCompile Include="Toolbox.cpp" />
-    <ClCompile Include="Viewport.cpp" />
-    <ClCompile Include="Window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="AirBrushData.h" />
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="Arrangement.h" />
-    <ClInclude Include="ArrangementManager.h" />
-    <ClInclude Include="ArticulatedLineShader.h" />
-    <ClInclude Include="SelectionManager.h" />
-    <ClInclude Include="CubicBezierBone.h" />
-    <ClInclude Include="Brush.h" />
-    <ClInclude Include="BrushManager.h" />
-    <ClInclude Include="Canvas.h" />
-    <ClInclude Include="CanvasEvent.h" />
-    <ClInclude Include="CubicBezier.h" />
-    <ClInclude Include="DotShader.h" />
-    <ClInclude Include="EditTool.h" />
-    <ClInclude Include="EntityObject.h" />
-    <ClInclude Include="EyedropperInfo.h" />
-    <ClInclude Include="FillTool.h" />
-    <ClInclude Include="easytab.h" />
-    <ClInclude Include="InnerBrush.h" />
-    <ClInclude Include="Layer.h" />
-    <ClInclude Include="LayerManager.h" />
-    <ClInclude Include="Loader.h" />
-    <ClInclude Include="Painter.h" />
-    <ClInclude Include="Registry.h" />
-    <ClInclude Include="RenderableTexture.h" />
-    <ClInclude Include="CanvasSelectionTextureManager.h" />
-    <ClInclude Include="StampBrushData.h" />
-    <ClInclude Include="StrokeContainer.h" />
-    <ClInclude Include="TempLayers.h" />
-    <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="TimelineManager.h" />
-    <ClInclude Include="Toolbox.h" />
-    <ClInclude Include="Viewport.h" />
-    <ClInclude Include="Visiblity.h" />
-    <ClInclude Include="PaintTool.h" />
-    <ClInclude Include="pch.hpp" />
-    <ClInclude Include="ColorFace.h" />
-    <ClInclude Include="PolygonShader.h" />
-    <ClInclude Include="Polyline.h" />
-    <ClInclude Include="ArticulatedLineComp.h" />
-    <ClInclude Include="ShaderProgram.h" />
-    <ClInclude Include="ShaderUtilities.h" />
-    <ClInclude Include="Stroke.h" />
-    <ClInclude Include="Tool.h" />
-    <ClInclude Include="Window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="shaders\articulatedLine.frag">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\articulatedLine.geom">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\articulatedLine.vert">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="shaders\polygon.frag">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\polygon.vert">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\articulatedLine.comp">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="images\stamp1.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="images\stamp2.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\imgui\imgui.vcxproj">
-      <Project>{c4079022-342b-4aea-9437-6d3c27c856f5}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="shaders\dot.frag">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\dot.geom">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="shaders\dot.vert">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="images\fill_marker.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="images\myaamori.jpg">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="images\stamp3.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="images\girl.jpg">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="models\girl.csv">
-      <FileType>Document</FileType>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/models</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <ItemGroup>
-    <CopyFileToFolders Include="images\dot2.png">
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
-      <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
-    </CopyFileToFolders>
-  </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+    <ItemGroup Label="ProjectConfigurations">
+        <ProjectConfiguration Include="Debug|x64">
+            <Configuration>Debug</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+        <ProjectConfiguration Include="Release|x64">
+            <Configuration>Release</Configuration>
+            <Platform>x64</Platform>
+        </ProjectConfiguration>
+    </ItemGroup>
+    <PropertyGroup Label="Globals">
+        <VCProjectVersion>16.0</VCProjectVersion>
+        <Keyword>Win32Proj</Keyword>
+        <ProjectGuid>{03c5582d-45d3-498d-b43d-9aef3af04f46}</ProjectGuid>
+        <RootNamespace>Ciallo</RootNamespace>
+        <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+        <ConfigurationType>Application</ConfigurationType>
+        <UseDebugLibraries>true</UseDebugLibraries>
+        <PlatformToolset>v143</PlatformToolset>
+        <CharacterSet>Unicode</CharacterSet>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+        <ConfigurationType>Application</ConfigurationType>
+        <UseDebugLibraries>false</UseDebugLibraries>
+        <PlatformToolset>v143</PlatformToolset>
+        <WholeProgramOptimization>true</WholeProgramOptimization>
+        <CharacterSet>Unicode</CharacterSet>
+    </PropertyGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+    <ImportGroup Label="ExtensionSettings">
+    </ImportGroup>
+    <ImportGroup Label="Shared">
+    </ImportGroup>
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    </ImportGroup>
+    <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform"/>
+    </ImportGroup>
+    <PropertyGroup Label="UserMacros"/>
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <LinkIncremental>false</LinkIncremental>
+    </PropertyGroup>
+    <PropertyGroup Label="Vcpkg">
+        <VcpkgEnableManifest>true</VcpkgEnableManifest>
+        <VcpkgEnabled>true</VcpkgEnabled>
+    </PropertyGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+        <ClCompile>
+            <WarningLevel>Level3</WarningLevel>
+            <SDLCheck>true</SDLCheck>
+            <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS;CGAL_NO_ASSERTIONS;CGAL_NO_PRECONDITIONS</PreprocessorDefinitions>
+            <ConformanceMode>true</ConformanceMode>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+            <AdditionalIncludeDirectories>$(SolutionDir)dlib;$(SolutionDir)imgui</AdditionalIncludeDirectories>
+            <PrecompiledHeader>Use</PrecompiledHeader>
+            <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+            <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+            <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+            <DisableSpecificWarnings>4819</DisableSpecificWarnings>
+        </ClCompile>
+        <Link>
+            <SubSystem>Console</SubSystem>
+            <GenerateDebugInformation>true</GenerateDebugInformation>
+        </Link>
+    </ItemDefinitionGroup>
+    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+        <ClCompile>
+            <WarningLevel>Level3</WarningLevel>
+            <FunctionLevelLinking>true</FunctionLevelLinking>
+            <IntrinsicFunctions>true</IntrinsicFunctions>
+            <SDLCheck>true</SDLCheck>
+            <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);CGAL_DO_NOT_USE_BOOST_MP;ENTT_USE_ATOMIC;IMGUI_DEFINE_MATH_OPERATORS;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+            <ConformanceMode>true</ConformanceMode>
+            <AdditionalIncludeDirectories>$(SolutionDir)dlib;$(SolutionDir)imgui</AdditionalIncludeDirectories>
+            <LanguageStandard>stdcpp20</LanguageStandard>
+            <PrecompiledHeader>Use</PrecompiledHeader>
+            <PrecompiledHeaderFile>pch.hpp</PrecompiledHeaderFile>
+            <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+            <DisableSpecificWarnings>4819</DisableSpecificWarnings>
+        </ClCompile>
+        <Link>
+            <SubSystem>Console</SubSystem>
+            <EnableCOMDATFolding>true</EnableCOMDATFolding>
+            <OptimizeReferences>true</OptimizeReferences>
+            <GenerateDebugInformation>true</GenerateDebugInformation>
+        </Link>
+    </ItemDefinitionGroup>
+    <ItemGroup>
+        <ClCompile Include="..\dlib\dlib\all\source.cpp">
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+        </ClCompile>
+        <ClCompile Include="AirBrushData.cpp"/>
+        <ClCompile Include="Application.cpp"/>
+        <ClCompile Include="ArrangementManager.cpp"/>
+        <ClCompile Include="ArticulatedLineShader.cpp"/>
+        <ClCompile Include="EntityTree.cpp"/>
+        <ClCompile Include="SelectionManager.cpp"/>
+        <ClCompile Include="CubicBezierBone.cpp"/>
+        <ClCompile Include="Brush.cpp"/>
+        <ClCompile Include="BrushManager.cpp"/>
+        <ClCompile Include="Canvas.cpp"/>
+        <ClCompile Include="CanvasEvent.cpp"/>
+        <ClCompile Include="Ciallo.cpp"/>
+        <ClCompile Include="CubicBezier.cpp"/>
+        <ClCompile Include="DotShader.cpp"/>
+        <ClCompile Include="EditTool.cpp"/>
+        <ClCompile Include="EntityObject.cpp"/>
+        <ClCompile Include="FillTool.cpp"/>
+        <ClCompile Include="InnerBrush.cpp"/>
+        <ClCompile Include="Layer.cpp"/>
+        <ClCompile Include="LayerManager.cpp"/>
+        <ClCompile Include="Loader.cpp"/>
+        <ClCompile Include="Painter.cpp"/>
+        <ClCompile Include="PaintTool.cpp"/>
+        <ClCompile Include="pch.cpp">
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+            <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+        </ClCompile>
+        <ClCompile Include="ColorFace.cpp"/>
+        <ClCompile Include="PolygonShader.cpp"/>
+        <ClCompile Include="Polyline.cpp"/>
+        <ClCompile Include="ArticulatedLineComp.cpp"/>
+        <ClCompile Include="Registry.cpp"/>
+        <ClCompile Include="RenderableTexture.cpp"/>
+        <ClCompile Include="ShaderProgram.cpp"/>
+        <ClCompile Include="CanvasSelectionTextureManager.cpp"/>
+        <ClCompile Include="ShaderUtilities.cpp"/>
+        <ClCompile Include="StampBrushData.cpp"/>
+        <ClCompile Include="Stroke.cpp"/>
+        <ClCompile Include="StrokeContainer.cpp"/>
+        <ClCompile Include="TempLayers.cpp"/>
+        <ClCompile Include="TextureManager.cpp"/>
+        <ClCompile Include="TimelineManager.cpp"/>
+        <ClCompile Include="Tool.cpp"/>
+        <ClCompile Include="Toolbox.cpp"/>
+        <ClCompile Include="Viewport.cpp"/>
+        <ClCompile Include="Window.cpp"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ClInclude Include="AirBrushData.h"/>
+        <ClInclude Include="Application.h"/>
+        <ClInclude Include="Arrangement.h"/>
+        <ClInclude Include="ArrangementManager.h"/>
+        <ClInclude Include="ArticulatedLineShader.h"/>
+        <ClInclude Include="EntityTree.h"/>
+        <ClInclude Include="SelectionManager.h"/>
+        <ClInclude Include="CubicBezierBone.h"/>
+        <ClInclude Include="Brush.h"/>
+        <ClInclude Include="BrushManager.h"/>
+        <ClInclude Include="Canvas.h"/>
+        <ClInclude Include="CanvasEvent.h"/>
+        <ClInclude Include="CubicBezier.h"/>
+        <ClInclude Include="DotShader.h"/>
+        <ClInclude Include="EditTool.h"/>
+        <ClInclude Include="EntityObject.h"/>
+        <ClInclude Include="EyedropperInfo.h"/>
+        <ClInclude Include="FillTool.h"/>
+        <ClInclude Include="easytab.h"/>
+        <ClInclude Include="InnerBrush.h"/>
+        <ClInclude Include="Layer.h"/>
+        <ClInclude Include="LayerManager.h"/>
+        <ClInclude Include="Loader.h"/>
+        <ClInclude Include="Painter.h"/>
+        <ClInclude Include="Registry.h"/>
+        <ClInclude Include="RenderableTexture.h"/>
+        <ClInclude Include="CanvasSelectionTextureManager.h"/>
+        <ClInclude Include="StampBrushData.h"/>
+        <ClInclude Include="StrokeContainer.h"/>
+        <ClInclude Include="TempLayers.h"/>
+        <ClInclude Include="TextureManager.h"/>
+        <ClInclude Include="TimelineManager.h"/>
+        <ClInclude Include="Toolbox.h"/>
+        <ClInclude Include="Viewport.h"/>
+        <ClInclude Include="Visiblity.h"/>
+        <ClInclude Include="PaintTool.h"/>
+        <ClInclude Include="pch.hpp"/>
+        <ClInclude Include="ColorFace.h"/>
+        <ClInclude Include="PolygonShader.h"/>
+        <ClInclude Include="Polyline.h"/>
+        <ClInclude Include="ArticulatedLineComp.h"/>
+        <ClInclude Include="ShaderProgram.h"/>
+        <ClInclude Include="ShaderUtilities.h"/>
+        <ClInclude Include="Stroke.h"/>
+        <ClInclude Include="Tool.h"/>
+        <ClInclude Include="Window.h"/>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="shaders\articulatedLine.frag">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\articulatedLine.geom">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\articulatedLine.vert">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="shaders\polygon.frag">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\polygon.vert">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\articulatedLine.comp">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="images\stamp1.png">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="images\stamp2.png">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\imgui\imgui.vcxproj">
+            <Project>{c4079022-342b-4aea-9437-6d3c27c856f5}</Project>
+        </ProjectReference>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="shaders\dot.frag">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\dot.geom">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="shaders\dot.vert">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/shaders</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/shaders</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="images\fill_marker.png">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="images\myaamori.jpg">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+        <CopyFileToFolders Include="images\stamp3.png">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="images\girl.jpg">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="models\girl.csv">
+            <FileType>Document</FileType>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/models</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <CopyFileToFolders Include="images\dot2.png">
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
+            <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
+        </CopyFileToFolders>
+    </ItemGroup>
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+    <ImportGroup Label="ExtensionTargets">
+    </ImportGroup>
 </Project>

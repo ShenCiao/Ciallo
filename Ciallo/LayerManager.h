@@ -1,27 +1,31 @@
 ﻿#pragma once
 
-#include <boost/graph/adjacency_list.hpp>
+#include <treehh/tree.hh>
+#include "Layer.h"
+#include "EntityTree.h"
 
-using LayerGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, entt::entity>;
-
-// Layers are unused in this project
+// This class is only used with Illustration
 class LayerManager
 {
 public:
 	LayerManager();
-	LayerGraph LayerTree = LayerGraph(1); // reserve a place for root node
-	std::vector<entt::entity> Layers;
-	std::unordered_set<entt::entity> SelectedLayers{};
+	tree<entt::entity> LayerTree;
+	tree<entt::entity>::iterator SelectedLayerIt; // default value (no selection) is LayerTree.begin()
 
 	void DrawUI();
 	void Run();
 	void DrawMenuButton();
-	entt::entity CreateLayer() const;
-	void GenChildLayer(entt::entity parent);
+	entt::entity CreateLayer(LayerType = LayerType::Normal) const;
 	// move to back if target not found
-	void MoveSelection(entt::entity target = entt::null);
-	void RemoveSelection();
 private:
+	tree<entt::entity>::iterator DropTargetIt;
+	tree<entt::entity>::iterator DragSourceIt;
+	enum class InsertionType { None, PreviousSibling, NextSibling, PrependChild, AppendChild };
+	InsertionType Insertion;
 	bool IsRenaming = false;
-	bool IsMultiSelecting() const;
+	void RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it);
+	// Usually, a drop target span the two sibling layer nodes, means it drops between them.
+	// but when the target position is between a leaf and a parent, there is a conflict. The drop target should be divided into two halfs.
+	enum class DropTargetType { UpperHalf, LowerHalf };
+	static bool DrawDropTarget(DropTargetType, bool indent = false);
 };

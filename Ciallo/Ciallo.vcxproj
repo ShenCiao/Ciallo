@@ -100,7 +100,6 @@
         <ClCompile Include="Application.cpp"/>
         <ClCompile Include="ArrangementManager.cpp"/>
         <ClCompile Include="ArticulatedLineShader.cpp"/>
-        <ClCompile Include="EntityTree.cpp"/>
         <ClCompile Include="SelectionManager.cpp"/>
         <ClCompile Include="CubicBezierBone.cpp"/>
         <ClCompile Include="Brush.cpp"/>
@@ -129,6 +128,7 @@
         <ClCompile Include="ArticulatedLineComp.cpp"/>
         <ClCompile Include="Registry.cpp"/>
         <ClCompile Include="RenderableTexture.cpp"/>
+        <ClCompile Include="SerializeTreehh.cpp"/>
         <ClCompile Include="ShaderProgram.cpp"/>
         <ClCompile Include="CanvasSelectionTextureManager.cpp"/>
         <ClCompile Include="ShaderUtilities.cpp"/>
@@ -149,7 +149,6 @@
         <ClInclude Include="Arrangement.h"/>
         <ClInclude Include="ArrangementManager.h"/>
         <ClInclude Include="ArticulatedLineShader.h"/>
-        <ClInclude Include="EntityTree.h"/>
         <ClInclude Include="SelectionManager.h"/>
         <ClInclude Include="CubicBezierBone.h"/>
         <ClInclude Include="Brush.h"/>
@@ -289,6 +288,9 @@
             <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)/images</DestinationFolders>
             <DestinationFolders Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)/images</DestinationFolders>
         </CopyFileToFolders>
+    </ItemGroup>
+    <ItemGroup>
+        <Content Include="SerializeTreehh.h"/>
     </ItemGroup>
     <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
     <ImportGroup Label="ExtensionTargets">

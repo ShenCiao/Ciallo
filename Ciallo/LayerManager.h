@@ -2,7 +2,6 @@
 
 #include <treehh/tree.hh>
 #include "Layer.h"
-#include "EntityTree.h"
 
 // This class is only used with Illustration
 class LayerManager

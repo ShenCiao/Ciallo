@@ -47,12 +47,14 @@ void LayerManager::DrawUI()
 		LayerTree.move_after(DropTargetIt, DragSourceIt);
 		break;
 	case InsertionType::PrependChild:
-		tempIt = LayerTree.append_child(DragSourceIt, entt::null);
-		LayerTree.move_ontop(tempIt, DragSourceIt);
+		tempIt = LayerTree.prepend_child(DropTargetIt, entt::null);
+		LayerTree.move_before(tempIt, DragSourceIt);
+		LayerTree.erase(tempIt);
 		break;
 	case InsertionType::AppendChild:
-		tempIt = LayerTree.append_child(DragSourceIt, entt::null);
-		LayerTree.move_ontop(tempIt, DragSourceIt);
+		tempIt = LayerTree.append_child(DropTargetIt, entt::null);
+		LayerTree.move_after(tempIt, DragSourceIt);
+		LayerTree.erase(tempIt);
 		break;
 	}
 

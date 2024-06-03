@@ -13,7 +13,21 @@ void save(Archive& archive, const tree<entt::entity>& t)
 }
 
 template<class Archive>
-void static recursivelyLoadTree(tree<entt::entity>::iterator parentIt, unsigned numChildren, Archive& archive, tree<entt::entity>& t);
+void static DFSLoadTree(tree<entt::entity>::iterator parentIt, unsigned numChildren, Archive& archive, tree<entt::entity>& t)
+{
+	if (numChildren == 0)
+	{
+		return;
+	}
+	for (unsigned i = 0; i < numChildren; ++i)
+	{
+		entt::entity childE;
+		unsigned numGrandChildren;
+		archive(childE, numGrandChildren);
+		auto childIt = t.append_child(parentIt, childE);
+		DFSLoadTree(childIt, numGrandChildren, archive, t);
+	}
+}
 
 template<class Archive>
 void load(Archive& archive, tree<entt::entity>& t)
@@ -21,6 +35,5 @@ void load(Archive& archive, tree<entt::entity>& t)
 	entt::entity head;
 	unsigned int numChildren;
 	archive(head, numChildren); // head is null entity
-	auto root = t.set_head(head);
-	recursivelyLoadTree(root, numChildren, archive);
+	DFSLoadTree(t.begin(), numChildren, archive, t);
 }

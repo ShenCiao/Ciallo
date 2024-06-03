@@ -19,4 +19,10 @@ public:
 	LayerFlags Flags = LayerFlags::Visible;
 	LayerType Type = LayerType::Normal;
 	std::string Name = {};
+
+	template<class Archive>
+	void serialize(Archive& archive)
+	{
+		archive(Flags, Type, Name);
+	}
 };

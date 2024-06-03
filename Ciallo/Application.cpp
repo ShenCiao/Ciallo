@@ -33,24 +33,24 @@ void Application::Run()
 	// The current design uses ImGui, so GUI code is coupling with the data itself
 	// Decouple the code after switch to another GUI framework.
 	GenDefaultProject();
-	
+
 	while (!Window->ShouldClose())
 	{
 		Window->BeginFrame();
 		// I have to add this annoying `if` statement.
 		// Because iconify callback is not always called in the same frame that the window is minimized.
 		// The callback can be called a frame delayed.
-		if(Window->IsMinimized())
+		if (Window->IsMinimized())
 		{
 			Window->EndFrame();
 			continue;
 		}
 		DrawMainMenu();
-		if(ShowMetricsWindow) ImGui::ShowMetricsWindow(&ShowMetricsWindow);
+		if (ShowMetricsWindow) ImGui::ShowMetricsWindow(&ShowMetricsWindow);
 		R.ctx().get<Canvas>().DrawUI();
 		R.ctx().get<BrushManager>().DrawUI();
 		R.ctx().get<Toolbox>().DrawUI();
-		if(Mode == PaintMode::Animation)
+		if (Mode == PaintMode::Animation)
 		{
 			R.ctx().get<TimelineManager>().DrawUI();
 			entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
@@ -59,11 +59,11 @@ void Application::Run()
 				R.get<ArrangementManager>(currentE).Run();
 			}
 			auto& layers = R.ctx().get<TempLayers>();
-		
+
 			glEnable(GL_BLEND);
 			glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 			glDisable(GL_DEPTH_TEST);
-		
+
 			auto& canvas = R.ctx().get<Canvas>();
 			canvas.Viewport.BindMVPBuffer();
 			canvas.Image.BindFramebuffer();
@@ -76,36 +76,37 @@ void Application::Run()
 			layers.RenderFill();
 			layers.RenderDrawing();
 			layers.RenderOverlay();
-		
+
 			layers.ClearOverlay();
 			R.ctx().get<CanvasSelectionTextureManager>().GenSelectionTexture(canvas.GetSizePixel());
 			R.ctx().get<CanvasSelectionTextureManager>().RenderSelectionTexture();
 		}
 
-		if(Mode == PaintMode::Illustration)
+		if (Mode == PaintMode::Illustration)
 		{
 			auto& lm = R.ctx().get<LayerManager>();
 			lm.DrawUI();
 			lm.Run();
 		}
-			
 
 		R.ctx().get<Canvas>().Run();
 		Window->EndFrame();
-		
+
 		if (Loader::ShouldLoadProject)
 		{
 			glfwSwapBuffers(Window->GlfwWindow);
 			std::filesystem::path path = "./project";
-			Loader::LoadProject(path/Loader::ProjectName);
+			Loader::LoadProject(path / Loader::ProjectName);
 			Loader::ShouldLoadProject = false;
 		}
 
-		if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0) {
-			
+		if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0)
+		{
+
 			auto& canvas = R.ctx().get<Canvas>();
 			TextureManager::SaveTexture(canvas.Image.ColorTexture, std::to_string(R.ctx().get<TimelineManager>().CurrentFrame));
-			if (tm.ExportingIndex >= tm.KeyFrames.size()) {
+			if (tm.ExportingIndex >= tm.KeyFrames.size())
+			{
 				tm.ExportingIndex = -1;
 			}
 		}
@@ -146,7 +147,7 @@ void Application::GenDefaultProject()
 	brush3.Name = "Airbrush";
 	brush3.Program = ShaderProgram::ArticulatedLine->Program(ArticulatedLineShader::Type::Airbrush);
 	brush3.AirBrush = std::make_unique<AirBrushData>();
-	brush3.AirBrush->Curve = glm::mat4x2{ {0.0f, 1.0f}, {0.2f, 1.0f}, {0.5f, 0.0f}, {1.0f, 0.0f} };
+	brush3.AirBrush->Curve = glm::mat4x2{{0.0f, 1.0f}, {0.2f, 1.0f}, {0.5f, 0.0f}, {1.0f, 0.0f}};
 	brush3.AirBrush->UpdateGradient();
 
 	brushes.push_back(R.create());
@@ -178,7 +179,7 @@ void Application::DrawMainMenu()
 	ImGui::BeginMainMenuBar();
 	if (ImGui::BeginMenu("File"))
 	{
-		if(ImGui::MenuItem("New Project"))
+		if (ImGui::MenuItem("New Project"))
 		{
 			entt::registry newR{};
 			R = std::move(newR);
@@ -194,7 +195,7 @@ void Application::DrawMainMenu()
 				Loader::LoadAnimation("./models/fish");
 			if (ImGui::MenuItem("Flower"))
 				Loader::LoadCsv("./models/flower.csv");
-			
+
 			ImGui::ColorEdit4("Stroke Color", glm::value_ptr(Loader::StrokeColor), ImGuiColorEditFlags_NoInputs);
 			ImGui::PushItemWidth(100.0f);
 			ImGui::DragFloat("##1", &Loader::TargetRadius, 0.00001f, 0.00001f, 0.1f, "%.5f");
@@ -210,9 +211,11 @@ void Application::DrawMainMenu()
 		if (ImGui::BeginMenu("Load Project"))
 		{
 			std::string path = "./project";
-			for (auto& entry : std::filesystem::directory_iterator(path)) {
+			for (auto& entry : std::filesystem::directory_iterator(path))
+			{
 				std::string name = entry.path().filename().string();
-				if (ImGui::MenuItem(name.c_str())) {
+				if (ImGui::MenuItem(name.c_str()))
+				{
 					Loader::ShouldLoadProject = true;
 					Loader::ProjectName = name;
 				}
@@ -222,7 +225,7 @@ void Application::DrawMainMenu()
 		ImGui::EndMenu();
 	}
 
-	if(ImGui::MenuItem("Metrics Window"))
+	if (ImGui::MenuItem("Metrics Window"))
 	{
 		ShowMetricsWindow = !ShowMetricsWindow;
 	}

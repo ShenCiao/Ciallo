@@ -2,16 +2,12 @@
 #include "LayerManager.h"
 
 #include "StrokeContainer.h"
+#include "SerializeTreehh.h"
 
 LayerManager::LayerManager()
 {
 	LayerTree.set_head(entt::null);
 	SelectedLayerIt = LayerTree.begin();
-	auto t = LayerTree.append_child(LayerTree.begin(), CreateLayer());
-	LayerTree.append_child(LayerTree.begin(), CreateLayer());
-	LayerTree.append_child(t, CreateLayer());
-	t = LayerTree.append_child(t, CreateLayer());
-	t = LayerTree.append_child(t, CreateLayer());
 }
 void LayerManager::DrawUI()
 {
@@ -26,37 +22,71 @@ void LayerManager::DrawUI()
 	ImGui::Separator();
 
 	DropTargetIt = LayerTree.end();
-	Insertion = InsertionType::None;
+
 	RecursivelyDrawTreeNodes(LayerTree.begin());
 	// Pad a final drop target
-	if (DrawDropTarget(DropTargetType::UpperHalf))
+	if (DrawDropTarget(ImGui::GetCursorPos()))
 	{
 		DropTargetIt = LayerTree.begin();
 		Insertion = InsertionType::AppendChild;
+		DropTargetScreenPos = ImGui::GetCursorScreenPos();
 	}
 
-	tree<entt::entity>::iterator tempIt;
+	// draw indicator line.
+	float lineThickness = 2.f;
+	glm::vec2 lineStartScreenPos = DropTargetScreenPos;
+
 	switch (Insertion)
 	{
 	case InsertionType::None:
 		break;
 	case InsertionType::PreviousSibling:
-		LayerTree.move_before(DropTargetIt, DragSourceIt);
+		lineStartScreenPos -= glm::vec2(0.0, lineThickness / 2);
 		break;
 	case InsertionType::NextSibling:
-		LayerTree.move_after(DropTargetIt, DragSourceIt);
+		lineStartScreenPos += glm::vec2(0.0, ImGui::GetFrameHeightWithSpacing() - lineThickness / 2);
 		break;
 	case InsertionType::PrependChild:
-		tempIt = LayerTree.prepend_child(DropTargetIt, entt::null);
-		LayerTree.move_before(tempIt, DragSourceIt);
-		LayerTree.erase(tempIt);
+		lineStartScreenPos += glm::vec2(ImGui::GetStyle().IndentSpacing, ImGui::GetFrameHeightWithSpacing() - lineThickness / 2);
 		break;
 	case InsertionType::AppendChild:
-		tempIt = LayerTree.append_child(DropTargetIt, entt::null);
-		LayerTree.move_after(tempIt, DragSourceIt);
-		LayerTree.erase(tempIt);
+		lineStartScreenPos -= glm::vec2(0.0, lineThickness / 2);
 		break;
 	}
+
+	if (Insertion != InsertionType::None)
+	{
+		ImGui::GetWindowDrawList()->AddLine(lineStartScreenPos, lineStartScreenPos + glm::vec2(1000.f, 0),
+		                                    IM_COL32(240, 240, 210, 255), lineThickness);
+	}
+
+	// Move layers
+	tree<entt::entity>::iterator tempIt;
+	if (Dropped)
+	{
+		switch (Insertion)
+		{
+		case InsertionType::None:
+			break;
+		case InsertionType::PreviousSibling:
+			LayerTree.move_before(DropTargetIt, DragSourceIt);
+			break;
+		case InsertionType::NextSibling:
+			LayerTree.move_after(DropTargetIt, DragSourceIt);
+			break;
+		case InsertionType::PrependChild:
+			tempIt = LayerTree.prepend_child(DropTargetIt, entt::null);
+			LayerTree.move_before(tempIt, DragSourceIt);
+			LayerTree.erase(tempIt);
+			break;
+		case InsertionType::AppendChild:
+			tempIt = LayerTree.append_child(DropTargetIt, entt::null);
+			LayerTree.move_after(tempIt, DragSourceIt);
+			LayerTree.erase(tempIt);
+			break;
+		}
+	}
+	Insertion = InsertionType::None;
 
 	ImGui::PopStyleVar();
 	ImGui::PopStyleVar();
@@ -72,7 +102,7 @@ void LayerManager::DrawMenuButton()
 	{
 		entt::entity e = CreateLayer();
 		// if (SelectedLayerIt == LayerTree.begin())
-		LayerTree.append_child(LayerTree.begin(), e);
+		SelectedLayerIt = LayerTree.append_child(LayerTree.begin(), e);
 		// else
 		// 	LayerTree.insert_after(SelectedLayerIt, e);
 	}
@@ -81,7 +111,7 @@ void LayerManager::DrawMenuButton()
 	{
 		entt::entity e = CreateLayer(LayerType::Mask);
 		// if (SelectedLayerIt == LayerTree.begin())
-		LayerTree.append_child(LayerTree.begin(), e);
+		SelectedLayerIt = LayerTree.append_child(LayerTree.begin(), e);
 		// else
 		// 	LayerTree.insert_after(SelectedLayerIt, e);
 	}
@@ -89,6 +119,7 @@ void LayerManager::DrawMenuButton()
 	if (ImGui::Button("Remove"))
 	{
 		LayerTree.erase(SelectedLayerIt);
+		SelectedLayerIt = LayerTree.begin();
 	}
 }
 
@@ -109,20 +140,13 @@ void LayerManager::RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it)
 	// Draw current node
 	entt::entity e = *it;
 	bool isRootNode = e == entt::null;
-	bool isNodeOpen = true;
+	bool isNodeOpen = false;
+	bool isLeaf = false;
 	if (!isRootNode)
 	{
-		// Draw drop targets, make sure call these functions before checkbox
-		if (DrawDropTarget(DropTargetType::UpperHalf))
-		{
-			DropTargetIt = it;
-			Insertion = InsertionType::PreviousSibling;
-		}
-		if (DrawDropTarget(DropTargetType::LowerHalf))
-		{
-			DropTargetIt = it;
-			Insertion = isNodeOpen ? InsertionType::PrependChild : InsertionType::NextSibling;
-		}
+		glm::vec2 nodePos = ImGui::GetCursorPos();
+		glm::vec2 nodeScreenPos = ImGui::GetCursorScreenPos();
+
 		// Draw tree node
 		auto& layer = R.get<Layer>(e);
 		ImGui::CheckboxFlags(fmt::format("##vis{}", e).c_str(),
@@ -133,20 +157,24 @@ void LayerManager::RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it)
 		ImGuiTreeNodeFlags_OpenOnArrow;
 		if (*SelectedLayerIt == e)
 			flag |= ImGuiTreeNodeFlags_Selected;
-		if (layer.Type == LayerType::Normal)
+		isLeaf = layer.Type == LayerType::Normal;
+		if (isLeaf)
 			flag |= ImGuiTreeNodeFlags_Leaf;
 		isNodeOpen = ImGui::TreeNodeEx(fmt::format("##node{}", e).c_str(), flag, "");
 
 		// selection gesture
-		if (ImGui::IsItemClicked() && !ImGui::IsDragDropActive() && !IsRenaming)
+		if (ImGui::IsItemClicked() && !ImGui::IsDragDropActive())
 		{
 			SelectedLayerIt = it;
 			IsRenaming = false;
 		}
 
 		// renaming gesture
-		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && !IsRenaming)
+		if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+		{
+			SelectedLayerIt = it;
 			IsRenaming = true;
+		}
 
 		// drag
 		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None))
@@ -167,10 +195,29 @@ void LayerManager::RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it)
 		if (IsRenaming && *SelectedLayerIt == e)
 		{
 			ImGui::SetCursorPos(nameStart);
+			ImGui::SetKeyboardFocusHere(0);
 			bool done = ImGui::InputText(fmt::format("##nameInput{}", e).c_str(), &layer.Name,
 			                             ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
 			if (done || ImGui::IsItemDeactivated())
 				IsRenaming = false;
+		}
+
+		// Draw drop targets
+		// upper half
+		if (DrawDropTarget(nodePos))
+		{
+			DropTargetIt = it;
+			DropTargetScreenPos = nodeScreenPos;
+			Insertion = InsertionType::PreviousSibling;
+		}
+		// lower half
+		if (DrawDropTarget(nodePos + glm::vec2(0, ImGui::GetFrameHeightWithSpacing() / 2)))
+		{
+			DropTargetIt = it;
+			DropTargetScreenPos = nodeScreenPos;
+			// Carefully, ImGui allows non leaf nodes to be opened.
+			Insertion = isNodeOpen && !isLeaf ? InsertionType::PrependChild : InsertionType::NextSibling;
 		}
 	}
 
@@ -184,36 +231,25 @@ void LayerManager::RecursivelyDrawTreeNodes(tree<entt::entity>::iterator it)
 	}
 	if (isNodeOpen && !isRootNode) ImGui::TreePop();
 }
-bool LayerManager::DrawDropTarget(DropTargetType type, bool indent)
+bool LayerManager::DrawDropTarget(glm::vec2 pos)
 {
-	bool dropped = false;
-	glm::vec2 nextPos = ImGui::GetCursorPos(); // start position of the next tree node.
+	bool acceptingPayload = false;
+	glm::vec2 originalPos = ImGui::GetCursorPos(); // Avoid change original cursor position
+	ImGui::SetCursorPos(pos);
 
-	if (type == DropTargetType::LowerHalf)
-		ImGui::SetCursorPos(nextPos + glm::vec2(0, ImGui::GetFrameHeightWithSpacing() / 2));
+	ImGui::Dummy({1000.f, ImGui::GetFrameHeightWithSpacing() / 2});
 
-	ImGui::Dummy({1000.f, ImGui::GetFrameHeight() / 2});
-	ImGui::SetCursorPos(nextPos);
-	if (indent) ImGui::Indent();
-	glm::vec2 screenPos = ImGui::GetCursorScreenPos();
-	if (indent) ImGui::Unindent();
 	if (ImGui::BeginDragDropTarget())
 	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
-			"LayerMove", ImGuiDragDropFlags_AcceptPeekOnly))
+		const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(
+			"LayerMove", ImGuiDragDropFlags_AcceptPeekOnly);
+		acceptingPayload = payload;
+		if (acceptingPayload)
 		{
-			float lineThickness = 2.0f;
-			auto* drawList = ImGui::GetWindowDrawList();
-			glm::vec2 pos;
-			if (type == DropTargetType::UpperHalf)
-				pos = screenPos - glm::vec2(0.0, lineThickness / 2);
-			else
-				pos = screenPos + glm::vec2(0.0, ImGui::GetFrameHeightWithSpacing()) - glm::vec2(0.0, lineThickness / 2);
-
-			drawList->AddLine(pos, pos + glm::vec2(1000.f, 0), IM_COL32(240, 240, 210, 255), lineThickness);
-			dropped = payload->IsDelivery();
+			Dropped = payload->IsDelivery();
 		}
 		ImGui::EndDragDropTarget();
 	}
-	return dropped;
+	ImGui::SetCursorPos(originalPos);
+	return acceptingPayload;
 }

@@ -18,6 +18,8 @@
 #include "EyedropperInfo.h"
 #include "PaintTool.h"
 #include "SelectionManager.h"
+#include "LayerManager.h"
+#include "SerializeTreehh.h"
 
 void Loader::LoadCsv(const std::filesystem::path& filePath)
 {
@@ -81,7 +83,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 		c = c.Scale({factor, factor}, mid);
 		c = c.Translate(-mid + canvas.Viewport.GetSize() / 2.0f);
 		auto& offset = pressures[i];
-		for (float& t : offset) t = - (1.0f - t / maxPressure) * TargetRadius;
+		for (float& t : offset) t = -(1.0f - t / maxPressure) * TargetRadius;
 
 		entt::entity strokeE = R.create();
 		R.emplace<StrokeUsageFlags>(strokeE, StrokeUsageFlags::Final | StrokeUsageFlags::Arrange);
@@ -105,7 +107,7 @@ void Loader::LoadCsv(const std::filesystem::path& filePath)
 void Loader::SaveCsv(const std::filesystem::path& filePath)
 {
 	std::ofstream file(filePath);
-	
+
 }
 
 void Loader::LoadAnimation(const std::filesystem::path& filePath)
@@ -121,7 +123,8 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 	std::vector<float> pressure;
 	float maxPressure = 0.0f;
 
-	for (const auto& entry : std::filesystem::directory_iterator(filePath)) {
+	for (const auto& entry : std::filesystem::directory_iterator(filePath))
+	{
 		std::ifstream file(entry.path());
 		file.exceptions(std::ifstream::badbit);
 
@@ -152,7 +155,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 
 	spdlog::info("#strokes: {}", curves.size());
 	spdlog::info("#vertices: {}", allPoints.size());
-	
+
 	glm::vec2 boundSize = allPoints.BoundingBox()[1] - allPoints.BoundingBox()[0];
 	auto& canvas = R.ctx().get<Canvas>();
 	glm::vec2 factorXY = boundSize / canvas.Viewport.GetSize();
@@ -161,7 +164,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 	glm::vec2 mid = (allPoints.BoundingBox()[1] + allPoints.BoundingBox()[0]) / 2.0f;
 
 	// Transformation parameters
-	glm::vec2 scale = { scaleFactor, scaleFactor };
+	glm::vec2 scale = {scaleFactor, scaleFactor};
 	glm::vec2 pivot = mid;
 	glm::vec2 translate = -mid + canvas.Viewport.GetSize() / 2.0f;
 
@@ -207,7 +210,7 @@ void Loader::LoadAnimation(const std::filesystem::path& filePath)
 		for (int i = 0; i < curves.size(); ++i)
 		{
 			auto& c = curves[i];
-			c = c.Scale({ scaleFactor, scaleFactor }, pivot);
+			c = c.Scale({scaleFactor, scaleFactor}, pivot);
 			c = c.Translate(translate);
 			auto& offset = pressures[i];
 			for (float& t : offset) t = glm::pow(t / maxPressure, 1.5) * TargetRadius;
@@ -234,21 +237,24 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 {
 	entt::registry newR{};
 	{
-		auto storage = std::ifstream{ filePath, std::ios::binary };
-		cereal::BinaryInputArchive archive{ storage };
-		entt::snapshot_loader loader{ newR };
-		loader.get<entt::entity>(archive)
-			.get<Stroke>(archive)
-			.get<StrokeUsageFlags>(archive)
-			.get<StrokeContainer>(archive)
-			.get<Brush>(archive);
+		auto storage = std::ifstream{filePath, std::ios::binary};
+		cereal::BinaryInputArchive archive{storage};
+		entt::snapshot_loader loader{newR};
+		loader
+		.get<entt::entity>(archive)
+		.get<Stroke>(archive)
+		.get<StrokeUsageFlags>(archive)
+		.get<StrokeContainer>(archive)
+		.get<Brush>(archive)
+		.get<Layer>(archive);
 
 		archive(newR.ctx().emplace<BrushManager>());
 		archive(newR.ctx().emplace<TimelineManager>());
+		archive(newR.ctx().emplace<LayerManager>());
 	}
-	
+
 	R = std::move(newR);
-	
+
 	auto& canvas = R.ctx().emplace<Canvas>();
 	R.ctx().emplace<TempLayers>();
 	R.ctx().emplace<Toolbox>();
@@ -259,10 +265,12 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 	R.ctx().emplace<SelectionManager>();
 
 	auto view = R.view<StrokeContainer>();
-	for (entt::entity drawingE : view) {
+	for (entt::entity drawingE : view)
+	{
 		auto& arm = R.emplace<ArrangementManager>(drawingE);
 		auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
-		for (entt::entity e : strokeEs) {
+		for (entt::entity e : strokeEs)
+		{
 			auto& stroke = R.get<Stroke>(e);
 			stroke.UpdateBuffers();
 			auto usage = R.get<StrokeUsageFlags>(e);
@@ -277,15 +285,18 @@ void Loader::LoadProject(const std::filesystem::path& filePath)
 
 void Loader::SaveProject(const std::filesystem::path& filePath)
 {
-	std::ofstream storage{ filePath, std::ios::binary };
-	cereal::BinaryOutputArchive archive{ storage };
+	std::ofstream storage{filePath, std::ios::binary};
+	cereal::BinaryOutputArchive archive{storage};
 
-	entt::snapshot{ R }.get<entt::entity>(archive)
-		.get<Stroke>(archive)
-		.get<StrokeUsageFlags>(archive)
-		.get<StrokeContainer>(archive)
-		.get<Brush>(archive);
+	entt::snapshot{R}
+	.get<entt::entity>(archive)
+	.get<Stroke>(archive)
+	.get<StrokeUsageFlags>(archive)
+	.get<StrokeContainer>(archive)
+	.get<Brush>(archive)
+	.get<Layer>(archive);
 
 	archive(R.ctx().get<BrushManager>());
 	archive(R.ctx().get<TimelineManager>());
+	archive(R.ctx().get<LayerManager>());
 }

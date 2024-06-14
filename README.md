@@ -4,8 +4,7 @@
 
 🔴 [SIGGRAPH 2024 Paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf) |
 SIGGRAPH 2023 Talk ([Paper](./paper)) ([Presentation](https://youtu.be/KkwW6M16O3c)) |
-[Web Demo](https://shenciao.github.io/Ciallo/) |
-[Video Demo](https://youtu.be/gqTrD8-nlh0) |
+Demo ([Web](https://shenciao.github.io/Ciallo/)) ([Video](https://youtu.be/gqTrD8-nlh0)) |
 [Blender Implementation (WIP)](https://devtalk.blender.org/t/add-stamp-brush-and-fix-airbrush/30884)
 
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)

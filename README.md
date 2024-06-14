@@ -2,7 +2,8 @@
 
 [Tutorial](https://shenciao.github.io/brush-rendering-tutorial/) → Very detailed technical description with interactive code blocks.
 
-🔴 [SIGGRAPH 2024 Paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf) |
+🔴 [SIGGRAPH 2024 Paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf)
+
 SIGGRAPH 2023 Talk ([Paper](./paper)) ([Presentation](https://youtu.be/KkwW6M16O3c)) |
 Demo ([Web](https://shenciao.github.io/Ciallo/)) ([Video](https://youtu.be/gqTrD8-nlh0)) |
 [Blender Implementation (WIP)](https://devtalk.blender.org/t/add-stamp-brush-and-fix-airbrush/30884)

@@ -2,7 +2,7 @@
 
 [Tutorial](https://shenciao.github.io/brush-rendering-tutorial/) → Very detailed technical description with interactive code blocks.
 
-🔴 [SIGGRAPH 2024 Paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf)
+🔴 [SIGGRAPH 2024 Paper](https://dl.acm.org/doi/10.1145/3641519.3657418)
 
 SIGGRAPH 2023 Talk ([Paper](./paper)) ([Presentation](https://youtu.be/KkwW6M16O3c)) |
 Demo ([Web](https://shenciao.github.io/Ciallo/)) ([Video](https://youtu.be/gqTrD8-nlh0)) |
@@ -20,7 +20,9 @@ The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", 
 
 The project is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). To offer a free open-source industrial-level paint program, Shen Ciao will integrate the stroke rendering methods into the grease pencil.
 
-The final version of the [paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf), and its [draft version](./paper) (two-page abstract). The research was first presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023 ([video](https://youtu.be/KkwW6M16O3c)), 🔴 and will be presented at the SIGGRAPH 2024 Conference on Monday, 29 July 2024 in Vector Graphics session.
+The final version of the [paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf), and its [draft version](./paper) (two-page abstract). The research was first presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023 ([video](https://youtu.be/KkwW6M16O3c)), 🔴 and will be presented at the SIGGRAPH 2024 Conference on Monday, 29 July 2024 in [Vector Graphics](https://s2024.conference-program.org/presentation/?id=papers_343&sess=sess101) session.
+
+🔴 We have been selected to join the Technical Paper Demos session on Tuesday, 30 July 2024! Feel free to drop by between 3 PM and 5 PM in the Experience Hall! :)
 
 <table>
     <tr>

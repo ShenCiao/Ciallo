@@ -2,7 +2,8 @@
 
 [Tutorial](https://shenciao.github.io/brush-rendering-tutorial/) → Very detailed technical description with interactive code blocks.
 
-🔴 [SIGGRAPH 2024 Paper](https://dl.acm.org/doi/10.1145/3641519.3657418)
+[SIGGRAPH 2024 Paper](https://dl.acm.org/doi/10.1145/3641519.3657418)
+🔴 [SIGGRAPH 2024 Talk](https://www.youtube.com/watch?v=yPK6_Z_tUr0)
 
 SIGGRAPH 2023 Talk ([Paper](./paper)) ([Presentation](https://youtu.be/KkwW6M16O3c)) |
 Demo ([Web](https://shenciao.github.io/Ciallo/)) ([Video](https://youtu.be/gqTrD8-nlh0)) |
@@ -11,7 +12,7 @@ Demo ([Web](https://shenciao.github.io/Ciallo/)) ([Video](https://youtu.be/gqTrD
 - [Shen Ciao](https://www.linkedin.com/in/shenciao)
 - [Li-Yi Wei](https://www.liyiwei.org/)
 
-## 🔴 Introduction
+## Introduction
 This research project, titled  **_Ciallo: GPU-Accelerated Rendering of Vector Brush Strokes_** is published in SIGGRAPH 2024 as a conference-track technical paper. Its draft version, titled  **_Ciallo: The next-generation vector paint program_** is published in the SIGGRAPH 2023 Talk. The techniques demonstrated in this project have been anticipated by our community for almost two decades.
 
 A [web demo](https://shenciao.github.io/Ciallo) to showcase the stroke rendering technique.
@@ -20,9 +21,7 @@ The name "Ciallo" is the combination of the Italian "Ciao" and English "Hello", 
 
 The project is greatly inspired by [Blender Grease Pencil](https://docs.blender.org/manual/en/latest/grease_pencil/introduction.html). To offer a free open-source industrial-level paint program, Shen Ciao will integrate the stroke rendering methods into the grease pencil.
 
-The final version of the [paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf), and its [draft version](./paper) (two-page abstract). The research was first presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023 ([video](https://youtu.be/KkwW6M16O3c)), 🔴 and will be presented at the SIGGRAPH 2024 Conference on Monday, 29 July 2024 in [Vector Graphics](https://s2024.conference-program.org/presentation/?id=papers_343&sess=sess101) session.
-
-🔴 We have been selected to join the Technical Paper Demos session on Tuesday, 30 July 2024! Feel free to drop by between 3 PM and 5 PM in the Experience Hall! :)
+The final version of the [paper](https://cislab.hkust-gz.edu.cn/media/documents/Ciallo.pdf), and its [draft version](./paper) (two-page abstract). The research was presented at the SIGGRAPH 2023 Conference on Thursday, 10 August 2023 ([video](https://youtu.be/KkwW6M16O3c)), and at the SIGGRAPH 2024 Conference on Monday, 29 July 2024 ([video](https://www.youtube.com/watch?v=yPK6_Z_tUr0)) in [Vector Graphics](https://s2024.conference-program.org/presentation/?id=papers_343&sess=sess101) session.
 
 <table>
     <tr>
@@ -45,36 +44,40 @@ The final version of the [paper](https://cislab.hkust-gz.edu.cn/media/documents/
 
 SIGGRAPH 2024 Technical Paper (Conference Track)
 
-    @inproceedings{Ciallo2024,
-      author    = {Shen Ciao and Zhongyue Guan and Qianxi Liu and Li-Yi Wei and Zeyu Wang},
-      title     = {{Ciallo: GPU-Accelerated Rendering of Vector Brush Strokes}},
-      booktitle = {Special Interest Group on Computer Graphics and Interactive Techniques Conference Conference Papers '24 (SIGGRAPH Conference Papers '24)},
-      year      = {2024},
-      date      = {2024-07-27/2024-08-01},
-      venue     = {Denver, CO, USA},
-      publisher = {ACM},
-      address   = {New York, NY, USA},
-      pages     = {1--11},
-      doi       = {10.1145/3641519.3657418},
-      url       = {https://doi.org/10.1145/3641519.3657418}
+    @inproceedings{10.1145/3641519.3657418,
+       author = {Ciao, Shen and Guan, Zhongyue and Liu, Qianxi and Wei, Li-Yi and Wang, Zeyu},
+       title = {Ciallo: GPU-Accelerated Rendering of Vector Brush Strokes},
+       year = {2024},
+       isbn = {9798400705250},
+       publisher = {Association for Computing Machinery},
+       address = {New York, NY, USA},
+       url = {https://doi.org/10.1145/3641519.3657418},
+       doi = {10.1145/3641519.3657418},
+       booktitle = {ACM SIGGRAPH 2024 Conference Papers},
+       articleno = {3},
+       numpages = {11},
+       keywords = {brush stroke rendering, digital painting, vector graphics},
+       location = {Denver, CO, USA},
+       series = {SIGGRAPH '24}
+    }
 
 SIGGRAPH 2023 Talk
 
     @inproceedings{Ciallo,
-      author = {Ciao, Shen and Wei, Li-Yi},
-      title = {Ciallo: The next-Generation Vector Paint Program},
-      year = {2023},
-      isbn = {9798400701436},
-      publisher = {Association for Computing Machinery},
-      address = {New York, NY, USA},
-      url = {https://doi.org/10.1145/3587421.3595418},
-      doi = {10.1145/3587421.3595418},
-      booktitle = {ACM SIGGRAPH 2023 Talks},
-      articleno = {67},
-      numpages = {2},
-      keywords = {Digital painting, stylized stroke, arrangement, vector graphics. coloring, graphics processing unit (GPU)},
-      location = {Los Angeles, CA, USA},
-      series = {SIGGRAPH '23}
+       author = {Ciao, Shen and Wei, Li-Yi},
+       title = {Ciallo: The next-Generation Vector Paint Program},
+       year = {2023},
+       isbn = {9798400701436},
+       publisher = {Association for Computing Machinery},
+       address = {New York, NY, USA},
+       url = {https://doi.org/10.1145/3587421.3595418},
+       doi = {10.1145/3587421.3595418},
+       booktitle = {ACM SIGGRAPH 2023 Talks},
+       articleno = {67},
+       numpages = {2},
+       keywords = {Digital painting, stylized stroke, arrangement, vector graphics. coloring, graphics processing unit (GPU)},
+       location = {Los Angeles, CA, USA},
+       series = {SIGGRAPH '23}
     }
 
 ## Core Features

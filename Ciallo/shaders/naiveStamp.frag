@@ -58,9 +58,11 @@ layout(location = 0) out vec4 outColor;
 
 layout(location = 1) uniform vec4 color = vec4(0.9, 0.0, 0.0, 0.0); // Red to warn if value is not set
 layout(location = 3, binding = 0) uniform sampler2D tex;
+layout(location = 5) uniform float noiseFactor = 1.5;
 void main() {
     vec4 c = texture(tex, uv);
-    float alpha = clamp(c.a - 0.5*fbm(uv*50.0), 0.0, 1.0) * 1.0;
+    // float alpha = clamp(c.a - noiseFactor*fbm(uv*50.0), 0.0, 1.0) * c.a;
+    float alpha = c.a;
+    // outColor = vec4(color.rgb, c.a);
     outColor = (color.a < 1e-5) ? c:vec4(color.rgb, alpha);
-    // outColor = (color.a < 1e-5) ? c:vec4(color.rgb, c.a);
 }

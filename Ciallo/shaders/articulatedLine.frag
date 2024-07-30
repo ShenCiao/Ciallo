@@ -81,32 +81,12 @@ float fbm (in vec2 st) {
 // t1 and t2: two parameters that control the shape of the brush stroke
 // L: the length of the brush stroke
 
-float x2n(float x, float r, float t1, float t2, float L){
-    // I screw the code up.
-    // RatioDistance: out of consideration
-    if(stampMode == RatioDistance){
-        const float tolerance = 1e-5;
-        if(t1 <= 0 || t1/t2 < tolerance){
-            t1 = tolerance*t2;
-        }
-        else if(t2 <= 0 || t2/t1 < tolerance){
-            t2 = tolerance*t1;
-        }
-        t1 = 2.0*t1; t2 = 2.0*t2; 
-        if(t1 == t2){
-            return x/(r*t1);
-        }
-        else{
-            return -L / r / (t1 - t2) * log(1.0 - (1.0 - t2/t1)/L * x);
-        }
-    }
-    else{
-        return x / (uniRadius * 2.0 * r);
-    }
+float x2n(float x, float r){
+    return x / (uniRadius * 2.0 * r);
 }
 
 // Normalized distance n -> Physical distance x for a brush stamp
-float n2x(float n, float r, float t1, float t2, float L){
+float n2x(float n, float r){
     return n * uniRadius * 2.0 * r;
 }
 #endif
@@ -170,10 +150,10 @@ void main() {
         startIndex = ceil(summedIndex) - summedIndex;
     }
     else{
-        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio, r0, r1, len)) - summedIndex;
+        startIndex = ceil(summedIndex + x2n(frontEdge, stampIntervalRatio)) - summedIndex;
     }
     endIndex = summedLength[1]/stampIntervalRatio-summedIndex;
-    float backIndex = x2n(backEdge, stampIntervalRatio, r0, r1, len);
+    float backIndex = x2n(backEdge, stampIntervalRatio);
     endIndex = endIndex < backIndex ? endIndex : backIndex;
     if(startIndex > endIndex) discard;
 
@@ -181,29 +161,26 @@ void main() {
     float A = 1e-10;
     vec4 currColor = vec4(1e-10);
     for(int i = 0; i < MAX_i; i++){
-        float currStampLocalX = n2x(currIndex, stampIntervalRatio, r0, r1, len);
+        float currStampLocalX = n2x(currIndex, stampIntervalRatio);
         float r = r0 - cosTheta * currStampLocalX;
         vec2 pToStamp = pLocal - vec2(currStampLocalX, 0);
         vec2 textureCoordinate = (pToStamp/r + 1.0)/2.0;
         vec4 color = texture(footprint, textureCoordinate);
-        vec4 colorOut;
+
         // fbm: noise generation, 50.0 -> scale
-        float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
-        // float alpha = 1.0;
+        // float alpha = clamp(color.a - noiseFactor*fbm(textureCoordinate*50.0), 0.0, 1.0) * fragColor.a;
+        float alpha = color.a;
         // color.a -> stamp, fragColor -> settings, noiseFactor muptiple
         // A = clamp((A * (1.0 - alpha) + alpha) * r0 * 800.0, 0.0, 1.0);
         A = A * (1.0 - alpha) + alpha;
-        colorOut.a = A;
-        colorOut.rgb = (color.rgb * color.a + currColor.rgb * currColor.a * (1.0 - color.a))/colorOut.a;
-        currColor = colorOut;
-
+        
         currIndex += 1.0;
         if(currIndex > endIndex) break;
     }
 
     if(A < 1e-4) discard;
-    // outColor = vec4(fragColor.rgb, A);
-    outColor = currColor;
+    outColor = vec4(fragColor.rgb, A);
+    // outColor = currColor;
     return;
 #endif
 

@@ -5,7 +5,7 @@
 
 void StampBrushData::SetUniforms()
 {
-	glBindTexture(GL_TEXTURE_2D, StampTexture);
+	glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[1]);
 	glUniform1f(4, StampIntervalRatio);
 	glUniform1f(5, NoiseFactor);
 	glUniform1f(6, RotationRand);

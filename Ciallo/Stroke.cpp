@@ -67,19 +67,19 @@ void Stroke::GenBuffers()
 
 void Stroke::UpdatePositionBuffer()
 {
-	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_STREAM_DRAW);
+	glNamedBufferData(VertexBuffers[0], Position.size() * sizeof(glm::vec2), Position.data(), GL_STATIC_DRAW);
 }
 
 void Stroke::UpdateRadiusOffsetBuffer()
 {
 	glNamedBufferData(VertexBuffers[1], RadiusOffset.size() * sizeof(float), RadiusOffset.data(),
-	                  GL_STREAM_DRAW);
+		GL_STATIC_DRAW);
 }
 
 // Using position buffer, be careful about the calling order.
 void Stroke::UpdateDistanceBuffer(int stampMode)
 {
-	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_STREAM_DRAW);
+	glNamedBufferData(VertexBuffers[2], Position.size() * sizeof(float), nullptr, GL_STATIC_DRAW);
 	glUseProgram(RenderingSystem::PrefixSum->Program);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, VertexBuffers[0]);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, VertexBuffers[1]);
@@ -105,22 +105,6 @@ Stroke Stroke::Copy()
 void Stroke::LineDrawCall()
 {
 	int count = Position.size();
-	if (count == 1)
-	{
-		glm::vec2 p = Position[0];
-		float offset = 0.0f;
-		if (!RadiusOffset.empty()) offset = RadiusOffset[0];
-
-		glm::vec2 paddedPos = {p.x + 0.01f * (Radius + offset), p.y};
-		Position.push_back(paddedPos);
-
-		UpdatePositionBuffer();
-		UpdateRadiusOffsetBuffer();
-
-		Position.pop_back();
-
-		count = 2;
-	}
 	glBindVertexArray(VertexArray);
 	glDrawArrays(GL_LINE_STRIP, 0, count);
 }

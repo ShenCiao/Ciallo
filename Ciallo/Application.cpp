@@ -79,7 +79,8 @@ void Application::Run()
 	R.ctx().emplace<Timer>();
 	GenDefaultProject();
 	enum { OurMethod, NaiveMethod};
-	int method = OurMethod;
+
+	std::map<const int, std::string> methods{ {OurMethod, "Our Method"}, {NaiveMethod, "Naive Method"} };
 	
 	int w, h;
 	glfwGetFramebufferSize(Window->GlfwWindow, &w, &h);
@@ -89,121 +90,119 @@ void Application::Run()
 	bool shouldClose = false;
 	while (!Window->ShouldClose())
 	{	
-		for(float ra = 0.00175f; ra < 0.004; ra += 0.001){
-			for(float nof = 5.0; nof < 51.0; nof += 5.0){
-				shouldClose = true;
-				Loader::LoadCsv("./models/girl.csv", ra, nof);
-				auto& currTime = R.ctx().get<Timer>();
-				currTime.timestamp = std::chrono::high_resolution_clock::now();
+		for (auto const [method, methodStr] : methods) {
+			spdlog::info(methodStr);
+			for (float ra = 0.00175f; ra < 0.004; ra += 0.001) {
+				for (float nof = 5.0; nof < 51.0; nof += 5.0) {
+					shouldClose = true;
+					Loader::LoadCsv("./models/grid.csv", ra, nof);
+					auto& currTime = R.ctx().get<Timer>();
+					currTime.timestamp = std::chrono::high_resolution_clock::now();
 
-				entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
-				if (drawingE == entt::null) return;
-				auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
-				if(method == NaiveMethod)
-				{
-					for (entt::entity e : strokeEs)
-					{
-						auto& stroke = R.get<Stroke>(e);
-						std::vector<glm::vec2> newPositions = { stroke.Position[0] };
-						std::vector<float> newRadius = { stroke.RadiusOffset[0] + stroke.Radius };
-						float interval = stroke.Radius * 2.0f/nof;
-						float nextStampToBeginPointDistance = interval;
-						float accumlatedDistance = 0.0f;
-						int count = stroke.Position.size();
-						for (int i = 1; i < count; ++i) {
-							glm::vec2 p0 = stroke.Position[i - 1];
-							glm::vec2 p1 = stroke.Position[i];
-							float r0 = stroke.RadiusOffset[i - 1] + stroke.Radius;
-							float r1 = stroke.RadiusOffset[i] + stroke.Radius;
-							float segmentLength = glm::distance(p0, p1);
-							accumlatedDistance += segmentLength;
-							while (accumlatedDistance >= nextStampToBeginPointDistance) {
-								float ratio = (accumlatedDistance - nextStampToBeginPointDistance) / segmentLength;
-								newPositions.push_back(glm::mix(p1, p0, ratio));
-								newRadius.push_back(glm::mix(r1, r0, ratio));
-									
-								nextStampToBeginPointDistance += interval;
+					entt::entity drawingE = R.ctx().get<TimelineManager>().GetRenderDrawing();
+					if (drawingE == entt::null) return;
+					auto& strokeEs = R.get<StrokeContainer>(drawingE).StrokeEs;
+
+					while (true) {
+						Window->BeginFrame();
+						ImGui::ShowMetricsWindow();
+						R.ctx().get<Canvas>().DrawUI();
+
+						if (currTime.run()) {
+							Window->EndFrame();
+							break;
+						}
+						entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
+						// if (currentE != entt::null)
+						// {
+						// 	R.get<ArrangementManager>(currentE).Run();
+						// }
+						glEnable(GL_BLEND);
+						glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+						glDisable(GL_DEPTH_TEST);
+						glDisable(GL_STENCIL_TEST);
+						glBindFramebuffer(GL_FRAMEBUFFER, 0);
+						glClearColor(1, 1, 1, 1);
+						glClear(GL_COLOR_BUFFER_BIT);
+
+						auto& canvas = R.ctx().get<Canvas>();
+						canvas.Viewport.UploadMVP();
+						canvas.Viewport.BindMVPBuffer();
+						glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+						if (method == OurMethod) {
+							for (entt::entity e : strokeEs)
+							{
+								auto& stroke = R.get<Stroke>(e);
+								Brush* brush;
+
+								brush = &R.get<Brush>(stroke.BrushE);
+								brush->Use();
+								brush->SetUniforms();
+								stroke.SetUniforms();
+								stroke.LineDrawCall();
 							}
 						}
-						int newCount = newPositions.size();
-						glNamedBufferData(stroke.VertexBuffers[0], newCount * sizeof(glm::vec2), newPositions.data(), GL_STREAM_DRAW);
-						glNamedBufferData(stroke.VertexBuffers[1], newCount * sizeof(float), newRadius.data(), GL_STREAM_DRAW);
-						stroke.Position = std::move(newPositions);
-					}
-				}
-				
-				while(true){
-					Window->BeginFrame();
-					ImGui::ShowMetricsWindow();
-					R.ctx().get<Canvas>().DrawUI();
 
-					if(currTime.run()){
+						if (method == NaiveMethod) {
+							for (entt::entity e : strokeEs)
+							{
+								auto& stroke = R.get<Stroke>(e);
+								std::vector<glm::vec2> newPositions = { stroke.Position[0] };
+								std::vector<float> newRadius = { stroke.RadiusOffset[0] + stroke.Radius };
+								float interval = stroke.Radius * 2.0f / nof;
+								float nextStampToBeginPointDistance = interval;
+								float accumlatedDistance = 0.0f;
+								int count = stroke.Position.size();
+								for (int i = 1; i < count; ++i) {
+									glm::vec2 p0 = stroke.Position[i - 1];
+									glm::vec2 p1 = stroke.Position[i];
+									float r0 = stroke.RadiusOffset[i - 1] + stroke.Radius;
+									float r1 = stroke.RadiusOffset[i] + stroke.Radius;
+									float segmentLength = glm::distance(p0, p1);
+									accumlatedDistance += segmentLength;
+									while (accumlatedDistance >= nextStampToBeginPointDistance) {
+										float ratio = (accumlatedDistance - nextStampToBeginPointDistance) / segmentLength;
+										newPositions.push_back(glm::mix(p1, p0, ratio));
+										newRadius.push_back(glm::mix(r1, r0, ratio));
+
+										nextStampToBeginPointDistance += interval;
+									}
+								}
+								int newCount = newPositions.size();
+								glNamedBufferData(stroke.VertexBuffers[0], newCount * sizeof(glm::vec2), newPositions.data(), GL_STATIC_DRAW);
+								glNamedBufferData(stroke.VertexBuffers[1], newCount * sizeof(float), newRadius.data(), GL_STATIC_DRAW);
+
+								glUseProgram(RenderingSystem::Dot->Program);
+								glUniform4fv(1, 1, glm::value_ptr(stroke.Color));
+								glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[1]);
+								glBindVertexArray(stroke.VertexArray);
+								glDrawArrays(GL_POINTS, 0, newCount);
+							}
+						}
+
 						Window->EndFrame();
-						break;
-					}
-					entt::entity currentE = R.ctx().get<TimelineManager>().GetCurrentDrawing();
-					// if (currentE != entt::null)
-					// {
-					// 	R.get<ArrangementManager>(currentE).Run();
-					// }
-					glEnable(GL_BLEND);
-					glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-					glDisable(GL_DEPTH_TEST);
-					glDisable(GL_STENCIL_TEST);
-					glBindFramebuffer(GL_FRAMEBUFFER, 0);
-					glClearColor(1, 1, 1, 1);
-					glClear(GL_COLOR_BUFFER_BIT);
 
-					auto& canvas = R.ctx().get<Canvas>();
-					canvas.Viewport.UploadMVP();
-					canvas.Viewport.BindMVPBuffer();
-					glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-					if (method == OurMethod) {
-						for (entt::entity e : strokeEs)
+						if (Loader::ShouldLoadProject)
 						{
-							auto& stroke = R.get<Stroke>(e);
-							Brush* brush;
-
-							brush = &R.get<Brush>(stroke.BrushE);
-							brush->Use();
-							brush->SetUniforms();
-							stroke.SetUniforms();
-							stroke.LineDrawCall();
+							glfwSwapBuffers(Window->GlfwWindow);
+							Loader::LoadProject("./project/project");
+							Loader::ShouldLoadProject = false;
 						}
-					}
 
-					if (method == NaiveMethod) {
-						for (entt::entity e : strokeEs) {
-							auto &stroke = R.get<Stroke>(e);
-							glUseProgram(RenderingSystem::Dot->Program);
-							glUniform4fv(1, 1, glm::value_ptr(stroke.Color));
-							glBindTexture(GL_TEXTURE_2D, TextureManager::Textures[1]);
-							glBindVertexArray(stroke.VertexArray);
-							glDrawArrays(GL_POINTS, 0, stroke.Position.size());
-						}
-					}
-					
-					Window->EndFrame();
+						if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0) {
 
-					if (Loader::ShouldLoadProject)
-					{
-						glfwSwapBuffers(Window->GlfwWindow);
-						Loader::LoadProject("./project/project");
-						Loader::ShouldLoadProject = false;
-					}
-
-					if (auto& tm = R.ctx().get<TimelineManager>(); tm.ExportingIndex >= 0) {
-						
-						auto& canvas = R.ctx().get<Canvas>();
-						TextureManager::SaveTexture(canvas.Image.ColorTexture, std::to_string(R.ctx().get<TimelineManager>().CurrentFrame));
-						if (tm.ExportingIndex >= tm.KeyFrames.size()) {
-							tm.ExportingIndex = -1;
+							auto& canvas = R.ctx().get<Canvas>();
+							TextureManager::SaveTexture(canvas.Image.ColorTexture, std::to_string(R.ctx().get<TimelineManager>().CurrentFrame));
+							if (tm.ExportingIndex >= tm.KeyFrames.size()) {
+								tm.ExportingIndex = -1;
+							}
 						}
 					}
 				}
 			}
 		}
+		
 
 		if(shouldClose){
 			break;
@@ -251,8 +250,8 @@ void Application::GenDefaultProject()
 	glm::vec2 max = { ratio * 16.0, ratio * 9.0 };
 	// resolution
 	// float dpi = 130.62857142857143f;
-	float dpi = 174.1714285714286f;
-	// float dpi = 261.25714285714287f;
+	//float dpi = 174.1714285714286f;
+	 float dpi = 261.25714285714287f;
 	auto& canvas = R.ctx().emplace<Canvas>(min, max, dpi);
 	R.ctx().emplace<TempLayers>(canvas.GetSizePixel());
 

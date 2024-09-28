@@ -1,5 +1,16 @@
 # Ciallo ～(∠・ω< )⌒★!
 
+**Critical Warning**: There is a critical error in the SIGGRAPH 2024 Paper at the 3.RENDERING ALGORITHMS second paragraph.
+> All three types of strokes use the same vertex placing method. **We parameterize the stroke based on its length and place a vertex equidistantly along the stroke based on a given interval.**
+
+We never need to parameterize the stroke based on its length, our original data are polylines.
+Even if we need to render a parameterized curve, like $Curve(t)$.
+We don't reparameterize it into $Curve(s)$ but simply pick an arithmetic sequence of $t$ to turn it into a polyline.
+We sincerely apologize for the occurrence of such an obvious yet damaging error.
+
+---
+
+
 [Tutorial](https://shenciao.github.io/brush-rendering-tutorial/) → Very detailed technical description with interactive code blocks.
 
 [SIGGRAPH 2024 Paper](https://dl.acm.org/doi/10.1145/3641519.3657418)

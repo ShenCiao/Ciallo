@@ -1,50 +1,50 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
-About,,关于Ciallo,,,,,
-Background color,,,,,,,
-Ciallo,,Ciallo,,,,,
-Close Document,,,,,,,
-Copy,,,,,,,
-Create,,,,,,,
-Cut,,剪切,,,,,
-Delete,,删除,,,,,
-Document name,,,,,,,
-Document name cannot be empty.,,,,,,,
-Double click to rename,,,,,,,
-Enable AutoReload,,,,,,,
-Enable StackTrace,,,,,,,
-Enable Tracking,,,,,,,
-Error,,,,,,,
-Export as Godot scene,,,,,,,
-Export as image,,,,,,,
-Invalid document name. Please use a valid file name.,,,,,,,
-Language,,,,,,,
-Lasso - Free-hand selection,,,,,,,
-Layer,,,,,,,
-New Document,,,,,,,
-Opacity:,,,,,,,
-Open,,,,,,,
-Open a File,,,,,,,
-Open Document,,,,,,,
-Paint Brush,,,,,,,
-Paint Fill - Draw colored area free-handly.,,,,,,,
-Paste,,,,,,,
-Recent documents:,,,,,,,
-Recent Files,,,,,,,
-Redo,,,,,,,
-Reference size (?),,,,,,,
-Reload,,,,,,,
-Reload automatically.,,,,,,,
-Reload View.,,,,,,,
-Rotation,,,,,,,
-Save,,,,,,,
-Save As...,,,,,,,
-Save folder,,,,,,,
-Save folder does not exist.,,,,,,,
-Selection,,,,,,,
-Set Property,,,,,,,
-Settings,,设置,,,,,
-Start,,,,,,,
-Undo,,,,,,,
-User manual,,,,,,,
-Vector fill - Fill enclose areas with editable fill markers.,,,,,,,
-Zoom,,,,,,,
+About,,关于Ciallo,關於Ciallo,Cialloについて,Ciallo 정보,Über Ciallo,À propos de Ciallo
+Background color,,背景颜色,背景顏色,背景色,배경 색상,Hintergrundfarbe,Couleur d'arrière-plan
+Ciallo,,Ciallo,Ciallo,Ciallo,Ciallo,Ciallo,Ciallo
+Close Document,,关闭文档,關閉文檔,ドキュメントを閉じる,문서 닫기,Dokument schließen,Fermer le document
+Copy,,复制,複製,コピー,복사,Kopieren,Copier
+Create,,创建,建立,作成,만들기,Erstellen,Créer
+Cut,,剪切,剪下,切り取り,잘라내기,Ausschneiden,Couper
+Delete,,删除,刪除,削除,삭제,Löschen,Supprimer
+Document name,,文档名称,文檔名稱,ドキュメント名,문서 이름,Dokumentname,Nom du document
+Document name cannot be empty.,,文档名称不能为空。,文檔名稱不能為空。,ドキュメント名を空にすることはできません。,문서 이름은 비워둘 수 없습니다.,Der Dokumentname darf nicht leer sein.,Le nom du document ne peut pas être vide.
+Double click to rename,,双击重命名,雙擊重新命名,ダブルクリックで名前を変更,더블클릭으로 이름 변경,Doppelklick zum Umbenennen,Double-clic pour renommer
+Enable AutoReload,,启用自动重载,啟用自動重新載入,自動再読み込みを有効にする,자동 새로고침 활성화,AutoReload aktivieren,Activer le rechargement automatique
+Enable StackTrace,,启用堆栈跟踪,啟用堆疊追蹤,スタックトレースを有効にする,스택 트레이스 활성화,StackTrace aktivieren,Activer la trace de pile
+Enable Tracking,,启用跟踪,啟用追蹤,トラッキングを有効にする,추적 활성화,Tracking aktivieren,Activer le suivi
+Error,,错误,錯誤,エラー,오류,Fehler,Erreur
+Export as Godot scene,,导出为Godot场景,匯出為Godot場景,Godotシーンとしてエクスポート,Godot 씬으로 내보내기,Als Godot-Szene exportieren,Exporter comme scène Godot
+Export as image,,导出为图像,匯出為圖像,画像としてエクスポート,이미지로 내보내기,Als Bild exportieren,Exporter comme image
+Invalid document name. Please use a valid file name.,,文档名称无效。请使用有效的文件名。,文檔名稱無效。請使用有效的檔案名稱。,無効なドキュメント名です。有効なファイル名を使用してください。,잘못된 문서 이름입니다. 유효한 파일 이름을 사용하세요.,Ungültiger Dokumentname. Bitte verwenden Sie einen gültigen Dateinamen.,Nom de document invalide. Veuillez utiliser un nom de fichier valide.
+Language,,语言,語言,言語,언어,Sprache,Langue
+Lasso - Free-hand selection,,套索 - 自由选择,套索 - 自由選取,投げ縄 - フリーハンド選択,올가미 - 자유 선택,Lasso - Freihandauswahl,Lasso - Sélection à main levée
+Layer,,图层,圖層,レイヤー,레이어,Ebene,Calque
+New Document,,新建文档,新增文檔,新しいドキュメント,새 문서,Neues Dokument,Nouveau document
+Opacity:,,不透明度:,不透明度:,不透明度:,불투명도:,Deckkraft:,Opacité :
+Open,,打开,開啟,開く,열기,Öffnen,Ouvrir
+Open a File,,打开文件,開啟檔案,ファイルを開く,파일 열기,Datei öffnen,Ouvrir un fichier
+Open Document,,打开文档,開啟文檔,ドキュメントを開く,문서 열기,Dokument öffnen,Ouvrir un document
+Paint Brush,,画笔,畫筆,ペイントブラシ,페인트 브러시,Pinsel,Pinceau
+Paint Fill - Draw colored area free-handly.,,填充绘制 - 自由手绘彩色区域。,填充繪製 - 自由手繪彩色區域。,塗りつぶし - フリーハンドでカラー領域を描画。,페인트 채우기 - 자유롭게 색칠된 영역 그리기.,Farbfüllung - Frei gezeichnete Farbflächen.,Remplissage - Dessiner des zones colorées à main levée.
+Paste,,粘贴,貼上,貼り付け,붙여넣기,Einfügen,Coller
+Recent documents:,,最近的文档:,最近的文檔:,最近のドキュメント:,최근 문서:,Letzte Dokumente:,Documents récents :
+Recent Files,,最近的文件,最近的檔案,最近のファイル,최근 파일,Letzte Dateien,Fichiers récents
+Redo,,重做,重做,やり直し,다시 실행,Wiederholen,Rétablir
+Reference size (?),,参考尺寸 (?),參考尺寸 (?),参照サイズ (?),"참조 크기 (?)",Referenzgröße (?),Taille de référence (?)
+Reload,,重新加载,重新載入,再読み込み,새로고침,Neu laden,Recharger
+Reload automatically.,,自动重新加载。,自動重新載入。,自動的に再読み込みします。,자동으로 새로고침됩니다.,Automatisch neu laden.,Recharger automatiquement.
+Reload View.,,重新加载视图。,重新載入檢視。,ビューを再読み込み。,뷰 새로고침.,Ansicht neu laden.,Recharger la vue.
+Rotation,,旋转,旋轉,回転,회전,Rotation,Rotation
+Save,,保存,儲存,保存,저장,Speichern,Sauvegarder
+Save As...,,另存为...,另存新檔...,名前を付けて保存...,다른 이름으로 저장...,Speichern unter...,Enregistrer sous...
+Save folder,,保存文件夹,儲存資料夾,保存フォルダー,저장 폴더,Speicherordner,Dossier de sauvegarde
+Save folder does not exist.,,保存文件夹不存在。,儲存資料夾不存在。,保存フォルダーが存在しません。,저장 폴더가 존재하지 않습니다.,Speicherordner existiert nicht.,Le dossier de sauvegarde n'existe pas.
+Selection,,选择,選取,選択,선택,Auswahl,Sélection
+Set Property,,设置属性,設定屬性,プロパティを設定,속성 설정,Eigenschaft festlegen,Définir la propriété
+Settings,,设置,設定,設定,설정,Einstellungen,Paramètres
+Start,,开始,開始,開始,시작,Start,Démarrer
+Undo,,撤销,復原,元に戻す,실행 취소,Rückgängig,Annuler
+User manual,,用户手册,使用者手冊,ユーザーマニュアル,사용자 매뉴얼,Benutzerhandbuch,Manuel utilisateur
+Vector fill - Fill enclose areas with editable fill markers.,,矢量填充 - 用可编辑填充标记填充封闭区域。,向量填充 - 用可編輯填充標記填充封閉區域。,ベクター塗りつぶし - 編集可能な塗りつぶしマーカーで囲まれた領域を塗りつぶします。,벡터 채우기 - 편집 가능한 채우기 마커로 닫힌 영역을 채웁니다.,Vektorfüllung - Geschlossene Bereiche mit bearbeitbaren Füllmarkierungen füllen.,Remplissage vectoriel - Remplir les zones fermées avec des marqueurs de remplissage modifiables.
+Zoom,,缩放,縮放,ズーム,확대/축소,Zoom,Zoom

@@ -1,0 +1,75 @@
+Text to Translate
+- Scroll mouse wheel to zoom in/out. - Click and drag middle mouse button to pan. - Double click middle mouse button to reset canvas view to center.
+About Ciallo
+AllowReselect must be false.
+Background color
+Button must be in toggle mode
+Camera2D not found.
+Cannot sample from an empty curve.
+Canvas navigation guide (?)
+Capture StackTrace when subscribed. Performance impact: high
+Child entity must have LayerTreeNode component.
+Ciallo
+Ciallo is a free and open-source tool for digital painting. New technologies are researched and developed by Shen Ciao — inspired by love and supported by your donations.
+Close Document
+Copy
+Create
+Cut
+Delete
+Demo version
+Document name
+Document name cannot be empty.
+Double click to rename
+Enable AutoReload
+Enable StackTrace
+Enable Tracking
+Error
+Export as Godot scene
+Export as image
+GC.Collect
+Invalid document name. Please use a valid file name.
+Invoke GC.Collect.
+Language
+Lasso - Free-hand selection
+Layer
+List of primitive types cannot be used as components.
+New Document
+New document - Ciallo
+Opacity:
+Open
+Open Document
+Open a File
+Other document
+Paint Brush
+Paint Fill - Draw colored area free-handly.
+Paste
+Polyline cannot be empty.
+Primitive types cannot be used as components.
+Recent Files
+Recent documents:
+Redo
+Reference size (?)
+Reload
+Reload View.
+Reload automatically.
+Rotation
+RotationControl not found.
+Save
+Save As...
+Save folder
+Save folder does not exist.
+Selection
+Set Property
+Set your canvas reference size in pixels—you can always export your artwork at a higher resolution.
+Settings:
+Start
+Start to track Observable subscription. Performance impact: low
+The given layer control is not created by this LayerTreeControl.
+The given layer control is not managed by this LayerTreeControl.
+The specified world does not exist.
+Undo
+Unhandled menu item index:
+User manual
+Vector fill - Fill enclose areas with editable fill markers.
+Zoom
+ZoomControl not found.

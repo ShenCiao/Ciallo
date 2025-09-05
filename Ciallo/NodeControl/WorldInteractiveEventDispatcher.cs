@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Linq;
 using Ciallo.Widget;
 using Ciallo.Tool;
 
@@ -19,24 +20,28 @@ public partial class WorldInteractiveEventDispatcher : SubViewportContainer
     private Vector2 _prevWorldPos;
     
     /// <summary>
-    /// The tool manager that handles tool switching and input routing.
+    /// The global tool manager that handles tool switching and input routing.
     /// </summary>
-    public ToolManager ToolManager { get; private set; }
+    public ToolManager ToolManager => Global.ToolManager;
     
     public override void _Ready()
     {
         _camera = GetNode<Camera2D>("%Camera2D");
         
-        // Initialize tool manager and register default tools
-        ToolManager = new ToolManager();
-        RegisterDefaultTools();
+        // Register default tools if not already registered
+        RegisterDefaultToolsIfNeeded();
     }
     
     /// <summary>
-    /// Register the default tools available in the application.
+    /// Register the default tools if they haven't been registered yet.
+    /// Since ToolManager is now global, we only want to register tools once.
     /// </summary>
-    private void RegisterDefaultTools()
+    private void RegisterDefaultToolsIfNeeded()
     {
+        // Check if tools are already registered by checking if any tool exists
+        if (ToolManager.GetToolNames().Any())
+            return;
+            
         ToolManager.RegisterTool(new SelectionTool());
         ToolManager.RegisterTool(new PaintTool());
         ToolManager.RegisterTool(new RectangleTool());

@@ -25,12 +25,14 @@ The foundation of all interactive tools. Defines the contract that all tools mus
 
 ### 2. ToolManager
 
-Central coordinator for the tool system:
+Central coordinator for the tool system, available globally:
 
+- **Global Access**: Single instance accessible via `Global.ToolManager`
 - **Tool Registration**: Register and unregister tools dynamically
 - **Tool Switching**: Activate different tools based on user selection
 - **Input Routing**: Forward input events to the active tool
 - **State Management**: Handle tool lifecycle and cleanup
+- **Cross-Document**: Tool state persists when switching between documents
 
 ### 3. InteractiveToolBase
 
@@ -42,12 +44,13 @@ Abstract base class providing common functionality:
 
 ### 4. WorldInteractiveEventDispatcher Integration
 
-Enhanced to work with the tool system:
+Enhanced to work with the global tool system:
 
-- **Tool Integration**: Creates and manages ToolManager instance
+- **Global Tool Access**: Uses the global `ToolManager` instance
 - **Input Forwarding**: Routes appropriate events to tools vs. navigation
 - **Tool Shortcuts**: Keyboard shortcuts for quick tool switching
 - **Navigation Preservation**: Maintains existing pan/zoom functionality
+- **Tool Registration**: Registers default tools on first initialization
 
 ## Tool Categories
 
@@ -97,7 +100,7 @@ var command = new PaintStrokeCmd(points, brushSize, color);
 
 // Command integrates with undo system
 command.Commit(); // Executes and adds to undo history
-command.Free();   // Clean up (required by Godot object management)
+// Note: Memory cleanup is handled by UndoRedo system automatically
 ```
 
 ### Command Lifecycle
@@ -138,10 +141,8 @@ else
 ### Basic Tool Usage
 
 ```csharp
-// Register tools
-var toolManager = new ToolManager();
-toolManager.RegisterTool(new SelectionTool());
-toolManager.RegisterTool(new PaintTool());
+// Access the global tool manager
+var toolManager = Global.ToolManager;
 
 // Switch tools
 toolManager.SetActiveTool("Paint");
@@ -161,7 +162,7 @@ public class CustomTool : InteractiveToolBase
     {
         var cmd = new CustomCommand(start, end);
         cmd.Commit();
-        cmd.Free();
+        // Note: Memory cleanup is handled by UndoRedo system automatically
     }
 }
 ```
@@ -169,15 +170,23 @@ public class CustomTool : InteractiveToolBase
 ### Tool Registration
 
 ```csharp
-// In WorldInteractiveEventDispatcher._Ready()
-private void RegisterDefaultTools()
+// Tools are registered globally during application startup
+// In WorldInteractiveEventDispatcher._Ready() or application initialization
+private void RegisterDefaultToolsIfNeeded()
 {
-    ToolManager.RegisterTool(new SelectionTool());
-    ToolManager.RegisterTool(new PaintTool());
-    ToolManager.RegisterTool(new RectangleTool());
-    ToolManager.RegisterTool(new PolygonTool());
+    var toolManager = Global.ToolManager;
     
-    ToolManager.SetActiveTool("Select"); // Default tool
+    // Only register if not already registered
+    if (!toolManager.GetToolNames().Any())
+    {
+        toolManager.RegisterTool(new SelectionTool());
+        toolManager.RegisterTool(new PaintTool());
+        toolManager.RegisterTool(new RectangleTool());
+        toolManager.RegisterTool(new PolygonTool());
+        
+        toolManager.SetActiveTool("Select"); // Default tool
+    }
+}
 }
 ```
 

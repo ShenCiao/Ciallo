@@ -1,5 +1,6 @@
 using Godot;
 using Ciallo.Tool;
+using System.Collections.Generic;
 
 namespace Ciallo.NodeControl;
 
@@ -18,9 +19,8 @@ public partial class ToolPanelExample : PanelContainer
     {
         SetupUI();
         
-        // Get tool manager from WorldInteractiveEventDispatcher
-        var dispatcher = GetNode<WorldInteractiveEventDispatcher>("%WorldInteractiveEventDispatcher");
-        _toolManager = dispatcher.ToolManager;
+        // Use the global tool manager
+        _toolManager = Global.ToolManager;
         
         // Subscribe to tool changes
         _toolManager.ActiveToolChanged.Subscribe(OnActiveToolChanged);
@@ -221,7 +221,7 @@ public class AdvancedPaintTool : PaintTool
             );
             
             advancedCmd.Commit();
-            advancedCmd.Free();
+            // Note: Memory cleanup is handled by UndoRedo system automatically
             _currentStrokeCommand = null;
         }
         

@@ -1,6 +1,7 @@
 using Godot;
 using System;
 using Ciallo.Widget;
+using Ciallo.Tool;
 
 namespace Ciallo.NodeControl;
 
@@ -17,14 +18,76 @@ public partial class WorldInteractiveEventDispatcher : SubViewportContainer
     private Vector2 _prevScreenPos;
     private Vector2 _prevWorldPos;
     
+    /// <summary>
+    /// The tool manager that handles tool switching and input routing.
+    /// </summary>
+    public ToolManager ToolManager { get; private set; }
+    
     public override void _Ready()
     {
         _camera = GetNode<Camera2D>("%Camera2D");
+        
+        // Initialize tool manager and register default tools
+        ToolManager = new ToolManager();
+        RegisterDefaultTools();
+    }
+    
+    /// <summary>
+    /// Register the default tools available in the application.
+    /// </summary>
+    private void RegisterDefaultTools()
+    {
+        ToolManager.RegisterTool(new SelectionTool());
+        ToolManager.RegisterTool(new PaintTool());
+        ToolManager.RegisterTool(new RectangleTool());
+        ToolManager.RegisterTool(new EllipseTool());
+        ToolManager.RegisterTool(new PolygonTool());
+        
+        // Set selection tool as default
+        ToolManager.SetActiveTool("Select");
+    }
+    
+    public override void _Process(double delta)
+    {
+        // Update the active tool every frame
+        ToolManager?.UpdateActiveTool(delta);
     }
     
     public void OnGuiInput(InputEvent e)
     {
         var panel = (PaintPanel)Owner;
+        
+        // Handle keyboard input for tools
+        if (e is InputEventKey keyEvent)
+        {
+            // Tool switching shortcuts
+            if (keyEvent.Pressed)
+            {
+                switch (keyEvent.Keycode)
+                {
+                    case Key.Key1:
+                        ToolManager?.SetActiveTool("Select");
+                        return;
+                    case Key.Key2:
+                        ToolManager?.SetActiveTool("Paint");
+                        return;
+                    case Key.Key3:
+                        ToolManager?.SetActiveTool("Rectangle");
+                        return;
+                    case Key.Key4:
+                        ToolManager?.SetActiveTool("Ellipse");
+                        return;
+                    case Key.Key5:
+                        ToolManager?.SetActiveTool("Polygon");
+                        return;
+                }
+            }
+            
+            // Forward to active tool
+            ToolManager?.DispatchKeyInput(keyEvent);
+            return;
+        }
+        
         if (e is InputEventMouseMotion motion)
         {
             var worldPos = _camera.GetViewportTransform().AffineInverse() * motion.Position;
@@ -41,6 +104,7 @@ public partial class WorldInteractiveEventDispatcher : SubViewportContainer
                 RawData = motion
             };
             
+            // Dispatch to tool system first
             Dispatch(data);
             
             _prevScreenPos = screenPos;
@@ -52,27 +116,51 @@ public partial class WorldInteractiveEventDispatcher : SubViewportContainer
             }
         }
 
-        // Handle 
-        // Drag middle mouse to pan
-        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Middle, Pressed: true } && _isHovering)
-            _isPanning = true;
-        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Middle, Pressed: false })
-            _isPanning = false;
-        
-        // Double click to reset camera position.
-        if (e is InputEventMouseButton { ButtonIndex: MouseButton.Middle, DoubleClick: true })
+        // Handle mouse button events
+        if (e is InputEventMouseButton buttonEvent)
         {
-            panel.Offset.Value = Vector2.Zero;
-        }
-        // Scroll mouse wheel zooming.
-        var zoomFactor = Preferences.MouseWheelZoomFactor.Value;
-        if (e is InputEventMouseButton { ButtonIndex: MouseButton.WheelUp } && _isHovering)
-        {
-            panel.Zoom.Value *= 1.0f + zoomFactor;
-        }
-        else if (e is InputEventMouseButton { ButtonIndex: MouseButton.WheelDown } && _isHovering)
-        {
-            panel.Zoom.Value *= 1.0f - zoomFactor;
+            var worldPos = _camera.GetViewportTransform().AffineInverse() * buttonEvent.Position;
+            
+            // Handle navigation with middle mouse button
+            if (buttonEvent.ButtonIndex == MouseButton.Middle)
+            {
+                if (buttonEvent.Pressed && _isHovering)
+                {
+                    _isPanning = true;
+                }
+                else if (!buttonEvent.Pressed)
+                {
+                    _isPanning = false;
+                }
+                
+                // Double click to reset camera position
+                if (buttonEvent.DoubleClick)
+                {
+                    panel.Offset.Value = Vector2.Zero;
+                }
+                return; // Don't forward navigation events to tools
+            }
+            
+            // Handle zoom with mouse wheel
+            if (buttonEvent.ButtonIndex == MouseButton.WheelUp || buttonEvent.ButtonIndex == MouseButton.WheelDown)
+            {
+                if (_isHovering)
+                {
+                    var zoomFactor = Preferences.MouseWheelZoomFactor.Value;
+                    if (buttonEvent.ButtonIndex == MouseButton.WheelUp)
+                    {
+                        panel.Zoom.Value *= 1.0f + zoomFactor;
+                    }
+                    else
+                    {
+                        panel.Zoom.Value *= 1.0f - zoomFactor;
+                    }
+                }
+                return; // Don't forward zoom events to tools
+            }
+            
+            // Forward other mouse button events to tools
+            ToolManager?.DispatchMouseButton(buttonEvent.ButtonIndex, buttonEvent.Pressed, worldPos);
         }
     }
     
@@ -90,6 +178,7 @@ public partial class WorldInteractiveEventDispatcher : SubViewportContainer
 
     public void Dispatch(CursorMotionData data)
     {
-        
+        // Forward mouse motion events to the active tool
+        ToolManager?.DispatchMouseMotion(data);
     }
 }

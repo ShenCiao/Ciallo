@@ -66,7 +66,7 @@ System requirements (A system can run large-sized 2D games.):
 - Memory: 6GB or more
 - Graphics card: Minimum NV GTX 1650 or AMD Radeon RX 6500 XT.
 
-> About MacOS: The developer literally wishes but cannot afford to develop a macOS version. Buying a MacBook Pro will cost him half a year’s living budget. Consider patreon him for a macOS version.
+> About MacOS: The developer literally wishes but cannot afford to develop a macOS version. Buying a MacBook Pro will cost him half a year’s living budget. Consider Patreon him for a macOS version.
 
 ## Development philosophy and roadmap
 

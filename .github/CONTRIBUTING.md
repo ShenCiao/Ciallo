@@ -136,7 +136,7 @@ So I think this design is reasonable.
 Ciallo heavily uses [R3](https://github.com/Cysharp/R3) library's `ReactiveProperty` implement two-way binding between data and UI.
 You can find code like `colorButton.BindColor(ReactiveProperty<Color> color)` in UI code to intimate WPF's xaml binding behavior.
 
-R3's document is terrible. I put a lot of efforts only to take a very basic grasp.
+R3's document is terrible. I put a lot of effort only to take a very basic grasp.
 But luckily, you don't have to learn too much about R3 to start.
 Just google for what is ReactiveProperty, two-way binding, or MVVM pattern.
 Then you understand most of the R3 usage in Ciallo.

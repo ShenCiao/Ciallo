@@ -1,0 +1,18 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 💬 Community Discussion
+    url: https://github.com/ShenCiao/Ciallo/discussions
+    about: Ask questions, share ideas, and discuss Ciallo with the community
+
+  - name: 🤝 Contributing Guide
+    url: https://github.com/ShenCiao/Ciallo/blob/main/.github/CONTRIBUTING.md
+    about: Learn how to contribute to Ciallo development
+
+  - name: 📚 Documentation & Tutorials
+    url: https://shenciao.github.io/brush-rendering-tutorial/Introduction/
+    about: Learn about the techniques and research behind Ciallo
+
+  - name: 💝 Sponsor the Project
+    url: https://github.com/ShenCiao/Ciallo/blob/main/.github/FUNDING.yml
+    about: Support Ciallo development through sponsorship

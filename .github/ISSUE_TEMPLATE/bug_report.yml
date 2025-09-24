@@ -1,109 +1,52 @@
 name: Bug report
 description: Report a bug in Ciallo
+assignees: [ShenCiao]
 
 body:
   - type: markdown
     attributes:
       value: |
-        When reporting bugs, please follow the guidelines in this template. This helps identify the problem precisely and thus enables contributors to fix it faster.
-        - Write a descriptive issue title above.
-        - The golden rule is to **always open *one* issue for *one* bug**. If you notice several bugs and want to report them, make sure to create one new issue for each of them.
-        - Search [open](https://github.com/ShenCiao/Ciallo/issues) and [closed](https://github.com/ShenCiao/Ciallo/issues?q=is%3Aissue+is%3Aclosed) issues to ensure it has not already been reported. If you don't find a relevant match or if you're unsure, don't hesitate to **open a new issue**.
-        - Verify that you are using a supported Ciallo version. Please always check if your issue is reproducible in the latest version – it may already have been fixed!
-        - If you use a custom build, please test if your issue is reproducible in official builds too.
+        Please search existing issues before creating a new one.
 
   - type: textarea
     attributes:
-      label: Tested versions
-      description: |
-        To properly fix a bug, we need to identify if the bug was recently introduced, or if it was always present.
-        - Please specify the Ciallo version you found the issue in, including the **Git commit hash** if using a development build.
-        - If you can, **please test earlier Ciallo versions** and mention whether the bug is reproducible or not in the versions you tested.
-        - The aim is for us to identify whether a bug is a **regression**, i.e. an issue that didn't exist in a previous version, but was introduced later on, breaking existing functionality.
-      placeholder: |
-        - Reproducible in: v0.1-EA [abc123def], v0.1-dev.
-        - Not reproducible in: v0.0.9-stable.
+      label: Version information
+      description: Please specify your Ciallo version and commit hash if available.
+      placeholder: "Ciallo commit: abc123def"
     validations:
       required: true
 
   - type: input
     attributes:
       label: System information
-      description: |
-        - Specify the OS version, and when relevant hardware information.
-        - For graphics-related issues, please specify the GPU model, driver version, and the rendering backend (Vulkan, OpenGL).
-        - For performance issues, specify the CPU model and architecture.
-        - **Bug reports not including the required information may be closed at the maintainers' discretion.** If in doubt, always include all the requested information; it's better to include too much information than not enough information.
-        - **You can copy system information by using *Help > System Info* in Ciallo (if available), or manually provide the details below.**
-      placeholder: Windows 11 - Ciallo v0.1-EA - Vulkan - dedicated NVIDIA GeForce RTX 3070 (nvidia, 522.25) - Intel Core i7-11700K CPU @ 3.60GHz (16 Threads)
+      description: Please specify OS, GPU model, and any relevant hardware information.
+      placeholder: "Windows 11 - NVIDIA GeForce RTX 3070"
     validations:
       required: true
 
   - type: textarea
     attributes:
       label: Issue description
-      description: |
-        Describe your issue briefly. What doesn't work, and how do you expect it to work instead?
-        You can include images or videos with drag and drop, and format code blocks or logs with <code>\`\`\`</code> tags, on separate lines before and after the text.
-        Please do not add error messages as screenshots, but as text, this helps searching for issues. If you are reporting a bug in the user interface, please provide both a screenshot *and* description of the issue.
+      description: Describe your issue briefly. What doesn't work, and how do you expect it to work instead?
     validations:
       required: true
-
-  - type: dropdown
-    attributes:
-      label: Which area of Ciallo is affected?
-      description: Select the area(s) most relevant to your bug report
-      multiple: true
-      options:
-        - Brush engine / Painting tools
-        - Vector graphics / Vector fill
-        - Layer system
-        - User interface / Menus
-        - File handling / Import/Export
-        - Performance / Rendering
-        - Installation / Startup
-        - Undo/Redo system
-        - Canvas / Viewport
-        - Tool system
-        - Other (please specify in issue description)
 
   - type: textarea
     attributes:
       label: Steps to reproduce
-      description: |
-        List of steps or detailed workflow that reproduces the issue. Having reproducible issues is a prerequisite for contributors to be able to solve them.
-        If you include a minimal reproduction project below, you can detail how to use it here.
+      description: List the steps to reproduce the issue.
       placeholder: |
         1. Open Ciallo
-        2. Create a new document
-        3. Select the brush tool
-        4. Try to paint on the canvas
-        5. Notice the unexpected behavior...
+        2. ...
+        3. Notice the issue
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Minimal reproduction project (MRP)
+      label: Reproduction project
       description: |
-        - A small Ciallo project (.ciallo file) which reproduces the issue, with no unnecessary files included.
-        - Having an MRP is very important for contributors to be able to reproduce the bug in the same way that you are experiencing it.
-        - If the reproduction steps are not project dependent (e.g. the bug is visible in a brand new project), you can write "N/A" in the field.
-        - Drag and drop a .ciallo file or ZIP archive to upload it (max 10 MB). **Do not select another field until the project is done uploading.**
+        If needed, drag and drop a .ciallo project file or write "N/A" if not applicable.
       placeholder: Attach a .ciallo project file or write "N/A" if not applicable
     validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Error logs
-      description: |
-        If Ciallo crashed or produced error messages, please include them here.
-        You can find logs in the Ciallo application folder or check the console output if running from terminal.
-        Use <code>\`\`\`</code> tags to format error logs.
-      placeholder: |
-        ```
-        [Error] example error message here
-        ```
-      validations:
-        required: false
+      required: false

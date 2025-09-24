@@ -1,138 +1,17 @@
 name: Feature request
-description: Suggest a new feature or enhancement for Ciallo
+description: Suggest a new feature for Ciallo
+assignees: [ShenCiao]
 
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to suggest a feature for Ciallo! Please fill out this template to help us understand your request.
-        - Write a descriptive issue title above.
-        - Search [open](https://github.com/ShenCiao/Ciallo/issues) and [closed](https://github.com/ShenCiao/Ciallo/issues?q=is%3Aissue+is%3Aclosed) issues to ensure this feature hasn't already been requested.
-        - Check the [roadmap in CONTRIBUTING.md](https://github.com/ShenCiao/Ciallo/blob/main/.github/CONTRIBUTING.md) to see if the feature is already planned.
-        - Keep in mind that Ciallo is currently in early access (EA) stage focusing on core painting functionality.
-
-  - type: dropdown
-    attributes:
-      label: Feature category
-      description: What type of feature are you requesting?
-      options:
-        - Brush engine / Painting tools
-        - Vector graphics / Vector fill
-        - Layer system
-        - Animation system
-        - User interface / UX improvement
-        - File handling / Import/Export
-        - Performance optimization
-        - Tool system / Selection tools
-        - Canvas / Viewport features
-        - Workflow / Productivity
-        - Accessibility
-        - Other (please specify below)
-    validations:
-      required: true
+        Please search existing issues to ensure this feature hasn't already been requested.
 
   - type: textarea
     attributes:
-      label: Problem statement
-      description: |
-        Describe the problem you're trying to solve or the limitation you've encountered.
-        What workflow or task is currently difficult or impossible in Ciallo?
-      placeholder: |
-        Currently, when I try to do [specific task], I have to [current workaround/limitation]...
-        This makes it difficult to [specific workflow]...
+      label: Feature description
+      description: Describe the feature you would like to see in Ciallo.
+      placeholder: I would like Ciallo to have...
     validations:
       required: true
-
-  - type: textarea
-    attributes:
-      label: Proposed solution
-      description: |
-        Describe your preferred solution to the problem. Be as detailed as possible about how you envision this feature working.
-        If you have UI mockups, workflow diagrams, or reference images, feel free to include them.
-      placeholder: |
-        I would like to see a feature that allows me to...
-        It could work by...
-        The user interface could look like...
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Alternatives considered
-      description: |
-        Have you considered any alternative solutions or workarounds?
-        Are there similar features in other graphics programs that could serve as reference?
-      placeholder: |
-        I've also considered...
-        Photoshop/Krita/Clip Studio Paint has a similar feature that...
-        Alternative approaches could be...
-    validations:
-      required: false
-
-  - type: dropdown
-    attributes:
-      label: Target users
-      description: Who would primarily benefit from this feature?
-      multiple: true
-      options:
-        - Digital illustrators
-        - Concept artists
-        - Manga/Comic artists
-        - Animators
-        - Hobbyist artists
-        - Professional artists
-        - Game developers
-        - UI/UX designers
-        - All users
-    validations:
-      required: true
-
-  - type: dropdown
-    attributes:
-      label: Priority level
-      description: How important is this feature for your workflow?
-      options:
-        - Low - Nice to have, but not essential
-        - Medium - Would improve my workflow significantly
-        - High - Essential for my workflow, current blocker
-        - Critical - Cannot use Ciallo effectively without this
-    validations:
-      required: true
-
-  - type: checkboxes
-    attributes:
-      label: Additional context
-      description: Please check any that apply to provide additional context
-      options:
-        - label: I am willing to help test this feature when implemented
-        - label: I am willing to help with documentation for this feature
-        - label: I am willing to contribute code for this feature (if I have the technical skills)
-        - label: This feature request is related to accessibility needs
-        - label: This feature request is related to performance concerns
-        - label: This feature would help with professional/commercial work
-
-  - type: textarea
-    attributes:
-      label: Use cases and examples
-      description: |
-        Provide specific examples or use cases where this feature would be helpful.
-        If possible, describe a typical workflow where this feature would be used.
-      placeholder: |
-        Example 1: When creating character illustrations, I need to...
-        Example 2: During animation work, this would help me...
-        Workflow: Typically I start by... then I need to... and this feature would help at the step where...
-    validations:
-      required: false
-
-  - type: textarea
-    attributes:
-      label: References
-      description: |
-        Include any relevant links, images, or references that could help illustrate your request.
-        This could include links to tutorials, examples from other software, research papers, etc.
-      placeholder: |
-        - Reference implementation in [Software Name]: [link]
-        - Tutorial showing the workflow: [link]
-        - Related discussion: [link]
-    validations:
-      required: false

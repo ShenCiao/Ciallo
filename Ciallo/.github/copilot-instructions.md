@@ -14,7 +14,7 @@
 ## Details
 - Global variables or static classes (that need to work with) are named as "App*"
 - No plural forms for class, folder, or namespace names.
-  - Optionally, use plural names for collection-type variables, fields, and properties.
+  - Optionally, use plural names for collection-type variables, fields, and properties to hint collection type.
   - Ignore English countable/uncountable rules.
     - e.g., `Datas` is an acceptable name for a `List<Data>` object.
     - Counting rules in English are legacy system and not worth the effort.

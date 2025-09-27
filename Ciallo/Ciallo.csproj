@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.4.1">
+<Project Sdk="Godot.NET.Sdk/4.5.0">
   <PropertyGroup>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <LangVersion>default</LangVersion>
@@ -27,7 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Localization\*.csv" />
-    <None Include="**\*.gdshader"/>
+    <None Include="**\*.gdshader" />
   </ItemGroup>
 
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
@@ -41,15 +41,5 @@
   </PropertyGroup>
   <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
     <DefineConstants>OS_MAC</DefineConstants>
-  </PropertyGroup>
-  <!-- After I tried to create a cpp project under the solution, rider stopped auto defining these contants.-->
-  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DefineConstants>GODOT;GODOT_WINDOWS;GODOT_PC;GODOT4;GODOT4_4;GODOT4_4_1;GODOT4_OR_GREATER;GODOT4_0_OR_GREATER;GODOT4_1_OR_GREATER;GODOT4_2_OR_GREATER;GODOT4_3_OR_GREATER;GODOT4_4_OR_GREATER;GODOT4_4_0_OR_GREATER;GODOT4_4_1_OR_GREATER;TRACE;TOOLS</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'ExportDebug' ">
-    <DefineConstants>GODOT;GODOT_WINDOWS;GODOT_PC;GODOT4;GODOT4_4;GODOT4_4_1;GODOT4_OR_GREATER;GODOT4_0_OR_GREATER;GODOT4_1_OR_GREATER;GODOT4_2_OR_GREATER;GODOT4_3_OR_GREATER;GODOT4_4_OR_GREATER;GODOT4_4_0_OR_GREATER;GODOT4_4_1_OR_GREATER;TRACE;DEBUG</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)' == 'ExportRelease' ">
-    <DefineConstants>GODOT_WINDOWS;GODOT_PC;GODOT4;GODOT4_4;GODOT4_4_1;GODOT4_OR_GREATER;GODOT4_0_OR_GREATER;GODOT4_1_OR_GREATER;GODOT4_2_OR_GREATER;GODOT4_3_OR_GREATER;GODOT4_4_OR_GREATER;GODOT4_4_0_OR_GREATER;GODOT4_4_1_OR_GREATER;TRACE</DefineConstants>
   </PropertyGroup>
 </Project>

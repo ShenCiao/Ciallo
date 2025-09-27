@@ -5,27 +5,17 @@ on:
       - main
 
 env:
-  GODOT_VERSION: 4.4.1
+  GODOT_VERSION: 4.5.stable.mono
   EXPORT_NAME: Ciallo
   PROJECT_PATH: ./Ciallo
 
 jobs:
   export-windows:
-    name: Windows Export
-    runs-on: ubuntu-22.04  # Use 22.04 with godot 4
+    name: Build
+    runs-on: ubuntu-24.04
     container:
-      image: barichello/godot-ci:mono-4.4.1
+      image: barichello/godot-ci:mono-4.5
     steps:
-      - name: Setup WINE and rcedit # Copied from Pixelorama
-        run: |
-          chown root:root -R ~
-          godot --headless --quit
-          echo 'export/windows/wine = "/usr/bin/wine64-stable"' >> ~/.config/godot/editor_settings-4.4.tres
-          echo 'export/windows/rcedit = "/opt/rcedit.exe"' >> ~/.config/godot/editor_settings-4.4.tres
-      - name: Setup .NET 9 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
       - name: Checkout
         uses: actions/checkout@v5
         with:
@@ -48,76 +38,4 @@ jobs:
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/windows/$EXPORT_NAME.exe"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows
-          path: build/windows
-
-  export-linux:
-    name: Linux Export
-    runs-on: ubuntu-22.04  # Use 22.04 with godot 4
-    container:
-      image: barichello/godot-ci:mono-4.4.1
-    steps:
-      - name: Setup .NET 9 SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          lfs: true
-      - name: Setup
-        run: |
-          mkdir -v -p ~/.local/share/godot/export_templates/
-          mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable.mono ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable.mono
-      - name: Import resources once
-        continue-on-error: true
-        run: |
-          cd $PROJECT_PATH
-          godot --headless --verbose --import
-      - name: Linux Build
-        run: |
-          mkdir -v -p build/linux
-          EXPORT_DIR="$(readlink -f build)"
-          cd $PROJECT_PATH
-          godot --headless --verbose --export-release "Linux/X11" "$EXPORT_DIR/linux/$EXPORT_NAME.x86_64"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux
-          path: build/linux
           
-## Shen doesn't have a MacBook Pro for a fundamental interactive test, so sadly, no macOS release.
-#
-#  export-mac:
-#     name: Mac Export
-#     runs-on: ubuntu-22.04  # Use 22.04 with godot 4
-#     container:
-#       image: barichello/godot-ci:mono-4.4.1
-#     steps:
-#       - name: Checkout
-#         uses: actions/checkout@v5
-#         with:
-#           lfs: true
-#       - name: Setup
-#         run: |
-#           mkdir -v -p ~/.local/share/godot/export_templates/
-#           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable.mono ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable.mono
-#       - name: Import resources once
-#         continue-on-error: true
-#         run: |
-#           cd $PROJECT_PATH
-#           godot --headless --verbose --import
-#       - name: Mac Build
-#         run: |
-#           mkdir -v -p build/mac
-#           EXPORT_DIR="$(readlink -f build)"
-#           cd $PROJECT_PATH
-#           godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/mac/$EXPORT_NAME.zip"
-#       - name: Upload Artifact
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: mac
-#           path: build/mac

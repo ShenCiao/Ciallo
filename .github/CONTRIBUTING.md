@@ -82,25 +82,48 @@ Designing professional-grade software architectures often takes decades of exper
 Please contact me if you have recommendations for improvement.
 
 ### Godot
-Ciallo uses following 2D features of Godot: Rendering/Shader for stroke rendering, Input, GUI, Physics for click detection,
-which basically cover every aspect of a 2D game.
+
+Ciallo basically uses every major feature of Godot to develop a 2D game.
 So every piece of experience you have in 2D game development is helpful, and skills you learn from Ciallo can also be applied your future 2D game development.
 
-### Component pattern
+### Component pattern and Arch library
 Ciallo heavily uses the [Arch](https://github.com/genaray/Arch) library for implementing component pattern in almost every piece of code.
 Make sure you understand the component pattern [(tutorial)](https://gameprogrammingpatterns.com/component.html),
 and the Arch library [documentation](https://arch-ecs.gitbook.io/arch).
 > __Note__: Reading Arch document's first three tabs: Concepts, World and Entity is enough to begin with.
-> Ciallo uses Arch for writing clean code, but not for CPU-cache optimizations (the "S" part of ECS).
+> Ciallo uses Arch for writing clean code, but not for CPU-cache optimization (the "S" part of ECS).
 
 See `WorldManager` class. Each user document is stored and managed by a `World` object.
-Each `World` object create a "singleton entity" that stores "document-level singletons" data,
-such as `DocumentSetting` for canvas parameters, `LayerTreeManager` for layer data, `CommandManager` for undoRedo stack, etc.
-They should be one per document, so I call them "document-level singletons" and simply name the singleton entity variable as `Document`.
+Each `World` object creates an entity that stores "document-level singletons" data.
+e.g. `DocumentSetting` for canvas settings, `LayerTreeManager` for layer data, `CommandManager` for undo redo stack, etc.
+These data should be one per document, so I call them "document-level singletons" and simply name the entity as `Document`.
 
-The current active `Document` is globally accessible, so does those document-level singletons.
-You will see code like `var tree = Document.Get<LayerTreeManager>()` to visit the document's layer tree within the Tool or Command system code.
+The current document user working on is globally accessible, so are those document-level singletons.
+You can see self-explanatory code like `Document.Get<LayerTreeManager>()` to visit the document's layer tree.
 
+> Note: There are several annoying issues have to bear with when coding:
+> - `Entity.Add()` can lag Rider a lot.
+> - Rider crashes much more often after using Arch (Tell me if you have the same feeling, rather than my own hallucination).
+> - Remember to include both `Arch.Core` and `Arch.Core.Extensions`
+>   - When adding component(s), `e.Add(Obj)` is in Arch.Core.Extensions namespace but `e.Add(Obj1, Obj2)` is in `Arch.Core` namespace.
+>   - I have wasted a lot of time on finding this issue.
+
+<details>
+<summary>Why using an ECS framework?</summary>
+When I developed my research project, I found Inkscape and Krita both use an integer id value to manage editable objects.
+So to imitate them and reduce code to implement, I tried to find a library can do the two things:
+
+- Generate unique ids.
+- Manage objects lifecycle with these id values.
+
+An ECS framework is a very nice fit when ignoring the "s" part (cache-friendly system coding).
+
+I used EnTT for my C++ project (undoubtedly overdesigned in that project).
+And when I started C#, I searched for a C# ECS framework similar to EnTT, but only found Arch.
+There are other C# ECS frameworks, but they are either unity-specific or force users to use the "s" part.
+</details>
+
+<!--
 <details>
 <summary>Why globalize the Document entity?</summary>
 Though using global variables/singletons is commonly considered a bad practice, it's necessary for Ciallo.
@@ -108,6 +131,31 @@ Ciallo is an interactive graphics program, the interaction between subsystems is
 As the business grows, it's impossible to predefine the accessibility scope of each subsystem.
 So I think this design is reasonable.
 </details>
+-->
+
+### Two-way binding and R3 library
+Ciallo heavily uses [R3](https://github.com/Cysharp/R3) library's `ReactiveProperty` implement two-way binding between data and UI.
+You can find code like `colorButton.BindColor(ReactiveProperty<Color> color)` in UI code to intimate WPF's xaml binding behavior.
+
+R3's document is terrible. I put a lot of effort only to take a very basic grasp.
+But luckily, you don't have to learn too much about R3 to start.
+Just google for what is ReactiveProperty, two-way binding, or MVVM pattern.
+Then you understand most of the R3 usage in Ciallo.
+
+If you have to understand how I handle dragging mouse input with R3 (reactive programming) in the Layers panel, here is my learning path:
+
+1. Know [reactive programming](https://gist.github.com/staltz/868e7e9bc2a7b8c1f754) concept first.
+2. Then read [UniRx](https://github.com/neuecc/UniRx) to know the former version of R3.
+3. Reference [ReactiveX operator document](https://reactivex.io/documentation/operators.html) to choose suitable operators.
+4. Make hard guess on a very unintuitive solution (and still being buggy).
+
+### MVP pattern
+For those elements (strokes, polygons) visible on the canvas. They hold complex data not suitable for two-way binding.
+Ciallo separates related code into the Data(Model), Rendering(View) and Command(Presenter).
+You can find corresponding folders in the project directory.
+The interaction logic between them can be explained by the [MVP pattern](https://www.geeksforgeeks.org/android/mvp-model-view-presenter-architecture-pattern-in-android-with-example/).
+Create command objects to change both data and view.
+As the "Command" name suggests, it also implements the undo/redo system.
 
 ## Code style
 See my [instruction](../Ciallo/.github/copilot-instructions.md) to copilot.

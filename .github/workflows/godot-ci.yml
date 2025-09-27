@@ -1,5 +1,8 @@
 name: "godot-ci export"
-on: push
+on:
+  push:
+    branches:
+      - main
 
 env:
   GODOT_VERSION: 4.4.1
@@ -86,7 +89,7 @@ jobs:
           name: linux
           path: build/linux
           
-## Shen doesn't have a MacBook Pro for a fundamental interactive test, so sadly, no macOS release. He must be responsible for his product. 
+## Shen doesn't have a MacBook Pro for a fundamental interactive test, so sadly, no macOS release.
 #
 #  export-mac:
 #     name: Mac Export

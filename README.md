@@ -1,5 +1,7 @@
 ⚠️ This page and features are under construction. Navigate to the [Contributing Tab] for the development plan.
 
+[![godot-ci export](https://github.com/ShenCiao/Ciallo/actions/workflows/godot-ci.yml/badge.svg?branch=main)](https://github.com/ShenCiao/Ciallo/actions/workflows/godot-ci.yml)
+
 Want to know how these features are (or will be) implemented?
 Leave a star to this project and check my [research project], [paper](https://dl.acm.org/doi/10.1145/3641519.3657418) or [tutorial](https://shenciao.github.io/brush-rendering-tutorial/Introduction/).
 
@@ -8,12 +10,12 @@ Leave a star to this project and check my [research project], [paper](https://dl
 
 Ciallo is an open-source graphics program for professional digital painting.
 
-It aims to compete with traditional painting software like Photoshop and Clip Studio Paint, while offering the following unique features:
+It aims to compete with traditional raster painting software like Photoshop and Clip Studio Paint, while offering the following unique features:
 
 ## Unique features
-### Vectorized raster brushes
+### Vectorized Photoshop-like brushes
 
-Resolution-independent, Photoshop-like brushes: The brushes are entirely drawn on your graphics card, and the techniques behind were invented by the developer (Shen Ciao).
+Resolution-independent, Photoshop-like brushes: The brushes are entirely drawn on your graphics card. This technique was invented by the developer ([Shen Ciao]).
 
 ### Vector fill
 
@@ -36,7 +38,7 @@ Other game engines will be supported in the future.
 The following features may be in your favor:
 
 ### No generative AI
-<img align="left" width="128" height="128" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/No_AI_art.svg">
+<img align="left" width="192" height="192" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/No_AI_art.svg">
 
 Ciallo uses a custom vector format that is hard to generate by AI.
 
@@ -64,7 +66,7 @@ System requirements (A system can run large-sized 2D games.):
 - Memory: 6GB or more
 - Graphics card: Minimum NV GTX 1650 or AMD Radeon RX 6500 XT.
 
-> About MacOS, Linux: The developer literally wishes but cannot afford to develop a macOS version. Buying a MacBook Pro will cost him half a year’s living budget. Consider patreon him for a macOS version.
+> About MacOS: The developer literally wishes but cannot afford to develop a macOS version. Buying a MacBook Pro will cost him half a year’s living budget. Consider Patreon him for a macOS version.
 
 ## Development philosophy and roadmap
 
@@ -126,7 +128,7 @@ I soon realize the complexity of Vulkan: it isn’t designed for one-person proj
 
 So, I decided to sacrifice the freedom of controlling graphics in exchange for productivity. Under this idea, one of the game engines is the best choice.
 
-You can imagine Ciallo as a building/RTS game, e.g., _City Skylines_, _Warcraft III_. Players build strokes (polylines with brush materials) and place color blocks (polygons with fill materials) in the game world (canvas).
+You can consider Ciallo as a building/RTS game, e.g., _City Skylines_, _Warcraft III_. Players build strokes (polylines) and place color blocks (polygons) in the game world (canvas).
 
 ### Why Godot, not Unity or Unreal?
 
@@ -148,3 +150,4 @@ But I do like the GDScript language itself. In my wet dream, Godot will discard 
 
 [Contributing Tab]:https://github.com/ShenCiao/Ciallo?tab=contributing-ov-file
 [research project]:https://github.com/ShenCiao/CialloResearch
+[Shen Ciao]:https://github.com/ShenCiao

@@ -2,7 +2,7 @@
 
 **TL;DR**: Ciallo community follows GitHub community [code-of-conduct](https://docs.github.com/en/site-policy/github-terms/github-community-code-of-conduct) with one extra rule:
 
-We strictly forbid any forms of political topics, including but not limited to patriotism, DEI, race, religion, national wars, and any other topics that categorize people into political groups to raise conflicts.
+We strictly forbid any forms of political topics, including but not limited to patriotism, DEI, race, religion, national wars, and any other topics that categorize people into groups to raise conflicts.
 
 The only exception is you (or our community) are being persecuted substantively by some political groups and needing help.
 

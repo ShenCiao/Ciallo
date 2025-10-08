@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://dvy6gjoyohxh3"]
 
-[ext_resource type="Script" uid="uid://d0tvejqc5yhxk" path="res://NodeControl/ImageTextureEdit.cs" id="1_pccdo"]
+[ext_resource type="Script" uid="uid://d0tvejqc5yhxk" path="res://Widget/ImageTextureEdit.cs" id="1_pccdo"]
 [ext_resource type="Texture2D" uid="uid://dhjldtye0na35" path="res://Icon/FixedSize/folder-edit-outline-sized.svg" id="2_cdoaa"]
 [ext_resource type="Texture2D" uid="uid://dk26wrfpr3ml7" path="res://Icon/FixedSize/minus-sized.svg" id="3_xysc2"]
 [ext_resource type="Texture2D" uid="uid://ce3ajixnbpwk1" path="res://Icon/FixedSize/rotate-right.svg" id="4_xysc2"]
@@ -48,5 +48,5 @@ unique_name_in_owner = true
 title = "Open a File"
 file_mode = 0
 access = 2
-filters = PackedStringArray(".jpg,*.jpeg,*.png,*.svg,*.webp,*.tga,*.bmp,*.dds,*.ktx,*.exr,*.hdr,*")
+filters = PackedStringArray(".jpg,*.jpeg,*.png,*.webp,*.tga,*.bmp,*.dds,*.ktx,*.exr,*.hdr,*")
 use_native_dialog = true

@@ -5,6 +5,7 @@ Will make a release on steam and start version "v0.1 EA" after finish these feat
 
 - [x] Document/world manager
 - [x] Export to Godot
+- [x] Export to raster image
 - [x] .Ciallo project file
 - [x] Command undo/redo system
 - [ ] Property undo/redo
@@ -29,7 +30,7 @@ Will make a release on steam and start version "v0.1 EA" after finish these feat
   - [x] Rename
   - [x] Reorder
   - [ ] Merge, split
-  - [ ] Import image as a layer
+- [ ] Import image as a layer
 - [ ] Localization
   - [x] Infrastructure (ai translation)
   - [ ] Complete

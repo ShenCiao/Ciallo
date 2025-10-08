@@ -5,7 +5,7 @@ using Ciallo.Data;
 using Ciallo.Misc;
 using Godot;
 
-namespace Ciallo.NodeControl;
+namespace Ciallo.Widget;
 
 public partial class ImageTextureEdit : BoxContainer
 {

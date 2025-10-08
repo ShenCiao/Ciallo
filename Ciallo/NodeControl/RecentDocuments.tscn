@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://cph5sy6uxxhb8"]
 
-[ext_resource type="Texture2D" uid="uid://b6hhbllblswdp" path="res://Icon/folder-edit-outline.svg" id="1_lfm73"]
+[ext_resource type="Texture2D" uid="uid://b6hhbllblswdp" path="res://Icon/folder-edit-outline.svg" id="1_bkyk0"]
 
 [node name="RecentDocument" type="MarginContainer"]
 size_flags_vertical = 3
@@ -40,5 +40,5 @@ text = "Open"
 layout_mode = 2
 focus_mode = 0
 text = "Other document"
-icon = ExtResource("1_lfm73")
+icon = ExtResource("1_bkyk0")
 expand_icon = true

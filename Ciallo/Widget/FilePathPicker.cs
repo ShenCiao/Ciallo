@@ -13,10 +13,13 @@ public partial class FilePathPicker : HBoxContainer
     public string Path
     {
         get => IsInstanceValid(PathEdit) ? PathEdit.Text : string.Empty;
-        set => PathEdit.Text = value;
+        set
+        {
+            if (IsInstanceValid(PathEdit)) PathEdit.Text = value;
+        }
     }
 
-    
+
     [Export]
     public FileDialog.FileModeEnum FileMode = FileDialog.FileModeEnum.OpenFile;
     

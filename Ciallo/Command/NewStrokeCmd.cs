@@ -12,7 +12,7 @@ public class NewStrokeCmd : CommandBase
     private Entity _layerE;
     public Entity StrokeE = Entity.Null;
     private readonly List<Node> _refNodes = [];
-
+    
     public NewStrokeCmd(Entity layerE)
     {
         _layerE = layerE;
@@ -29,6 +29,7 @@ public class NewStrokeCmd : CommandBase
         // Data
         StrokeE.Add(new ToSerializeTag());
         _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
+        StrokeE.Add<StrokeBrush>(Entity.Null);
         
         // View
         if (_refNodes.Count == 0) _refNodes.Add(new StrokeView()
@@ -51,18 +52,18 @@ public class NewStrokeCmd : CommandBase
 
     public override void Undo()
     {
-        var layerE = _layerE;
         // Overlay
         StrokeE.Remove<StrokeOverlay>();
-        var layerOverlay = layerE.Get<PolylineLayerOverlay>();
+        var layerOverlay = _layerE.Get<PolylineLayerOverlay>();
         layerOverlay.RemoveChild(_refNodes[1]);
         
         // View
         StrokeE.Remove<StrokeView>();
-        var layerView = layerE.Get<PolylineLayerView>();
+        var layerView = _layerE.Get<PolylineLayerView>();
         layerView.RemoveChild(_refNodes[0]);
         
         // Data
+        StrokeE.Remove<StrokeBrush>();
         _layerE.Get<LayerTreeNode>().RemoveChild(^1);
         StrokeE.Remove<ToSerializeTag>();
     }
@@ -73,7 +74,6 @@ public class NewStrokeCmd : CommandBase
         StrokeE = WorkingWorld.Create();
         var node = new LayerTreeNode();
         StrokeE.Add(new StrokeGeometry(), node);
-        StrokeE.Add<StrokeBrush>(Entity.Null);
         return StrokeE;
     }
 }

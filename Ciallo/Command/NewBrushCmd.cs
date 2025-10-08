@@ -13,10 +13,27 @@ public class NewBrushCmd : CommandBase
     public Entity BrushE = Entity.Null;
     private readonly BrushSetting _setting;
 
+    /// <summary>
+    /// Create a new brush command with an optional setting.
+    /// If setting is provided, it will be cloned and used for the new brush.
+    /// </summary>
     public NewBrushCmd(BrushSetting setting = null)
     {
         _setting = setting?.Clone() ?? new BrushSetting();
         _setting.Labels.Remove(BrushLabel.BuiltIn);
+        
+        // Dirty hack
+        AppBrushLibrary.SelectedIndex.Value = -1;
+    }
+
+    /// <summary>
+    /// Create a new brush command with an existing entity.
+    /// This is useful for deserialization where the entity already has data components.
+    /// </summary>
+    public NewBrushCmd(Entity brushE)
+    {
+        BrushE = brushE;
+        _setting = brushE.Has<BrushSetting>() ? brushE.Get<BrushSetting>() : new BrushSetting();
         
         // Dirty hack
         AppBrushLibrary.SelectedIndex.Value = -1;
@@ -27,29 +44,42 @@ public class NewBrushCmd : CommandBase
     public override void Do()
     {
         InitEntity();
+        
         // Data
-        BrushE.Add(new ToSerializeTag());
-        var bm = Document.Get<BrushManager>();
-        bm.Add(BrushE);
+        if (!BrushE.Has<ToSerializeTag>())
+        {
+            BrushE.Add(new ToSerializeTag());
+            var bm = Document.Get<BrushManager>();
+            bm.Add(BrushE);
+        }
         
         // Material
-        var material = new BrushMaterial();
-        material.ObserveBrushSetting(BrushE.Get<BrushSetting>());
-        BrushE.Add(material);
+        if (!BrushE.Has<BrushMaterial>())
+        {
+            var material = new BrushMaterial();
+            material.ObserveBrushSetting(BrushE.Get<BrushSetting>());
+            BrushE.Add(material);
+        }
         
         // UI
         // Note: Should have a dedicate custom widget to handle this.
         var setting = BrushE.Get<BrushSetting>();
         var list = Document.Get<DocumentBrushList>();
+        var bm2 = Document.Get<BrushManager>();
         
-        list.AddItem(setting.Name.Value);
-        var sub = setting.Name.Subscribe(s =>
+        // Check if this brush is already in the list
+        var existingIdx = bm2.Brushes.IndexOf(BrushE);
+        if (existingIdx == -1 || existingIdx >= list.ItemCount)
         {
-            var idx = bm.Brushes.IndexOf(BrushE);
-            list.SetItemText(idx, s);
-        });
-        var callableSub = Callable.From(() => sub.Dispose());
-        list.SetItemMetadata(list.ItemCount - 1, callableSub);
+            list.AddItem(setting.Name.Value);
+            var sub = setting.Name.Subscribe(s =>
+            {
+                var idx = bm2.Brushes.IndexOf(BrushE);
+                list.SetItemText(idx, s);
+            });
+            var callableSub = Callable.From(() => sub.Dispose());
+            list.SetItemMetadata(list.ItemCount - 1, callableSub);
+        }
     }
 
     public override void Undo()

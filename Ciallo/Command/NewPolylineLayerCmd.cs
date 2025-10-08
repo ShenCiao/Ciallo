@@ -14,9 +14,23 @@ public class NewPolylineLayerCmd : CommandBase
     private readonly List<Node> _refObjects = [];
     private readonly PolylineLayerSetting _setting;
 
+    /// <summary>
+    /// Create a new polyline layer command with an optional setting.
+    /// If setting is provided, it will be cloned and used for the new layer.
+    /// </summary>
     public NewPolylineLayerCmd(PolylineLayerSetting setting = null)
     {
         _setting = setting?.Clone() ?? new PolylineLayerSetting();
+    }
+
+    /// <summary>
+    /// Create a new polyline layer command with an existing entity.
+    /// This is useful for deserialization where the entity already has data components.
+    /// </summary>
+    public NewPolylineLayerCmd(Entity layerE)
+    {
+        LayerE = layerE;
+        _setting = layerE.Has<PolylineLayerSetting>() ? layerE.Get<PolylineLayerSetting>() : new PolylineLayerSetting();
     }
 
     public override IEnumerable<Entity> DoRefEntities => ToEnumerable(LayerE);
@@ -28,27 +42,36 @@ public class NewPolylineLayerCmd : CommandBase
 
         // Data
         var tree = Document.Get<LayerTreeManager>();
-        LayerE.Add(new ToSerializeTag());
-        tree.Root.AddChild(LayerE);
+        if (!LayerE.Has<ToSerializeTag>())
+        {
+            LayerE.Add(new ToSerializeTag());
+            tree.Root.AddChild(LayerE);
+        }
         
         // Layer panel
         var layerContainer = Document.Get<LayerContainer>();
         layerContainer.CreateAdd(LayerE);
         
         // View
-        var worldView = Document.Get<WorldView>();
-        if (_refObjects.Count == 0) _refObjects.Add(new PolylineLayerView());
-        var layerView = (PolylineLayerView)_refObjects[0];
-        worldView.AddChild(layerView);
-        LayerE.Add(layerView);
-        layerView.SetOwner(worldView);
+        if (!LayerE.Has<PolylineLayerView>())
+        {
+            var worldView = Document.Get<WorldView>();
+            if (_refObjects.Count == 0) _refObjects.Add(new PolylineLayerView());
+            var layerView = (PolylineLayerView)_refObjects[0];
+            worldView.AddChild(layerView);
+            LayerE.Add(layerView);
+            layerView.SetOwner(worldView);
+        }
         
         // Overlay
-        var worldOverlay = Document.Get<WorldOverlay>();
-        if(_refObjects.Count == 1) _refObjects.Add(new PolylineLayerOverlay());
-        var layerOverlay = (PolylineLayerOverlay)_refObjects[1];
-        worldOverlay.AddChild(layerOverlay);
-        LayerE.Add(layerOverlay);
+        if (!LayerE.Has<PolylineLayerOverlay>())
+        {
+            var worldOverlay = Document.Get<WorldOverlay>();
+            if(_refObjects.Count == 1) _refObjects.Add(new PolylineLayerOverlay());
+            var layerOverlay = (PolylineLayerOverlay)_refObjects[1];
+            worldOverlay.AddChild(layerOverlay);
+            LayerE.Add(layerOverlay);
+        }
     }
 
     public override void Undo()

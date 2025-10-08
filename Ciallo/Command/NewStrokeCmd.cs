@@ -13,9 +13,23 @@ public class NewStrokeCmd : CommandBase
     public Entity StrokeE = Entity.Null;
     private readonly List<Node> _refNodes = [];
 
+    /// <summary>
+    /// Create a new stroke command for a given layer.
+    /// This will create a new stroke entity.
+    /// </summary>
     public NewStrokeCmd(Entity layerE)
     {
         _layerE = layerE;
+    }
+
+    /// <summary>
+    /// Create a new stroke command with an existing stroke entity and its parent layer.
+    /// This is useful for deserialization where the entity already has data components.
+    /// </summary>
+    public NewStrokeCmd(Entity layerE, Entity strokeE)
+    {
+        _layerE = layerE;
+        StrokeE = strokeE;
     }
 
     public override IEnumerable<Entity> DoRefEntities => ToEnumerable(StrokeE);
@@ -27,26 +41,35 @@ public class NewStrokeCmd : CommandBase
         InitEntity();
 
         // Data
-        StrokeE.Add(new ToSerializeTag());
-        _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
+        if (!StrokeE.Has<ToSerializeTag>())
+        {
+            StrokeE.Add(new ToSerializeTag());
+            _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
+        }
         
         // View
-        if (_refNodes.Count == 0) _refNodes.Add(new StrokeView()
+        if (!StrokeE.Has<StrokeView>())
         {
-            Material = BrushMaterial.MissingBrushMaterial,
-        });
-        var strokeView =  (StrokeView)_refNodes[0];
-        var layerView = _layerE.Get<PolylineLayerView>();
-        layerView.AddChild(strokeView);
-        StrokeE.Add(strokeView);
-        strokeView.SetOwner(layerView.Owner);
+            if (_refNodes.Count == 0) _refNodes.Add(new StrokeView()
+            {
+                Material = BrushMaterial.MissingBrushMaterial,
+            });
+            var strokeView = (StrokeView)_refNodes[0];
+            var layerView = _layerE.Get<PolylineLayerView>();
+            layerView.AddChild(strokeView);
+            StrokeE.Add(strokeView);
+            strokeView.SetOwner(layerView.Owner);
+        }
 
         // Overlay
-        if(_refNodes.Count == 1) _refNodes.Add(new StrokeOverlay());
-        var strokeOverlay = (StrokeOverlay)_refNodes[1];
-        var layerOverlay = _layerE.Get<PolylineLayerOverlay>();
-        layerOverlay.AddChild(strokeOverlay);
-        StrokeE.Add(strokeOverlay);
+        if (!StrokeE.Has<StrokeOverlay>())
+        {
+            if(_refNodes.Count == 1) _refNodes.Add(new StrokeOverlay());
+            var strokeOverlay = (StrokeOverlay)_refNodes[1];
+            var layerOverlay = _layerE.Get<PolylineLayerOverlay>();
+            layerOverlay.AddChild(strokeOverlay);
+            StrokeE.Add(strokeOverlay);
+        }
     }
 
     public override void Undo()

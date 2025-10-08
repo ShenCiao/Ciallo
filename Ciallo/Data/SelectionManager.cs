@@ -1,7 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Runtime.Serialization;
-using Arch.Core;
-using Arch.Core.Extensions;
+using Massive;
 using ObservableCollections;
 using R3;
 
@@ -18,7 +17,7 @@ public class SelectionManager
         get
         {
             if (WorkingLayer.Value == Entity.Null) return [];
-            var world = AppWorldManager.GetWorldById(WorkingLayer.Value.WorldId);
+            var world = WorkingLayer.Value.World;
             ImmutableArray<int> path = [..world.Document().Get<LayerTreeManager>().Root.FindPathTo(WorkingLayer.Value)];
             return path;
         }

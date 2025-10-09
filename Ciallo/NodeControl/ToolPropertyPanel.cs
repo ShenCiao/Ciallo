@@ -1,7 +1,7 @@
 using Godot;
 using System;
 using System.Collections.Specialized;
-using Arch.Core.Extensions;
+using Massive;
 using Ciallo.Data;
 using Ciallo.Misc;
 using Ciallo.Tool;
@@ -29,7 +29,7 @@ public partial class ToolPropertyPanel : PanelContainer
                 case NotifyCollectionChangedAction.Add:
                     var holder = new DocumentToolPropertyContainer();
                     holder.VisibleIf(AppWorldManager.WorkingWorld, e.NewItem);
-                    e.NewItem.Document().Add(holder);
+                    e.NewItem.Document().Set(holder);
                     HubBox.AddChild(holder);
                     HubBox.MoveChild(holder, e.NewStartingIndex);
                     

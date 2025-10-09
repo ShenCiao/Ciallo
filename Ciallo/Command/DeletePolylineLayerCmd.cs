@@ -64,7 +64,7 @@ public class DeletePolylineLayerCmd : CommandBase
         layerTreeControl.CreateInsert(_targetE, _targetIndex);
         
         // Data
-        _targetE.Add(new ToSerializeTag());
+        _targetE.Set(new ToSerializeTag());
         var tree = Document.Get<LayerTreeManager>();
         tree.Root.InsertChild(_targetIndex, _targetE);
     }

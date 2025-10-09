@@ -26,9 +26,9 @@ public class NewStrokeCmd : CommandBase
         InitEntity();
 
         // Data
-        StrokeE.Add(new ToSerializeTag());
+        StrokeE.Set(new ToSerializeTag());
         _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
-        StrokeE.Add<StrokeBrush>(Entity.Null);
+        StrokeE.Set<StrokeBrush>(Entity.Null);
         
         // View
         if (_refNodes.Count == 0) _refNodes.Add(new StrokeView()
@@ -38,7 +38,7 @@ public class NewStrokeCmd : CommandBase
         var strokeView =  (StrokeView)_refNodes[0];
         var layerView = _layerE.Get<PolylineLayerView>();
         layerView.AddChild(strokeView);
-        StrokeE.Add(strokeView);
+        StrokeE.Set(strokeView);
         strokeView.SetOwner(layerView.Owner);
 
         // Overlay
@@ -46,7 +46,7 @@ public class NewStrokeCmd : CommandBase
         var strokeOverlay = (StrokeOverlay)_refNodes[1];
         var layerOverlay = _layerE.Get<PolylineLayerOverlay>();
         layerOverlay.AddChild(strokeOverlay);
-        StrokeE.Add(strokeOverlay);
+        StrokeE.Set(strokeOverlay);
     }
 
     public override void Undo()
@@ -72,7 +72,8 @@ public class NewStrokeCmd : CommandBase
         if (StrokeE != Entity.Null) return StrokeE;
         StrokeE = WorkingWorld.Create();
         var node = new LayerTreeNode();
-        StrokeE.Add(new StrokeGeometry(), node);
+        StrokeE.Set(new StrokeGeometry());
+        StrokeE.Set(node);
         return StrokeE;
     }
 }

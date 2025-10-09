@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using Ciallo.Data;
 using Ciallo.Geometry;
-using CommunityToolkit.HighPerformance;
 using Godot;
 using R3;
 

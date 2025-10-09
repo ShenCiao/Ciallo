@@ -43,7 +43,7 @@ public partial class PaintTool : CommonToolBase
                     panel.Visible = false;
                     panel.PopupWindow = true; // Hint user this is different from the brush library panel
                     panel.Exclusive = false; // Allow propagating input (redo/undo mainly) to main window
-                    docAdd.Add(panel);
+                    docAdd.Set(panel);
                     ((SceneTree)Engine.GetMainLoop()).GetCurrentScene().AddChild(panel);
 
                     panel.BrushPreviewContainer.Visible = false; // Add preview someday
@@ -137,7 +137,7 @@ public partial class PaintTool : CommonToolBase
         var selectionM = document.Get<SelectionManager>();
         foreach(var brushE in brushM.Brushes)
             brushList.AddItem(brushE.Get<BrushSetting>().Name.Value);
-        document.Add(brushList);
+        document.Set(brushList);
         container.AddProperty("Brush in document", brushList);
         
         var radiusControl = new SpinSlider

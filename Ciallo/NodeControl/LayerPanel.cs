@@ -20,7 +20,7 @@ public partial class LayerPanel : VBoxContainer
         var layerContainer = LayerContainer.Instantiate();
         layerContainer.VisibleIf(AppWorldManager.WorkingDocument, document);
         AddChild(layerContainer);
-        document.Add(layerContainer);
+        document.Set(layerContainer);
     }
 
     public void RemoveFreeLayerContainer(Entity document)

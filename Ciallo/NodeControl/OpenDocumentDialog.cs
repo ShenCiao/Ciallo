@@ -30,7 +30,7 @@ public partial class OpenDocumentDialog : FileDialog
             return false;
         }
         AppWorldManager.CopyWorldByData(dataDocument);
-        dataWorld.Dispose();
+        dataWorld.Clear();
         if(!AppPreference.RecentFiles.Contains(path)) AppPreference.RecentFiles.Add(path);
         return true;
     }

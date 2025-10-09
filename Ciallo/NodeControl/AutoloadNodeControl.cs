@@ -1,5 +1,5 @@
 ﻿using System.Linq;
-using Arch.Core.Extensions;
+using Massive;
 using Ciallo.Data;
 using Ciallo.Rendering;
 using Godot;
@@ -42,11 +42,11 @@ public partial class AutoloadNodeControl : Node
             
             // World view
             var worldView = paintPanel.GetNode<WorldView>("%WorldView");
-            document.Add(worldView);
+            document.Set(worldView);
             
             // World overlay
             var worldOverlay = paintPanel.GetNode<WorldOverlay>("%WorldOverlay");
-            document.Add(worldOverlay);
+            document.Set(worldOverlay);
         }).AddTo(this);
         
         AppWorldManager.LoadedWorlds.ObserveRemove().Subscribe(et =>

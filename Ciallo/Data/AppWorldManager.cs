@@ -6,6 +6,7 @@ using Godot;
 using Massive;
 using ObservableCollections;
 using R3;
+using System.Diagnostics;
 
 namespace Ciallo.Data;
 
@@ -23,28 +24,26 @@ public static partial class AppWorldManager
     // Current focused document.
     public static readonly ReactiveProperty<World> WorkingWorld = new(null);
     public static readonly ReadOnlyReactiveProperty<Entity> WorkingDocument =
-        WorkingWorld.Select(w => w?.Document() ?? Entity.Null).ToReadOnlyReactiveProperty();
-    
-    private static readonly Sys.Dictionary<World, Entity> DocumentSingletons = [];
+        WorkingWorld.Select(w => w?.Document() ?? default).ToReadOnlyReactiveProperty();
 
     public static World Create([NotNull] DocumentSetting settings)
     {
         // Only one loaded world is supported for current version.
         Clear();
-        var world = World.Create();
-        world.AddForbiddenComponents();
+        var world = new World();
 
         // Init empty document
-        var document = world.Create();
-        DocumentSingletons.Add(world, document);
+        var i = world.Create();
+        Debug.Assert(i == 0);
+        var document = world.CreateEntity();
 
         // Add managers
-        var layerTreeManager = new LayerTreeManager();
-        var selectionManager = new SelectionManager();
-        var commandManager = new CommandManager();
-        var brushManager = new BrushManager();
-        document.Add(settings, layerTreeManager, selectionManager, commandManager, brushManager);
-
+        document.Set(settings);
+        document.Set(new SelectionManager());
+        document.Set(new LayerTreeManager());
+        document.Set(new CommandManager());
+        document.Set(new BrushManager());
+        
         // Always init first, then add to list
         LoadedWorlds.Add(world);
         
@@ -72,8 +71,7 @@ public static partial class AppWorldManager
         world.Document().Get<CommandManager>().Free();
         
         // Dispose world
-        DocumentSingletons.Remove(world);
-        world.Dispose();
+        world.Clear();
     }
     
     public static void Clear()
@@ -87,40 +85,6 @@ public static partial class AppWorldManager
     
     public static Entity Document([NotNull] this World world)
     {
-        return DocumentSingletons[world];
+        return world.GetEntity(0);
     }
-
-    public static void AddForbiddenComponents(this World world)
-    {
-        var throwError = new Action(() => throw new InvalidOperationException("Primitive types cannot be used as components."));
-        // ReSharper disable UnusedParameter.Local
-        world.SubscribeComponentAdded((in Entity e, ref Entity _)  => throwError()); // The most common mistake
-        world.SubscribeComponentAdded((in Entity e, ref Type _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref int _)=> throwError());
-        world.SubscribeComponentAdded((in Entity e, ref float _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref double _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref bool _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref string _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref char _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref Vector2 _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref Vector2I _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref Transform2D _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref Rect2 _) => throwError());
-        world.SubscribeComponentAdded((in Entity e, ref Rect2I _) => throwError());
-        var throwCollectionError = new Action(() => throw new InvalidOperationException("List of primitive types cannot be used as components."));
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Entity> _)  => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<int> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<float> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<double> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<bool> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<string> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<char> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Vector2> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Vector2I> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Transform2D> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Rect2> _) => throwCollectionError());
-        world.SubscribeComponentAdded((in Entity e, ref Sys.List<Rect2I> _) => throwCollectionError());
-    }
-    
-    public static World GetWorldById(int id) => LoadedWorlds.Single(w => w.Id == id);
 }

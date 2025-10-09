@@ -26,14 +26,14 @@ public class NewBrushCmd : CommandBase
     {
         InitEntity();
         // Data
-        BrushE.Add(new ToSerializeTag());
+        BrushE.Set(new ToSerializeTag());
         var bm = Document.Get<BrushManager>();
         bm.Add(BrushE);
         
         // Material
         var material = new BrushMaterial();
         material.ObserveBrushSetting(BrushE.Get<BrushSetting>());
-        BrushE.Add(material);
+        BrushE.Set(material);
         
         // UI
         // Note: Should have a dedicate custom widget to handle this.
@@ -74,7 +74,7 @@ public class NewBrushCmd : CommandBase
         if (BrushE == Entity.Null)
         {
             BrushE = WorkingWorld.Create();
-            BrushE.Add(_setting);
+            BrushE.Set(_setting);
         }
 
         return BrushE;

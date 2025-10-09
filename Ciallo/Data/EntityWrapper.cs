@@ -24,20 +24,16 @@ public class EntityWrapper
     // public void Remove<T>() => Value.Remove<T>();
     public bool Has<T>() => Value.Has<T>();
     public T Get<T>() => Value.Get<T>();
-    public bool TryGet<T>(out T component) => Value.TryGet(out component);
-    
-    public World World => World.Worlds[Value.WorldId];
-    public bool IsAlive() => World.IsAlive(Value);
 }
 
 public static class EntityExtension
 {
-    public static void Add<TWrapper>(this Entity self, Entity e) where TWrapper : EntityWrapper, new()
+    public static void Set<TWrapper>(this Entity self, Entity e) where TWrapper : EntityWrapper, new()
     {
         var wrapper = new TWrapper
         {
             Value = e
         };
-        self.Add(wrapper);
+        self.Set(wrapper);
     }
 }

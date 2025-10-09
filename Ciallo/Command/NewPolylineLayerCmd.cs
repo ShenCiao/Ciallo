@@ -27,7 +27,7 @@ public class NewPolylineLayerCmd : CommandBase
 
         // Data
         var tree = Document.Get<LayerTreeManager>();
-        LayerE.Add(new ToSerializeTag());
+        LayerE.Set(new ToSerializeTag());
         tree.Root.AddChild(LayerE);
         
         // Layer panel
@@ -39,7 +39,7 @@ public class NewPolylineLayerCmd : CommandBase
         if (_refObjects.Count == 0) _refObjects.Add(new PolylineLayerView());
         var layerView = (PolylineLayerView)_refObjects[0];
         worldView.AddChild(layerView);
-        LayerE.Add(layerView);
+        LayerE.Set(layerView);
         layerView.SetOwner(worldView);
         
         // Overlay
@@ -47,7 +47,7 @@ public class NewPolylineLayerCmd : CommandBase
         if(_refObjects.Count == 1) _refObjects.Add(new PolylineLayerOverlay());
         var layerOverlay = (PolylineLayerOverlay)_refObjects[1];
         worldOverlay.AddChild(layerOverlay);
-        LayerE.Add(layerOverlay);
+        LayerE.Set(layerOverlay);
     }
 
     public override void Undo()
@@ -83,7 +83,8 @@ public class NewPolylineLayerCmd : CommandBase
             {
                 Name = { Value = $"{"Line layer".Tr()} {tree.Root.ChildCount+1}" },
             };
-            LayerE.Add(_setting, node);
+            LayerE.Set(_setting);
+            LayerE.Set(node);
         }
 
         return LayerE;

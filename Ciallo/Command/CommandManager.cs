@@ -67,11 +67,8 @@ public partial class WrapperObject(IEnumerable<Entity> entities, IEnumerable<God
         
         if (entities?.Any() == true)
         {
-            // w can be null but Rider hint it cannot be.
-            // ReSharper disable once ConstantConditionalAccessQualifier
-            var world = World.Worlds.First(w => w?.Id == entities.First().WorldId);
-            foreach(var e in entities)
-                world.Destroy(e);
+            foreach (var e in entities)
+                e.Destroy();
         }
 
         if (objects != null)

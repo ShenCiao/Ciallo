@@ -57,7 +57,7 @@ public partial class LayerContainer : Container
     {
         var layerControl = Create(layerE);
         _rootControl.AddChild(layerControl);
-        layerE.Add(layerControl);
+        layerE.Set(layerControl);
         return layerControl;
     }
 

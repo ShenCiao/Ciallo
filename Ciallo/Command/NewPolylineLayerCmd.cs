@@ -27,7 +27,7 @@ public class NewPolylineLayerCmd : CommandBase
 
         // Data
         var tree = Document.Get<LayerTreeManager>();
-        LayerE.Set(new ToSerializeTag());
+        LayerE.Add<ToSerializeTag>();
         tree.Root.AddChild(LayerE);
         
         // Layer panel

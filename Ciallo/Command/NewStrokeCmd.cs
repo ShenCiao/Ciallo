@@ -26,7 +26,7 @@ public class NewStrokeCmd : CommandBase
         InitEntity();
 
         // Data
-        StrokeE.Set(new ToSerializeTag());
+        StrokeE.Add<ToSerializeTag>();
         _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
         StrokeE.Set<StrokeBrush>(new Entity());
         

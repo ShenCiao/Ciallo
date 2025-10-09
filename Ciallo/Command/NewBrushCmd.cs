@@ -27,7 +27,7 @@ public class NewBrushCmd : CommandBase
     {
         InitEntity();
         // Data
-        BrushE.Set(new ToSerializeTag());
+        BrushE.Add<ToSerializeTag>();
         var bm = Document.Get<BrushManager>();
         bm.Add(BrushE);
         

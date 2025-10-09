@@ -35,7 +35,7 @@ public static partial class AppWorldManager
         // Init empty document
         var i = world.Create();
         Debug.Assert(i == 0);
-        var document = world.CreateEntity();
+        var document = world.GetEntity(i);
 
         // Add managers
         document.Set(settings);

@@ -78,47 +78,43 @@ So if you have solid experience in VS Code or Visual Studio to script Godot C#. 
 Designing professional-grade software architectures often takes decades of experience, so my implementations may seem noob trying hard.
 Please contact me if you have recommendations for improvement.
 
-### Godot
+### Godot 2D features
 
-Ciallo basically uses every major feature of Godot to develop a 2D game.
-So every piece of experience you have in 2D game development is helpful, and skills you learn from Ciallo can also be applied your future 2D game development.
+Ciallo will use the vast majority of Godot feature for developing a 2D game, and heavily use nearly all types of GUI control node.
+So every piece of experience you have in 2D game development is helpful, and skills you learn from Ciallo can also be applied your future game development.
 
-### Component pattern and Arch library
-Ciallo heavily uses the [Arch](https://github.com/genaray/Arch) library for implementing component pattern in almost every piece of code.
-Make sure you understand the component pattern [(tutorial)](https://gameprogrammingpatterns.com/component.html),
-and the Arch library [documentation](https://arch-ecs.gitbook.io/arch).
-> __Note__: Reading Arch document's first three tabs: Concepts, World and Entity is enough to begin with.
+### Component pattern and Massive ECS library
+Ciallo heavily uses the [massive-ecs](https://github.com/nilpunch/massive-ecs) library for realizing component pattern in almost every piece of code.
+Make sure you understand the component pattern thoery [(tutorial)](https://gameprogrammingpatterns.com/component.html),
+and the Massive library [documentation](https://github.com/nilpunch/massive-ecs/wiki/Entity-Component-System).
+> __Note__:
 > Ciallo uses Arch for writing clean code, but not for CPU-cache optimization (the "S" part of ECS).
 
-See `WorldManager` class. Each user document is stored and managed by a `World` object.
+See the `AppWorldManager` class. Each user document is stored and managed by a `World` object.
 Each `World` object creates an entity that stores "document-level singletons" data.
 e.g. `DocumentSetting` for canvas settings, `LayerTreeManager` for layer data, `CommandManager` for undo redo stack, etc.
-These data should be one per document, so I call them "document-level singletons" and simply name the entity as `Document`.
 
-The current document user working on is globally accessible, so are those document-level singletons.
-You can see self-explanatory code like `Document.Get<LayerTreeManager>()` to visit the document's layer tree.
+These data should be one per document, so I call them "document-level singletons" and name the entity as `Document`.
+You can find self-explanatory code like `Document.Get<LayerTreeManager>()` to visit the document's layer tree.
 
-> Note: There are several annoying issues have to bear with when coding:
-> - `Entity.Add()` and `Set`, `Remove` can lag Rider a lot.
-> - Rider crashes much more often after using Arch (Tell me if you have the same feeling, rather than my own hallucination).
-> - Remember to include both `Arch.Core` and `Arch.Core.Extensions`
->   - When adding component(s), `e.Add(Obj)` is in Arch.Core.Extensions namespace but `e.Add(Obj1, Obj2)` is in `Arch.Core` namespace.
->   - I have wasted a lot of time on debugging this after starting using Arch.
-> - If you have a field `Entity e;` `e` is not initialized as Entity.Null. Must use `Entity e = new();` or `Entity e = Entity.Null;`
+For those editable object like strokes, layers, we will create entities and add components such as `PolylineGeometry`, `StrokeBrush`, `LayerSetting` object to the entities.
 
 <details>
-<summary>Why using an ECS framework?</summary>
+<summary>Why using an ECS library?</summary>
+
 When I developed my research project, I found Inkscape and Krita both use an integer id value to manage editable objects.
-So to imitate them and reduce code to implement, I tried to find a library can do the two things:
+So to imitate them, I tried to find a 3rd party library can do the two things:
 
 - Generate unique ids.
 - Manage objects lifecycle with these id values.
 
-An ECS framework is a very nice fit when ignoring the "s" part (cache-friendly system coding).
+An ECS library is a very nice fit after ignoring the "s" part (cache-friendly system coding).
+In fact, if you search for a 3rd party library for component pattern, an ECS library is the only choice. There are no dedicate libraries for component pattern.
 
 I used EnTT for my C++ project (undoubtedly overdesigned in that project).
-And when I started C#, I searched for a C# ECS framework similar to EnTT, but only found Arch.
-There are other C# ECS frameworks, but they are either unity-specific or force users to use the "s" part.
+And when I started C#, I searched for a C# ECS library similar to EnTT, first tried Arch then switch to Massive for sparse set.
+There are other C# ECS libraries, but they are either Unity-specific or force users to write the "System" code.
+
 </details>
 
 <!--
@@ -135,8 +131,7 @@ So I think this design is reasonable.
 Ciallo heavily uses [R3](https://github.com/Cysharp/R3) library's `ReactiveProperty` implement two-way binding between data and UI.
 You can find code like `colorButton.BindColor(ReactiveProperty<Color> color)` in UI code to intimate WPF's xaml binding behavior.
 
-R3's document is terrible. I put a lot of effort only to take a very basic grasp.
-But luckily, you don't have to learn too much about R3 to start.
+R3's document is terrible. I put a lot of effort only to take a very basic grasp. Luckily, you don't have to learn too much about R3 to start.
 Just google for what is ReactiveProperty, two-way binding, or MVVM pattern.
 Then you understand most of the R3 usage in Ciallo.
 
@@ -151,6 +146,7 @@ If you have to understand how I handle dragging mouse input with R3 (reactive pr
 For those elements (strokes, polygons) visible on the canvas. They hold complex data not suitable for two-way binding.
 Ciallo separates related code into the Data(Model), Rendering(View) and Command(Presenter).
 You can find corresponding folders in the project directory.
+
 The interaction logic between them can be explained by the [MVP pattern](https://www.geeksforgeeks.org/android/mvp-model-view-presenter-architecture-pattern-in-android-with-example/).
 Create command objects to change both data and view.
 As the "Command" name suggests, it also implements the undo/redo system.

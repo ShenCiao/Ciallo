@@ -17,14 +17,6 @@ public static partial class AppWorldManager
     public static readonly HashSet<Type> ToSerializeTypes = [..GetToSerializeTypes()];
     public static readonly HashSet<Type> ToSerializeTags = ToSerializeTypes.Where(t => t.IsTag()).ToHashSet();
 
-    static AppWorldManager()
-    {
-        foreach (var type in ToSerializeTypes)
-        {
-            ComponentRegistry.Add(type);
-        }
-    }
-
     public static void CopyWorldByData(Entity dataDocument)
     {
         // Load brushes
@@ -122,80 +114,98 @@ public static partial class AppWorldManager
     /// <remarks>
     /// Serialize all entities with <see cref="ToSerializeTag"/> and their components marked with <see cref="ToSerializeAttribute"/>.
     /// The result is two binary blobs:
-    /// 1. Entity-Component structure data: ListListType`, each inner list corresponds to an entity and contains its component types.
-    /// 2. Component data: `Dictionary(Type, List(object))`, each list contains the data of that component type for all entities in order.
+    /// 1. Entity-Component structure data: List(List(Type))`, each inner list corresponds to an entity and contains its component types.
+    /// 2. Component data: `Dictionary(Type, List(byte[]))`, each list contains the data of that component type for all entities in order.
     /// </remarks>
     public static byte[][] Serialize([NotNull] World world)
     {
-        List<Entity> entities = [world.Document()];
-        world.Query(in new QueryDescription().WithAll<ToSerializeTag>(), e => entities.Add(e));
-        List<List<Type>> ecData = [];
-        foreach (var e in entities)
+        SortedDictionary<int, List<Type>> sortedEcData = [];
+        foreach (var t in ToSerializeTypes)
         {
-            var componentTypes = e.GetComponentTypes().Components.ToArray().Select(ct => ct.Type)
-                .Where(t => ToSerializeTypes.Contains(t));
-
-            ecData.Add(componentTypes.ToList());
+            var filter = (Filter)typeof(DynamicFilter)
+                .GetMethod("Include")!
+                .MakeGenericMethod(t)
+                .Invoke(new DynamicFilter(world).Include<ToSerializeTag>(), null);
+            world.Filter(filter).ForEach(id =>
+            {
+                if(!sortedEcData.ContainsKey(id))
+                    sortedEcData[id] = [];
+                sortedEcData[id].Add(t);
+            });
         }
-
-        var ecBin = MessagePackSerializer.Serialize(ecData);
-        EntityToIndexFormatter.Instance.EntityList = entities;
-
+        
+        var ecBin = MessagePackSerializer.Serialize(sortedEcData.Values.ToList());
+        
+        EntityToIndexFormatter.Instance.EntityList = sortedEcData.Keys.Select(world.GetEntity).ToList();
+        
         // Note, directly using List<object> will cause losing type information in deserialization.
         Dictionary<Type, List<byte[]>> componentData = [];
-        foreach (var e in entities)
+        Dictionary<Type, MethodInfo> worldGetFunctions = [];
+        var getMethodDef = typeof(WorldIdExtensions).GetMethods().Single(info=>info.Name == "Get");
+        foreach (var t in ToSerializeTypes.Where(t => !t.IsTag()))
+            worldGetFunctions[t] = getMethodDef!.MakeGenericMethod(t);
+        
+        foreach (var (id, types) in sortedEcData)
         {
-            var types = e.GetComponentTypes().Components.ToArray().Select(ct => ct.Type).ToArray();
-            var data = e.GetAllComponents();
-            
-            for (int i = 0; i < types.Length; i++)
+            foreach (var t in types)
             {
-                var t = types[i];                                                                                                                                                                   
-                if (!ToSerializeTypes.Contains(t) || ToSerializeTags.Contains(t)) continue;
-                if (!componentData.ContainsKey(t))
-                    componentData[t] = [];
-                var bytes = MessagePackSerializer.Serialize(data[i]);
+                if (ToSerializeTags.Contains(t)) continue;
+                
+                var obj = worldGetFunctions[t].Invoke(null, [world, id]);
+                if (!componentData.ContainsKey(t)) componentData[t] = [];
+                var bytes = MessagePackSerializer.Serialize(t, obj);
                 componentData[t].Add(bytes);
             }
         }
         
         var componentBin = MessagePackSerializer.Serialize(componentData);
-
+        
         return [ecBin, componentBin];
     }
 
     public static World Deserialize(byte[][] bins, out Entity document)
     {
         var world = new World();
-
+        
         var ecBin = bins[0];
         var ecData = MessagePackSerializer.Deserialize<List<List<Type>>>(ecBin);
         var entities = new List<Entity>(ecData.Count);
         foreach (var types in ecData)
         {
-            ComponentType[] cTypes = types.Select(t => ComponentRegistry.TypeToComponentType[t]).ToArray();
-            var e = world.Create(cTypes);
+            var e = world.CreateEntity();
             entities.Add(e);
         }
         document = entities[0];
-
+        
         EntityToIndexFormatter.Instance.EntityList = entities;
-
+        
         var componentBin = bins[1];
         var componentData = MessagePackSerializer.Deserialize<Dictionary<Type, Queue<byte[]>>>(componentBin);
-        foreach (var e in entities)
+        Dictionary<Type, MethodInfo> entityAddFunctions = [];
+        Dictionary<Type, MethodInfo> entitySetFunctions = [];
+        var addMethodDef = typeof(Entity).GetMethod("Add");
+        var setMethodDef = typeof(Entity).GetMethod("Set");
+        foreach (var t in ToSerializeTypes.Where(t => !t.IsTag()))
         {
-            foreach (var ct in e.GetComponentTypes().Components)
+            entityAddFunctions[t] = addMethodDef!.MakeGenericMethod(t);
+            entitySetFunctions[t] = setMethodDef!.MakeGenericMethod(t);
+        }
+        foreach (var (idx, ts) in ecData.Index())
+        {
+            var e = entities[idx];
+            foreach (var t in ts)
             {
-                var type = ct.Type;
-                if (!componentData.TryGetValue(type, out var dataQueue)) continue;
-                var data = dataQueue.Dequeue();
-                if (data == null) continue;
-                var component = MessagePackSerializer.Deserialize(type, data);
-                if(component != null) e.Set(component);
+                if (t.IsTag()) entityAddFunctions[t].Invoke(e, null);
+                else
+                {
+                    if (!componentData.TryGetValue(t, out var dataQueue)) continue;
+                    var bytes = dataQueue.Dequeue();
+                    var component = MessagePackSerializer.Deserialize(t, bytes);
+                    entitySetFunctions[t].Invoke(e, [component]);
+                }
             }
         }
-
+        
         return world;
     }
 

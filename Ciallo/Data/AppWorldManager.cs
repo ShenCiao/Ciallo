@@ -1,8 +1,6 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Ciallo.Command;
-using Godot;
 using Massive;
 using ObservableCollections;
 using R3;
@@ -36,6 +34,7 @@ public static partial class AppWorldManager
         var i = world.Create();
         Debug.Assert(i == 0);
         var document = world.GetEntity(i);
+        document.Add<ToSerializeTag>();
 
         // Add managers
         document.Set(settings);

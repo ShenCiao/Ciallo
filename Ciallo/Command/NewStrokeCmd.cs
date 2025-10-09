@@ -70,7 +70,7 @@ public class NewStrokeCmd : CommandBase
     public Entity InitEntity()
     {
         if (StrokeE.IsNotNull()) return StrokeE;
-        StrokeE = WorkingWorld.Create();
+        StrokeE = WorkingWorld.CreateEntity();
         var node = new LayerTreeNode();
         StrokeE.Set(new StrokeGeometry());
         StrokeE.Set(node);

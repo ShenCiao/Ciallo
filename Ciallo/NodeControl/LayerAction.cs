@@ -1,3 +1,4 @@
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Godot;

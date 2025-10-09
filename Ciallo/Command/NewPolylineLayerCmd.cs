@@ -78,7 +78,7 @@ public class NewPolylineLayerCmd : CommandBase
         
         if (LayerE.IsNull())
         {
-            LayerE = WorkingWorld.Create();
+            LayerE = WorkingWorld.CreateEntity();
             var node = new LayerTreeNode()
             {
                 Name = { Value = $"{"Line layer".Tr()} {tree.Root.ChildCount+1}" },

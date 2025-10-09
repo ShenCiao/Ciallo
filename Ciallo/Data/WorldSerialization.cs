@@ -166,8 +166,7 @@ public static partial class AppWorldManager
 
     public static World Deserialize(byte[][] bins, out Entity document)
     {
-        var world = World.Create();
-        world.AddForbiddenComponents();
+        var world = new World();
 
         var ecBin = bins[0];
         var ecData = MessagePackSerializer.Deserialize<List<List<Type>>>(ecBin);

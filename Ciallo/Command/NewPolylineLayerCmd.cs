@@ -9,7 +9,7 @@ namespace Ciallo.Command;
 
 public class NewPolylineLayerCmd : CommandBase
 {
-    public Entity LayerE = Entity.Null;
+    public Entity LayerE;
     private readonly List<Node> _refObjects = [];
     private readonly PolylineLayerSetting _setting;
 
@@ -76,7 +76,7 @@ public class NewPolylineLayerCmd : CommandBase
     {
         var tree = Document.Get<LayerTreeManager>();
         
-        if (LayerE == Entity.Null)
+        if (LayerE.IsNull())
         {
             LayerE = WorkingWorld.Create();
             var node = new LayerTreeNode()

@@ -8,8 +8,8 @@ namespace Ciallo.Command;
 public class ChangeWorkingLayerCmd : CommandBase
 {
     public Index NewIndex = int.MaxValue;
-    public Entity NewE = Entity.Null;
-    public Entity OldE = Entity.Null;
+    public Entity NewE;
+    public Entity OldE;
 
     public ChangeWorkingLayerCmd(Index index)
     {
@@ -23,7 +23,7 @@ public class ChangeWorkingLayerCmd : CommandBase
 
     public override void Do()
     {
-        if (NewE == Entity.Null && NewIndex.Value != int.MaxValue)
+        if (NewE.IsNull() && NewIndex.Value != int.MaxValue)
             NewE = Document.Get<LayerTreeManager>().Root.GetChild(NewIndex);
         // Selection manager
         var sm = Document.Get<SelectionManager>();

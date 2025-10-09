@@ -13,7 +13,7 @@ using R3;
 
 public partial class PaintTool : CommonToolBase
 {
-    public readonly ReactiveProperty<Entity> BrushE = new(Entity.Null);
+    public readonly ReactiveProperty<Entity> BrushE = new(new Entity());
     
     public override InteractorBase LeftInteractor => PaintInteractor;
     
@@ -148,9 +148,9 @@ public partial class PaintTool : CommonToolBase
             ExpEdit = true,
         };
         var radiusBox = container.AddProperty("Radius", radiusControl);
-        radiusBox.VisibleIf(selectionM.WorkingBrush, e => e != Entity.Null);
+        radiusBox.VisibleIf(selectionM.WorkingBrush, e => e.IsNotNull());
         var rView = selectionM.WorkingBrush
-            .Select(e => e == Entity.Null ? null : e.Get<BrushSetting>().BaseRadius).ToReadOnlyReactiveProperty();
+            .Select(e => e.IsNull() ? null : e.Get<BrushSetting>().BaseRadius).ToReadOnlyReactiveProperty();
         radiusControl.ReactiveBindNumber(rView);
         
         var manageDocumentBrush = new Button()

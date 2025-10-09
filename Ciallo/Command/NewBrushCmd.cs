@@ -3,12 +3,13 @@ using Ciallo.Data;
 using Ciallo.Rendering;
 using Godot;
 using Massive;
+using R3;
 
 namespace Ciallo.Command;
 
 public class NewBrushCmd : CommandBase
 {
-    public Entity BrushE = Entity.Null;
+    public Entity BrushE;
     private readonly BrushSetting _setting;
 
     public NewBrushCmd(BrushSetting setting = null)
@@ -71,9 +72,9 @@ public class NewBrushCmd : CommandBase
 
     public Entity InitEntity()
     {
-        if (BrushE == Entity.Null)
+        if (BrushE.IsNull())
         {
-            BrushE = WorkingWorld.Create();
+            BrushE = WorkingWorld.CreateEntity();
             BrushE.Set(_setting);
         }
 

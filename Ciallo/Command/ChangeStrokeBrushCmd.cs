@@ -6,7 +6,7 @@ namespace Ciallo.Command;
 
 public class ChangeStrokeBrushCmd(Entity strokeE, Entity newBrushE) : CommandBase
 {
-    private Entity _oldBrushE = Entity.Null;
+    private Entity _oldBrushE;
     
     public override void Do()
     {
@@ -16,14 +16,14 @@ public class ChangeStrokeBrushCmd(Entity strokeE, Entity newBrushE) : CommandBas
         wrapper.Value = newBrushE;
         
         // View
-        strokeE.Get<StrokeView>().Material = newBrushE != Entity.Null ? 
+        strokeE.Get<StrokeView>().Material = newBrushE.IsNotNull() ? 
             newBrushE.Get<BrushMaterial>() : BrushMaterial.MissingBrushMaterial;
     }
 
     public override void Undo()
     {
         // View
-        strokeE.Get<StrokeView>().Material = _oldBrushE != Entity.Null ? 
+        strokeE.Get<StrokeView>().Material = _oldBrushE.IsNotNull() ? 
             _oldBrushE.Get<BrushMaterial>() : BrushMaterial.MissingBrushMaterial;
         
         // Data

@@ -16,14 +16,14 @@ public class SelectionManager
     {
         get
         {
-            if (WorkingLayer.Value == Entity.Null) return [];
+            if (WorkingLayer.Value.IsNull()) return [];
             var world = WorkingLayer.Value.World;
             ImmutableArray<int> path = [..world.Document().Get<LayerTreeManager>().Root.FindPathTo(WorkingLayer.Value)];
             return path;
         }
     }
     
-    [DataMember] public ReactiveProperty<Entity> WorkingLayer = new(Entity.Null);
+    [DataMember] public ReactiveProperty<Entity> WorkingLayer = new(new Entity());
     
-    [DataMember] public ReactiveProperty<Entity> WorkingBrush = new(Entity.Null);
+    [DataMember] public ReactiveProperty<Entity> WorkingBrush = new(new Entity());
 }

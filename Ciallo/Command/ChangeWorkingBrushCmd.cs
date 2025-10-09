@@ -6,8 +6,8 @@ namespace Ciallo.Command;
 
 public class ChangeWorkingBrushCmd(Index idx) : CommandBase
 {
-    public Entity OldBrushE = Entity.Null;
-    public Entity NewBrushE = Entity.Null;
+    public Entity OldBrushE;
+    public Entity NewBrushE;
     
     public override void Do()
     {
@@ -31,7 +31,7 @@ public class ChangeWorkingBrushCmd(Index idx) : CommandBase
         
         // UI
         var brushList = Document.Get<DocumentBrushList>();
-        if(OldBrushE == Entity.Null) brushList.DeselectAll();
+        if(OldBrushE.IsNull()) brushList.DeselectAll();
         else
         {
             var oldIdx = bm.Brushes.IndexOf(OldBrushE);

@@ -9,7 +9,7 @@ namespace Ciallo.Command;
 public class NewStrokeCmd : CommandBase
 {
     private Entity _layerE;
-    public Entity StrokeE = Entity.Null;
+    public Entity StrokeE;
     private readonly List<Node> _refNodes = [];
     
     public NewStrokeCmd(Entity layerE)
@@ -28,7 +28,7 @@ public class NewStrokeCmd : CommandBase
         // Data
         StrokeE.Set(new ToSerializeTag());
         _layerE.Get<LayerTreeNode>().AddChild(StrokeE);
-        StrokeE.Set<StrokeBrush>(Entity.Null);
+        StrokeE.Set<StrokeBrush>(new Entity());
         
         // View
         if (_refNodes.Count == 0) _refNodes.Add(new StrokeView()
@@ -69,7 +69,7 @@ public class NewStrokeCmd : CommandBase
 
     public Entity InitEntity()
     {
-        if (StrokeE != Entity.Null) return StrokeE;
+        if (StrokeE.IsNotNull()) return StrokeE;
         StrokeE = WorkingWorld.Create();
         var node = new LayerTreeNode();
         StrokeE.Set(new StrokeGeometry());

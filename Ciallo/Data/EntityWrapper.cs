@@ -25,15 +25,3 @@ public class EntityWrapper
     public bool Has<T>() => Value.Has<T>();
     public T Get<T>() => Value.Get<T>();
 }
-
-public static class EntityExtension
-{
-    public static void Set<TWrapper>(this Entity self, Entity e) where TWrapper : EntityWrapper, new()
-    {
-        var wrapper = new TWrapper
-        {
-            Value = e
-        };
-        self.Set(wrapper);
-    }
-}

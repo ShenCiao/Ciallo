@@ -11,7 +11,7 @@ public class PaintFillInteractor : InteractorBase
         get
         {
             var l = SelectionManager.WorkingLayer.Value;
-            return l != Entity.Null && l.Has<PolylineLayerSetting>();
+            return l.IsNotNull() && l.Has<PolylineLayerSetting>();
         }
     }
 

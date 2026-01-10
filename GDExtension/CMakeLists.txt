@@ -26,9 +26,10 @@ set(GODOT_CPP_BUILD_TYPE ${GODOT_CPP_BUILD_TYPE} CACHE STRING "" FORCE)
 
 add_subdirectory(${GODOT_CPP_DIR} ${GODOT_CPP_BUILD_DIR})
 
-file(GLOB_RECURSE GDEXTENSION_SOURCES CONFIGURE_DEPENDS src/*.cpp src/*.h)
-
-add_library(ciallo_gdextension SHARED ${GDEXTENSION_SOURCES})
+add_library(ciallo_gdextension SHARED
+  src/example.cpp
+  src/register_types.cpp
+)
 
 target_include_directories(ciallo_gdextension PRIVATE
   ${GODOT_CPP_DIR}/include

@@ -2,6 +2,9 @@
 .godot/
 /android/
 *.translation
+GDExtension/build/
+GDExtension/bin/
+GDExtension/_codeql_build_dir/
 
 # ignore copilot
 Ciallo/.idea/.idea.Ciallo/.idea/copilot*

@@ -1,0 +1,11 @@
+[configuration]
+entry_symbol = "ciallo_library_init"
+compatibility_minimum = "4.5.1"
+
+[libraries]
+windows.debug.x86_64 = "res://GDExtension/bin/ciallo.dll"
+windows.release.x86_64 = "res://GDExtension/bin/ciallo.dll"
+linux.debug.x86_64 = "res://GDExtension/bin/libciallo.so"
+linux.release.x86_64 = "res://GDExtension/bin/libciallo.so"
+macos.debug.universal = "res://GDExtension/bin/libciallo.dylib"
+macos.release.universal = "res://GDExtension/bin/libciallo.dylib"

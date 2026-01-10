@@ -10,7 +10,7 @@ class Example : public Node {
 
 public:
   Example() = default;
-  ~Example() override = default;
+  virtual ~Example() override = default;
 
   static void _bind_methods();
   void say_hello();

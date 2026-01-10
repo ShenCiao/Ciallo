@@ -43,13 +43,7 @@ else()
   target_compile_options(ciallo_gdextension PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-if(WIN32)
-  set_target_properties(ciallo_gdextension PROPERTIES OUTPUT_NAME "ciallo" SUFFIX ".dll")
-elseif(APPLE)
-  set_target_properties(ciallo_gdextension PROPERTIES OUTPUT_NAME "ciallo" SUFFIX ".dylib")
-else()
-  set_target_properties(ciallo_gdextension PROPERTIES OUTPUT_NAME "ciallo" SUFFIX ".so")
-endif()
+set_target_properties(ciallo_gdextension PROPERTIES OUTPUT_NAME "ciallo")
 
 set(GDEXTENSION_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 add_custom_command(TARGET ciallo_gdextension POST_BUILD

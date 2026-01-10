@@ -1,0 +1,7 @@
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/CMakeFiles/ciallo_gdextension.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/CMakeFiles/edit_cache.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/CMakeFiles/rebuild_cache.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/godot-cpp/CMakeFiles/generate_bindings.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/godot-cpp/CMakeFiles/godot-cpp.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/godot-cpp/CMakeFiles/edit_cache.dir
+/home/runner/work/Ciallo/Ciallo/GDExtension/_codeql_build_dir/godot-cpp/CMakeFiles/rebuild_cache.dir

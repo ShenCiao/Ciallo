@@ -336,6 +336,15 @@ public class BezierCurve
     }
 
     private const float L = 0.4f;
+
+    // Returns the in/out handle pair aligned along the direction from (0, y0) to (1, y1).
+    private static (Vector2 In, Vector2 Out) AlignedHandles(float y0, float y1)
+    {
+        var v = new Vector2(1f, y1 - y0);
+        var dl = v / v.Length() * L;
+        return (-dl, dl);
+    }
+
     public static BezierCurve Constant(float y = 0.0f) =>
         new([
             new(new(0f, y), new(-L, 0f), new(L, 0f)),
@@ -344,12 +353,10 @@ public class BezierCurve
 
     public static BezierCurve Linear(float y0 = 0.0f, float y1 = 1.0f)
     {
-        var v = new Vector2(1f, y1 - y0);
-        var len = v.Length();
-        var dl = v / len * L;
+        var (inHandle, outHandle) = AlignedHandles(y0, y1);
         return new([
-            new(new(0f, y0), -dl, dl),
-            new(new(1f, y1), -dl, dl)
+            new(new(0f, y0), inHandle, outHandle),
+            new(new(1f, y1), inHandle, outHandle)
         ]);
     }
 
@@ -359,6 +366,30 @@ public class BezierCurve
         return new BezierCurve([
             new(new(0f, y0), new(-L, 0f), new(L, 0f)),
             new(new(1f, y1), new(-L, 0f), new(L, 0f))
+        ]);
+    }
+
+    /// <summary>
+    /// Creates a curve that starts slow (horizontal tangent) and ends at the natural slope of the line — ease in.
+    /// </summary>
+    public static BezierCurve EaseIn(float y0 = 0.0f, float y1 = 1.0f)
+    {
+        var (inHandle, outHandle) = AlignedHandles(y0, y1);
+        return new([
+            new(new(0f, y0), new(-L, 0f), new(L, 0f)), // horizontal: slow start
+            new(new(1f, y1), inHandle, outHandle)         // aligned to slope: fast end
+        ]);
+    }
+
+    /// <summary>
+    /// Creates a curve that starts at the natural slope of the line and ends slow (horizontal tangent) — ease out.
+    /// </summary>
+    public static BezierCurve EaseOut(float y0 = 0.0f, float y1 = 1.0f)
+    {
+        var (inHandle, outHandle) = AlignedHandles(y0, y1);
+        return new([
+            new(new(0f, y0), inHandle, outHandle),         // aligned to slope: fast start
+            new(new(1f, y1), new(-L, 0f), new(L, 0f))    // horizontal: slow end
         ]);
     }
 

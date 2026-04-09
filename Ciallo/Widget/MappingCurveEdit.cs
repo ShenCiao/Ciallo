@@ -99,53 +99,26 @@ public partial class MappingCurveEdit : Control
         return new Vector2(256, 256);
     }
 
-    // public void UsePreset(PresetId presetId)
-    // {
-    //     if (_curve == null || presetId < 0 || presetId >= PresetId.Count)
-    //         return;
-    //
-    //     // Note: Undo/redo not supported in C# without editor-specific APIs, so we modify the curve directly
-    //     _curve.Clear();
-    //
-    //     float minY = MinValue;
-    //     float maxY = MaxValue;
-    //     float minX = MinDomain;
-    //     float maxX = MaxDomain;
-    //
-    //     switch (presetId)
-    //     {
-    //         case PresetId.Constant:
-    //             _curve.TryInsertPoint(new Vector2(minX, (minY + maxY) / 2.0f));
-    //             _curve.TryInsertPoint(new Vector2(maxX, (minY + maxY) / 2.0f));
-    //             _curve.SetPointRightMode(0, Curve.TangentMode.Linear);
-    //             _curve.SetPointLeftMode(1, Curve.TangentMode.Linear);
-    //             break;
-    //
-    //         case PresetId.Linear:
-    //             _curve.TryInsertPoint(new Vector2(minX, minY));
-    //             _curve.TryInsertPoint(new Vector2(maxX, maxY));
-    //             _curve.SetPointRightMode(0, Curve.TangentMode.Linear);
-    //             _curve.SetPointLeftMode(1, Curve.TangentMode.Linear);
-    //             break;
-    //
-    //         case PresetId.EaseIn:
-    //             _curve.TryInsertPoint(new Vector2(minX, minY));
-    //             _curve.TryInsertPoint(new Vector2(maxX, maxY), ValueRange / DomainRange * 1.4f, 0);
-    //             break;
-    //
-    //         case PresetId.EaseOut:
-    //             _curve.TryInsertPoint(new Vector2(minX, minY), 0, ValueRange / DomainRange * 1.4f);
-    //             _curve.TryInsertPoint(new Vector2(maxX, maxY));
-    //             break;
-    //
-    //         case PresetId.Smoothstep:
-    //             _curve.TryInsertPoint(new Vector2(minX, minY));
-    //             _curve.TryInsertPoint(new Vector2(maxX, maxY));
-    //             break;
-    //     }
-    //
-    //     SetSelectedIndex(-1);
-    // }
+    public void UsePreset(PresetId presetId)
+    {
+        if (_curve == null || presetId < 0 || presetId >= PresetId.Count)
+            return;
+
+        var preset = presetId switch
+        {
+            PresetId.Constant => BezierCurve.Constant((MinValue + MaxValue) / 2f),
+            PresetId.Linear => BezierCurve.Linear(MinValue, MaxValue),
+            PresetId.EaseIn => BezierCurve.EaseIn(MinValue, MaxValue),
+            PresetId.EaseOut => BezierCurve.EaseOut(MinValue, MaxValue),
+            PresetId.Smoothstep => BezierCurve.EaseInOut(MinValue, MaxValue),
+            _ => null
+        };
+        if (preset == null) return;
+
+        // Modify the existing curve in-place so that external references remain valid.
+        _curve.Points = preset.Points;
+        SetSelectedIndex(-1);
+    }
 
     public override void _GuiInput(InputEvent @event)
     {

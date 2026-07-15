@@ -222,6 +222,10 @@ locale/translations=PackedStringArray("res://Localization/LongStrings.de.transla
 
 2d/default_link_connection_radius=0.01
 
+[physics]
+
+3d/physics_engine="Dummy"
+
 [plugins]
 
 icon_explorer/preview_size_exp=7.0

@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Ciallo"
 config/description="GPU powered vector paint program!"
-config/version="0.0.3"
+config/version="0.0.4"
 run/main_scene="uid://bhueivskybp02"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 boot_splash/show_image=false

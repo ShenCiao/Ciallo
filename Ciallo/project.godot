@@ -31,6 +31,7 @@ AutoloadData="res://AutoloadData.cs"
 AutoloadRendering="res://Rendering/AutoloadRendering.cs"
 AutoloadGuiControl="res://GuiControl/AutoloadGuiControl.cs"
 AutoloadTool="res://Tool/AutoloadTool.cs"
+SteamManager="uid://cnywctm8jpnkt"
 _fennara_game_capture="*res://addons/fennara/runtime/game_capture_helper.gd"
 
 [debug]

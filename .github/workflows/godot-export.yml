@@ -452,6 +452,30 @@ jobs:
             throw "Export did not create expected output: $outFile"
           }
 
+          $expectedAssets = switch ("${{ matrix.name }}") {
+            "Windows" { @("Facepunch.Steamworks.Win64.dll", "steam_api64.dll") }
+            "Linux" { @("Facepunch.Steamworks.Posix.dll", "libsteam_api.so") }
+            "macOS" { @("Facepunch.Steamworks.Posix.dll", "libsteam_api.dylib") }
+          }
+          $forbiddenAssets = switch ("${{ matrix.name }}") {
+            "Windows" { @("Facepunch.Steamworks.Posix.dll", "libsteam_api.so", "libsteam_api.dylib") }
+            "Linux" { @("Facepunch.Steamworks.Win64.dll", "steam_api64.dll", "libsteam_api.dylib") }
+            "macOS" { @("Facepunch.Steamworks.Win64.dll", "steam_api64.dll", "libsteam_api.so") }
+          }
+          $assetRoot = if ("${{ matrix.name }}" -eq "macOS") { $outFile } else { $outDir }
+          $exportedFiles = @(Get-ChildItem -LiteralPath $assetRoot -Recurse -File)
+
+          foreach ($asset in $expectedAssets) {
+            if ($exportedFiles.Name -cnotcontains $asset) {
+              throw "Export is missing expected Steamworks asset '$asset'."
+            }
+          }
+          foreach ($asset in $forbiddenAssets) {
+            if ($exportedFiles.Name -ccontains $asset) {
+              throw "Export contains Steamworks asset '$asset' from another platform."
+            }
+          }
+
       - name: Package Windows
         if: matrix.name == 'Windows'
         shell: pwsh

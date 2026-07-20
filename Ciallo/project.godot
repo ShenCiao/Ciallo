@@ -33,6 +33,7 @@ AutoloadGuiControl="res://GuiControl/AutoloadGuiControl.cs"
 AutoloadTool="res://Tool/AutoloadTool.cs"
 SteamManager="uid://cnywctm8jpnkt"
 _fennara_game_capture="*res://addons/fennara/runtime/game_capture_helper.gd"
+Keychain="*uid://dgiia2xg7fsud"
 
 [debug]
 
@@ -54,7 +55,7 @@ project/assembly_name="Ciallo"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dockable_container/plugin.cfg", "res://addons/kenyoni/remove_orphan_uid/plugin.cfg")
+enabled=PackedStringArray("res://addons/dockable_container/plugin.cfg", "res://addons/kenyoni/remove_orphan_uid/plugin.cfg", "res://addons/keychain/plugin.cfg")
 
 [global_group]
 

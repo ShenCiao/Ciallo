@@ -33,7 +33,7 @@ internal static class LayerConversionActions
     private static void ConvertImageToShape(Entity imageLayer)
     {
         var imageSetting = imageLayer.Get<ImageLayerSetting>();
-        var strokes = CenterlineVectorizer.VectorizeTexture(
+        var strokes = TopologyCenterlineVectorizer.VectorizeTexture(
             imageSetting.Texture,
             VectorizeParameters);
         var imageTransform = imageSetting.ImageTransform.Value;

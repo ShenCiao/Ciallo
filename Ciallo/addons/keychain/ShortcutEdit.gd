@@ -69,6 +69,7 @@ var is_editing := false
 var current_name_filter := ""
 var current_event_filter: InputEvent
 var filter_by_shortcut_line_edit_has_focus := false
+@export var profile_io_enabled := false
 # Textures taken from Godot https://github.com/godotengine/godot/tree/master/editor/icons
 var add_tex: Texture2D = preload("assets/add.svg")
 var edit_tex: Texture2D = preload("assets/edit.svg")
@@ -109,9 +110,23 @@ var folder_tex: Texture2D = preload("assets/folder.svg")
 @onready var profile_name: LineEdit = $ProfileSettings/ProfileName
 @onready var delete_confirmation: ConfirmationDialog = $DeleteConfirmation
 @onready var reset_confirmation: ConfirmationDialog = $ResetConfirmation
+var import_profile_dialog: FileDialog
+var export_profile_dialog: FileDialog
+var profile_operation_error: AcceptDialog
 
 
 func _ready() -> void:
+	if profile_io_enabled:
+		var import_profile_button: Button = find_child("ImportProfile")
+		var export_profile_button: Button = find_child("ExportProfile")
+		import_profile_dialog = find_child("ImportProfileDialog")
+		export_profile_dialog = find_child("ExportProfileDialog")
+		profile_operation_error = find_child("ProfileOperationError")
+		import_profile_button.pressed.connect(_on_import_profile_pressed)
+		export_profile_button.pressed.connect(_on_export_profile_pressed)
+		import_profile_dialog.file_selected.connect(_on_import_profile_file_selected)
+		export_profile_dialog.file_selected.connect(_on_export_profile_file_selected)
+
 	for profile in Keychain.profiles:
 		profile_option_button.add_item(profile.name)
 
@@ -524,6 +539,71 @@ func _on_DeleteProfile_pressed() -> void:
 
 func _on_OpenProfileFolder_pressed() -> void:
 	OS.shell_open(ProjectSettings.globalize_path(Keychain.PROFILES_PATH))
+
+
+func _on_import_profile_pressed() -> void:
+	import_profile_dialog.popup_file_dialog()
+
+
+func _on_export_profile_pressed() -> void:
+	export_profile_dialog.current_file = Keychain.selected_profile.resource_path.get_file()
+	export_profile_dialog.popup_file_dialog()
+
+
+func _on_import_profile_file_selected(path: String) -> void:
+	var resource: Resource = load(path)
+	if not resource is ShortcutProfile:
+		_show_profile_operation_error("Import Failed", "The selected file is not a shortcut profile.")
+		return
+
+	var profile: ShortcutProfile = (resource as ShortcutProfile).duplicate(true) as ShortcutProfile
+	var base_name: String = profile.name if not profile.name.is_empty() else path.get_file().get_basename()
+	var unique_name: String = _get_unique_import_name(base_name)
+	profile.name = unique_name
+	profile.customizable = true
+	profile.resource_path = Keychain.PROFILES_PATH.path_join(unique_name.validate_filename() + ".tres")
+	profile.fill_bindings(false)
+	if not profile.save():
+		_show_profile_operation_error("Import Failed", "The shortcut profile could not be saved.")
+		return
+
+	Keychain.profiles.append(profile)
+	profile_option_button.add_item(profile.name)
+	Keychain.profile_index = Keychain.profiles.size() - 1
+	profile_option_button.select(Keychain.profile_index)
+	_on_ProfileOptionButton_item_selected(Keychain.profile_index)
+
+
+func _on_export_profile_file_selected(path: String) -> void:
+	var export_path: String = path if path.get_extension().to_lower() == "tres" else path + ".tres"
+	var profile: ShortcutProfile = Keychain.selected_profile.duplicate(true) as ShortcutProfile
+	var err: Error = ResourceSaver.save(profile, export_path)
+	if err != OK:
+		_show_profile_operation_error("Export Failed", "The shortcut profile could not be exported.")
+
+
+func _get_unique_import_name(base_name: String) -> String:
+	var candidate: String = base_name
+	var suffix := 2
+	while _profile_name_exists(candidate) or FileAccess.file_exists(
+		Keychain.PROFILES_PATH.path_join(candidate.validate_filename() + ".tres")
+	):
+		candidate = "%s (%d)" % [base_name, suffix]
+		suffix += 1
+	return candidate
+
+
+func _profile_name_exists(profile_name_to_find: String) -> bool:
+	for profile in Keychain.profiles:
+		if profile.name == profile_name_to_find:
+			return true
+	return false
+
+
+func _show_profile_operation_error(title: String, message: String) -> void:
+	profile_operation_error.title = title
+	profile_operation_error.dialog_text = message
+	profile_operation_error.popup_centered()
 
 
 func _on_ProfileSettings_confirmed() -> void:

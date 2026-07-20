@@ -120,6 +120,9 @@ func _set_shortcut(action: StringName, old_event: InputEvent, new_event: InputEv
 
 
 func _find_matching_event_in_map(action: StringName, event: InputEvent) -> Array:
+	if not Keychain.detect_conflicts:
+		return []
+
 	var group := ""
 	if action in Keychain.actions:
 		group = Keychain.actions[action].group

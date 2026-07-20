@@ -18,6 +18,9 @@ var groups: Dictionary[StringName, InputGroup] = {}
 var ignore_actions: Array[StringName] = []  ## [Array] of [StringName] input map actions to ignore.
 ## If [code]true[/code], ignore Godot's default "ui_" input map actions.
 var ignore_ui_actions := true
+## If [code]true[/code], assigning an event already used by another action moves the event
+## to the new action according to the action group rules.
+var detect_conflicts := true
 ## A [PackedByteArray] of [bool]s with a fixed length of 4. Used for developers to allow or
 ## forbid setting certain types of InputEvents. The first element is for [InputEventKey]s,
 ## the second for [InputEventMouseButton]s, the third for [InputEventJoypadButton]s
@@ -113,6 +116,39 @@ class InputGroup:
 	func _init(_parent_group := "", _folded := true) -> void:
 		parent_group = _parent_group
 		folded = _folded
+
+
+func clear_action_metadata() -> void:
+	actions.clear()
+	groups.clear()
+
+
+func register_group(
+	group_name: StringName,
+	parent_group: StringName = &"",
+	folded := true
+) -> void:
+	groups[group_name] = InputGroup.new(parent_group, folded)
+
+
+func register_action(
+	action_name: StringName,
+	display_name := "",
+	group: StringName = &"",
+	global := true
+) -> void:
+	actions[action_name] = InputAction.new(display_name, group, global)
+
+
+func configure_remapping(
+	keyboard: bool,
+	mouse_button: bool,
+	joy_button: bool,
+	joy_axis: bool,
+	should_detect_conflicts: bool
+) -> void:
+	changeable_types = [keyboard, mouse_button, joy_button, joy_axis]
+	detect_conflicts = should_detect_conflicts
 
 
 func _init() -> void:

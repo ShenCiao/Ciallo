@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bs1ihvm0fcb3p" path="res://Icon/star.svg" id="4_kjvhd"]
 [ext_resource type="Script" uid="uid://dl5upm3versn3" path="res://GuiControl/Menu/MenuFile.cs" id="5_5tuhn"]
 [ext_resource type="Script" uid="uid://jlhg6n6d75q0" path="res://GuiControl/Menu/MenuEdit.cs" id="6_2gh4u"]
+[ext_resource type="Script" uid="uid://ddlyhppu0ovs1" path="res://GuiControl/Menu/MenuSettings.cs" id="7_devvj"]
 [ext_resource type="Script" uid="uid://bu48sb2g4a75y" path="res://GuiControl/MainDockableContainer.cs" id="8_2gh4u"]
 [ext_resource type="Script" uid="uid://cwjtb7r01fcf7" path="res://GuiControl/Menu/MenuWindow.cs" id="8_c2ibq"]
 [ext_resource type="Script" uid="uid://b4qlaa8fwe6i6" path="res://GuiControl/Menu/MenuHelp.cs" id="8_sc1dx"]
@@ -85,7 +86,6 @@ Root = SubResource("Resource_hri7i")
 
 [node name="Main" type="Panel" unique_id=1926960144]
 texture_filter = 1
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -132,30 +132,35 @@ stretch_mode = 5
 custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 
-[node name="MenuBar" type="MenuBar" parent="MainGui/MenuBarContainer/Margin/HBoxContainer" unique_id=926680703]
+[node name="MainMenuBar" type="MenuBar" parent="MainGui/MenuBarContainer/Margin/HBoxContainer" unique_id=926680703]
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_constants/h_separation = 30
 flat = true
 
-[node name="File" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MenuBar" unique_id=1777051197]
+[node name="File" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MainMenuBar" unique_id=1777051197]
 auto_translate_mode = 1
 oversampling_override = 1.0
 size = Vector2i(201, 172)
 submenu_popup_delay = 0.01
 script = ExtResource("5_5tuhn")
 
-[node name="Edit" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MenuBar" unique_id=411502354]
+[node name="Edit" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MainMenuBar" unique_id=411502354]
 oversampling_override = 1.0
 submenu_popup_delay = 0.1
 script = ExtResource("6_2gh4u")
 
-[node name="Window" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MenuBar" unique_id=1493039209]
+[node name="Window" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MainMenuBar" unique_id=1493039209]
 auto_translate_mode = 1
 submenu_popup_delay = 0.1
 script = ExtResource("8_c2ibq")
 
-[node name="Help" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MenuBar" unique_id=1987393091]
+[node name="Settings" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MainMenuBar" unique_id=859848762]
+auto_translate_mode = 1
+submenu_popup_delay = 0.1
+script = ExtResource("7_devvj")
+
+[node name="Help" type="PopupMenu" parent="MainGui/MenuBarContainer/Margin/HBoxContainer/MainMenuBar" unique_id=1987393091]
 auto_translate_mode = 1
 size = Vector2i(144, 100)
 submenu_popup_delay = 0.1

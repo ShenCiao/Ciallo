@@ -91,7 +91,7 @@ theme_override_constants/separation = 15
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("2_8ha6r")
 expand_icon = true
 
@@ -99,7 +99,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("3_eaqx8")
 expand_icon = true
 
@@ -107,7 +107,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("4_7s73l")
 expand_icon = true
 
@@ -116,7 +116,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 tooltip_text = "Reset all built-in brushes"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("5_eaqx8")
 expand_icon = true
 
@@ -124,7 +124,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("5_hu6b8")
 expand_icon = true
 
@@ -132,7 +132,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("6_4gyxw")
 expand_icon = true
 
@@ -140,7 +140,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("7_vldbi")
 expand_icon = true
 
@@ -148,7 +148,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("8_tnq2j")
 expand_icon = true
 

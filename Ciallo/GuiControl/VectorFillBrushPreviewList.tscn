@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://ddgqnm1dvnk6w" path="res://Icon/content-copy.svg" id="3_4ist4"]
 
 [node name="VectorFillBrushPreviewList" type="PanelContainer" unique_id=907877715]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -27,7 +26,7 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("1_i8jn5")
 expand_icon = true
 
@@ -35,7 +34,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("2_t3di1")
 expand_icon = true
 
@@ -43,7 +42,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("3_4ist4")
 expand_icon = true
 

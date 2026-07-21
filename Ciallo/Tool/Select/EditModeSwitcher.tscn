@@ -7,7 +7,6 @@
 [ext_resource type="Texture2D" uid="uid://8bmp8mbehv18" path="res://Icon/vector-curve.svg" id="5_frfv6"]
 
 [node name="EditModeSwitcher" type="HFlowContainer" unique_id=439818538]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_right = -1700.0
@@ -23,7 +22,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "Transform polyline"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 toggle_mode = true
 button_group = ExtResource("2_gm8as")
 icon = ExtResource("3_tbtaq")
@@ -34,7 +33,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "[Bezier Deform Tooltip]"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 toggle_mode = true
 button_group = ExtResource("2_gm8as")
 icon = ExtResource("5_frfv6")

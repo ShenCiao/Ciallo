@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://ckykoq4my4eok"]
 
+[ext_resource type="Theme" uid="uid://cmwretuqbofqt" path="res://MainTheme.tres" id="1_1eecp"]
 [ext_resource type="Script" uid="uid://crbythwxpbjg3" path="res://GuiControl/Layer/LayerAction.cs" id="1_qp7qr"]
 [ext_resource type="Texture2D" uid="uid://tugksq2pg442" path="res://Icon/layers-plus.svg" id="2_rh62m"]
 [ext_resource type="Texture2D" uid="uid://c6pduk2ad1t3i" path="res://Icon/layers-minus.svg" id="3_7h52i"]
@@ -10,6 +11,7 @@
 [node name="LayerAction" type="HFlowContainer" unique_id=1292664685]
 offset_right = 258.0
 offset_bottom = 36.0
+theme = ExtResource("1_1eecp")
 theme_override_constants/h_separation = 8
 script = ExtResource("1_qp7qr")
 
@@ -27,7 +29,7 @@ use_native_dialog = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "Add a layer"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("2_rh62m")
 expand_icon = true
@@ -35,7 +37,7 @@ expand_icon = true
 [node name="RemoveLayer" type="Button" parent="." unique_id=297937532]
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("3_7h52i")
 expand_icon = true
@@ -44,7 +46,7 @@ expand_icon = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "New folder layer"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("4_7h52i")
 expand_icon = true
@@ -53,7 +55,7 @@ expand_icon = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "Import an image"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("4_54l2l")
 expand_icon = true
@@ -62,7 +64,7 @@ expand_icon = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
 tooltip_text = "Convert to shape layer"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("5_conv1")
 expand_icon = true

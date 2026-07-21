@@ -49,8 +49,8 @@ msgstr "Μετονομασία προφίλ συντομεύσεων"
 msgid "Are you sure you want to delete this shortcut profile?"
 msgstr "Είστε σίγουροι πως θέλετε να διαγραφτεί αυτό το προφίλ συντομέυσεων;"
 
-msgid "Key"
-msgstr "Πλήκτρο"
+msgid "Keyboard"
+msgstr "Πληκτρολόγιο"
 
 msgid "Mouse Button"
 msgstr "Κουμπί ποντικιού"

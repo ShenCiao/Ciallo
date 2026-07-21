@@ -35,7 +35,7 @@ public partial class ShortcutSettings : AcceptDialog
         RegisterAction(keychain, "CancelInteraction", "Cancel", "Interaction");
         RegisterAction(keychain, "ConfirmInteraction", "Confirm", "Interaction");
 
-        keychain.Call(ConfigureRemappingMethod, true, false, false, false, false);
+        keychain.Call(ConfigureRemappingMethod, true, false, true, true, false);
     }
 
     public override void _Ready() => UpdateTranslation();

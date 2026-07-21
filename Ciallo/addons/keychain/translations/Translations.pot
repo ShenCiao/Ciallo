@@ -43,7 +43,7 @@ msgstr ""
 msgid "Are you sure you want to delete this shortcut profile?"
 msgstr ""
 
-msgid "Key"
+msgid "Keyboard"
 msgstr ""
 
 msgid "Mouse Button"

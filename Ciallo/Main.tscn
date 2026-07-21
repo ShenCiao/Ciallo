@@ -86,6 +86,7 @@ Root = SubResource("Resource_hri7i")
 
 [node name="Main" type="Panel" unique_id=1926960144]
 texture_filter = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2

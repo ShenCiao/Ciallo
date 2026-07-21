@@ -20,7 +20,7 @@ public partial class SteamManager : Node
         }
         catch (Exception e)
         {
-            GD.PrintErr($"Steam initialization failed: {e.Message}");
+            GD.Print($"Steam initialization failed: {e.Message}");
             return;
         }
     }

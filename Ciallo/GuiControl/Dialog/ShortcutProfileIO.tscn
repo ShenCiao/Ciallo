@@ -5,12 +5,10 @@ size_flags_horizontal = 8
 
 [node name="ImportProfile" type="Button" parent="." unique_id=1315796295]
 layout_mode = 2
-mouse_default_cursor_shape = 2
 text = "Import..."
 
 [node name="ExportProfile" type="Button" parent="." unique_id=654588696]
 layout_mode = 2
-mouse_default_cursor_shape = 2
 text = "Export..."
 
 [node name="ImportProfileDialog" type="FileDialog" parent="." unique_id=201624950]

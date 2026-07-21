@@ -36,6 +36,7 @@ profile_io_enabled = true
 
 [node name="ProfileOptionButton" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="1" unique_id=824603650]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="Blank1" type="Control" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="2" unique_id=83923571]
 custom_minimum_size = Vector2(36, 0)
@@ -43,15 +44,19 @@ layout_mode = 2
 
 [node name="NewProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="3" unique_id=1220509889]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="ResetProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="4" unique_id=1987606653]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="RenameProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="5" unique_id=492086360]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="DeleteProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="6" unique_id=997640289]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="Blank2" type="Control" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="7" unique_id=2126795139]
 custom_minimum_size = Vector2(36, 0)
@@ -62,6 +67,7 @@ layout_mode = 2
 
 [node name="OpenProfileFolder" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="9" unique_id=1836797572]
 size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
 
 [node name="MMTopLeft" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="0" unique_id=495320334]
 button_group = SubResource("ButtonGroup_1am13")

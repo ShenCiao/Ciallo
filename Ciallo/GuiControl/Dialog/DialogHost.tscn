@@ -95,6 +95,7 @@ script = ExtResource("10_0gwwr")
 
 [node name="ConfigureGlobalPenPressure" parent="." unique_id=44268714 instance=ExtResource("12_1xav8")]
 unique_name_in_owner = true
+visible = false
 
 [node name="ShortcutSettings" parent="." unique_id=1180501835 instance=ExtResource("13_3ccb4")]
 unique_name_in_owner = true

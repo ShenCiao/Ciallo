@@ -14,13 +14,12 @@ color = Color(0.57, 0.57, 0.57, 1)
 thickness = 4
 
 [sub_resource type="InputEventAction" id="InputEventAction_8on0h"]
-action = &"NewDocument"
+action = &"Global.File.NewDocument"
 
 [sub_resource type="Shortcut" id="Shortcut_w3byx"]
 events = [SubResource("InputEventAction_8on0h")]
 
 [node name="WelcomePanel" type="PanelContainer" unique_id=593651183]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2

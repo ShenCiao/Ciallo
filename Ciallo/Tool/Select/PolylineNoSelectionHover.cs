@@ -66,13 +66,13 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
 
     public override bool OnKey(InputEventKey key, CursorButtonData data)
     {
-        if (AppHotkeys.Copy.IsPressedBy(key))
+        if (AppHotkeys.Global.EditCopy.IsPressedBy(key))
         {
             AppClipboardManager.CopyShapes(Document.Get<SelectionManager>().SelectedShapes);
             return true;
         }
 
-        if (AppHotkeys.Cut.IsPressedBy(key))
+        if (AppHotkeys.Global.EditCut.IsPressedBy(key))
         {
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes.ToArray();
             AppClipboardManager.CopyShapes(selectedShapes);
@@ -81,7 +81,7 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
             return true;
         }
 
-        if (AppHotkeys.Paste.IsPressedBy(key))
+        if (AppHotkeys.Global.EditPaste.IsPressedBy(key))
         {
             var pastedShapes = AppClipboardManager.PasteShapes(WorkingLayer);
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
@@ -91,14 +91,14 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
             return true;
         }
 
-        if (AppHotkeys.CancelInteraction.IsPressedBy(key))
+        if (AppHotkeys.Global.InteractionCancel.IsPressedBy(key))
         {
             Document.Get<SelectionManager>().SelectedShapes.Clear();
             Tool.Machine.Fire(ToolBase.Trigger.Refresh);
             return true;
         }
 
-        if (AppHotkeys.Delete.IsPressedBy(key))
+        if (AppHotkeys.Global.EditDelete.IsPressedBy(key))
         {
             DeleteShapes(Document.Get<SelectionManager>().SelectedShapes.ToArray());
             Tool.Machine.Fire(ToolBase.Trigger.Refresh);

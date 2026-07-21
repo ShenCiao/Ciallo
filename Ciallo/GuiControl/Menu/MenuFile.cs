@@ -10,12 +10,12 @@ public partial class MenuFile : PopupMenu
 {
     public static readonly OrderedDictionary<string, AppHotkey> MenuItems = new()
     {
-        { "New document", AppHotkeys.NewDocument },
-        { "Open document", AppHotkeys.OpenDocument },
+        { "New document", AppHotkeys.Global.FileNewDocument },
+        { "Open document", AppHotkeys.Global.FileOpenDocument },
         { "Close document", null },
         { "-1", null },
-        { "Save", AppHotkeys.Save },
-        { "Save As...", AppHotkeys.SaveAs },
+        { "Save", AppHotkeys.Global.FileSave },
+        { "Save As...", AppHotkeys.Global.FileSaveAs },
         { "-2", null },
         { "Export as image", null },
         { "Export frame sequence", null },

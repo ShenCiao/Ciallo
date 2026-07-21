@@ -35,6 +35,7 @@
         <AdditionalFiles Include="**\*.tscn">
             <DependentUpon Condition="Exists('%(RootDir)%(Directory)%(Filename).cs')">%(Filename).cs</DependentUpon>
         </AdditionalFiles>
+        <AdditionalFiles Include="project.godot" />
     </ItemGroup>
 
     <ItemGroup>

@@ -73,18 +73,18 @@ public class PolylineSelectTool : ToolBase
 
         Configure(BezierDeform)
             .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionCancel), TransToHover)
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionConfirm), TransToHover);
 
         Configure(RectTransform)
             .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionCancel), TransToHover)
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionConfirm), TransToHover);
 
         Configure(Select)
             .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionCancel), TransToHover)
+            .PermitDynamic(Press(AppHotkeys.Global.InteractionConfirm), TransToHover);
 
         InteractiveSessionBase TransToHover()
         {

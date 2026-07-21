@@ -12,19 +12,19 @@
 [ext_resource type="Texture2D" uid="uid://bgxr2a6lqjqvy" path="res://Icon/wrench.svg" id="9_wrench"]
 
 [sub_resource type="InputEventAction" id="InputEventAction_sx6ov"]
-action = &"ToolSelection"
+action = &"Global.Tool.Selection"
 
 [sub_resource type="Shortcut" id="Shortcut_wcmo1"]
 events = [SubResource("InputEventAction_sx6ov")]
 
 [sub_resource type="InputEventAction" id="InputEventAction_wcmo1"]
-action = &"ToolPaintBrush"
+action = &"Global.Tool.PaintBrush"
 
 [sub_resource type="Shortcut" id="Shortcut_7agld"]
 events = [SubResource("InputEventAction_wcmo1")]
 
 [sub_resource type="InputEventAction" id="InputEventAction_7agld"]
-action = &"ToolPaintFill"
+action = &"Global.Tool.PaintFill"
 
 [sub_resource type="Shortcut" id="Shortcut_nllhf"]
 events = [SubResource("InputEventAction_7agld")]

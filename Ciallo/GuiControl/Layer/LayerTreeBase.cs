@@ -81,7 +81,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
     public override void _Input(InputEvent @event)
     {
         if (!IsDragging) return;
-        if (!AppHotkeys.CancelInteraction.IsPressedBy(@event)) return;
+        if (!AppHotkeys.Global.InteractionCancel.IsPressedBy(@event)) return;
 
         IsDragging = false;
         _dragCancelled = true;

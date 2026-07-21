@@ -91,7 +91,7 @@ public class PaintStrokeInteractor : InteractiveSessionBase
     public override void Cancel() => Clear();
     public override bool OnKey(InputEventKey key, CursorButtonData data)
     {
-        if (AppHotkeys.ConfirmInteraction.IsPressedBy(key))
+        if (AppHotkeys.Global.InteractionConfirm.IsPressedBy(key))
         {
             OnEndPaintButton();
         }

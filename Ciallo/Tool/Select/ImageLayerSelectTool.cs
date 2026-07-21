@@ -19,8 +19,8 @@ public class ImageLayerSelectTool : ToolBase
 
         Configure(Left)
             .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.CancelInteraction), Hover)
-            .Permit(Press(AppHotkeys.ConfirmInteraction), Hover);
+            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
+            .Permit(Press(AppHotkeys.Global.InteractionConfirm), Hover);
     }
 
     public override bool CanHandleLayer(params Entity[] layerEs)

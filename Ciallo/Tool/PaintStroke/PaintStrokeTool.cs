@@ -39,7 +39,7 @@ public class PaintStrokeTool : ToolBase
             });
 
         Configure(Left)
-            .Permit(Press(AppHotkeys.CancelInteraction), Hover)
+            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
             .Permit(PaintStrokeInteractor.PaintEnd, Hover);
 
         Configure(LeftOnFill)

@@ -83,8 +83,8 @@ public abstract partial class ToolBase : ITool
             .OnExit((Action<StateMachine<InteractiveSessionBase, Trigger>.Transition>)(t =>
             {
                 t.Destination.BeforeTransitionSrcEnd(t.Source);
-                if (t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.CancelInteraction, true) ||
-                    t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.CancelInteraction, false) ||
+                if (t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.Global.InteractionCancel, true) ||
+                    t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.Global.InteractionCancel, false) ||
                     t.Trigger == Trigger.Deactivate)
                     t.Source.Cancel();
                 else

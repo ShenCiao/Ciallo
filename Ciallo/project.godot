@@ -55,7 +55,7 @@ project/assembly_name="Ciallo"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/dockable_container/plugin.cfg", "res://addons/kenyoni/remove_orphan_uid/plugin.cfg", "res://addons/keychain/plugin.cfg")
+enabled=["res://addons/Ciallo/plugin.cfg", "res://addons/dockable_container/plugin.cfg", "res://addons/kenyoni/remove_orphan_uid/plugin.cfg"]
 
 [global_group]
 

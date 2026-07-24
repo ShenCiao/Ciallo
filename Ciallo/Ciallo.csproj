@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.6.2-ciallo.g0882c9597">
+<Project Sdk="Godot.NET.Sdk/4.6.2-ciallo.gfbd17920c">
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LangVersion>default</LangVersion>

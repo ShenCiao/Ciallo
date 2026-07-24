@@ -91,7 +91,11 @@ jobs:
             exit 1
           fi
 
-          if [ "$STEAM_BRANCH" = "__auto__" ]; then
+          if [ "$STEAM_BRANCH" = "default" ]; then
+            # Steam does not allow a newly uploaded build to be set live on
+            # the default branch. Leaving releaseBranch empty uploads only.
+            release_branch=""
+          elif [ "$STEAM_BRANCH" = "__auto__" ]; then
             if [ "$BUILD_KIND" = "release" ] || [ "$BUILD_KIND" = "hotfix" ]; then
               # Empty releaseBranch uploads only; default branch promotion stays manual.
               release_branch=""

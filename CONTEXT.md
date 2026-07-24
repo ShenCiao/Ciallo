@@ -4,11 +4,55 @@
 
 ### Document
 
-A document is the complete editable animation content stored in exactly one `.ciallo` file.
+A document is complete editable animation content with a stable identity whose individual saved and recovered versions each use one `.ciallo` file.
 
 ### Working Document
 
 The working document is the one document currently open for editing in a Ciallo process, and is absent when that process has no document open.
+
+### Editing Session
+
+An editing session is one device's continuous period of working on a document between opening and closing it.
+
+### Interrupted Editing Session
+
+An interrupted editing session is an editing session that did not close normally and has reported no activity for 15 minutes.
+
+### Document Identity
+
+A document identity distinguishes one document across changes to its name, local path, and editing device.
+
+### Recovery Snapshot
+
+A recovery snapshot is an automatically captured version of the working document reserved for restoring work after an unexpected interruption and is never a manually saved document version.
+
+### Cloud Saved Version
+
+A cloud saved version is a manually saved version of a document made available for normal opening on another device.
+
+### Document Version Conflict
+
+A document version conflict exists when multiple devices independently save different versions of the same document without observing each other's save.
+
+### Recovery Retention
+
+Recovery retention is the per-document recovery snapshot history maintained within the account-wide storage limit.
+
+### Recovered Working State
+
+A recovered working state is a recovery snapshot opened as unsaved working document content after an unexpected interruption.
+
+### Cloud Protection Point
+
+A cloud protection point is the newest document state confirmed to be stored in Steam Cloud.
+
+### Cloud Authorization
+
+A cloud authorization is a Steam user's scoped permission for Ciallo to read and write that user's document files in Steam Cloud.
+
+### Managed Cloud Copy
+
+A managed cloud copy is a device-local `.ciallo` file maintained by Ciallo for editing a document obtained from Steam Cloud.
 
 ### Cel
 
@@ -99,6 +143,21 @@ A command segment is one ordered part of an undoable action. Related gestures ma
 
 ## Relationships
 
+- Every **Document** has exactly one **Document Identity**.
+- Saving a **Document** as a new file creates a new **Document** with a new **Document Identity**.
+- A **Document** has at most one current **Cloud Saved Version**.
+- An unresolved **Document Version Conflict** has at least two candidate **Cloud Saved Versions** and no current version.
+- Resolving a **Document Version Conflict** selects one candidate as current while leaving every other candidate available to become a new **Document**.
+- A **Recovery Snapshot** belongs to exactly one **Document**.
+- A **Recovery Snapshot** contains only completed **Undoable Actions** and excludes an interaction still in progress.
+- A **Recovery Snapshot** excludes **Command History**.
+- A **Recovery Snapshot** from an active **Editing Session** becomes a recovery candidate only after that session becomes an **Interrupted Editing Session**.
+- **Recovery Retention** may remove the oldest **Recovery Snapshots** but never a **Cloud Saved Version** or an unresolved **Document Version Conflict** candidate.
+- A **Recovered Working State** becomes a **Cloud Saved Version** only after the user actively saves it.
+- A **Cloud Protection Point** may lag behind the newest local **Recovery Snapshot** while cloud storage is unavailable or an upload is pending.
+- Cloud operations require a **Cloud Authorization** belonging to the Steam user currently running Ciallo.
+- A **Cloud Authorization** expires 30 days after issuance and must then be renewed by the user.
+- Opening a **Cloud Saved Version** on a device without a linked local file creates a **Managed Cloud Copy**.
 - A **Vector Fill Layer** can have zero or more **Reference Layers**.
 - A **Reference Layer** can provide boundary artwork for zero or more **Vector Fill Layers**.
 - When editing reference artwork from a **Vector Fill Layer**, the edited **Shape** remains owned by its original **Reference Layer**.
@@ -106,3 +165,5 @@ A command segment is one ordered part of an undoable action. Related gestures ma
 ## Flagged Ambiguities
 
 - "Project" was used to mean a **Document** stored in one `.ciallo` file; **Document** is the canonical term and does not contain multiple documents.
+- "One `.ciallo` file" describes the format of one **Document** version, not a single physical copy across all devices.
+- "Autosave" was used to mean both recovery and normal document saving; **Recovery Snapshot** is non-authoritative, and normal reopening after choosing not to save uses the last manually saved **Document** version.

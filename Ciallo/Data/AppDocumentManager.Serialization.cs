@@ -184,6 +184,7 @@ public static partial class AppDocumentManager
             EnsureSaveDirectory(settings.FilePath.Value);
             Save(WorkingDocument.Value, settings.FilePath.Value);
             WorkingDocument.CurrentValue.Get<CommandManager>().OnSave();
+            AppDocumentDurability.EnqueueManualSave(WorkingDocument.CurrentValue, settings.FilePath.Value);
             return true;
         }
         catch (Exception exception)
@@ -197,17 +198,25 @@ public static partial class AppDocumentManager
     {
         if (WorkingDocument.CurrentValue.IsNull) return false;
         var settings = WorkingDocument.CurrentValue.Get<DocumentSetting>();
+        var previousDocumentId = settings.DocumentId.Value;
+        var previousName = settings.Name.Value;
+        var previousFilePath = settings.FilePath.Value;
         try
         {
             EnsureSaveDirectory(filePath);
-            Save(WorkingDocument.Value, filePath);
-            settings.FilePath.Value = filePath;
+            settings.DocumentId.Value = Guid.NewGuid();
             settings.Name.Value = filePath.GetFile().GetBaseName();
+            settings.FilePath.Value = filePath;
+            Save(WorkingDocument.Value, filePath);
             WorkingDocument.CurrentValue.Get<CommandManager>().OnSave();
+            AppDocumentDurability.EnqueueManualSave(WorkingDocument.CurrentValue, filePath);
             return true;
         }
         catch (Exception exception)
         {
+            settings.DocumentId.Value = previousDocumentId;
+            settings.Name.Value = previousName;
+            settings.FilePath.Value = previousFilePath;
             WarnSaveFailed(exception);
             return false;
         }

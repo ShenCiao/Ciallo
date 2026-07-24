@@ -121,6 +121,8 @@ internal static class ScalarConvert
             return null;
         if (nonNullableType.IsEnum)
             return Enum.ToObject(nonNullableType, Convert.ToInt64(db));
+        if (nonNullableType == typeof(Guid))
+            return (Guid)db;
         if (nonNullableType == typeof(string)) return Convert.ToString(db);
         if (nonNullableType == typeof(bool)) return Convert.ToBoolean(db);
         if (nonNullableType == typeof(byte)) return Convert.ToByte(db);
@@ -143,6 +145,8 @@ internal static class ScalarConvert
     /// </summary>
     public static IList ToDbList(Type elementType, IEnumerable<object> elements)
     {
+        if (elementType == typeof(Guid))
+            return elements.Cast<Guid>().ToList();
         if (elementType == typeof(float))
             return elements.Select(Convert.ToSingle).ToList();
         if (elementType == typeof(double))

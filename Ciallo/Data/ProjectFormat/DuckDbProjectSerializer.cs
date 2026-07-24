@@ -29,6 +29,19 @@ public static class DuckDbProjectSerializer
 
     public static void Save(Entity document, string filePath)
     {
+        // Detaching first (entity refs -> positional ids, mutable arrays copied) means both save
+        // paths share one writer. The extra capture copy is acceptable for a user-initiated save,
+        // and reference-resolution errors now surface here rather than mid-write.
+        Save(PersistenceSnapshotCapture.Capture(document, 0), filePath);
+    }
+
+    public static void Save(PersistenceSnapshot snapshot, string filePath)
+    {
+        SaveStaged(filePath, stagingPath => WriteDatabase(snapshot, stagingPath));
+    }
+
+    private static void SaveStaged(string filePath, Action<string> writeStagingFile)
+    {
         var targetPath = Path.GetFullPath(filePath);
         var targetDirectory = Path.GetDirectoryName(targetPath)
                               ?? throw new InvalidOperationException($"File {filePath} has no directory.");
@@ -42,8 +55,7 @@ public static class DuckDbProjectSerializer
 
         try
         {
-            var registry = ProjectFormatRegistry.Create();
-            WriteDatabase(document, stagingPath, registry);
+            writeStagingFile(stagingPath);
             CommitSave(stagingPath, targetPath);
         }
         finally
@@ -61,9 +73,12 @@ public static class DuckDbProjectSerializer
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"File {filePath} not found.");
 
-        var registry = ProjectFormatRegistry.Create();
+        var registry = ProjectFormatRegistry.Shared;
         var document = ReadDatabase(filePath, registry);
-        document.Get<DocumentSetting>().FilePath.Value = filePath;
+        var settings = document.Get<DocumentSetting>();
+        if (settings.DocumentId.Value == Guid.Empty)
+            throw new InvalidDataException("Project database has an invalid document identity.");
+        settings.FilePath.Value = filePath;
         return document;
     }
 
@@ -103,7 +118,7 @@ public static class DuckDbProjectSerializer
 
     #region Write
 
-    private static void WriteDatabase(Entity document, string dbPath, ProjectFormatRegistry registry)
+    private static void WriteDatabase(PersistenceSnapshot snapshot, string dbPath)
     {
         if (File.Exists(dbPath))
             File.Delete(dbPath);
@@ -116,47 +131,27 @@ public static class DuckDbProjectSerializer
         // blocks regardless). The block size lives in the file header, so files stay self-describing
         // and each save rewrites the file at the current block size.
         var attachPath = dbPath.Replace("'", "''");
-        using (var connection = new DuckDBConnection("Data Source=:memory:"))
-        {
-            connection.Open();
-            Execute(connection, $"ATTACH '{attachPath}' AS project (BLOCK_SIZE {BlockSize});");
-            Execute(connection, "USE project;");
+        using var connection = new DuckDBConnection("Data Source=:memory:");
+        connection.Open();
+        Execute(connection, $"ATTACH '{attachPath}' AS project (BLOCK_SIZE {BlockSize});");
+        Execute(connection, "USE project;");
 
-            CreateInfrastructureTables(connection);
-            foreach (var component in registry.Components)
-                CreateComponentTable(connection, component);
+        CreateInfrastructureTables(connection);
+        foreach (var component in snapshot.Registry.Components)
+            CreateComponentTable(connection, component);
 
-            var entities = BuildEntityList(document);
-            var entityToId = new Dictionary<Entity, int>();
-            for (int i = 0; i < entities.Count; i++)
-                entityToId[entities[i]] = i;
+        Execute(connection, "BEGIN TRANSACTION;");
+        WriteMetadata(connection, snapshot.ApplicationVersion);
+        InsertEntities(connection, snapshot.EntityCount);
+        foreach (var component in snapshot.Components)
+            InsertComponentRows(connection, component);
+        Execute(connection, "COMMIT;");
 
-            Execute(connection, "BEGIN TRANSACTION;");
-            WriteMetadata(connection);
-            InsertEntities(connection, entities.Count);
-            foreach (var component in registry.Components)
-                InsertComponentRows(connection, component, entities, entityToId);
-            Execute(connection, "COMMIT;");
-
-            // Collapse the WAL into the main file so the single .ciallo file is self-contained
-            // and can be atomically moved with no sidecar.
-            Execute(connection, "CHECKPOINT project;");
-            Execute(connection, "USE memory;");
-            Execute(connection, "DETACH project;");
-        }
-    }
-
-    private static List<Entity> BuildEntityList(Entity document)
-    {
-        var result = new List<Entity> { document };
-        var query = document.World.CreateQuery().Tagged<ToSerializeTag>().Build();
-        foreach (var entity in query.EnumerateWithEntities())
-        {
-            if (entity == document)
-                continue;
-            result.Add(entity);
-        }
-        return result;
+        // Collapse the WAL into the main file so the single .ciallo file is self-contained
+        // and can be atomically moved with no sidecar.
+        Execute(connection, "CHECKPOINT project;");
+        Execute(connection, "USE memory;");
+        Execute(connection, "DETACH project;");
     }
 
     private static void CreateInfrastructureTables(DuckDBConnection connection)
@@ -174,13 +169,12 @@ public static class DuckDbProjectSerializer
                             """);
     }
 
-    private static void WriteMetadata(DuckDBConnection connection)
+    private static void WriteMetadata(DuckDBConnection connection, string applicationVersion)
     {
         InsertMetadata(connection, "format", "ciallo-project-duckdb");
         InsertMetadata(connection, "format_version", FormatVersion.ToString());
         InsertMetadata(connection, "created_by", "Ciallo");
-        InsertMetadata(connection, "ciallo_version",
-            ProjectSettings.GetSetting("application/config/version", "unknown").AsString());
+        InsertMetadata(connection, "ciallo_version", applicationVersion);
     }
 
     private static void CreateComponentTable(DuckDBConnection connection, ComponentDescriptor component)
@@ -215,44 +209,32 @@ public static class DuckDbProjectSerializer
 
     private static void InsertComponentRows(
         DuckDBConnection connection,
-        ComponentDescriptor descriptor,
-        IReadOnlyList<Entity> entities,
-        Dictionary<Entity, int> entityToId)
+        PersistenceComponentSnapshot component)
     {
         var batch = new List<InsertBuilder>(InsertBatchSize);
-        for (int id = 0; id < entities.Count; id++)
+        foreach (var row in component.Rows)
         {
-            var entity = entities[id];
-            if (!entity.Has(descriptor.ComponentType))
-                continue;
-
-            var component = entity.Get(descriptor.ComponentType);
-            batch.Add(BuildComponentRow(descriptor, id, component, entityToId, "r" + batch.Count));
+            batch.Add(BuildComponentRow(component.Descriptor, row, "r" + batch.Count));
             if (batch.Count == InsertBatchSize)
             {
-                ExecuteComponentBatch(connection, descriptor, batch);
+                ExecuteComponentBatch(connection, component.Descriptor, batch);
                 batch.Clear();
             }
         }
 
-        ExecuteComponentBatch(connection, descriptor, batch);
+        ExecuteComponentBatch(connection, component.Descriptor, batch);
     }
 
     private static InsertBuilder BuildComponentRow(
         ComponentDescriptor descriptor,
-        int ownerId,
-        object component,
-        Dictionary<Entity, int> entityToId,
+        PersistenceComponentRow row,
         string parameterPrefix)
     {
         var builder = new InsertBuilder(parameterPrefix);
-        builder.AddColumn("entity_id", builder.NextParam(ownerId));
+        builder.AddColumn("entity_id", builder.NextParam(row.EntityId));
 
-        foreach (var field in descriptor.Fields)
-        {
-            var value = field.GetProjectValue(component);
-            SerializeField(builder, field, value, entityToId);
-        }
+        for (int i = 0; i < descriptor.Fields.Count; i++)
+            SerializeCapturedField(builder, descriptor.Fields[i], row.Values[i]);
 
         return builder;
     }
@@ -274,11 +256,10 @@ public static class DuckDbProjectSerializer
         command.ExecuteNonQuery();
     }
 
-    private static void SerializeField(
+    private static void SerializeCapturedField(
         InsertBuilder builder,
         FieldDescriptor field,
-        object value,
-        Dictionary<Entity, int> entityToId)
+        object value)
     {
         switch (field.Shape)
         {
@@ -302,20 +283,19 @@ public static class DuckDbProjectSerializer
                 break;
 
             case FieldShape.EntityRef:
-                builder.AddColumn(field.Name, builder.NextParam(EntityRefToDb(field, value, entityToId)));
+                builder.AddColumn(field.Name, builder.NextParam(value));
                 break;
 
             case FieldShape.EntityArray:
-                var ids = EntityCollectionToIds(field, value, entityToId);
-                builder.AddColumn(field.Name, $"{builder.NextParam(ids)}::INTEGER[]");
+                builder.AddColumn(field.Name, $"{builder.NextParam(value)}::INTEGER[]");
                 break;
 
             case FieldShape.EntityMap:
-                builder.AddColumn(field.Name, BuildEntityMapExpr(builder, field, value, entityToId));
+                builder.AddColumn(field.Name, BuildEntityMapExpr(builder, (PersistenceEntityMap)value));
                 break;
 
             case FieldShape.Blob:
-                builder.AddColumn(field.Name, builder.NextParam(BlobToDb(field, value)));
+                builder.AddColumn(field.Name, builder.NextParam(value));
                 break;
 
             default:
@@ -360,73 +340,11 @@ public static class DuckDbProjectSerializer
         return $"list_transform({zip}, e -> {literal})";
     }
 
-    private static string BuildEntityMapExpr(
-        InsertBuilder builder,
-        FieldDescriptor field,
-        object value,
-        Dictionary<Entity, int> entityToId)
+    private static string BuildEntityMapExpr(InsertBuilder builder, PersistenceEntityMap value)
     {
         if (value == null)
             return "NULL";
-
-        var keys = new List<int>();
-        var vals = new List<int>();
-        foreach (var kv in (IEnumerable<KeyValuePair<int, Entity>>)value)
-        {
-            keys.Add(kv.Key);
-            vals.Add(ResolveRequiredId(field, kv.Value, entityToId));
-        }
-
-        return $"map({builder.NextParam(keys)}::INTEGER[], {builder.NextParam(vals)}::INTEGER[])";
-    }
-
-    private static object EntityRefToDb(FieldDescriptor field, object value, Dictionary<Entity, int> entityToId)
-    {
-        if (value == null)
-            return null;
-
-        var entity = (Entity)value;
-        if (entity.IsNull)
-        {
-            if (field.EntityNullability == EntityNullability.Required)
-                throw new InvalidOperationException(
-                    $"Field {field.Component.Name}.{field.Name} is required but is Entity.Null.");
-            return null;
-        }
-
-        if (!entityToId.TryGetValue(entity, out var id))
-            throw new InvalidOperationException(
-                $"Field {field.Component.Name}.{field.Name} references an entity that is not persisted.");
-        return id;
-    }
-
-    private static List<int> EntityCollectionToIds(
-        FieldDescriptor field, object value, Dictionary<Entity, int> entityToId)
-    {
-        var ids = new List<int>();
-        if (value == null)
-            return ids;
-        foreach (var entity in (IEnumerable<Entity>)value)
-            ids.Add(ResolveRequiredId(field, entity, entityToId));
-        return ids;
-    }
-
-    private static int ResolveRequiredId(FieldDescriptor field, Entity entity, Dictionary<Entity, int> entityToId)
-    {
-        if (entity.IsNull)
-            throw new InvalidOperationException(
-                $"Collection field {field.Component.Name}.{field.Name} contains Entity.Null.");
-        if (!entityToId.TryGetValue(entity, out var id))
-            throw new InvalidOperationException(
-                $"Collection field {field.Component.Name}.{field.Name} references an entity that is not persisted.");
-        return id;
-    }
-
-    private static object BlobToDb(FieldDescriptor field, object value)
-    {
-        if (value == null)
-            return null;
-        return MessagePackSerializer.Serialize(field.ValueType, value);
+        return $"map({builder.NextParam(value.Keys)}::INTEGER[], {builder.NextParam(value.Values)}::INTEGER[])";
     }
 
     #endregion
@@ -607,7 +525,7 @@ public static class DuckDbProjectSerializer
         }
 
         var collection = ContainerFactory.Build(field.ContainerKind, typeof(Entity), entities.Cast<object>().ToList());
-        field.Field.SetValue(instance, collection);
+        field.SetFieldStorageObject(instance, collection);
     }
 
     private static void PopulateEntityMap(
@@ -627,7 +545,7 @@ public static class DuckDbProjectSerializer
             addMethod.Invoke(mapInstance, [key, entity]);
         }
 
-        field.Field.SetValue(instance, mapInstance);
+        field.SetFieldStorageObject(instance, mapInstance);
     }
 
     private static Entity ResolveEntity(Dictionary<int, Entity> idToEntity, object dbValue, FieldDescriptor field)

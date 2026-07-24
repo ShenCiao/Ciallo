@@ -24,6 +24,7 @@ public partial class AutoloadData : Node
         GetTree().AutoAcceptQuit = false;
 
         DefaultOption = MessagePackSerializer.DefaultOptions;
+        AppDocumentDurability.Initialize(ProjectSettings.GlobalizePath("user://"));
 
         // Preference and load brush library data
         bool preferenceFileExists = AppPreference.TryLoad();
@@ -67,6 +68,11 @@ public partial class AutoloadData : Node
         AppMarkerTextureLibrary.Initialise();
     }
 
+    public override void _Process(double delta)
+    {
+        AppDocumentDurability.Process(delta);
+    }
+
     // ReSharper disable once AsyncVoidMethod
     public override async void _Notification(int what)
     {
@@ -75,6 +81,9 @@ public partial class AutoloadData : Node
             var result = await AppDocumentManager.UserCloseWorkingDocument();
             if (!result) return;
 
+            await AppDocumentDurability.ShutdownAsync();
+            if (SteamManager.IsCloudAvailable)
+                await SteamManager.FlushCloudSessionAsync(TimeSpan.FromSeconds(5));
             AppStrokeBrushLibrary.Save();
             AppMarkerTextureLibrary.Save();
             AppPreference.Save();

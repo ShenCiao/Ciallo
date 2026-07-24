@@ -55,9 +55,12 @@ internal sealed class FieldDescriptor
     public bool IsNullable { get; }
     public string DuckDbColumnType { get; }
 
-    // Cached ReactiveProperty<T>.Value accessor; null for non-reactive fields. Resolving this
-    // per-row via FieldType.GetProperty("Value") showed up under save/load of large documents.
-    private readonly PropertyInfo _reactiveValueProperty;
+    // Field access goes through delegates compiled once at startup instead of per-row reflection,
+    // which showed up under save/load of large documents.
+    private readonly Func<object, object> _getProjectValue;
+    private readonly Func<object, object> _getFieldStorage;
+    private readonly Action<object, object> _setProjectValue;
+    private readonly Action<object, object> _setFieldStorage;
 
     private FieldDescriptor(
         ComponentDescriptor component,
@@ -88,7 +91,10 @@ internal sealed class FieldDescriptor
         IsReactive = isReactive;
         IsNullable = isNullable;
         DuckDbColumnType = BuildColumnType();
-        _reactiveValueProperty = isReactive ? fieldType.GetProperty("Value") : null;
+        _getProjectValue = FieldAccessorFactory.BuildGetProjectValue(field, isReactive);
+        _getFieldStorage = FieldAccessorFactory.BuildGetFieldStorage(field);
+        _setProjectValue = FieldAccessorFactory.BuildSetProjectValue(field, isReactive);
+        _setFieldStorage = FieldAccessorFactory.BuildSetFieldStorage(field);
     }
 
     public static FieldDescriptor TryCreate(ComponentDescriptor component, FieldInfo field)
@@ -122,36 +128,13 @@ internal sealed class FieldDescriptor
 
     #region Value access (reactive unwrap)
 
-    public object GetProjectValue(object component)
-    {
-        var value = Field.GetValue(component);
-        if (!IsReactive || value == null)
-            return value;
-        return _reactiveValueProperty!.GetValue(value);
-    }
+    public object GetProjectValue(object component) => _getProjectValue(component);
 
-    public object GetFieldStorageObject(object component)
-    {
-        return Field.GetValue(component);
-    }
+    public object GetFieldStorageObject(object component) => _getFieldStorage(component);
 
-    public void SetProjectValue(object component, object value)
-    {
-        if (IsReactive)
-        {
-            var property = Field.GetValue(component);
-            if (property == null)
-            {
-                property = Activator.CreateInstance(FieldType, value);
-                Field.SetValue(component, property);
-                return;
-            }
-            _reactiveValueProperty!.SetValue(property, value);
-            return;
-        }
+    public void SetProjectValue(object component, object value) => _setProjectValue(component, value);
 
-        Field.SetValue(component, value);
-    }
+    public void SetFieldStorageObject(object component, object value) => _setFieldStorage(component, value);
 
     #endregion
 
@@ -265,6 +248,7 @@ internal sealed class FieldDescriptor
     {
         if (type.IsEnum)
             return "INTEGER";
+        if (type == typeof(Guid)) return "UUID";
         if (type == typeof(string)) return "VARCHAR";
         if (type == typeof(bool)) return "BOOLEAN";
         if (type == typeof(byte)) return "UTINYINT";
@@ -308,6 +292,7 @@ internal sealed class FieldDescriptor
     private static bool IsScalar(Type type)
     {
         return type == typeof(string)
+               || type == typeof(Guid)
                || type == typeof(bool)
                || type.IsEnum
                || type == typeof(byte)

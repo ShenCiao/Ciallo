@@ -107,6 +107,7 @@ public static partial class AppDocumentManager
     {
         DisplayServer.WindowSetTitle("Ciallo");
 
+        AppDocumentDurability.OnDocumentClosing(document);
         document.Get<ToolManager>().DeactivateWorkingTool();
         WorkingDocument.Value = Entity.Null;
 

@@ -7,7 +7,7 @@
         <TestSessionTimeout>180000</TestSessionTimeout>
         <TreatNoTestsAsError>true</TreatNoTestsAsError>
         <EnvironmentVariables>
-            <GODOT_BIN>C:\dev\godot\bin\godot.windows.editor.dev.x86_64.exe</GODOT_BIN>
+            <GODOT_BIN>C:\dev\godot\bin\godot.windows.editor.dev.x86_64.mono.exe</GODOT_BIN>
         </EnvironmentVariables>
     </RunConfiguration>
 

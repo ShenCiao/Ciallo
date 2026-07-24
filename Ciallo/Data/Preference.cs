@@ -47,6 +47,15 @@ public class Preference
     public ReactiveProperty<int> CommandHistoryLimit = new(50);
 
     [DataMember]
+    public ReactiveProperty<TimeSpan> RecoverySnapshotInterval = new(TimeSpan.FromMinutes(5));
+    [DataMember]
+    public ReactiveProperty<int> RecoverySnapshotLimitPerDocument = new(24);
+    [DataMember]
+    public ReactiveProperty<int> RecoverySnapshotAccountFileLimit = new(256);
+    [DataMember]
+    public ReactiveProperty<long> RecoverySnapshotAccountByteLimit = new(2L * 1024 * 1024 * 1024);
+
+    [DataMember]
     public Color StrokeWireframeColor = Colors.Orange;
     [DataMember]
     public float StrokeWireframeRadius = 2f;

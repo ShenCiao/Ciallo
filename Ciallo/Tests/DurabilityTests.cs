@@ -1,0 +1,632 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
+using Ciallo.Data;
+using Frent;
+using GdUnit4;
+using Godot;
+using Newtonsoft.Json;
+using Steamworks.WebApi;
+using static GdUnit4.Assertions;
+
+namespace Ciallo.Tests;
+
+[TestSuite]
+public class DurabilityTests
+{
+    [TestCase]
+    public void RevisionGraphKeepsConcurrentHeadsUntilResolution()
+    {
+        var documentId = Guid.NewGuid();
+        var root = Revision(documentId, Guid.NewGuid());
+        var branchA = Revision(documentId, Guid.NewGuid(), root.RevisionId);
+        var branchB = Revision(documentId, Guid.NewGuid(), root.RevisionId);
+
+        var conflictedHeads = SteamCloudCatalogService.FindHeads([root, branchA, branchB])
+            .Select(revision => revision.RevisionId)
+            .Order()
+            .ToArray();
+        AssertThat(conflictedHeads).ContainsExactly(
+            new[] { branchA.RevisionId, branchB.RevisionId }.Order().ToArray());
+
+        var resolution = Revision(
+            documentId,
+            Guid.NewGuid(),
+            branchA.RevisionId,
+            [branchB.RevisionId]);
+        var resolvedHeads = SteamCloudCatalogService.FindHeads([root, branchA, branchB, resolution])
+            .Select(revision => revision.RevisionId)
+            .ToArray();
+        AssertThat(resolvedHeads).ContainsExactly(resolution.RevisionId);
+    }
+
+    [TestCase]
+    public void CloudOutboxPrioritizesSessionBeforeSavedAndRecoveryUploads()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var saved = new CloudOutboxRecord
+        {
+            RevisionId = Guid.NewGuid(),
+            Kind = CloudRevisionKind.Saved,
+            CapturedAtUtc = now.AddMinutes(-2),
+        };
+        var olderRecovery = new CloudOutboxRecord
+        {
+            RevisionId = Guid.NewGuid(),
+            Kind = CloudRevisionKind.Recovery,
+            CapturedAtUtc = now.AddMinutes(-3),
+        };
+        var newerRecovery = new CloudOutboxRecord
+        {
+            RevisionId = Guid.NewGuid(),
+            Kind = CloudRevisionKind.Recovery,
+            CapturedAtUtc = now.AddMinutes(-1),
+        };
+        var session = new CloudOutboxRecord
+        {
+            RevisionId = Guid.NewGuid(),
+            Kind = CloudRevisionKind.Session,
+            CapturedAtUtc = now,
+        };
+
+        var ordered = SteamCloudCoordinator.OrderPending(
+            [olderRecovery, saved, newerRecovery, session]);
+
+        AssertThat(ordered.Select(record => record.RevisionId).ToArray()).ContainsExactly(
+            session.RevisionId,
+            saved.RevisionId,
+            newerRecovery.RevisionId,
+            olderRecovery.RevisionId);
+    }
+
+    [TestCase]
+    public async Task RevisionPackageUsesManifestLastAndValidChunkHashes()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ciallo-durability-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var path = Path.Combine(directory, "source.ciallo");
+            var bytes = new byte[SteamCloudOptions.ChunkByteLength + 31];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+            await File.WriteAllBytesAsync(path, bytes);
+            var contentSha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+            var preservedConflictId = Guid.NewGuid();
+            var record = new CloudOutboxRecord
+            {
+                RevisionId = Guid.NewGuid(),
+                DocumentId = Guid.NewGuid(),
+                Kind = CloudRevisionKind.Recovery,
+                SupersededRevisionIds = [preservedConflictId],
+                SessionId = Guid.NewGuid(),
+                DeviceId = Guid.NewGuid(),
+                SourcePath = path,
+                ByteLength = bytes.Length,
+                ContentSha256 = contentSha256,
+                CapturedAtUtc = DateTimeOffset.UtcNow,
+            };
+
+            var package = CloudRevisionPackageBuilder.Build(record);
+            AssertThat(package.Manifest.Chunks.Length).IsEqual(2);
+            AssertThat(package.Manifest.Chunks[0].ByteLength).IsEqual(SteamCloudOptions.ChunkByteLength);
+            AssertThat(package.Manifest.Chunks[1].ByteLength).IsEqual(31);
+            AssertThat(package.Manifest.ContentSha256).IsEqual(contentSha256);
+            AssertThat(package.Manifest.SupersededRevisionIds).ContainsExactly(preservedConflictId);
+            AssertThat(package.UploadFiles[^1].FileName).IsEqual(package.ManifestFileName);
+            foreach (var chunk in package.Manifest.Chunks)
+            {
+                var expected = bytes.AsSpan(
+                    chunk.Index * SteamCloudOptions.ChunkByteLength,
+                    chunk.ByteLength);
+                var expectedSha256 = Convert.ToHexString(SHA256.HashData(expected)).ToLowerInvariant();
+                AssertThat(chunk.Sha256).IsEqual(expectedSha256);
+            }
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase]
+    public async Task CloudCatalogCachesOnlyManifestsWithSha1()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ciallo-catalog-cache-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var steamId = 76561198000000000UL;
+            var options = new SteamCloudOptions { AppId = 4103990, OAuthClientId = "test-client" };
+            var files = new DurabilityFileStore(directory);
+            DurabilityFiles.WriteJson(
+                Path.Combine(files.RootPath, "steam-oauth-token.json"),
+                new StoredSteamOAuthToken
+                {
+                    AccessToken = "test-token",
+                    SteamId = steamId,
+                });
+
+            var handler = new CatalogManifestHandler();
+            using var httpClient = new System.Net.Http.HttpClient(handler);
+            var protocol = new SteamCloudWebApiClient(httpClient);
+            var authorization = new SteamCloudAuthorization(options, steamId, files.RootPath, httpClient);
+            var authorized = new AuthorizedSteamCloudClient(protocol, options, authorization);
+            var catalog = new SteamCloudCatalogService(
+                options,
+                files,
+                new CloudOutboxStore(files),
+                authorized,
+                protocol);
+            var manifest = new CloudRevisionManifest
+            {
+                RevisionId = Guid.NewGuid(),
+                DocumentId = Guid.NewGuid(),
+                Kind = CloudRevisionKind.Saved,
+                DeviceId = Guid.NewGuid(),
+                DocumentName = "First",
+                CapturedAtUtc = DateTimeOffset.UnixEpoch,
+                ContentSha256 = Convert.ToHexString(SHA256.HashData(Array.Empty<byte>())).ToLowerInvariant(),
+            };
+
+            handler.SetManifest(manifest, includeSha1: true);
+            var first = await catalog.RefreshAsync(CancellationToken.None);
+            AssertThat(first.Documents.Single().DocumentName).IsEqual("First");
+            AssertThat(handler.ManifestDownloadCount).IsEqual(1);
+
+            await catalog.RefreshAsync(CancellationToken.None);
+            AssertThat(handler.ManifestDownloadCount).IsEqual(1);
+
+            handler.SetManifest(manifest with { DocumentName = "Changed" }, includeSha1: true);
+            var changed = await catalog.RefreshAsync(CancellationToken.None);
+            AssertThat(changed.Documents.Single().DocumentName).IsEqual("Changed");
+            AssertThat(handler.ManifestDownloadCount).IsEqual(2);
+
+            handler.SetManifest(manifest with { DocumentName = "No hash" }, includeSha1: false);
+            await catalog.RefreshAsync(CancellationToken.None);
+            await catalog.RefreshAsync(CancellationToken.None);
+            AssertThat(handler.ManifestDownloadCount).IsEqual(4);
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase]
+    public async Task SteamCloudUploadCompletesCommittedBatch()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ciallo-steam-api-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var steamId = 76561198000000000UL;
+            DurabilityFiles.WriteJson(
+                Path.Combine(directory, "steam-oauth-token.json"),
+                new StoredSteamOAuthToken
+                {
+                    AccessToken = "test-token",
+                    SteamId = steamId,
+                });
+            var options = new SteamCloudOptions { AppId = 4103990, OAuthClientId = "test-client" };
+            var handler = new SteamCloudApiHandler();
+            using var httpClient = new System.Net.Http.HttpClient(handler);
+            var authorization = new SteamCloudAuthorization(options, steamId, directory, httpClient);
+            var client = new AuthorizedSteamCloudClient(
+                new SteamCloudWebApiClient(httpClient),
+                options,
+                authorization);
+
+            await client.ModifyBatchAsync(
+                [new SteamCloudUploadFile("ciallo/v1/test.bin", [1, 2, 3])],
+                [],
+                CancellationToken.None);
+
+            AssertThat(handler.Calls.ToArray()).ContainsExactly(
+                "BeginAppUploadBatch",
+                "BeginHTTPUpload",
+                "PUT",
+                "CommitHTTPUpload",
+                "CompleteAppUploadBatch");
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase]
+    public async Task SteamCloudRejectedTokenRequiresNewAuthorization()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ciallo-steam-auth-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            var steamId = 76561198000000000UL;
+            var tokenPath = Path.Combine(directory, "steam-oauth-token.json");
+            DurabilityFiles.WriteJson(
+                tokenPath,
+                new StoredSteamOAuthToken
+                {
+                    AccessToken = "revoked-token",
+                    SteamId = steamId,
+                });
+            var options = new SteamCloudOptions { AppId = 4103990, OAuthClientId = "test-client" };
+            using var httpClient = new System.Net.Http.HttpClient(new RejectedSteamCloudApiHandler());
+            var authorization = new SteamCloudAuthorization(options, steamId, directory, httpClient);
+            var client = new AuthorizedSteamCloudClient(
+                new SteamCloudWebApiClient(httpClient),
+                options,
+                authorization);
+
+            var authorizationRequired = false;
+            try
+            {
+                await client.EnumerateFilesAsync();
+            }
+            catch (SteamWebApiAuthorizationException)
+            {
+                authorizationRequired = true;
+            }
+
+            AssertThat(authorizationRequired).IsTrue();
+            AssertThat(authorization.Status.State).IsEqual(SteamCloudAuthorizationState.AuthorizationRequired);
+            AssertThat(File.Exists(tokenPath)).IsFalse();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase]
+    public void DurabilityJsonKeepsCompactIdentifiers()
+    {
+        var revisionId = Guid.NewGuid();
+        var documentId = Guid.NewGuid();
+        var parentRevisionId = Guid.NewGuid();
+        var supersededRevisionId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        var deviceId = Guid.NewGuid();
+        var manifest = new CloudRevisionManifest
+        {
+            RevisionId = revisionId,
+            DocumentId = documentId,
+            ParentRevisionId = parentRevisionId,
+            SupersededRevisionIds = [supersededRevisionId],
+            SessionId = sessionId,
+            DeviceId = deviceId,
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(manifest, DurabilityFiles.JsonOptions);
+        var roundTrip = System.Text.Json.JsonSerializer.Deserialize<CloudRevisionManifest>(
+            json,
+            DurabilityFiles.JsonOptions)!;
+
+        AssertThat(json.Contains(revisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(json.Contains(documentId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(json.Contains(parentRevisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(json.Contains(supersededRevisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(json.Contains(sessionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(json.Contains(deviceId.ToString("N"), StringComparison.Ordinal)).IsTrue();
+        AssertThat(roundTrip.RevisionId).IsEqual(revisionId);
+        AssertThat(roundTrip.DocumentId).IsEqual(documentId);
+        AssertThat(roundTrip.ParentRevisionId).IsEqual(parentRevisionId);
+        AssertThat(roundTrip.SupersededRevisionIds).ContainsExactly(supersededRevisionId);
+        AssertThat(roundTrip.SessionId).IsEqual(sessionId);
+        AssertThat(roundTrip.DeviceId).IsEqual(deviceId);
+    }
+
+    [TestCase]
+    public void RecoverySnapshotIntervalLoadsTimeSpan()
+    {
+        var preference = new Preference();
+        JsonConvert.PopulateObject(
+            """{"RecoverySnapshotInterval":"00:02:30"}""",
+            preference,
+            Preference.JsonOptions);
+        AssertThat(preference.RecoverySnapshotInterval.Value).IsEqual(TimeSpan.FromSeconds(150));
+        AssertThat(JsonConvert.SerializeObject(
+            preference.RecoverySnapshotInterval,
+            Preference.JsonOptions)).IsEqual("\"00:02:30\"");
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void RecoveryRetentionKeepsNewestSnapshotThatExceedsByteLimit()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ciallo-retention-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Large snapshot" } });
+        try
+        {
+            var snapshot = PersistenceSnapshotCapture.Capture(document, 1);
+            var store = new DurabilityFileStore(directory);
+            var result = store.WriteRecoverySnapshot(new RecoveryWriteRequest(
+                snapshot,
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                store.DeviceId,
+                "Large snapshot",
+                "",
+                new RecoveryRetentionPolicy(24, 256, 1)));
+
+            AssertThat(result.Retention.LimitExceeded).IsTrue();
+            AssertThat(File.Exists(store.GetRecoverySnapshotPath(result.Snapshot))).IsTrue();
+            AssertThat(store.ListRecoverySnapshots(snapshot.DocumentId).Count).IsEqual(1);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task PersistenceSnapshotIsDetachedFromLaterWorldChanges()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-snapshot-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Before" } });
+        var shape = document.World.Create();
+        shape.Tag<ToSerializeTag>();
+        var originalPositions = ImmutableArray.Create(new Vector2(1, 2), new Vector2(3, 4));
+        shape.Add(new SampledPolyline { Positions = { Value = originalPositions } });
+
+        try
+        {
+            var snapshot = PersistenceSnapshotCapture.Capture(document, 7);
+            var documentId = snapshot.DocumentId;
+            document.Get<DocumentSetting>().Name.Value = "After";
+            shape.Get<SampledPolyline>().Positions.Value = ImmutableArray.Create(new Vector2(9, 9));
+
+            await Task.Run(() => DuckDbProjectSerializer.Save(snapshot, path));
+            var loaded = DuckDbProjectSerializer.Load(path);
+            AssertThat(loaded.Get<DocumentSetting>().DocumentId.Value).IsEqual(documentId);
+            AssertThat(loaded.Get<DocumentSetting>().Name.Value).IsEqual("Before");
+            var query = loaded.World.CreateQuery().With<SampledPolyline>().Build();
+            var loadedShape = Entity.Null;
+            foreach (var entity in query.EnumerateWithEntities())
+                loadedShape = entity;
+            AssertThat(loadedShape.Get<SampledPolyline>().Positions.Value.Length).IsEqual(2);
+            AssertThat(loadedShape.Get<SampledPolyline>().Positions.Value[1]).IsEqual(new Vector2(3, 4));
+            DisposeWorld(loaded.World);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void ManualSaveRoundTripsEntityReferences()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-manual-save-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Manual" } });
+        var brush = document.World.Create();
+        brush.Tag<ToSerializeTag>();
+        var polygon = document.World.Create();
+        polygon.Tag<ToSerializeTag>();
+        polygon.Add(new FilledPolygonSetting { BrushE = { Value = brush } });
+
+        try
+        {
+            // Save goes through PersistenceSnapshotCapture, which resolves the live BrushE entity
+            // reference to a positional id; Load must reconstruct it as a real entity again.
+            AppDocumentManager.Save(document, path);
+            var loaded = DuckDbProjectSerializer.Load(path);
+
+            var query = loaded.World.CreateQuery().With<FilledPolygonSetting>().Build();
+            var loadedPolygon = Entity.Null;
+            foreach (var entity in query.EnumerateWithEntities())
+                loadedPolygon = entity;
+            var referencedBrush = loadedPolygon.Get<FilledPolygonSetting>().BrushE.Value;
+            AssertThat(referencedBrush.IsNull).IsFalse();
+            AssertThat(referencedBrush.Has<FilledPolygonSetting>()).IsFalse();
+            DisposeWorld(loaded.World);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public void SaveRoundTripsPrivateAndInheritedTreeFields()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-tree-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Tree" } });
+        var parent = document.World.Create();
+        parent.Tag<ToSerializeTag>();
+        parent.Add(new LayerTreeNode());
+        parent.Get<LayerTreeNode>().Init(parent);
+        var child = document.World.Create();
+        child.Tag<ToSerializeTag>();
+        child.Add(new LayerTreeNode());
+        child.Get<LayerTreeNode>().Init(child);
+        // Fills private _children (readonly EntityArray) on parent and private _parent
+        // (reactive EntityRef) on child — the DynamicMethod accessor paths.
+        parent.Get<LayerTreeNode>().AddChild(child);
+
+        try
+        {
+            AppDocumentManager.Save(document, path);
+            var loaded = DuckDbProjectSerializer.Load(path);
+
+            // Find the node whose _children (readonly EntityArray) round-tripped our AddChild, and
+            // confirm the child's _parent (reactive EntityRef) points back — both private fields.
+            var parentEntity = Entity.Null;
+            var query = loaded.World.CreateQuery().With<LayerTreeNode>().Build();
+            foreach (var entity in query.EnumerateWithEntities())
+                if (entity.Get<LayerTreeNode>().Children.Count == 1)
+                    parentEntity = entity;
+
+            AssertThat(parentEntity.IsNull).IsFalse();
+            var loadedChild = parentEntity.Get<LayerTreeNode>().Children[0];
+            AssertThat(loadedChild.Get<LayerTreeNode>().ParentValue).IsEqual(parentEntity);
+            DisposeWorld(loaded.World);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    private static CloudRevisionManifest Revision(
+        Guid documentId,
+        Guid revisionId,
+        Guid? parentRevisionId = null,
+        Guid[] supersededRevisionIds = null)
+    {
+        return new CloudRevisionManifest
+        {
+            RevisionId = revisionId,
+            DocumentId = documentId,
+            Kind = CloudRevisionKind.Saved,
+            ParentRevisionId = parentRevisionId,
+            SupersededRevisionIds = supersededRevisionIds ?? [],
+        };
+    }
+
+    private static void DisposeWorld(World world)
+    {
+        var query = world.CreateQuery().Build();
+        foreach (var entity in query.EnumerateWithEntities())
+            entity.Delete();
+        world.Dispose();
+    }
+
+    private sealed class SteamCloudApiHandler : HttpMessageHandler
+    {
+        public readonly System.Collections.Generic.List<string> Calls = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (request.Method == HttpMethod.Put)
+            {
+                Calls.Add("PUT");
+                var bytes = await request.Content!.ReadAsByteArrayAsync(cancellationToken);
+                AssertThat(bytes).ContainsExactly(1, 2, 3);
+                return Response("{}");
+            }
+
+            var method = request.RequestUri!.Segments[^2].TrimEnd('/');
+            Calls.Add(method);
+            return method switch
+            {
+                "BeginAppUploadBatch" => Response("""{"response":{"batch_id":"42","app_change_number":"9"}}"""),
+                "BeginHTTPUpload" => Response("""
+                    {"response":{"ugcid":"7","timestamp":"8","url_host":"storage.test","url_path":"/upload","use_https":true,"request_headers":[]}}
+                    """),
+                "CommitHTTPUpload" => Response("""{"response":{"file_committed":true}}"""),
+                "CompleteAppUploadBatch" => Response(""),
+                _ => throw new InvalidOperationException("Unexpected Steam WebAPI method " + method),
+            };
+        }
+
+        private static HttpResponseMessage Response(string json)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json"),
+            };
+            response.Headers.Add("x-eresult", "1");
+            return response;
+        }
+    }
+
+    private sealed class CatalogManifestHandler : HttpMessageHandler
+    {
+        private byte[] _manifestBytes;
+        private string _manifestFileName;
+        private bool _includeSha1;
+
+        public int ManifestDownloadCount { get; private set; }
+
+        public void SetManifest(CloudRevisionManifest manifest, bool includeSha1)
+        {
+            _manifestBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
+                manifest,
+                DurabilityFiles.JsonOptions);
+            _manifestFileName = SteamCloudPaths.RevisionManifest(
+                manifest.Kind,
+                manifest.DocumentId,
+                manifest.RevisionId);
+            _includeSha1 = includeSha1;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (request.RequestUri!.Host == "download.test")
+            {
+                ManifestDownloadCount++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new ByteArrayContent(_manifestBytes),
+                });
+            }
+
+            if (!request.RequestUri.AbsolutePath.Contains("/ICloudService/EnumerateUserFiles/", StringComparison.Ordinal))
+                throw new InvalidOperationException("Unexpected Steam Cloud request " + request.RequestUri);
+
+            var file = new Dictionary<string, object>
+            {
+                ["appid"] = 4103990,
+                ["ugcid"] = "11",
+                ["filename"] = _manifestFileName,
+                ["timestamp"] = "1710000000",
+                ["file_size"] = _manifestBytes.Length,
+                ["url"] = "https://download.test/manifest",
+                ["steamid_creator"] = "76561198000000000",
+                ["flags"] = 0,
+                ["platforms_to_sync"] = new[] { SteamCloudPlatforms.All },
+            };
+            if (_includeSha1)
+                file["file_sha"] = Convert.ToHexString(SHA1.HashData(_manifestBytes)).ToLowerInvariant();
+
+            var json = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                response = new
+                {
+                    files = new[] { file },
+                    total_files = 1,
+                },
+            });
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, Encoding.UTF8, "application/json"),
+            };
+            response.Headers.Add("x-eresult", "1");
+            return Task.FromResult(response);
+        }
+    }
+
+    private sealed class RejectedSteamCloudApiHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Forbidden));
+        }
+    }
+}

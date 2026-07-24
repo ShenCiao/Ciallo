@@ -19,8 +19,8 @@ on:
         description: Artifact commit SHA.
         required: true
         type: string
-      tag_kind:
-        description: rc, release, hotfix, or manual.
+      build_kind:
+        description: development, release, hotfix, or manual.
         required: false
         default: manual
         type: string
@@ -73,7 +73,7 @@ jobs:
         env:
           INPUT_APP_ID: ${{ inputs.app_id }}
           DEFAULT_APP_ID: ${{ vars.STEAM_APP_ID }}
-          TAG_KIND: ${{ inputs.tag_kind }}
+          BUILD_KIND: ${{ inputs.build_kind }}
           STEAM_BRANCH: ${{ inputs.steam_branch }}
           RELEASE_TITLE: ${{ inputs.release_title }}
           SOURCE_MODE: ${{ inputs.source_mode }}
@@ -92,9 +92,7 @@ jobs:
           fi
 
           if [ "$STEAM_BRANCH" = "__auto__" ]; then
-            if [ "$TAG_KIND" = "rc" ]; then
-              release_branch="development"
-            elif [ "$TAG_KIND" = "release" ] || [ "$TAG_KIND" = "hotfix" ]; then
+            if [ "$BUILD_KIND" = "release" ] || [ "$BUILD_KIND" = "hotfix" ]; then
               # Empty releaseBranch uploads only; default branch promotion stays manual.
               release_branch=""
             else
@@ -113,8 +111,8 @@ jobs:
           short_sha="${SHA:0:7}"
           if [ -n "${CUSTOM:-}" ]; then
             description="$CUSTOM"
-          elif [ "$TAG_KIND" = "rc" ] || [ "$TAG_KIND" = "release" ] || [ "$TAG_KIND" = "hotfix" ]; then
-            description="$RELEASE_TITLE | $TAG_KIND | $short_sha"
+          elif [ "$BUILD_KIND" = "release" ] || [ "$BUILD_KIND" = "hotfix" ]; then
+            description="$RELEASE_TITLE | $BUILD_KIND | $short_sha"
           else
             description="Ciallo $VERSION | $SOURCE_MODE | $SOURCE_LABEL | $short_sha"
           fi
@@ -196,7 +194,7 @@ jobs:
         env:
           SOURCE_MODE: ${{ inputs.source_mode }}
           SOURCE_LABEL: ${{ inputs.source_label }}
-          KIND: ${{ inputs.tag_kind }}
+          KIND: ${{ inputs.build_kind }}
           SHA: ${{ inputs.head_sha }}
           APP_ID: ${{ steps.steam.outputs.app_id }}
           STEAM_BRANCH: ${{ steps.steam.outputs.release_branch }}
@@ -211,7 +209,7 @@ jobs:
             echo ""
             echo "- Source mode: $SOURCE_MODE"
             echo "- Source ref or run id: $SOURCE_LABEL"
-            echo "- Release kind: $KIND"
+            echo "- Build kind: $KIND"
             echo "- Commit SHA: ${SHA:-unknown}"
             echo "- Steam app id: $APP_ID"
             echo "- Steam branch: ${STEAM_BRANCH:-default upload only}"
@@ -223,7 +221,7 @@ jobs:
               echo "> This often means the \`STEAM_CONFIG_VDF\` Steam Guard credential"
               echo "> expired and must be regenerated locally. **Contact the project"
               echo "> owner** to refresh the credential and re-run this job."
-            elif [ "$KIND" = "rc" ]; then
+            elif [ "$STEAM_BRANCH" = "development" ]; then
               echo "> [!NOTE]"
               echo "> Uploaded and set live on Steam branch **development** automatically."
               echo "> Testers on that branch will update on next client restart."

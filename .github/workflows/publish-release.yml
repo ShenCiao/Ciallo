@@ -1,0 +1,122 @@
+name: Publish Ciallo Release
+
+"on":
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Immutable release tag already created for the verified commit.
+        required: true
+        type: string
+      release_title:
+        description: GitHub and Steam release title.
+        required: true
+        type: string
+      project_version:
+        description: Ciallo project version.
+        required: true
+        type: string
+      head_sha:
+        description: Verified artifact commit SHA.
+        required: true
+        type: string
+      build_kind:
+        description: release or hotfix.
+        required: true
+        type: string
+      prerelease:
+        description: Publish the GitHub Release as a prerelease.
+        required: true
+        type: boolean
+      hotfix_base_version:
+        description: Stable base version for hotfix cleanup.
+        required: false
+        default: ""
+        type: string
+      sdk_version:
+        description: Custom Godot SDK package version.
+        required: true
+        type: string
+      engine_status:
+        description: Custom Godot engine status.
+        required: true
+        type: string
+      engine_release_tag:
+        description: Custom Godot GitHub release tag.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  github:
+    name: Publish GitHub Release
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          pattern: Ciallo-*
+          path: packages
+          merge-multiple: true
+
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > release-notes.md <<'EOF'
+          ${{ inputs.release_title }}
+
+          - Godot SDK: Godot.NET.Sdk/${{ inputs.sdk_version }}
+          - Custom engine status: ${{ inputs.engine_status }}
+          - Custom engine release: ${{ inputs.engine_release_tag }}
+          - Windows, Linux, and macOS artifacts are exported from the same SDK-locked build.
+          - macOS `.app` is signed with Developer ID, notarized by Apple, stapled, and Gatekeeper-verified in CI.
+          - Release kind: ${{ inputs.build_kind }}
+          EOF
+
+      - name: Publish
+        uses: softprops/action-gh-release@v3
+        with:
+          files: packages/*
+          name: ${{ inputs.release_title }}
+          tag_name: ${{ inputs.tag_name }}
+          prerelease: ${{ inputs.prerelease }}
+          fail_on_unmatched_files: true
+          body_path: release-notes.md
+
+      - name: Remove older hotfix prereleases
+        if: inputs.build_kind == 'hotfix'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_VERSION: ${{ inputs.hotfix_base_version }}
+          CURRENT_TAG: ${{ inputs.tag_name }}
+          REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for tag in $(gh release list --repo "$REPO" --limit 100 --json tagName,isPrerelease \
+            --jq ".[] | select(.isPrerelease == true and (.tagName | startswith(\"v${BASE_VERSION}-hotfix.\")) and .tagName != \"$CURRENT_TAG\") | .tagName"); do
+            echo "Deleting old hotfix GitHub Release: $tag"
+            gh release delete "$tag" --repo "$REPO" --yes
+          done
+
+  steam:
+    name: Push to Steam
+    uses: ./.github/workflows/steam-upload.yml
+    permissions:
+      actions: read
+      contents: read
+    with:
+      source_mode: release-tag
+      source_label: ${{ inputs.tag_name }}
+      project_version: ${{ inputs.project_version }}
+      head_sha: ${{ inputs.head_sha }}
+      build_kind: ${{ inputs.build_kind }}
+      release_title: ${{ inputs.release_title }}
+      app_id: ${{ vars.STEAM_APP_ID }}
+      steam_branch: __auto__
+    secrets: inherit

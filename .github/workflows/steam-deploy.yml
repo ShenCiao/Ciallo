@@ -155,7 +155,7 @@ jobs:
       source_label: ${{ needs.meta.outputs.source_label }}
       project_version: ${{ needs.meta.outputs.project_version }}
       head_sha: ${{ needs.meta.outputs.head_sha }}
-      tag_kind: manual
+      build_kind: manual
       app_id: ${{ needs.meta.outputs.app_id }}
       steam_branch: ${{ inputs.steam_branch }}
       build_description: ${{ inputs.build_description }}

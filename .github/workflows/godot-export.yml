@@ -1,7 +1,7 @@
 name: Godot Export
 
-# Shared export pipeline. `checkout_ref` drives tag semantics because
-# workflow_call refs describe the caller, not always the built commit.
+# Shared export pipeline. `checkout_ref` selects the exact source commit;
+# `release_ref` optionally applies stable or hotfix semantics before that tag exists.
 #
 # Distribution macOS builds use Godot codesign=3 with injected Developer ID
 # settings, then notarize and emit Ciallo-macOS.zip. Build-only runs emit
@@ -13,6 +13,11 @@ on:
       checkout_ref:
         description: Git ref to checkout and build (full ref like refs/tags/vX, or a bare tag/branch/SHA).
         required: true
+        type: string
+      release_ref:
+        description: Optional stable or hotfix tag semantics while checkout_ref remains an exact pre-tag SHA.
+        required: false
+        default: ""
         type: string
       sign_macos:
         description: Sign, notarize, staple, verify, and zip the macOS app for distribution.
@@ -31,8 +36,6 @@ on:
       APP_STORE_CONNECT_API_PRIVATE_KEY:
         required: false
     outputs:
-      project_name:
-        value: ${{ jobs.meta.outputs.project_name }}
       project_version:
         value: ${{ jobs.meta.outputs.project_version }}
       head_sha:
@@ -43,16 +46,8 @@ on:
         value: ${{ jobs.meta.outputs.engine_release_tag }}
       sdk_version:
         value: ${{ jobs.meta.outputs.sdk_version }}
-      tag_kind:
-        value: ${{ jobs.meta.outputs.tag_kind }}
-      is_release:
-        value: ${{ jobs.meta.outputs.is_release }}
-      is_prerelease:
-        value: ${{ jobs.meta.outputs.is_prerelease }}
       release_title:
         value: ${{ jobs.meta.outputs.release_title }}
-      hotfix_base_version:
-        value: ${{ jobs.meta.outputs.hotfix_base_version }}
 
 permissions:
   contents: read
@@ -76,14 +71,9 @@ jobs:
       engine_release_tag: ${{ steps.meta.outputs.engine_release_tag }}
       engine_status: ${{ steps.meta.outputs.engine_status }}
       head_sha: ${{ steps.meta.outputs.head_sha }}
-      hotfix_base_version: ${{ steps.meta.outputs.hotfix_base_version }}
-      is_release: ${{ steps.meta.outputs.is_release }}
-      is_prerelease: ${{ steps.meta.outputs.is_prerelease }}
-      project_name: ${{ steps.meta.outputs.project_name }}
       release_title: ${{ steps.meta.outputs.release_title }}
       project_version: ${{ steps.meta.outputs.project_version }}
       sdk_version: ${{ steps.meta.outputs.sdk_version }}
-      tag_kind: ${{ steps.meta.outputs.tag_kind }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -98,6 +88,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           CHECKOUT_REF: ${{ inputs.checkout_ref }}
+          RELEASE_REF: ${{ inputs.release_ref }}
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
@@ -140,11 +131,18 @@ jobs:
             "X-GitHub-Api-Version" = "2022-11-28"
             Authorization = "Bearer $env:GH_TOKEN"
           }
-          $templateAsset = "godot-export-templates-$engineStatus.tpz"
+          $templateAssets = @(
+            "godot-export-templates-windows-x86_64-$engineStatus.zip"
+            "godot-export-templates-linux-x86_64-$engineStatus.zip"
+            "godot-export-templates-macos-arm64-$engineStatus.zip"
+          )
           $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GODOT_RELEASE_REPO/releases?per_page=100" -Headers $headers
-          $engineRelease = $releases | Where-Object { $_.assets.name -contains $templateAsset } | Select-Object -First 1
+          $engineRelease = $releases | Where-Object {
+            $assetNames = @($_.assets.name)
+            @($templateAssets | Where-Object { $_ -notin $assetNames }).Count -eq 0
+          } | Select-Object -First 1
           if (-not $engineRelease) {
-            throw "Could not find a $env:GODOT_RELEASE_REPO release containing '$templateAsset'."
+            throw "Could not find a $env:GODOT_RELEASE_REPO release containing all export templates for '$engineStatus'."
           }
           $engineReleaseTag = $engineRelease.tag_name
 
@@ -157,38 +155,24 @@ jobs:
           $releaseTitle = "$projectName $projectVersion"
           $retention = "2"
 
-          # checkout_ref, not github.ref_name, decides whether this is a release tag.
+          # release_ref carries release semantics for pre-tag builds. Otherwise
+          # checkout_ref decides whether this is a release tag.
           $checkoutRef = $env:CHECKOUT_REF
-          $refName = $checkoutRef
+          $semanticRef = if ([string]::IsNullOrEmpty($env:RELEASE_REF)) { $checkoutRef } else { $env:RELEASE_REF }
+          $refName = $semanticRef
           $treatAsTag = $false
-          if ($checkoutRef.StartsWith("refs/tags/")) {
+          if ($semanticRef.StartsWith("refs/tags/")) {
             $treatAsTag = $true
-            $refName = $checkoutRef.Substring("refs/tags/".Length)
-          } elseif ($checkoutRef.StartsWith("refs/")) {
+            $refName = $semanticRef.Substring("refs/tags/".Length)
+          } elseif ($semanticRef.StartsWith("refs/")) {
             $treatAsTag = $false
-          } elseif ($checkoutRef -match "^ft/[^/]+\.\d+$" -or $checkoutRef -match "^v\d+\.\d+\.\d+(-(rc|hotfix)\.\d+)?$") {
+          } elseif ($semanticRef -match "^v\d+\.\d+\.\d+(-hotfix\.\d+)?$") {
             $treatAsTag = $true
-            $refName = $checkoutRef
+            $refName = $semanticRef
           }
 
           if ($treatAsTag) {
-            if ($refName -match "^ft/[^/]+\.\d+$") {
-              $tagKind = "feature-test"
-              $retention = "2"
-            } elseif ($refName -match "^v(?<version>\d+\.\d+\.\d+)-rc\.\d+$") {
-              if ($Matches.version -ne $projectVersion) {
-                throw "RC tag version '$($Matches.version)' must match project.godot config/version '$projectVersion'."
-              }
-              git merge-base --is-ancestor HEAD origin/dev
-              if ($LASTEXITCODE -ne 0) {
-                throw "RC tag '$refName' must point to a commit contained in origin/dev."
-              }
-              $tagKind = "rc"
-              $isRelease = "true"
-              $isPrerelease = "true"
-              $releaseTitle = "$projectName $refName"
-              $retention = "30"
-            } elseif ($refName -match "^v(?<version>\d+\.\d+\.\d+)-hotfix\.(?<number>[1-9]\d*)$") {
+            if ($refName -match "^v(?<version>\d+\.\d+\.\d+)-hotfix\.(?<number>[1-9]\d*)$") {
               $hotfixVersion = $Matches.version
               $hotfixTag = "v$hotfixVersion"
               if ($hotfixVersion -ne $projectVersion) {
@@ -222,7 +206,7 @@ jobs:
               $releaseTitle = "$projectName $refName"
               $retention = "30"
             } else {
-              throw "Unsupported tag '$refName'. Use ft/<slug>.<N>, vX.Y.Z-rc.N, vX.Y.Z-hotfix.N, or vX.Y.Z."
+              throw "Unsupported tag '$refName'. Use vX.Y.Z-hotfix.N or vX.Y.Z."
             }
           }
 
@@ -230,14 +214,9 @@ jobs:
           "engine_release_tag=$engineReleaseTag" >> $env:GITHUB_OUTPUT
           "engine_status=$engineStatus" >> $env:GITHUB_OUTPUT
           "head_sha=$headSha" >> $env:GITHUB_OUTPUT
-          "hotfix_base_version=$hotfixBaseVersion" >> $env:GITHUB_OUTPUT
-          "is_release=$isRelease" >> $env:GITHUB_OUTPUT
-          "is_prerelease=$isPrerelease" >> $env:GITHUB_OUTPUT
-          "project_name=$projectName" >> $env:GITHUB_OUTPUT
           "release_title=$releaseTitle" >> $env:GITHUB_OUTPUT
           "project_version=$projectVersion" >> $env:GITHUB_OUTPUT
           "sdk_version=$sdkVersion" >> $env:GITHUB_OUTPUT
-          "tag_kind=$tagKind" >> $env:GITHUB_OUTPUT
 
           "Project: $projectName $projectVersion"
           "Commit: $headSha"
@@ -245,6 +224,7 @@ jobs:
           "Engine status: $engineStatus"
           "Engine release: $engineReleaseTag"
           "Checkout ref: $checkoutRef"
+          "Release ref: $env:RELEASE_REF"
           "Tag kind: $tagKind"
 
       - name: Validate localization CSV
@@ -286,6 +266,7 @@ jobs:
             runner: windows-latest
             editor_asset: godot-windows-x86_64
             editor_glob: godot*.exe
+            template_asset: godot-export-templates-windows-x86_64
             preset: Windows Desktop
             output_dir: build/windows
             output_file: Ciallo.exe
@@ -295,6 +276,7 @@ jobs:
             runner: ubuntu-24.04
             editor_asset: godot-linuxbsd-x86_64
             editor_glob: godot*
+            template_asset: godot-export-templates-linux-x86_64
             preset: Linux
             output_dir: build/linux
             output_file: Ciallo
@@ -304,6 +286,7 @@ jobs:
             runner: macos-26
             editor_asset: godot-macos-arm64
             editor_glob: godot*
+            template_asset: godot-export-templates-macos-arm64
             preset: macOS
             output_dir: build/macos
             output_file: Ciallo.app
@@ -330,6 +313,7 @@ jobs:
           engine_status: ${{ needs.meta.outputs.engine_status }}
           editor_asset: ${{ matrix.editor_asset }}
           editor_glob: ${{ matrix.editor_glob }}
+          template_asset: ${{ matrix.template_asset }}
           release_repo: ${{ env.GODOT_RELEASE_REPO }}
           github_token: ${{ github.token }}
 

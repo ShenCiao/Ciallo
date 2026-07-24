@@ -1,14 +1,13 @@
 name: Ciallo Publish Release
 
-# Gated workflow that tags origin/main as v<version> and dispatches github-release.yml.
-# The dispatch ref picker is ignored; published code always comes from origin/main.
+# Builds and verifies origin/main before creating its immutable release tag.
+# GitHub and Steam publish the artifacts produced earlier in this same run.
 
-on:
+"on":
   workflow_dispatch:
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 concurrency:
   group: ciallo-release
@@ -18,46 +17,110 @@ env:
   PROJECT_PATH: Ciallo
 
 jobs:
-  tag:
-    name: Tag and dispatch release
+  prepare:
+    name: Resolve release commit
     runs-on: ubuntu-24.04
-    # Enforces publish permission: run pauses here for a required reviewer.
-    environment: production
+    outputs:
+      head_sha: ${{ steps.release.outputs.head_sha }}
+      tag: ${{ steps.release.outputs.tag }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ github.token }}
 
-      - name: Create release tag and dispatch pipeline
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
+      - name: Resolve release metadata
+        id: release
         shell: bash
         run: |
           set -euo pipefail
 
           git fetch origin +refs/heads/main:refs/remotes/origin/main --tags
+          git checkout --detach origin/main
           head_sha="$(git rev-parse HEAD)"
-          if ! git merge-base --is-ancestor "$head_sha" origin/main; then
-            echo "Refusing to tag: HEAD $head_sha is not contained in origin/main."
-            exit 1
-          fi
-
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
-
           project_version="$(bash .github/scripts/read-project-version.sh "$PROJECT_PATH")"
           release_tag="v$project_version"
-          # Same-version publish force-moves the tag and updates the release.
+
           if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
-            echo "Tag $release_tag already exists; moving it to $head_sha (overwriting the previous $release_tag)."
+            tagged_sha="$(git rev-list -n 1 "$release_tag")"
+            if [ "$tagged_sha" != "$head_sha" ]; then
+              echo "Immutable tag $release_tag already points to $tagged_sha, not $head_sha. Increase the project version."
+              exit 1
+            fi
           fi
 
-          git tag -f -a "$release_tag" "$head_sha" -m "Ciallo ${release_tag#v}"
-          git push -f origin "refs/tags/$release_tag"
+          {
+            echo "head_sha=$head_sha"
+            echo "tag=$release_tag"
+          } >> "$GITHUB_OUTPUT"
 
-          gh workflow run github-release.yml --repo "$REPO" --ref "$release_tag"
-          echo "Published $release_tag at origin/main@$head_sha and dispatched the release pipeline."
+  export:
+    name: Export verified release
+    needs: prepare
+    uses: ./.github/workflows/godot-export.yml
+    permissions:
+      contents: read
+    with:
+      checkout_ref: ${{ needs.prepare.outputs.head_sha }}
+      release_ref: ${{ needs.prepare.outputs.tag }}
+      sign_macos: true
+    secrets: inherit
+
+  tag:
+    name: Create immutable release tag
+    needs: [prepare, export]
+    runs-on: ubuntu-24.04
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.head_sha }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Create tag
+        env:
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin --tags
+          if git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null; then
+            tagged_sha="$(git rev-list -n 1 "$RELEASE_TAG")"
+            if [ "$tagged_sha" != "$HEAD_SHA" ]; then
+              echo "Immutable tag $RELEASE_TAG already points to $tagged_sha, not $HEAD_SHA."
+              exit 1
+            fi
+            echo "Reusing $RELEASE_TAG at $HEAD_SHA."
+            exit 0
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" "$HEAD_SHA" -m "Ciallo ${RELEASE_TAG#v}"
+          git push origin "refs/tags/$RELEASE_TAG"
+
+  publish:
+    name: Publish verified release
+    needs: [prepare, export, tag]
+    uses: ./.github/workflows/publish-release.yml
+    permissions:
+      actions: read
+      contents: write
+    with:
+      tag_name: ${{ needs.prepare.outputs.tag }}
+      release_title: ${{ needs.export.outputs.release_title }}
+      project_version: ${{ needs.export.outputs.project_version }}
+      head_sha: ${{ needs.export.outputs.head_sha }}
+      build_kind: release
+      prerelease: false
+      sdk_version: ${{ needs.export.outputs.sdk_version }}
+      engine_status: ${{ needs.export.outputs.engine_status }}
+      engine_release_tag: ${{ needs.export.outputs.engine_release_tag }}
+    secrets: inherit

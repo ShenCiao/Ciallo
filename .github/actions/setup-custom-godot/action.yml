@@ -14,6 +14,9 @@ inputs:
   editor_glob:
     description: File glob used to locate the editor binary.
     required: true
+  template_asset:
+    description: Export template asset name prefix for the current platform.
+    required: true
   release_repo:
     description: GitHub repository that publishes custom Godot releases.
     required: true
@@ -34,6 +37,7 @@ runs:
         ENGINE_RELEASE_TAG: ${{ inputs.engine_release_tag }}
         ENGINE_STATUS: ${{ inputs.engine_status }}
         EDITOR_ASSET: ${{ inputs.editor_asset }}
+        TEMPLATE_ASSET: ${{ inputs.template_asset }}
         RELEASE_REPO: ${{ inputs.release_repo }}
         GH_TOKEN: ${{ inputs.github_token }}
       shell: pwsh
@@ -42,30 +46,20 @@ runs:
         New-Item -ItemType Directory -Force -Path .godot-ci | Out-Null
 
         $editorArchive = "$env:EDITOR_ASSET-$env:ENGINE_STATUS.zip"
-        $templateArchive = "godot-export-templates-$env:ENGINE_STATUS.tpz"
+        $templateArchive = "$env:TEMPLATE_ASSET-$env:ENGINE_STATUS.zip"
 
         gh release download $env:ENGINE_RELEASE_TAG --repo $env:RELEASE_REPO --pattern $editorArchive --dir .godot-ci
         gh release download $env:ENGINE_RELEASE_TAG --repo $env:RELEASE_REPO --pattern $templateArchive --dir .godot-ci
 
         Expand-Archive -LiteralPath ".godot-ci/$editorArchive" -DestinationPath .godot-ci/editor -Force
-        New-Item -ItemType Directory -Force -Path .godot-ci/templates_src | Out-Null
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory(
-          (Resolve-Path ".godot-ci/$templateArchive").Path,
-          (Resolve-Path ".godot-ci/templates_src").Path
-        )
+        Expand-Archive -LiteralPath ".godot-ci/$templateArchive" -DestinationPath .godot-ci/templates_src -Force
 
     - name: Install export templates
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
-        $versionFile = Get-ChildItem -LiteralPath .godot-ci/templates_src -Recurse -Filter version.txt | Select-Object -First 1
-        if (-not $versionFile) {
-          throw "Export template version.txt was not found."
-        }
-
-        $templateVersion = (Get-Content -LiteralPath $versionFile.FullName -Raw).Trim()
-        $templateDir = Split-Path -Parent $versionFile.FullName
+        $templateDir = (Resolve-Path .godot-ci/templates_src/templates).Path
+        $templateVersion = (Get-Content -LiteralPath (Join-Path $templateDir version.txt) -Raw).Trim()
 
         if ($IsWindows) {
           $dest = Join-Path $env:APPDATA "Godot/export_templates/$templateVersion"

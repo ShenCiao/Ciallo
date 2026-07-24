@@ -1,0 +1,59 @@
+name: Ciallo Development Build
+
+# Builds the current origin/dev commit and sets it live on Steam's development
+# branch. Development builds do not create tags or GitHub Releases.
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ciallo-development-build
+  cancel-in-progress: false
+
+jobs:
+  source:
+    name: Resolve dev commit
+    runs-on: ubuntu-24.04
+    outputs:
+      head_sha: ${{ steps.source.outputs.head_sha }}
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v5
+        with:
+          ref: dev
+
+      - name: Record source commit
+        id: source
+        shell: bash
+        run: echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  export:
+    name: Export development build
+    needs: source
+    uses: ./.github/workflows/godot-export.yml
+    permissions:
+      contents: read
+    with:
+      checkout_ref: ${{ needs.source.outputs.head_sha }}
+      sign_macos: true
+    secrets: inherit
+
+  steam:
+    name: Push to Steam development
+    needs: export
+    uses: ./.github/workflows/steam-upload.yml
+    permissions:
+      contents: read
+      actions: read
+    with:
+      source_mode: development
+      source_label: origin/dev
+      project_version: ${{ needs.export.outputs.project_version }}
+      head_sha: ${{ needs.export.outputs.head_sha }}
+      build_kind: development
+      app_id: ${{ vars.STEAM_APP_ID }}
+      steam_branch: development
+    secrets: inherit

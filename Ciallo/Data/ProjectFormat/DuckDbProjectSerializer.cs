@@ -277,7 +277,7 @@ public static class DuckDbProjectSerializer
                 break;
 
             case FieldShape.PrimitiveArray:
-                var list = ScalarConvert.ToDbList(field.ElementType, FieldDescriptor.EnumerateArray(value));
+                var list = field.BuildDbList(value);
                 builder.AddColumn(field.Name,
                     $"{builder.NextParam(list)}::{FieldDescriptor.DuckScalarType(field.ElementType)}[]");
                 break;
@@ -325,13 +325,7 @@ public static class DuckDbProjectSerializer
         for (int i = 0; i < leafCount; i++)
             leafLists[i] = new List<float>();
 
-        var leaves = new float[leafCount];
-        foreach (var element in FieldDescriptor.EnumerateArray(value))
-        {
-            codec.Decompose(element, leaves);
-            for (int i = 0; i < leafCount; i++)
-                leafLists[i].Add(leaves[i]);
-        }
+        codec.DecomposeInto(value, leafLists);
 
         // Bind one FLOAT[] per leaf, zip them positionally, then build each STRUCT from e[1..N].
         var zipArgs = leafLists.Select(ll => $"{builder.NextParam(ll)}::FLOAT[]");
@@ -460,10 +454,8 @@ public static class DuckDbProjectSerializer
 
             case FieldShape.StructArray:
                 {
-                    var elements = dbValue == null
-                        ? new List<object>()
-                        : ((IEnumerable)dbValue).Cast<object>().Select(d => field.Codec.Compose(AsDict(d))).ToList();
-                    field.SetProjectValue(instance, ContainerFactory.Build(field.ContainerKind, field.ElementType, elements));
+                    var rows = dbValue as IEnumerable ?? Array.Empty<object>();
+                    field.SetProjectValue(instance, field.Codec.ComposeArray(rows, field.ContainerKind));
                     break;
                 }
 

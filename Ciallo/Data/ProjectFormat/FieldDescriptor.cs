@@ -61,6 +61,9 @@ internal sealed class FieldDescriptor
     private readonly Func<object, object> _getFieldStorage;
     private readonly Action<object, object> _setProjectValue;
     private readonly Action<object, object> _setFieldStorage;
+    // PrimitiveArray only: boxing-free container -> DuckDB list, or null when the reflective
+    // ToDbList fallback is used (enum / widening element types).
+    private readonly Func<object, IList> _buildDbList;
 
     private FieldDescriptor(
         ComponentDescriptor component,
@@ -95,6 +98,9 @@ internal sealed class FieldDescriptor
         _getFieldStorage = FieldAccessorFactory.BuildGetFieldStorage(field);
         _setProjectValue = FieldAccessorFactory.BuildSetProjectValue(field, isReactive);
         _setFieldStorage = FieldAccessorFactory.BuildSetFieldStorage(field);
+        _buildDbList = shape == FieldShape.PrimitiveArray
+            ? FieldAccessorFactory.BuildPrimitiveDbList(elementType)
+            : null;
     }
 
     public static FieldDescriptor TryCreate(ComponentDescriptor component, FieldInfo field)
@@ -135,6 +141,18 @@ internal sealed class FieldDescriptor
     public void SetProjectValue(object component, object value) => _setProjectValue(component, value);
 
     public void SetFieldStorageObject(object component, object value) => _setFieldStorage(component, value);
+
+    /// <summary>
+    /// PrimitiveArray only: convert the field's array value to the typed list DuckDB binds. Uses a
+    /// boxing-free copy when the element type already matches its DuckDB list type, else the
+    /// reflective <see cref="ScalarConvert.ToDbList"/> fallback.
+    /// </summary>
+    public IList BuildDbList(object value)
+    {
+        if (_buildDbList != null && value != null)
+            return _buildDbList(value);
+        return ScalarConvert.ToDbList(ElementType, EnumerateArray(value));
+    }
 
     #endregion
 
@@ -267,6 +285,23 @@ internal sealed class FieldDescriptor
     #endregion
 
     #region Helpers
+
+    /// <summary>
+    /// Normalize one STRUCT row DuckDB returns (usually a Dictionary) to a leaf-name lookup.
+    /// Used by StructCodec to read leaves without boxing the composed element.
+    /// </summary>
+    public static IReadOnlyDictionary<string, object> AsStructDict(object structValue)
+    {
+        if (structValue is IReadOnlyDictionary<string, object> readOnly)
+            return readOnly;
+        if (structValue is IDictionary<string, object> dict)
+            return new Dictionary<string, object>(dict);
+
+        var result = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (DictionaryEntry entry in (IDictionary)structValue)
+            result[Convert.ToString(entry.Key)!] = entry.Value;
+        return result;
+    }
 
     /// <summary>Enumerate an array/list value as boxed elements, treating a default ImmutableArray as empty.</summary>
     public static IEnumerable<object> EnumerateArray(object value)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Frent;
 using Godot;
@@ -48,6 +49,17 @@ internal sealed record PersistenceEntityMap(int[] Keys, int[] Values);
 public static class PersistenceSnapshotCapture
 {
     private static readonly ConditionalWeakTable<GodotObject, BlobCacheEntry> BlobCache = new();
+    private delegate PersistenceComponentSnapshot CaptureComponentDelegate(
+        ComponentDescriptor descriptor,
+        Entity document,
+        IReadOnlyDictionary<Entity, int> entityToId);
+
+    private static readonly MethodInfo CaptureComponentMethod = typeof(PersistenceSnapshotCapture)
+        .GetMethod(nameof(CaptureComponent), BindingFlags.NonPublic | BindingFlags.Static)!;
+    private static readonly IReadOnlyDictionary<Type, CaptureComponentDelegate> ComponentCaptures =
+        BuildComponentCaptures();
+
+    internal static void WarmUp() => _ = ComponentCaptures.Count;
 
     public static PersistenceSnapshot Capture(Entity document, long persistenceEpoch)
     {
@@ -59,25 +71,7 @@ public static class PersistenceSnapshotCapture
 
         var componentSnapshots = new List<PersistenceComponentSnapshot>(registry.Components.Count);
         foreach (var descriptor in registry.Components)
-        {
-            var rows = new List<PersistenceComponentRow>();
-            for (int entityId = 0; entityId < entities.Count; entityId++)
-            {
-                var entity = entities[entityId];
-                if (!entity.Has(descriptor.ComponentType))
-                    continue;
-
-                var component = entity.Get(descriptor.ComponentType);
-                var values = new object[descriptor.Fields.Count];
-                for (int fieldIndex = 0; fieldIndex < descriptor.Fields.Count; fieldIndex++)
-                {
-                    var field = descriptor.Fields[fieldIndex];
-                    values[fieldIndex] = CaptureField(field, field.GetProjectValue(component), entityToId);
-                }
-                rows.Add(new PersistenceComponentRow(entityId, values));
-            }
-            componentSnapshots.Add(new PersistenceComponentSnapshot(descriptor, rows));
-        }
+            componentSnapshots.Add(ComponentCaptures[descriptor.ComponentType](descriptor, document, entityToId));
 
         return new PersistenceSnapshot(
             registry,
@@ -87,6 +81,57 @@ public static class PersistenceSnapshotCapture
             persistenceEpoch,
             DateTimeOffset.UtcNow,
             ProjectSettings.GetSetting("application/config/version", "unknown").AsString());
+    }
+
+    private static IReadOnlyDictionary<Type, CaptureComponentDelegate> BuildComponentCaptures()
+    {
+        var result = new Dictionary<Type, CaptureComponentDelegate>();
+        foreach (var descriptor in ProjectFormatRegistry.Shared.Components)
+        {
+            var capture = CaptureComponentMethod
+                .MakeGenericMethod(descriptor.ComponentType)
+                .CreateDelegate<CaptureComponentDelegate>();
+            result.Add(descriptor.ComponentType, capture);
+        }
+        return result;
+    }
+
+    private static PersistenceComponentSnapshot CaptureComponent<TComponent>(
+        ComponentDescriptor descriptor,
+        Entity document,
+        IReadOnlyDictionary<Entity, int> entityToId)
+    {
+        var rows = new List<PersistenceComponentRow>();
+        if (document.Has<TComponent>())
+            rows.Add(CaptureComponentRow(0, document.Get<TComponent>(), descriptor, entityToId));
+
+        var query = document.World.CreateQuery()
+            .With<TComponent>()
+            .Tagged<ToSerializeTag>()
+            .Build();
+        foreach (var (entity, component) in query.EnumerateWithEntities<TComponent>())
+        {
+            if (entity == document)
+                continue;
+            rows.Add(CaptureComponentRow(entityToId[entity], component.Value, descriptor, entityToId));
+        }
+
+        return new PersistenceComponentSnapshot(descriptor, rows);
+    }
+
+    private static PersistenceComponentRow CaptureComponentRow(
+        int entityId,
+        object component,
+        ComponentDescriptor descriptor,
+        IReadOnlyDictionary<Entity, int> entityToId)
+    {
+        var values = new object[descriptor.Fields.Count];
+        for (int fieldIndex = 0; fieldIndex < descriptor.Fields.Count; fieldIndex++)
+        {
+            var field = descriptor.Fields[fieldIndex];
+            values[fieldIndex] = CaptureField(field, field.GetProjectValue(component), entityToId);
+        }
+        return new PersistenceComponentRow(entityId, values);
     }
 
     private static object CaptureField(

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -85,6 +87,22 @@ internal static class FieldAccessorFactory
         var assign = Expression.Assign(Expression.Field(typedComponent, field), typedValue);
         return Expression.Lambda<Action<object, object>>(assign, componentParam, valueParam).Compile();
     }
+
+    // PrimitiveArray: when the CLR element type already equals its DuckDB list element type
+    // (float/int/double/long/Guid), bind a boxing-free strongly-typed copy. Otherwise return null so
+    // the caller uses the reflective ToDbList fallback (enum, and widening types like short/byte/ulong).
+    public static Func<object, IList> BuildPrimitiveDbList(Type elementType)
+    {
+        if (elementType != ScalarConvert.DbListElementType(elementType))
+            return null;
+
+        var method = typeof(FieldAccessorFactory)
+            .GetMethod(nameof(CopyToTypedList), BindingFlags.NonPublic | BindingFlags.Static)!
+            .MakeGenericMethod(elementType);
+        return (Func<object, IList>)method.CreateDelegate(typeof(Func<object, IList>));
+    }
+
+    private static IList CopyToTypedList<T>(object source) => ScalarConvert.CopyList((IEnumerable<T>)source);
 
     private static Func<object, object> BuildPropertyGetter(PropertyInfo property)
     {

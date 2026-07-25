@@ -24,6 +24,8 @@ public partial class AutoloadData : Node
         GetTree().AutoAcceptQuit = false;
 
         DefaultOption = MessagePackSerializer.DefaultOptions;
+        // Compile persistence accessors and typed capture delegates before the first snapshot.
+        PersistenceSnapshotCapture.WarmUp();
         AppDocumentDurability.Initialize(ProjectSettings.GlobalizePath("user://"));
 
         // Preference and load brush library data

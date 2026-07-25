@@ -99,6 +99,35 @@ internal static class ContainerFactory
 
     private static ImmutableArray<T> AsImmutableArray<T>(T[] values) =>
         ImmutableCollectionsMarshal.AsImmutableArray(values);
+
+    /// <summary>
+    /// Build the field's declared container from strongly-typed, already-composed elements — the
+    /// boxing-free counterpart to <see cref="Build"/> for StructArray read. The builder's backing
+    /// array is handed to ImmutableArray without a copy.
+    /// </summary>
+    public static object BuildTyped<T>(ContainerKind kind, ImmutableArray<T>.Builder builder)
+    {
+        switch (kind)
+        {
+            case ContainerKind.ImmutableArray:
+                return builder.Count == builder.Capacity ? builder.MoveToImmutable() : builder.ToImmutable();
+            case ContainerKind.Array:
+                return builder.ToArray();
+            case ContainerKind.List:
+                return new List<T>(builder);
+            case ContainerKind.ObservableList:
+                return new ObservableList<T>(builder);
+            case ContainerKind.HashSet:
+                return new HashSet<T>(builder);
+            case ContainerKind.ObservableHashSet:
+                var set = new ObservableHashSet<T>();
+                foreach (var item in builder)
+                    set.Add(item);
+                return set;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+        }
+    }
 }
 
 /// <summary>Scalar value conversion between CLR field types and the boxed values DuckDB exchanges.</summary>
@@ -156,4 +185,23 @@ internal static class ScalarConvert
         // int / short / byte / enum -> INTEGER
         return elements.Select(Convert.ToInt32).ToList();
     }
+
+    /// <summary>
+    /// The DuckDB list element type a CLR element type binds as: FLOAT/DOUBLE/BIGINT/Guid stay,
+    /// everything smaller (int/short/byte/enum) becomes int. Mirrors <see cref="ToDbList"/>'s buckets.
+    /// </summary>
+    public static Type DbListElementType(Type elementType)
+    {
+        if (elementType == typeof(Guid)) return typeof(Guid);
+        if (elementType == typeof(float)) return typeof(float);
+        if (elementType == typeof(double)) return typeof(double);
+        if (elementType == typeof(long) || elementType == typeof(ulong)) return typeof(long);
+        return typeof(int);
+    }
+
+    // Boxing-free fast path for primitive arrays whose CLR element type already equals the DuckDB
+    // list element type (float[]/int[]/double[]/...): copy IEnumerable<T> straight into List<T>, no
+    // conversion and no per-element boxing. FieldDescriptor binds this once per field at startup for
+    // eligible types; enum and widening element types keep the reflective ToDbList fallback.
+    public static List<T> CopyList<T>(IEnumerable<T> source) => new(source);
 }

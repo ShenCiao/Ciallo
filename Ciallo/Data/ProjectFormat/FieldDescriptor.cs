@@ -61,9 +61,6 @@ internal sealed class FieldDescriptor
     private readonly Func<object, object> _getFieldStorage;
     private readonly Action<object, object> _setProjectValue;
     private readonly Action<object, object> _setFieldStorage;
-    // PrimitiveArray only: boxing-free container -> DuckDB list, or null when the reflective
-    // ToDbList fallback is used (enum / widening element types).
-    private readonly Func<object, IList> _buildDbList;
 
     private FieldDescriptor(
         ComponentDescriptor component,
@@ -98,9 +95,6 @@ internal sealed class FieldDescriptor
         _getFieldStorage = FieldAccessorFactory.BuildGetFieldStorage(field);
         _setProjectValue = FieldAccessorFactory.BuildSetProjectValue(field, isReactive);
         _setFieldStorage = FieldAccessorFactory.BuildSetFieldStorage(field);
-        _buildDbList = shape == FieldShape.PrimitiveArray
-            ? FieldAccessorFactory.BuildPrimitiveDbList(elementType)
-            : null;
     }
 
     public static FieldDescriptor TryCreate(ComponentDescriptor component, FieldInfo field)
@@ -141,18 +135,6 @@ internal sealed class FieldDescriptor
     public void SetProjectValue(object component, object value) => _setProjectValue(component, value);
 
     public void SetFieldStorageObject(object component, object value) => _setFieldStorage(component, value);
-
-    /// <summary>
-    /// PrimitiveArray only: convert the field's array value to the typed list DuckDB binds. Uses a
-    /// boxing-free copy when the element type already matches its DuckDB list type, else the
-    /// reflective <see cref="ScalarConvert.ToDbList"/> fallback.
-    /// </summary>
-    public IList BuildDbList(object value)
-    {
-        if (_buildDbList != null && value != null)
-            return _buildDbList(value);
-        return ScalarConvert.ToDbList(ElementType, EnumerateArray(value));
-    }
 
     #endregion
 

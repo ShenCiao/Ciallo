@@ -22,8 +22,8 @@ public static class DuckDbProjectSerializer
 
     // DuckDB storage block size for new project files (bytes, power of two, 16KB..256KB).
     private const int BlockSize = 65536;
-    // DuckDB.NET 1.4.1 appender cannot write STRUCT columns yet, so batch with VALUES instead.
-    private const int InsertBatchSize = 512;
+    // DuckDB.NET.Data cannot write composite appender columns yet; DuckDbBatchAppender supplies
+    // the same row-oriented boundary over the public DuckDB C bindings.
 
     #region Public API
 
@@ -171,10 +171,11 @@ public static class DuckDbProjectSerializer
 
     private static void WriteMetadata(DuckDBConnection connection, string applicationVersion)
     {
-        InsertMetadata(connection, "format", "ciallo-project-duckdb");
-        InsertMetadata(connection, "format_version", FormatVersion.ToString());
-        InsertMetadata(connection, "created_by", "Ciallo");
-        InsertMetadata(connection, "ciallo_version", applicationVersion);
+        using var appender = connection.CreateBatchAppender("metadata");
+        AppendMetadata(appender, "format", "ciallo-project-duckdb");
+        AppendMetadata(appender, "format_version", FormatVersion.ToString());
+        AppendMetadata(appender, "created_by", "Ciallo");
+        AppendMetadata(appender, "ciallo_version", applicationVersion);
     }
 
     private static void CreateComponentTable(DuckDBConnection connection, ComponentDescriptor component)
@@ -186,13 +187,11 @@ public static class DuckDbProjectSerializer
         Execute(connection, $"create table {Quote(component.TableName)} ({string.Join(", ", columns)});");
     }
 
-    private static void InsertMetadata(DuckDBConnection connection, string key, string value)
+    private static void AppendMetadata(DuckDbBatchAppender appender, string key, string value)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """insert into "metadata" ("key", "value") values ($key, $value);""";
-        command.Parameters.Add(new DuckDBParameter("key", key));
-        command.Parameters.Add(new DuckDBParameter("value", value));
-        command.ExecuteNonQuery();
+        var row = appender.CreateRow();
+        row.AppendValue(key).AppendValue(value);
+        row.EndRow();
     }
 
     private static void InsertEntities(DuckDBConnection connection, int count)
@@ -211,134 +210,76 @@ public static class DuckDbProjectSerializer
         DuckDBConnection connection,
         PersistenceComponentSnapshot component)
     {
-        var batch = new List<InsertBuilder>(InsertBatchSize);
+        using var appender = connection.CreateBatchAppender(component.Descriptor.TableName);
         foreach (var row in component.Rows)
         {
-            batch.Add(BuildComponentRow(component.Descriptor, row, "r" + batch.Count));
-            if (batch.Count == InsertBatchSize)
-            {
-                ExecuteComponentBatch(connection, component.Descriptor, batch);
-                batch.Clear();
-            }
+            var target = appender.CreateRow();
+            target.AppendValue(row.EntityId);
+            for (int i = 0; i < component.Descriptor.Fields.Count; i++)
+                AppendCapturedField(target, component.Descriptor.Fields[i], row.Values[i]);
+            target.EndRow();
         }
-
-        ExecuteComponentBatch(connection, component.Descriptor, batch);
     }
 
-    private static InsertBuilder BuildComponentRow(
-        ComponentDescriptor descriptor,
-        PersistenceComponentRow row,
-        string parameterPrefix)
-    {
-        var builder = new InsertBuilder(parameterPrefix);
-        builder.AddColumn("entity_id", builder.NextParam(row.EntityId));
-
-        for (int i = 0; i < descriptor.Fields.Count; i++)
-            SerializeCapturedField(builder, descriptor.Fields[i], row.Values[i]);
-
-        return builder;
-    }
-
-    private static void ExecuteComponentBatch(
-        DuckDBConnection connection,
-        ComponentDescriptor descriptor,
-        List<InsertBuilder> batch)
-    {
-        if (batch.Count == 0)
-            return;
-
-        using var command = connection.CreateCommand();
-        var rows = batch.Select(builder => $"({builder.ValueSql()})");
-        command.CommandText =
-            $"insert into {Quote(descriptor.TableName)} ({batch[0].ColumnSql()}) values {string.Join(", ", rows)};";
-        foreach (var builder in batch)
-            builder.Apply(command);
-        command.ExecuteNonQuery();
-    }
-
-    private static void SerializeCapturedField(
-        InsertBuilder builder,
+    private static void AppendCapturedField(
+        DuckDbBatchAppenderRow row,
         FieldDescriptor field,
         object value)
     {
         switch (field.Shape)
         {
             case FieldShape.Scalar:
-                builder.AddColumn(field.Name,
-                    builder.NextParam(ScalarConvert.ToDb(field.NonNullableValueType, value)));
+                row.AppendValue(ScalarConvert.ToDb(field.NonNullableValueType, value));
                 break;
 
             case FieldShape.Struct:
-                builder.AddColumn(field.Name, BuildStructExpr(builder, field, value));
+                if (value == null)
+                {
+                    row.AppendStruct(null);
+                    break;
+                }
+                var leaves = new float[field.Codec.LeafCount];
+                field.Codec.Decompose(value, leaves);
+                row.AppendStruct(leaves);
                 break;
 
             case FieldShape.StructArray:
-                builder.AddColumn(field.Name, BuildStructArrayExpr(builder, field, value));
+                if (value == null)
+                {
+                    row.AppendStructList(null);
+                    break;
+                }
+                var leafColumns = new List<float>[field.Codec.LeafCount];
+                for (int i = 0; i < leafColumns.Length; i++)
+                    leafColumns[i] = new List<float>();
+                field.Codec.DecomposeInto(value, leafColumns);
+                row.AppendStructList(leafColumns);
                 break;
 
             case FieldShape.PrimitiveArray:
-                var list = field.BuildDbList(value);
-                builder.AddColumn(field.Name,
-                    $"{builder.NextParam(list)}::{FieldDescriptor.DuckScalarType(field.ElementType)}[]");
+                row.AppendValue(FieldDescriptor.EnumerateArray(value).ToList());
                 break;
 
             case FieldShape.EntityRef:
-                builder.AddColumn(field.Name, builder.NextParam(value));
+                row.AppendValue(value);
                 break;
 
             case FieldShape.EntityArray:
-                builder.AddColumn(field.Name, $"{builder.NextParam(value)}::INTEGER[]");
+                row.AppendValue((IList)value);
                 break;
 
             case FieldShape.EntityMap:
-                builder.AddColumn(field.Name, BuildEntityMapExpr(builder, (PersistenceEntityMap)value));
+                var map = (PersistenceEntityMap)value;
+                row.AppendMap(map?.Keys, map?.Values);
                 break;
 
             case FieldShape.Blob:
-                builder.AddColumn(field.Name, builder.NextParam(value));
+                row.AppendValue((byte[])value);
                 break;
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(field.Shape), field.Shape, null);
         }
-    }
-
-    private static string BuildStructExpr(InsertBuilder builder, FieldDescriptor field, object value)
-    {
-        if (value == null)
-            return "NULL";
-
-        var leaves = new float[field.Codec.LeafCount];
-        field.Codec.Decompose(value, leaves);
-        var paramNames = new string[leaves.Length];
-        for (int i = 0; i < leaves.Length; i++)
-            paramNames[i] = builder.NextParam(leaves[i]);
-        return field.Codec.Literal(i => paramNames[i]);
-    }
-
-    private static string BuildStructArrayExpr(InsertBuilder builder, FieldDescriptor field, object value)
-    {
-        var codec = field.Codec;
-        int leafCount = codec.LeafCount;
-
-        var leafLists = new List<float>[leafCount];
-        for (int i = 0; i < leafCount; i++)
-            leafLists[i] = new List<float>();
-
-        codec.DecomposeInto(value, leafLists);
-
-        // Bind one FLOAT[] per leaf, zip them positionally, then build each STRUCT from e[1..N].
-        var zipArgs = leafLists.Select(ll => $"{builder.NextParam(ll)}::FLOAT[]");
-        var zip = $"list_zip({string.Join(", ", zipArgs)})";
-        var literal = codec.Literal(i => $"e[{i + 1}]");
-        return $"list_transform({zip}, e -> {literal})";
-    }
-
-    private static string BuildEntityMapExpr(InsertBuilder builder, PersistenceEntityMap value)
-    {
-        if (value == null)
-            return "NULL";
-        return $"map({builder.NextParam(value.Keys)}::INTEGER[], {builder.NextParam(value.Values)}::INTEGER[])";
     }
 
     #endregion
@@ -611,45 +552,4 @@ public static class DuckDbProjectSerializer
     }
 
     #endregion
-}
-
-/// <summary>
-/// Accumulates one component row's columns, value expressions, and parameters. Value expressions
-/// may be plain parameter refs ($p0) or composite SQL (struct_pack / list_transform) referencing
-/// several parameters.
-/// </summary>
-internal sealed class InsertBuilder
-{
-    private readonly List<string> _columns = new();
-    private readonly List<string> _valueExprs = new();
-    private readonly List<DuckDBParameter> _parameters = new();
-    private readonly string _parameterPrefix;
-    private int _seq;
-
-    public InsertBuilder(string parameterPrefix = "p")
-    {
-        _parameterPrefix = parameterPrefix;
-    }
-
-    public void AddColumn(string column, string valueExpr)
-    {
-        _columns.Add("\"" + column.Replace("\"", "\"\"") + "\"");
-        _valueExprs.Add(valueExpr);
-    }
-
-    public string NextParam(object value)
-    {
-        var name = _parameterPrefix + "_" + _seq++;
-        _parameters.Add(new DuckDBParameter(name, value ?? (object)DBNull.Value));
-        return "$" + name;
-    }
-
-    public string ColumnSql() => string.Join(", ", _columns);
-    public string ValueSql() => string.Join(", ", _valueExprs);
-
-    public void Apply(DuckDBCommand command)
-    {
-        foreach (var parameter in _parameters)
-            command.Parameters.Add(parameter);
-    }
 }

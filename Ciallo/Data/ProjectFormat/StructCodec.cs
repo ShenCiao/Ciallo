@@ -10,13 +10,11 @@ namespace Ciallo.Data;
 /// Maps a creative value type (Color, Vector2, Transform2D, BezierPoint) to a DuckDB STRUCT.
 ///
 /// A codec is the single source of truth for one structured type's project-format contract:
-/// its DuckDB column type, how to build a STRUCT literal in an INSERT, how to decompose a
-/// CLR value into flat FLOAT leaves (for both single-struct params and list_zip arrays), and
-/// how to recompose a value from the Dictionary DuckDB returns on read.
+/// its DuckDB column type, how to decompose a CLR value into flat FLOAT leaves, and how to
+/// recompose a value from the Dictionary DuckDB returns on read.
 ///
-/// All leaves are FLOAT. Leaf order is fixed and shared by <see cref="Literal"/>,
-/// <see cref="Decompose"/> so that leaf i in the literal always corresponds to leaf i produced
-/// by Decompose.
+/// All leaves are FLOAT. Their order follows a depth-first traversal of the DuckDB STRUCT type,
+/// which is the same order consumed by <see cref="DuckDbBatchAppender"/>.
 /// </summary>
 internal abstract class StructCodec
 {
@@ -25,12 +23,6 @@ internal abstract class StructCodec
 
     /// <summary>Full DuckDB type, e.g. <c>STRUCT(r FLOAT, g FLOAT, b FLOAT, a FLOAT)</c>.</summary>
     public abstract string DuckDbType { get; }
-
-    /// <summary>
-    /// Build a STRUCT literal where <paramref name="leaf"/>(i) yields the SQL expression for leaf i
-    /// (a parameter like <c>$p3</c> for a single struct, or <c>e[4]</c> inside a list_transform).
-    /// </summary>
-    public abstract string Literal(Func<int, string> leaf);
 
     /// <summary>Flatten a single CLR value into <paramref name="leaves"/> (length == <see cref="LeafCount"/>).
     /// Boxes one value; used for the single-element <c>Struct</c> shape, which is not a bulk hot path.</summary>
@@ -129,9 +121,6 @@ internal sealed class ColorCodec : StructCodec<Color>
     public override int LeafCount => 4;
     public override string DuckDbType => "STRUCT(r FLOAT, g FLOAT, b FLOAT, a FLOAT)";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'r': {leaf(0)}, 'g': {leaf(1)}, 'b': {leaf(2)}, 'a': {leaf(3)}}}";
-
     public override void Decompose(in Color value, Span<float> leaves)
     {
         leaves[0] = value.R;
@@ -157,9 +146,6 @@ internal sealed class Vector2Codec : StructCodec<Vector2>
     public override int LeafCount => 2;
     public override string DuckDbType => "STRUCT(x FLOAT, y FLOAT)";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'x': {leaf(0)}, 'y': {leaf(1)}}}";
-
     public override void Decompose(in Vector2 value, Span<float> leaves)
     {
         leaves[0] = value.X;
@@ -182,11 +168,6 @@ internal sealed class Transform2DCodec : StructCodec<Transform2D>
 
     public override string DuckDbType =>
         "STRUCT(x STRUCT(x FLOAT, y FLOAT), y STRUCT(x FLOAT, y FLOAT), origin STRUCT(x FLOAT, y FLOAT))";
-
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'x': {{'x': {leaf(0)}, 'y': {leaf(1)}}}, " +
-        $"'y': {{'x': {leaf(2)}, 'y': {leaf(3)}}}, " +
-        $"'origin': {{'x': {leaf(4)}, 'y': {leaf(5)}}}}}";
 
     public override void Decompose(in Transform2D value, Span<float> leaves)
     {
@@ -222,11 +203,6 @@ internal sealed class BezierPointCodec : StructCodec<BezierPoint>
     // "in" and "out" are DuckDB reserved words, so they must be quoted in the type definition.
     public override string DuckDbType =>
         "STRUCT(p STRUCT(x FLOAT, y FLOAT), \"in\" STRUCT(x FLOAT, y FLOAT), \"out\" STRUCT(x FLOAT, y FLOAT))";
-
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'p': {{'x': {leaf(0)}, 'y': {leaf(1)}}}, " +
-        $"'in': {{'x': {leaf(2)}, 'y': {leaf(3)}}}, " +
-        $"'out': {{'x': {leaf(4)}, 'y': {leaf(5)}}}}}";
 
     public override void Decompose(in BezierPoint value, Span<float> leaves)
     {

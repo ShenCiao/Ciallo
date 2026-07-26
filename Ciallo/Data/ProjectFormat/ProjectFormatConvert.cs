@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Frent;
@@ -167,41 +166,4 @@ internal static class ScalarConvert
         return Convert.ChangeType(db, nonNullableType);
     }
 
-    /// <summary>
-    /// Build the strongly-typed list DuckDB.NET expects when binding a scalar array parameter
-    /// (e.g. <c>FLOAT[]</c> wants List&lt;float&gt;, <c>INTEGER[]</c> wants List&lt;int&gt;).
-    /// Enums and small integers are stored as INTEGER, so they bind as List&lt;int&gt;.
-    /// </summary>
-    public static IList ToDbList(Type elementType, IEnumerable<object> elements)
-    {
-        if (elementType == typeof(Guid))
-            return elements.Cast<Guid>().ToList();
-        if (elementType == typeof(float))
-            return elements.Select(Convert.ToSingle).ToList();
-        if (elementType == typeof(double))
-            return elements.Select(Convert.ToDouble).ToList();
-        if (elementType == typeof(long) || elementType == typeof(ulong))
-            return elements.Select(Convert.ToInt64).ToList();
-        // int / short / byte / enum -> INTEGER
-        return elements.Select(Convert.ToInt32).ToList();
-    }
-
-    /// <summary>
-    /// The DuckDB list element type a CLR element type binds as: FLOAT/DOUBLE/BIGINT/Guid stay,
-    /// everything smaller (int/short/byte/enum) becomes int. Mirrors <see cref="ToDbList"/>'s buckets.
-    /// </summary>
-    public static Type DbListElementType(Type elementType)
-    {
-        if (elementType == typeof(Guid)) return typeof(Guid);
-        if (elementType == typeof(float)) return typeof(float);
-        if (elementType == typeof(double)) return typeof(double);
-        if (elementType == typeof(long) || elementType == typeof(ulong)) return typeof(long);
-        return typeof(int);
-    }
-
-    // Boxing-free fast path for primitive arrays whose CLR element type already equals the DuckDB
-    // list element type (float[]/int[]/double[]/...): copy IEnumerable<T> straight into List<T>, no
-    // conversion and no per-element boxing. FieldDescriptor binds this once per field at startup for
-    // eligible types; enum and widening element types keep the reflective ToDbList fallback.
-    public static List<T> CopyList<T>(IEnumerable<T> source) => new(source);
 }

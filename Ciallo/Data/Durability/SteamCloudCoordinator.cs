@@ -31,6 +31,7 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
     private readonly ConcurrentQueue<SteamCloudAuthorizationStatus> _authorizationNotifications = new();
     private readonly ConcurrentQueue<SteamCloudCatalogSnapshot> _catalogNotifications = new();
     private DateTimeOffset _nextCatalogRefreshUtc = DateTimeOffset.MinValue;
+    private int _disposed;
 
     public SteamCloudAuthorizationStatus AuthorizationStatus => _authorization.Status;
     public SteamCloudCatalogSnapshot Catalog => _catalogService.Catalog;
@@ -170,13 +171,21 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        // Idempotent: a second close notification (or a manual dispose after one) must not complete
+        // the upload loop twice or double-dispose the primitives below.
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
         _outbox.PendingChanged -= SignalUpload;
         _authorization.StatusChanged -= OnAuthorizationStatusChanged;
         _shutdown.Cancel();
         SignalUpload();
         try
         {
-            await _uploadLoop;
+            // Teardown touches no UI, so it must not resume on the captured main-thread context.
+            // Without this a sync-over-async caller on the main thread would deadlock waiting for a
+            // continuation that only the (blocked) main thread could run.
+            await _uploadLoop.ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

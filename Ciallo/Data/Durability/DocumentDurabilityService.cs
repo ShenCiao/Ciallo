@@ -33,6 +33,7 @@ internal sealed class DocumentDurabilityService
     private TimeSpan _snapshotElapsed;
     private TimeSpan _heartbeatElapsed;
     private DocumentDurabilityStatus _status = new();
+    private bool _isShutdown;
 
     public event Action<DocumentDurabilityStatus> StatusChanged;
 
@@ -188,6 +189,10 @@ internal sealed class DocumentDurabilityService
 
     public async Task ShutdownAsync()
     {
+        if (_isShutdown)
+            return;
+        _isShutdown = true;
+
         if (!_trackedDocument.IsNull)
         {
             CloseTrackedSession();
@@ -195,7 +200,7 @@ internal sealed class DocumentDurabilityService
             SetTrackedSessionId(Guid.Empty);
         }
 
-        _recoveryWrites.Writer.Complete();
+        _recoveryWrites.Writer.TryComplete();
         await _recoveryWriterTask;
         DrainStatusNotifications();
     }

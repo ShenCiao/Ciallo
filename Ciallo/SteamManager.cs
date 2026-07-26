@@ -58,12 +58,25 @@ public partial class SteamManager : Node
 
     public override void _ExitTree()
     {
-        if (_cloud != null)
-        {
-            _cloud.DisposeAsync().AsTask().GetAwaiter().GetResult();
-            _cloud = null;
-        }
-        SteamClient.Shutdown();
+        // Only pure synchronous teardown here. The cloud coordinator is disposed asynchronously
+        // during the normal close flow (ShutdownCloudAsync) so we never block the main thread on a
+        // sync-over-async wait while a captured SynchronizationContext continuation is queued to it.
+        if (SteamClient.IsValid)
+            SteamClient.Shutdown();
+    }
+
+    /// <summary>
+    /// Awaitable cloud teardown, driven from the main-thread async close path. Idempotent: the
+    /// coordinator's own DisposeAsync guards against a second call, and a null coordinator (Steam
+    /// never initialized, or already shut down) is a no-op.
+    /// </summary>
+    public static async Task ShutdownCloudAsync()
+    {
+        if (_cloud == null)
+            return;
+        var cloud = _cloud;
+        _cloud = null;
+        await cloud.DisposeAsync();
     }
 
     public static Task AuthorizeCloudAsync(CancellationToken cancellationToken = default)

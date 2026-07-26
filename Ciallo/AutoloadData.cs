@@ -75,17 +75,36 @@ public partial class AutoloadData : Node
         AppDocumentDurability.Process(delta);
     }
 
+    private bool _closing;
+
     // ReSharper disable once AsyncVoidMethod
     public override async void _Notification(int what)
     {
         if (what == NotificationWMCloseRequest)
         {
-            var result = await AppDocumentManager.UserCloseWorkingDocument();
-            if (!result) return;
+            // async void is re-entrant: without this guard a second close request while the first
+            // is still awaiting runs the whole teardown again (completing the recovery channel
+            // twice, disposing the cloud twice).
+            if (_closing) return;
+            _closing = true;
 
+            var result = await AppDocumentManager.UserCloseWorkingDocument();
+            if (!result)
+            {
+                // Close was cancelled (e.g. the unsaved-changes dialog was dismissed), so allow a
+                // later close request to run the teardown.
+                _closing = false;
+                return;
+            }
+
+            // Order matters: local shutdown writes the session close marker into the outbox, the
+            // flush pushes it to Steam Cloud, and only then may the upload loop be torn down.
+            // Everything is awaited on the main thread — no sync-over-async anywhere, so the
+            // captured SynchronizationContext can always run these continuations.
             await AppDocumentDurability.ShutdownAsync();
             if (SteamManager.IsCloudAvailable)
                 await SteamManager.FlushCloudSessionAsync(TimeSpan.FromSeconds(5));
+            await SteamManager.ShutdownCloudAsync();
             AppStrokeBrushLibrary.Save();
             AppMarkerTextureLibrary.Save();
             AppPreference.Save();

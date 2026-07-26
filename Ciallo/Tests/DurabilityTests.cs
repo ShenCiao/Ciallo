@@ -5,8 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Ciallo.Data;
@@ -397,6 +397,69 @@ public class DurabilityTests
                 loadedShape = entity;
             AssertThat(loadedShape.Get<SampledPolyline>().Positions.Value.Length).IsEqual(2);
             AssertThat(loadedShape.Get<SampledPolyline>().Positions.Value[1]).IsEqual(new Vector2(3, 4));
+            DisposeWorld(loaded.World);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
+    public async Task SaveRoundTripsAllSampledPolylineColumns()
+    {
+        // SampledPolyline is a pure numeric-array table, so it loads through NativeComponentReader.
+        // Radii/Pressures are FLOAT[] (PrimitiveArray path: AppendPrimitiveList / BuildImmutableThenContainer),
+        // Positions/Tilts are STRUCT(x,y)[] (StructArray path: DecomposeArrayInto / ComposeArrayFromLeaves) —
+        // two entirely separate code paths. A second, all-empty shape puts an empty list next to a
+        // populated one in the same table so the reader's per-row count-0 branch is exercised too.
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-polyline-columns-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Polyline" } });
+
+        var full = document.World.Create();
+        full.Tag<ToSerializeTag>();
+        full.Add(new SampledPolyline
+        {
+            Positions = { Value = ImmutableArray.Create(new Vector2(1, 2), new Vector2(3, 4), new Vector2(5, 6)) },
+            Radii = { Value = ImmutableArray.Create(0.5f, 1.5f, 2.5f) },
+            Pressures = { Value = ImmutableArray.Create(0.1f, 0.9f, 0.4f) },
+            Tilts = { Value = ImmutableArray.Create(new Vector2(-1, -2), new Vector2(-3, -4), new Vector2(-5, -6)) },
+        });
+
+        var empty = document.World.Create();
+        empty.Tag<ToSerializeTag>();
+        empty.Add(new SampledPolyline());
+
+        try
+        {
+            var snapshot = PersistenceSnapshotCapture.Capture(document, 11);
+            await Task.Run(() => DuckDbProjectSerializer.Save(snapshot, path));
+            var loaded = DuckDbProjectSerializer.Load(path);
+
+            SampledPolyline loadedFull = null;
+            SampledPolyline loadedEmpty = null;
+            var query = loaded.World.CreateQuery().With<SampledPolyline>().Build();
+            foreach (var entity in query.EnumerateWithEntities())
+            {
+                var polyline = entity.Get<SampledPolyline>();
+                if (polyline.Positions.Value.Length == 0)
+                    loadedEmpty = polyline;
+                else
+                    loadedFull = polyline;
+            }
+
+            AssertThat(loadedFull).IsNotNull();
+            AssertThat(loadedFull.Radii.Value.ToArray()).ContainsExactly(0.5f, 1.5f, 2.5f);
+            AssertThat(loadedFull.Pressures.Value.ToArray()).ContainsExactly(0.1f, 0.9f, 0.4f);
+            AssertThat(loadedFull.Positions.Value[2]).IsEqual(new Vector2(5, 6));
+            AssertThat(loadedFull.Tilts.Value[2]).IsEqual(new Vector2(-5, -6));
+
+            AssertThat(loadedEmpty).IsNotNull();
+            AssertThat(loadedEmpty.Radii.Value.Length).IsEqual(0);
+            AssertThat(loadedEmpty.Tilts.Value.Length).IsEqual(0);
             DisposeWorld(loaded.World);
         }
         finally

@@ -140,6 +140,8 @@ internal sealed class DuckDbBatchAppenderRow
     private readonly DuckDbBatchAppender _owner;
     private ulong _rowIndex;
     private int _columnIndex;
+    // Reused across rows: leaf FLOAT* pointers for the current STRUCT[] column.
+    private nint[] _leafDataScratch = [];
 
     internal DuckDbBatchAppenderRow(DuckDbBatchAppender owner)
     {
@@ -196,7 +198,7 @@ internal sealed class DuckDbBatchAppenderRow
         var vector = NextVector();
         if (values == null)
         {
-            DuckDbVectorWriter.WriteNull(vector, _rowIndex);
+            WriteEmptyList(vector);
             return this;
         }
 
@@ -230,7 +232,7 @@ internal sealed class DuckDbBatchAppenderRow
         var vector = _owner.GetVector(column);
         if (leafColumns == null)
         {
-            DuckDbVectorWriter.WriteNull(vector, _rowIndex);
+            WriteEmptyList(vector);
             return this;
         }
 
@@ -258,12 +260,97 @@ internal sealed class DuckDbBatchAppenderRow
         return this;
     }
 
+    /// <summary>
+    /// Write a STRUCT[] column straight from the raw field value via its codec, with no
+    /// intermediate <c>List&lt;float&gt;[]</c> and no per-element boxing. The hot path for
+    /// stroke geometry (Positions/Tilts).
+    /// </summary>
+    public unsafe DuckDbBatchAppenderRow AppendStructList(StructCodec codec, object arrayValue)
+    {
+        var column = _columnIndex++;
+        var vector = _owner.GetVector(column);
+        if (arrayValue == null)
+        {
+            WriteEmptyList(vector);
+            return this;
+        }
+
+        var count = codec.GetArrayLength(arrayValue);
+        var offset = (ulong)NativeMethods.Vectors.DuckDBListVectorGetSize(vector);
+        var required = offset + (ulong)count;
+        _owner.CheckListState(
+            NativeMethods.Vectors.DuckDBListVectorReserve(vector, required),
+            "Reserving DuckDB struct-list vector");
+
+        if (count > 0)
+        {
+            var structVector = NativeMethods.Vectors.DuckDBListVectorGetChild(vector);
+            var leafPaths = _owner.GetStructLeafPaths(column);
+            var leafData = _leafDataScratch.Length >= leafPaths.Length
+                ? _leafDataScratch.AsSpan(0, leafPaths.Length)
+                : (_leafDataScratch = new nint[leafPaths.Length]).AsSpan();
+            for (int leaf = 0; leaf < leafPaths.Length; leaf++)
+                leafData[leaf] = (nint)NativeMethods.Vectors.DuckDBVectorGetData(
+                    DuckDbVectorWriter.GetStructLeafVector(structVector, leafPaths[leaf]));
+            codec.DecomposeArrayInto(arrayValue, leafData, offset);
+        }
+
+        var entries = (DuckDBListEntry*)NativeMethods.Vectors.DuckDBVectorGetData(vector);
+        entries[_rowIndex] = new DuckDBListEntry(offset, (ulong)count);
+        _owner.CheckListState(
+            NativeMethods.Vectors.DuckDBListVectorSetSize(vector, required),
+            "Sizing DuckDB struct-list vector");
+        return this;
+    }
+
+    /// <summary>
+    /// Write a primitive scalar list column (e.g. FLOAT[]/INTEGER[]) straight from a contiguous
+    /// span, copying the block into the list child vector with no boxing. The hot path for
+    /// stroke Radii/Pressures.
+    /// </summary>
+    public unsafe DuckDbBatchAppenderRow AppendPrimitiveList<T>(ReadOnlySpan<T> values)
+        where T : unmanaged
+    {
+        var vector = NextVector();
+        var count = values.Length;
+        var offset = (ulong)NativeMethods.Vectors.DuckDBListVectorGetSize(vector);
+        var required = offset + (ulong)count;
+        _owner.CheckListState(
+            NativeMethods.Vectors.DuckDBListVectorReserve(vector, required),
+            "Reserving DuckDB primitive-list vector");
+
+        if (count > 0)
+        {
+            var child = NativeMethods.Vectors.DuckDBListVectorGetChild(vector);
+            var dst = (T*)NativeMethods.Vectors.DuckDBVectorGetData(child) + offset;
+            values.CopyTo(new Span<T>(dst, count));
+        }
+
+        var entries = (DuckDBListEntry*)NativeMethods.Vectors.DuckDBVectorGetData(vector);
+        entries[_rowIndex] = new DuckDBListEntry(offset, (ulong)count);
+        _owner.CheckListState(
+            NativeMethods.Vectors.DuckDBListVectorSetSize(vector, required),
+            "Sizing DuckDB primitive-list vector");
+        return this;
+    }
+
+    // A list/map row that carries no elements still needs a valid (offset, 0) entry: DuckDB's
+    // reused data chunk is not zeroed by DuckDBDataChunkReset, so a leftover entry from a prior
+    // chunk would otherwise describe out-of-range child rows.
+    private unsafe void WriteEmptyList(IntPtr vector)
+    {
+        var offset = (ulong)NativeMethods.Vectors.DuckDBListVectorGetSize(vector);
+        var entries = (DuckDBListEntry*)NativeMethods.Vectors.DuckDBVectorGetData(vector);
+        entries[_rowIndex] = new DuckDBListEntry(offset, 0);
+        DuckDbVectorWriter.WriteNull(vector, _rowIndex);
+    }
+
     public unsafe DuckDbBatchAppenderRow AppendMap(IList keys, IList values)
     {
         var vector = NextVector();
         if (keys == null)
         {
-            DuckDbVectorWriter.WriteNull(vector, _rowIndex);
+            WriteEmptyList(vector);
             return this;
         }
 

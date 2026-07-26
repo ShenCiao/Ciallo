@@ -126,7 +126,7 @@ Build the project and run the durability suite with:
 
 ```powershell
 dotnet build Ciallo/Ciallo.csproj --no-restore
-dotnet test Ciallo/Ciallo.csproj --no-build --settings Ciallo/Test/.runsettings --filter FullyQualifiedName~DurabilityTests
+dotnet test Ciallo/Ciallo.csproj --no-build --filter FullyQualifiedName~DurabilityTests
 ```
 
 The suite covers revision conflict heads, upload priority, manifest/chunk construction, detached snapshot serialization, over-limit newest-snapshot retention, the Steam upload batch sequence, and revoked-token handling. A live Steam Cloud integration test additionally requires the issued OAuth Client ID and a Steam account licensed for AppID `4103990`.

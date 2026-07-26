@@ -6,11 +6,15 @@ extends EditorPlugin
 const STRIP_AUTOLOADS: Array[String] = [
 	"_fennara_game_capture",
 ]
+const RUNSETTINGS_PATH := "res://.runsettings"
+const LOCAL_RUNSETTINGS_PATH := "res://.runsettings.local"
+const LOCAL_GODOT_BIN_MARKER := "        <!-- LOCAL_GODOT_BIN -->"
 
 var _export_plugin: _StripAutoloadExportPlugin
 
 
 func _enter_tree() -> void:
+	_write_local_runsettings()
 	_export_plugin = _StripAutoloadExportPlugin.new(STRIP_AUTOLOADS)
 	add_export_plugin(_export_plugin)
 
@@ -18,6 +22,24 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	remove_export_plugin(_export_plugin)
 	_export_plugin = null
+
+
+func _write_local_runsettings() -> void:
+	var template := FileAccess.get_file_as_string(RUNSETTINGS_PATH)
+	assert(template.contains(LOCAL_GODOT_BIN_MARKER))
+	var godot_bin := OS.get_executable_path().xml_escape()
+	var environment := (
+		"        <EnvironmentVariables>\n"
+		+ "            <GODOT_BIN>" + godot_bin + "</GODOT_BIN>\n"
+		+ "        </EnvironmentVariables>"
+	)
+	var contents := template.replace(LOCAL_GODOT_BIN_MARKER, environment)
+	var local_path := ProjectSettings.globalize_path(LOCAL_RUNSETTINGS_PATH)
+	if FileAccess.file_exists(local_path) and FileAccess.get_file_as_string(local_path) == contents:
+		return
+	var file := FileAccess.open(local_path, FileAccess.WRITE)
+	file.store_string(contents)
+	print("[Ciallo] Updated local test settings for ", OS.get_executable_path())
 
 
 class _StripAutoloadExportPlugin extends EditorExportPlugin:

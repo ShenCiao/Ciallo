@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Ciallo.Geometry;
 using Godot;
 
@@ -38,12 +39,33 @@ internal abstract class StructCodec
     /// </summary>
     public abstract void DecomposeInto(object arrayValue, List<float>[] leafColumns);
 
+    /// <summary>Element count of a StructArray field value without boxing or materializing.</summary>
+    public abstract int GetArrayLength(object arrayValue);
+
+    /// <summary>
+    /// Flatten every element of a StructArray field value straight into the destination STRUCT[]
+    /// child leaf vectors. <paramref name="leafData"/>[leaf] is the FLOAT data pointer of the
+    /// list-child struct's leaf vector; values are written at <paramref name="offset"/>..offset+Count.
+    /// This is the bulk hot path: no intermediate buffers, no per-element boxing.
+    /// </summary>
+    public abstract void DecomposeArrayInto(object arrayValue, ReadOnlySpan<nint> leafData, ulong offset);
+
     /// <summary>
     /// Rebuild a StructArray field value from the rows DuckDB returns for a STRUCT[] column,
     /// producing the field's declared container. Each row's leaf floats are read without boxing
     /// the composed element into object[].
     /// </summary>
     public abstract object ComposeArray(System.Collections.IEnumerable dbRows, ContainerKind containerKind);
+
+    /// <summary>
+    /// Rebuild a StructArray field value directly from the STRUCT[] child leaf vectors, producing
+    /// the field's declared container. <paramref name="leafData"/>[leaf] is the FLOAT data pointer
+    /// of the list-child struct's leaf vector; <paramref name="count"/> elements are read starting
+    /// at <paramref name="offset"/>. No Dictionary per element, no boxed floats — the read-side
+    /// counterpart to <see cref="DecomposeArrayInto"/>.
+    /// </summary>
+    public abstract object ComposeArrayFromLeaves(
+        ReadOnlySpan<nint> leafData, ulong offset, int count, ContainerKind containerKind);
 
     protected static float F(object o) => Convert.ToSingle(o);
 
@@ -92,6 +114,23 @@ internal abstract class StructCodec<T> : StructCodec
         }
     }
 
+    public sealed override int GetArrayLength(object arrayValue) => AsSpan(arrayValue).Length;
+
+    public sealed override unsafe void DecomposeArrayInto(
+        object arrayValue, ReadOnlySpan<nint> leafData, ulong offset)
+    {
+        var elements = AsSpan(arrayValue);
+        int leafCount = LeafCount;
+        Span<float> leaves = stackalloc float[leafCount];
+        for (int i = 0; i < elements.Length; i++)
+        {
+            Decompose(elements[i], leaves);
+            ulong row = offset + (ulong)i;
+            for (int leaf = 0; leaf < leafCount; leaf++)
+                ((float*)leafData[leaf])[row] = leaves[leaf];
+        }
+    }
+
     public sealed override object ComposeArray(System.Collections.IEnumerable dbRows, ContainerKind containerKind)
     {
         var builder = ImmutableArray.CreateBuilder<T>();
@@ -99,6 +138,22 @@ internal abstract class StructCodec<T> : StructCodec
         foreach (var row in dbRows)
         {
             ReadLeaves(FieldDescriptor.AsStructDict(row), leaves);
+            builder.Add(Compose(leaves));
+        }
+        return ContainerFactory.BuildTyped(containerKind, builder);
+    }
+
+    public sealed override unsafe object ComposeArrayFromLeaves(
+        ReadOnlySpan<nint> leafData, ulong offset, int count, ContainerKind containerKind)
+    {
+        var builder = ImmutableArray.CreateBuilder<T>(count);
+        int leafCount = LeafCount;
+        Span<float> leaves = stackalloc float[leafCount];
+        for (int i = 0; i < count; i++)
+        {
+            ulong row = offset + (ulong)i;
+            for (int leaf = 0; leaf < leafCount; leaf++)
+                leaves[leaf] = ((float*)leafData[leaf])[row];
             builder.Add(Compose(leaves));
         }
         return ContainerFactory.BuildTyped(containerKind, builder);
@@ -113,6 +168,32 @@ internal abstract class StructCodec<T> : StructCodec
             _ => throw new InvalidOperationException(
                 $"StructArray value {arrayValue?.GetType()} is not a supported container of {typeof(T)}."),
         };
+    }
+
+    /// <summary>
+    /// Zero-copy span over the StructArray field value. ImmutableArray&lt;T&gt; and T[] (the
+    /// containers the project format produces) expose their backing store directly; any other
+    /// IReadOnlyList&lt;T&gt; is copied once into a temporary array.
+    /// </summary>
+    private static ReadOnlySpan<T> AsSpan(object arrayValue)
+    {
+        switch (arrayValue)
+        {
+            case ImmutableArray<T> immutable:
+                return immutable.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(immutable);
+            case T[] array:
+                return array;
+            case List<T> list:
+                return CollectionsMarshal.AsSpan(list);
+            case IReadOnlyList<T> readOnly:
+                var copy = new T[readOnly.Count];
+                for (int i = 0; i < copy.Length; i++)
+                    copy[i] = readOnly[i];
+                return copy;
+            default:
+                throw new InvalidOperationException(
+                    $"StructArray value {arrayValue?.GetType()} is not a supported container of {typeof(T)}.");
+        }
     }
 }
 

@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using DuckDB.NET.Data;
 using Frent;
 using Godot;
@@ -136,11 +138,16 @@ public static class DuckDbProjectSerializer
         Execute(connection, $"ATTACH '{attachPath}' AS project (BLOCK_SIZE {BlockSize});");
         Execute(connection, "USE project;");
 
+        // One transaction for the whole write, DDL included: each CREATE TABLE would otherwise
+        // auto-commit (and hit the WAL) on its own, so a document with dozens of component tables
+        // pays dozens of extra commits before the first row is written. The appender reads table
+        // metadata through the same client context, so tables created earlier in the transaction
+        // are visible to it.
+        Execute(connection, "BEGIN TRANSACTION;");
         CreateInfrastructureTables(connection);
         foreach (var component in snapshot.Registry.Components)
             CreateComponentTable(connection, component);
 
-        Execute(connection, "BEGIN TRANSACTION;");
         WriteMetadata(connection, snapshot.ApplicationVersion);
         InsertEntities(connection, snapshot.EntityCount);
         foreach (var component in snapshot.Components)
@@ -244,20 +251,14 @@ public static class DuckDbProjectSerializer
                 break;
 
             case FieldShape.StructArray:
-                if (value == null)
-                {
-                    row.AppendStructList(null);
-                    break;
-                }
-                var leafColumns = new List<float>[field.Codec.LeafCount];
-                for (int i = 0; i < leafColumns.Length; i++)
-                    leafColumns[i] = new List<float>();
-                field.Codec.DecomposeInto(value, leafColumns);
-                row.AppendStructList(leafColumns);
+                // Decompose straight into the STRUCT[] child leaf vectors: no per-row
+                // List<float>[] buffers and no per-element boxing. This is the stroke-geometry
+                // hot path (SampledPolyline Positions/Tilts).
+                row.AppendStructList(field.Codec, value);
                 break;
 
             case FieldShape.PrimitiveArray:
-                row.AppendValue(FieldDescriptor.EnumerateArray(value).ToList());
+                AppendPrimitiveArray(row, field, value);
                 break;
 
             case FieldShape.EntityRef:
@@ -279,6 +280,40 @@ public static class DuckDbProjectSerializer
 
             default:
                 throw new ArgumentOutOfRangeException(nameof(field.Shape), field.Shape, null);
+        }
+    }
+
+    // Bulk-copy a primitive scalar array (FLOAT[]/INTEGER[]/...) straight into the list child
+    // vector with no boxing. SampledPolyline Radii/Pressures ride this path; falls back to the
+    // boxed IList overload for element types without a fast span path.
+    private static void AppendPrimitiveArray(DuckDbBatchAppenderRow row, FieldDescriptor field, object value)
+    {
+        switch (value)
+        {
+            case null:
+                row.AppendPrimitiveList(ReadOnlySpan<float>.Empty);
+                break;
+            case ImmutableArray<float> f:
+                row.AppendPrimitiveList(f.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(f).AsSpan());
+                break;
+            case float[] f:
+                row.AppendPrimitiveList<float>(f);
+                break;
+            case ImmutableArray<int> i:
+                row.AppendPrimitiveList(i.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(i).AsSpan());
+                break;
+            case int[] i:
+                row.AppendPrimitiveList<int>(i);
+                break;
+            case double[] d:
+                row.AppendPrimitiveList<double>(d);
+                break;
+            case ImmutableArray<double> d:
+                row.AppendPrimitiveList(d.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(d).AsSpan());
+                break;
+            default:
+                row.AppendValue(FieldDescriptor.EnumerateArray(value).ToList());
+                break;
         }
     }
 
@@ -334,6 +369,15 @@ public static class DuckDbProjectSerializer
         if (!TableExists(connection, component.TableName))
             return;
 
+        // Pure numeric-array tables (stroke geometry) can read straight from data-chunk vectors,
+        // with no per-element Dictionary or boxed float. This is a static, query-free filter: only
+        // such tables pay for the column-name lookup and native type check below. Everything else
+        // (the majority of components) goes straight to the managed reader, which reads actual
+        // column names from the DbDataReader itself.
+        if (NativeComponentReader.IsEligible(component.Fields)
+            && TryReadNative(connection, component, idToEntity))
+            return;
+
         using var command = connection.CreateCommand();
         command.CommandText = $"select * from {Quote(component.TableName)};";
         using var reader = command.ExecuteReader();
@@ -366,6 +410,27 @@ public static class DuckDbProjectSerializer
 
             entity.AddAs(component.ComponentType, instance);
         }
+    }
+
+    // Try the native chunk reader for an eligible table. Reads column names (the only query this
+    // adds, and only for native candidates) to require the full current schema: if the file gained
+    // or lost a field since save, or the on-disk types don't match the codecs, returns false so the
+    // caller falls back to the managed reader, which tolerates those differences.
+    private static bool TryReadNative(
+        DuckDBConnection connection,
+        ComponentDescriptor component,
+        Dictionary<int, Entity> idToEntity)
+    {
+        var columnNames = ReadColumnNames(connection, component.TableName);
+        if (!columnNames.Contains("entity_id"))
+            throw new InvalidOperationException($"{component.TableName} has no entity_id column.");
+
+        // The native reader materializes every field; if any column is missing, defer to the
+        // managed reader's per-field tolerance instead.
+        if (!component.Fields.All(f => columnNames.Contains(f.Name)))
+            return false;
+
+        return NativeComponentReader.TryRead(connection, component, component.Fields, idToEntity);
     }
 
     private static void DeserializeField(
@@ -523,6 +588,19 @@ public static class DuckDbProjectSerializer
         command.CommandText = "select 1 from information_schema.tables where table_name = $name;";
         command.Parameters.Add(new DuckDBParameter("name", tableName));
         return command.ExecuteScalar() != null;
+    }
+
+    private static HashSet<string> ReadColumnNames(DuckDBConnection connection, string tableName)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "select column_name from information_schema.columns where table_name = $name;";
+        command.Parameters.Add(new DuckDBParameter("name", tableName));
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+            names.Add(reader.GetString(0));
+        return names;
     }
 
     private static void Execute(DuckDBConnection connection, string sql)

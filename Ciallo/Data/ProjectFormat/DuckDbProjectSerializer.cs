@@ -24,6 +24,7 @@ public static class DuckDbProjectSerializer
 
     // DuckDB storage block size for new project files (bytes, power of two, 16KB..256KB).
     private const int BlockSize = 65536;
+    private const string StorageVersion = "v1.5.0";
     // DuckDB.NET.Data cannot write composite appender columns yet; DuckDbBatchAppender supplies
     // the same row-oriented boundary over the public DuckDB C bindings.
 
@@ -135,7 +136,9 @@ public static class DuckDbProjectSerializer
         var attachPath = dbPath.Replace("'", "''");
         using var connection = new DuckDBConnection("Data Source=:memory:");
         connection.Open();
-        Execute(connection, $"ATTACH '{attachPath}' AS project (BLOCK_SIZE {BlockSize});");
+        Execute(connection,
+            $"ATTACH '{attachPath}' AS project " +
+            $"(BLOCK_SIZE {BlockSize}, STORAGE_VERSION '{StorageVersion}', RECOVERY_MODE 'no_wal_writes');");
         Execute(connection, "USE project;");
 
         // One transaction for the whole write, DDL included: each CREATE TABLE would otherwise
@@ -323,7 +326,16 @@ public static class DuckDbProjectSerializer
 
     private static Entity ReadDatabase(string dbPath, ProjectFormatRegistry registry)
     {
-        using var connection = new DuckDBConnection($"Data Source={dbPath};ACCESS_MODE=READ_ONLY");
+        var connectionString = new DuckDBConnectionStringBuilder { DataSource = dbPath };
+        // For security
+        connectionString["ACCESS_MODE"] = "READ_ONLY";
+        connectionString["enable_external_access"] = false;
+        connectionString["autoinstall_known_extensions"] = false;
+        connectionString["autoload_known_extensions"] = false;
+        connectionString["allow_community_extensions"] = false;
+        connectionString["lock_configuration"] = true;
+
+        using var connection = new DuckDBConnection(connectionString.ConnectionString);
         connection.Open();
 
         var ids = ReadEntityIds(connection);

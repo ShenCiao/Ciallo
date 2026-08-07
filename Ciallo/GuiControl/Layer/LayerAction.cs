@@ -17,8 +17,12 @@ public partial class LayerAction : Control
         Document = document;
         var sm = Document.Get<SelectionManager>();
         var subs = new CompositeDisposable();
+        var clippingMask = sm.WorkingLayer
+            .Select(e => e.TryGet<CommonLayerSetting>()?.ClippingMask)
+            .Flatten().AddTo(Document);
         Root.ConvertToShape.VisibleIf(sm.WorkingLayer,
             e => e.TryHas<VectorFillLayerSetting>() || e.TryHas<ImageLayerSetting>(), subs);
+        Root.ClippingMask.BindBool(clippingMask, subs);
         subs.AddTo(Document);
     }
 

@@ -20,10 +20,14 @@ public partial class LayerPanel : VBoxContainer, IInitable
         var layerMarkColor = document.Get<SelectionManager>().WorkingLayer
             .Select(e => e.TryGet<CommonLayerSetting>()?.MarkColor)
             .Flatten().AddTo(document);
+        var blendMode = document.Get<SelectionManager>().WorkingLayer
+            .Select(e => e.TryGet<CommonLayerSetting>()?.BlendMode)
+            .Flatten().AddTo(document);
         LayerProperty.Opacity.BindNumber(opacity)
             .RegisterUndo(document.Get<CommandManager>());
         LayerProperty.LayerMark.BindColor(layerMarkColor)
             .RegisterUndo(document.Get<CommandManager>());
+        LayerProperty.BlendMode.BindEnum(blendMode);
         document.Add(LayerTree);
         document.Add(LayerTree.RootContainer);
         LayerAction.Init(document);

@@ -42,8 +42,8 @@ public partial class TimelineAction : Container
         _timelineSetting = document.Get<TimelineSetting>();
         var subs = new CompositeDisposable();
         NewAnimationCel.VisibleIf(_selectionManager.WorkingCelFolder, e => !e.IsNull, subs);
-        BindCheckButton.BindBool(LoopPlay, _timelineSetting.LoopPlaybackEnabled, subs);
-        BindCheckButton.BindBool(OnionSkin, _timelineSetting.OnionSkinEnabled, subs);
+        LoopPlay.BindBool(_timelineSetting.LoopPlaybackEnabled, subs);
+        OnionSkin.BindBool(_timelineSetting.OnionSkinEnabled, subs);
         FrameRate.BindNumber(_timelineSetting.FrameRate);
         subs.AddTo(document);
     }

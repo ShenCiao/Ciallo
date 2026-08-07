@@ -131,6 +131,9 @@ WithinCelFolder,Within cel folder,在赛璐珞文件夹内,在賽璐珞資料夾
 NewCelFolder,New cel folder,新建赛璐珞文件夹,新增賽璐珞資料夾,新しいセルフォルダー,새 셀 폴더,Neuer Cel-Ordner,Nouveau dossier de cellulos
 Vector fill layer,Vector fill layer,矢量填充图层,向量填充圖層,ベクターフィルレイヤー,벡터 채우기 레이어,Vektor-Füllebene,Calque de remplissage vectoriel
 Blend mode,Blend mode,混合模式,混合模式,ブレンドモード,블렌드 모드,Mischmodus,Mode de fusion
+Clipping mask,Clipping mask,剪贴蒙版,剪裁遮色片,クリッピングマスク,클리핑 마스크,Schnittmaske,Masque d'écrêtage
+Add,Add,添加,增加,加算,더하기,Addieren,Ajouter
+Multiply,Multiply,正片叠底,色彩增值,乗算,곱하기,Multiplizieren,Produit
 Bounded area color,Bounded area color,封闭区域颜色,封閉區域顏色,閉じた領域の色,닫힌 영역 색상,Farbe des geschlossenen Bereichs,Couleur de la zone fermée
 Mode,Mode,模式,模式,モード,모드,Modus,Mode
 Strength,Strength,强度,強度,強さ,강도,Stärke,Intensité

@@ -7,9 +7,10 @@
 [ext_resource type="Texture2D" uid="uid://dfoj5v33yirlw" path="res://Icon/folder-plus.svg" id="4_7h52i"]
 [ext_resource type="Texture2D" uid="uid://61obc8werubk" path="res://Icon/file-image-plus-outline.svg" id="4_54l2l"]
 [ext_resource type="Texture2D" uid="uid://c5018cdyomv64" path="res://Icon/layer-convert.svg" id="5_conv1"]
+[ext_resource type="Texture2D" uid="uid://ddgqnm1dvnk6w" path="res://Icon/content-copy.svg" id="8_ya6gm"]
 
 [node name="LayerAction" type="HFlowContainer" unique_id=1292664685]
-offset_right = 258.0
+offset_right = 300.0
 offset_bottom = 36.0
 theme = ExtResource("1_1eecp")
 theme_override_constants/h_separation = 8
@@ -23,7 +24,6 @@ dialog_hide_on_ok = true
 file_mode = 0
 access = 2
 filters = PackedStringArray(".jpg,*.jpeg,*.png,*.webp,*.tga,*.bmp,*.dds,*.ktx,*.exr,*.hdr,*")
-use_native_dialog = true
 
 [node name="NewLayer" type="Button" parent="." unique_id=1065481797]
 custom_minimum_size = Vector2(36, 36)
@@ -67,4 +67,15 @@ tooltip_text = "Convert to shape layer"
 theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("5_conv1")
+expand_icon = true
+
+[node name="ClippingMask" type="Button" parent="." unique_id=140026379]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+tooltip_text = "Clipping mask"
+theme_type_variation = &"IconToggleButton"
+toggle_mode = true
+action_mode = 0
+icon = ExtResource("8_ya6gm")
 expand_icon = true

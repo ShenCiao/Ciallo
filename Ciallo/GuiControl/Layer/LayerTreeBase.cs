@@ -111,7 +111,6 @@ public abstract partial class LayerTreeBase : ScrollContainer
     protected void InitBlock(Entity e)
     {
         var commonSetting = e.Get<CommonLayerSetting>();
-        var cmdM = e.Document.Get<CommandManager>();
 
         var subs = new CompositeDisposable();
         subs.AddTo(e);
@@ -119,9 +118,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
         var wrapper = GetWrapper(e);
         var block = GetBlock(e);
         block.WorkingButton.ButtonGroup = WorkingLayerButtonGroup;
-        block.VisibleButton
-            .BindBool(commonSetting.IsVisible, subs)
-            .RegisterUndo(cmdM, true);
+        block.VisibleButton.BindBool(commonSetting.IsVisible, subs);
         StyleBoxFlat markColorStyleBox = null;
         commonSetting.MarkColor.Subscribe(markColor =>
         {
@@ -141,17 +138,13 @@ public abstract partial class LayerTreeBase : ScrollContainer
             block.WorkingButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
             block.WorkingButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
         }).AddTo(subs);
-        var lineEdit = block.LabelLineEdit
-            .BindString(commonSetting.Name, subs)
-            .RegisterUndo(cmdM);
+        var lineEdit = block.LabelLineEdit.BindString(commonSetting.Name, subs);
 
         if (ShouldShowDropdownArrow(e))
         {
             block.DropdownArrow.Visible = true;
             var property = e.Get<FolderLayerSetting>().IsExpanded;
-            block.DropdownArrow
-                .BindBool(property, subs)
-                .RegisterUndo(cmdM, true);
+            block.DropdownArrow.BindBool(property, subs);
             wrapper.ObserveIsExpanded(property, subs);
         }
         else

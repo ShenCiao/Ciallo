@@ -4,7 +4,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using Ciallo.Data;
 using Ciallo.Widget;
-using Frent;
 using Godot;
 using ObservableCollections;
 using R3;
@@ -123,15 +122,14 @@ public partial class BrushPanel : AcceptDialog
 
     public void BindBrushSetting<T>(
         ObservableList<T> list,
-        Func<T, StrokeBrushSetting> toBrushSetting,
-        Entity document = default)
+        Func<T, StrokeBrushSetting> toBrushSetting)
     {
         BrushSelector.ObserveObservableList(list, e => toBrushSetting(e).Name)
             .BindSelectionIndex(SelectedIndex);
 
         foreach (var item in list)
         {
-            var propertyBox = new PropertyContainer(document)
+            var propertyBox = new PropertyContainer()
                 .VisibleIf(SelectedIndex, idx => EqualityComparer<T>.Default.Equals(list.ElementAtOrDefault(idx), item));
             toBrushSetting(item).DrawProperty(propertyBox);
             PropertiesHolder.AddChild(propertyBox);
@@ -142,7 +140,7 @@ public partial class BrushPanel : AcceptDialog
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    var propertyBox = new PropertyContainer(document)
+                    var propertyBox = new PropertyContainer()
                         .VisibleIf(SelectedIndex, idx => EqualityComparer<T>.Default.Equals(list.ElementAtOrDefault(idx), e.NewItem));
                     toBrushSetting(e.NewItem).DrawProperty(propertyBox);
                     PropertiesHolder.AddChild(propertyBox);

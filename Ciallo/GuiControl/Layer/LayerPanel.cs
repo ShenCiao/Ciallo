@@ -23,10 +23,8 @@ public partial class LayerPanel : VBoxContainer, IInitable
         var blendMode = document.Get<SelectionManager>().WorkingLayer
             .Select(e => e.TryGet<CommonLayerSetting>()?.BlendMode)
             .Flatten().AddTo(document);
-        LayerProperty.Opacity.BindNumber(opacity)
-            .RegisterUndo(document.Get<CommandManager>());
-        LayerProperty.LayerMark.BindColor(layerMarkColor)
-            .RegisterUndo(document.Get<CommandManager>());
+        LayerProperty.Opacity.BindNumber(opacity);
+        LayerProperty.LayerMark.BindColor(layerMarkColor);
         LayerProperty.BlendMode.BindEnum(blendMode);
         document.Add(LayerTree);
         document.Add(LayerTree.RootContainer);

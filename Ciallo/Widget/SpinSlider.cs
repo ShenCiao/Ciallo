@@ -181,32 +181,4 @@ public partial class SpinSlider : HBoxContainer
         Slider?.SetValueNoSignal(value);
     }
 
-    public SpinSlider RegisterUndo(CommandManager manager)
-    {
-        // block inner change to avoid infinite loop.
-        bool innerChange = false;
-        ValueChanged += (oldValue, newValue) =>
-        {
-            if (innerChange)
-            {
-                innerChange = false;
-                return;
-            }
-            manager.CommitSequence(
-                "Change value of SpinSlider " + GetInstanceId(),
-                new DelegateCommand(
-                    () =>
-                    {
-                        innerChange = true;
-                        Value = newValue;
-                    },
-                    () =>
-                    {
-                        innerChange = true;
-                        Value = oldValue;
-                    }),
-                execute: false);
-        };
-        return this;
-    }
 }

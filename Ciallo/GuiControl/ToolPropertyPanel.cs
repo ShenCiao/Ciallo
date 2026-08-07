@@ -40,7 +40,7 @@ public partial class ToolPropertyPanel : Container
             var toolManager = document.Get<ToolManager>();
             foreach (var tool in toolManager.Tools)
             {
-                var container = new PropertyContainer(document);
+                var container = new PropertyContainer();
                 container.VisibleIf(toolManager.WorkingTool, tool);
                 container.QueueFreeChildren();
                 tool.DrawProperty(container);

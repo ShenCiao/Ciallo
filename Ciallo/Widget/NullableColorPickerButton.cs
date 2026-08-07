@@ -62,45 +62,6 @@ public partial class NullableColorPickerButton : ColorPickerButton
         return this;
     }
 
-    public NullableColorPickerButton RegisterUndo(CommandManager manager)
-    {
-        if (manager == null)
-            return this;
-
-        bool innerChange = false;
-        var recordedColor = ColorOrNull;
-        ColorOrNullChanged
-            .Subscribe(newColor =>
-            {
-                if (innerChange)
-                {
-                    innerChange = false;
-                    return;
-                }
-
-                var oldColor = recordedColor;
-                manager.CommitSequence(
-                    "Change nullable color picker " + Name,
-                    new DelegateCommand(
-                        () =>
-                        {
-                            innerChange = true;
-                            SetColorOrNullAndEmit(newColor);
-                            recordedColor = newColor;
-                        },
-                        () =>
-                        {
-                            innerChange = true;
-                            SetColorOrNullAndEmit(oldColor);
-                            recordedColor = oldColor;
-                        }),
-                    execute: false);
-                recordedColor = newColor;
-            })
-            .AddTo(this);
-        return this;
-    }
-
     public void SetColorOrNullNoSignal(Color? color)
     {
         if (color.HasValue)

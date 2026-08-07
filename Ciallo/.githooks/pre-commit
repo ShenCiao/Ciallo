@@ -49,9 +49,3 @@ mode=$1
 git update-index --cacheinfo "$mode,$new_blob,$index_path"
 
 echo "Cleaned staged Godot export paths in $file."
-#!/bin/sh
-# Installed by code-review-graph. Remove this file to disable pre-commit graph checks.
-if command -v code-review-graph >/dev/null 2>&1; then
-    code-review-graph update || true
-    code-review-graph detect-changes --brief || true
-fi

@@ -358,9 +358,6 @@ MigrationBackup/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-# Added by code-review-graph
-.code-review-graph/
-
 # Local agent instructions and Fennara tooling
 /AGENTS.md
 /Ciallo/addons/fennara/

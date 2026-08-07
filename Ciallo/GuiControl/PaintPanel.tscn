@@ -12,6 +12,7 @@
 [ext_resource type="Texture2D" uid="uid://f80karf2gkhx" path="res://Icon/flip-vertical.svg" id="9_ms4ye"]
 
 [node name="PaintPanel" type="PanelContainer" unique_id=265811070]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -133,7 +134,7 @@ script = ExtResource("3_7pmtm")
 handle_input_locally = false
 use_hdr_2d = true
 canvas_cull_mask = 4293918723
-size = Vector2i(1920, 1036)
+size = Vector2i(1920, 1035)
 render_target_update_mode = 4
 
 [node name="Background" type="Polygon2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=340478953]

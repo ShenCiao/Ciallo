@@ -340,7 +340,8 @@ public partial class TimelineRuler : Control
                 if (x < -pxPerSecond || x > w + pxPerSecond) continue;
 
                 int secondFrame = (int)(s * _fps);
-                bool inRange = hasPlaybackRange && secondFrame >= playbackStart && secondFrame < playbackEnd;
+                bool inRange = hasPlaybackRange &&
+                    TimelineFrameGeometry.IsInPlaybackRange(secondFrame, playbackStart, playbackEnd);
                 Color secTickColor = inRange ? TickColor : OutOfPlaybackTickColor;
                 Color secLabelColor = inRange ? LabelColor : OutOfPlaybackLabelColor;
 
@@ -373,7 +374,8 @@ public partial class TimelineRuler : Control
             bool isMajor = frame == 0 || frame % majorStep == 0;
             float tickH = isMajor ? MajorTickHeight : MinorTickHeight;
 
-            bool inRange = hasPlaybackRange && frame >= playbackStart && frame < playbackEnd;
+            bool inRange = hasPlaybackRange &&
+                TimelineFrameGeometry.IsInPlaybackRange(frame, playbackStart, playbackEnd);
             Color frameTickColor = inRange ? TickColor : OutOfPlaybackTickColor;
             Color frameLabelColor = inRange ? LabelColor : OutOfPlaybackLabelColor;
 
@@ -547,7 +549,7 @@ public partial class TimelineRuler : Control
         if (_currentFrame != null && _playbackStart != null && _playbackEnd != null)
         {
             int frame = XToFrame(atPosition.X);
-            if (frame >= _playbackStart.Value && frame < _playbackEnd.Value)
+            if (TimelineFrameGeometry.IsInPlaybackRange(frame, _playbackStart.Value, _playbackEnd.Value))
                 return (int)CursorShape.PointingHand;
         }
         return (int)CursorShape.Arrow;

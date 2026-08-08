@@ -99,7 +99,7 @@ internal static class LayerContextActions
 
         foreach (var cel in exposures.Values)
         {
-            if (!renamedCels.Add(cel))
+            if (cel.IsCelFolder || !renamedCels.Add(cel))
                 continue;
 
             cmd.SetTarget(cel)

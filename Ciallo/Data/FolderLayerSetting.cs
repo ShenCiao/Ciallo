@@ -38,9 +38,10 @@ public class FolderLayerSetting
     #region Cel Folder
 
     /// <summary>
-    /// Cel exposure table. 
-    /// Keys represent the starting frame of a drawing; 
-    /// Values represent the layer to be displayed until the next key is encountered.
+    /// Cel exposure table.
+    /// Keys represent the starting frame of an exposure.
+    /// Values represent the layer to display until the next key. A CelFolder value represents
+    /// an explicit Empty exposure; authored Empty values use this setting's owning CelFolder entity.
     /// </summary>
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Required)]
     public ObservableSortedList<int, Entity> Exposures = null;

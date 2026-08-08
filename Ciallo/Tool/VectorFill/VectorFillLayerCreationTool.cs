@@ -161,7 +161,8 @@ public class VectorFillLayerCreationTool : ToolBase
                 exposures => AddCorrespondingExposures(
                     exposures,
                     sourceExposures,
-                    fillLayersBySourceCel));
+                    fillLayersBySourceCel,
+                    newCelFolder));
 
         if (!focusVectorFillLayer.IsNull)
             cmd.SetTarget(focusVectorFillLayer).SetWorkingLayer(true);
@@ -198,7 +199,7 @@ public class VectorFillLayerCreationTool : ToolBase
         var plans = new List<CelVectorFillPlan>();
         foreach (var sourceCel in sourceExposures.Values)
         {
-            if (seen.Add(sourceCel))
+            if (!sourceCel.IsCelFolder && seen.Add(sourceCel))
                 plans.Add(new(sourceCel, GetReferenceShapeLayersForCel(sourceCel)));
         }
 
@@ -240,11 +241,14 @@ public class VectorFillLayerCreationTool : ToolBase
     private static void AddCorrespondingExposures(
         ObservableSortedList<int, Entity> targetExposures,
         SortedList<int, Entity> sourceExposures,
-        IReadOnlyDictionary<Entity, Entity> fillLayersBySourceCel)
+        IReadOnlyDictionary<Entity, Entity> fillLayersBySourceCel,
+        Entity targetCelFolder)
     {
         foreach (var (frame, sourceCel) in sourceExposures)
         {
-            if (fillLayersBySourceCel.TryGetValue(sourceCel, out var fillLayer))
+            if (sourceCel.IsCelFolder)
+                targetExposures.Add(frame, targetCelFolder);
+            else if (fillLayersBySourceCel.TryGetValue(sourceCel, out var fillLayer))
                 targetExposures.Add(frame, fillLayer);
         }
     }

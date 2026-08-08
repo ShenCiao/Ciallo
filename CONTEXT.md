@@ -60,7 +60,7 @@ A cel is a direct child layer of a cel folder, whether or not it is currently as
 
 ### Cel Button
 
-A cel button is the clickable exposure bar on a CelTrack that represents one exposed cel at a specific timeline frame.
+A cel button is the clickable timeline control for an exposure key on a CelTrack. A cel exposure uses a labeled bar with an outgoing hold arrow. An Empty exposure uses an unlabeled X with no outgoing arrow. Both forms support the same click, drag, replace, delete, and undo workflows.
 
 ### Cel Folder
 
@@ -72,14 +72,18 @@ A cel child archetype is a shared editable setting grouped by layer name across 
 
 ### Preferred Cel Child Name
 
-A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the working layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the working layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. It is set only when the working layer becomes a direct cel child, and is empty by default.
+A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the working layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the working layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Empty selects the cel folder itself without changing the preferred name. It is set only when the working layer becomes a direct cel child, and is empty by default.
 
 ### Folder layer
 Any layer's parent must be a folder layer. The document entity is a folder layer entity.
 
 ### Exposure
 
-An exposure is a timeline assignment that says which cel is shown from a frame until the next exposure on the same cel folder.
+An exposure is a timeline assignment that says which cel, or Empty, is shown from a frame until the next exposure on the same cel folder.
+
+### Empty Exposure
+
+An Empty exposure is an explicit blank interval on a cel folder. In `FolderLayerSetting.Exposures`, any value whose entity is a CelFolder represents Empty; authored Empty values are self-references to the owning CelFolder. Empty displays no current layer, contributes a blank onion-skin exposure offset, and preserves the cel folder as the working layer so later cel navigation can recover the preferred cel child.
 
 ### Frame Sequence
 

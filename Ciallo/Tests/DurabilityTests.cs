@@ -508,6 +508,47 @@ public class DurabilityTests
 
     [TestCase]
     [RequireGodotRuntime]
+    public void SaveRoundTripsEmptyExposureSelfReference()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-empty-exposure-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Empty exposure" } });
+        var celFolder = document.World.Create();
+        celFolder.Tag<ToSerializeTag>();
+        celFolder.Add(new CommonLayerSetting { Name = { Value = "Animation" } });
+        celFolder.Add(new LayerTreeNode());
+        celFolder.Add(new FolderLayerSetting { IsCelFolder = true });
+        document.Get<LayerTreeNode>().AddChild(celFolder);
+        celFolder.Get<FolderLayerSetting>().Exposures.Add(12, celFolder);
+
+        try
+        {
+            AppDocumentManager.Save(document, path);
+            var loaded = DuckDbProjectSerializer.Load(path);
+
+            var loadedCelFolder = Entity.Null;
+            var query = loaded.World.CreateQuery().With<FolderLayerSetting>().Build();
+            foreach (var entity in query.EnumerateWithEntities())
+            {
+                if (entity.Get<FolderLayerSetting>().IsCelFolder)
+                    loadedCelFolder = entity;
+            }
+
+            AssertThat(loadedCelFolder.IsNull).IsFalse();
+            var loadedExposures = loadedCelFolder.Get<FolderLayerSetting>().Exposures;
+            AssertThat(loadedExposures.ContainsKey(12)).IsTrue();
+            AssertThat(loadedExposures[12]).IsEqual(loadedCelFolder);
+            DisposeWorld(loaded.World);
+        }
+        finally
+        {
+            AppDocumentManager.Clear();
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [TestCase]
+    [RequireGodotRuntime]
     public void SaveRoundTripsPrivateAndInheritedTreeFields()
     {
         var path = Path.Combine(Path.GetTempPath(), "ciallo-tree-test-" + Guid.NewGuid().ToString("N") + ".ciallo");

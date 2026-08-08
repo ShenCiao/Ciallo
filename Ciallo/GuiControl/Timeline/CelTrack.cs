@@ -196,8 +196,12 @@ public partial class CelTrack : Control
 
         if (previousFrame.HasValue && firstInRange.HasValue)
         {
-            float tipX = Mathf.Min(FrameToX(firstInRange.Value), w + ArrowHeadLength);
-            DrawArrow(playbackStartX, tipX, midY, GetCelArrowColor(_exposures[previousFrame.Value]));
+            var previousExposure = _exposures[previousFrame.Value];
+            if (!previousExposure.IsCelFolder)
+            {
+                float tipX = Mathf.Min(FrameToX(firstInRange.Value), w + ArrowHeadLength);
+                DrawArrow(playbackStartX, tipX, midY, GetCelArrowColor(previousExposure));
+            }
         }
 
         for (int i = 0; i < frames.Count; i++)
@@ -205,36 +209,60 @@ public partial class CelTrack : Control
             int frame = frames[i];
             float x = FrameToX(frame);
             var layerE = _exposures[frame];
+            bool isEmpty = layerE.IsCelFolder;
 
             // ── Cel drag bar
             var barRect = new Rect2(x, 0f, barW, h);
             if (barRect.End.X > 0f && barRect.Position.X < w)
             {
-                Color barColor;
-                if (_isDragging && frame == _dragSourceFrame)
-                    barColor = BarNormalColor with { A = 0.35f }; // ghost while dragging
-                else if (frame == _pressedFrame)
-                    barColor = BarPressedColor;
-                else if (frame == _hoveredFrame)
-                    barColor = BarHoverColor;
+                if (isEmpty)
+                {
+                    Color backgroundColor = Colors.Transparent;
+                    Color strokeColor = LabelColor;
+                    if (_isDragging && frame == _dragSourceFrame)
+                    {
+                        backgroundColor = BarNormalColor with { A = 0.15f };
+                        strokeColor = LabelColor with { A = 0.35f };
+                    }
+                    else if (frame == _pressedFrame)
+                        backgroundColor = BarPressedColor;
+                    else if (frame == _hoveredFrame)
+                        backgroundColor = BarHoverColor;
+
+                    DrawEmptyCelButton(barRect, strokeColor, backgroundColor);
+                }
                 else
-                    barColor = BarNormalColor;
-                DrawRect(barRect, barColor);
+                {
+                    Color barColor;
+                    if (_isDragging && frame == _dragSourceFrame)
+                        barColor = BarNormalColor with { A = 0.35f }; // ghost while dragging
+                    else if (frame == _pressedFrame)
+                        barColor = BarPressedColor;
+                    else if (frame == _hoveredFrame)
+                        barColor = BarHoverColor;
+                    else
+                        barColor = BarNormalColor;
+                    DrawRect(barRect, barColor);
+                }
             }
 
             // ── Layer name label (draw for any visible frame) ─────────────────
-            string name = layerE.Get<CommonLayerSetting>().Name.Value;
-            float labelX = x + barW + LabelPad;
-            int? nextAny = i + 1 < frames.Count ? frames[i + 1] : null;
-            float labelEnd = nextAny.HasValue
-                ? FrameToX(nextAny.Value) - ArrowHeadLength - LabelPad
-                : w;
-            float maxW = labelEnd - labelX;
-            if (maxW > 0f && labelX < w)
-                DrawString(LabelFont, new Vector2(labelX, midY + LabelFontSize * 0.35f),
-                    name, HorizontalAlignment.Left, maxW, LabelFontSize, LabelColor);
+            if (!isEmpty)
+            {
+                string name = layerE.Get<CommonLayerSetting>().Name.Value;
+                float labelX = x + barW + LabelPad;
+                int? nextAny = i + 1 < frames.Count ? frames[i + 1] : null;
+                float labelEnd = nextAny.HasValue
+                    ? FrameToX(nextAny.Value) - ArrowHeadLength - LabelPad
+                    : w;
+                float maxW = labelEnd - labelX;
+                if (maxW > 0f && labelX < w)
+                    DrawString(LabelFont, new Vector2(labelX, midY + LabelFontSize * 0.35f),
+                        name, HorizontalAlignment.Left, maxW, LabelFontSize, LabelColor);
+            }
 
             if (frame < _playbackStart || frame >= _playbackEnd) continue; // skip arrows for out-of-range frames
+            if (isEmpty) continue;
 
             // Next frame within playback range (or none)
             int? nextInRange = null;
@@ -268,9 +296,12 @@ public partial class CelTrack : Control
             Color previewColor = isValid
                 ? BarHoverColor with { A = 0.85f }
                 : new Color(0.9f, 0.25f, 0.25f, 0.6f);
-            DrawRect(new Rect2(targetX, 0f, barW, h), previewColor);
-            DrawRect(new Rect2(targetX, 0f, barW, h), isValid ? LabelColor : Colors.Red,
-                filled: false, width: 1f);
+            var previewRect = new Rect2(targetX, 0f, barW, h);
+            if (_exposures[_dragSourceFrame.Value].IsCelFolder)
+                DrawEmptyCelButton(previewRect, isValid ? LabelColor : Colors.Red, previewColor);
+            else
+                DrawRect(previewRect, previewColor);
+            DrawRect(previewRect, isValid ? LabelColor : Colors.Red, filled: false, width: 1f);
         }
 
         if (_isSelected)
@@ -279,6 +310,20 @@ public partial class CelTrack : Control
             DrawLine(new Vector2(0f, width), new Vector2(w, width), HintSelectedColor, width: width);
             DrawLine(new Vector2(0f, h - width / 2), new Vector2(w, h - width / 2), HintSelectedColor, width: width);
         }
+    }
+
+    private void DrawEmptyCelButton(Rect2 rect, Color strokeColor, Color backgroundColor)
+    {
+        if (backgroundColor.A > 0f)
+            DrawRect(rect, backgroundColor);
+
+        float inset = Mathf.Min(2f, Mathf.Min(rect.Size.X, rect.Size.Y) * 0.2f);
+        var topLeft = rect.Position + new Vector2(inset, inset);
+        var topRight = rect.Position + new Vector2(rect.Size.X - inset, inset);
+        var bottomLeft = rect.Position + new Vector2(inset, rect.Size.Y - inset);
+        var bottomRight = rect.End - new Vector2(inset, inset);
+        DrawLine(topLeft, bottomRight, strokeColor, 1.5f);
+        DrawLine(topRight, bottomLeft, strokeColor, 1.5f);
     }
 
     private void DrawArrow(float shaftStart, float tipX, float midY, Color color)

@@ -250,6 +250,7 @@ public partial class TimelineAction : Container
         var document = celFolder.Document;
         var folderSetting = celFolder.Get<FolderLayerSetting>();
         var exposures = folderSetting.Exposures;
+        bool replaceEmptyExposure = exposures.ContainsKey(frame) && exposures[frame].IsCelFolder;
         var celE = celFolder.World.Create();
 
         var cmd = new CommandBuilder("New Animation Cel", celE)
@@ -330,7 +331,11 @@ public partial class TimelineAction : Container
         }
 
         cmd.SetTarget(celFolder)
-            .SetObservableCollection(exposures, exp => exp.Add(frame, celE))
+            .SetObservableCollection(exposures, exp =>
+            {
+                if (replaceEmptyExposure) exp.Remove(frame);
+                exp.Add(frame, celE);
+            })
             .SetTarget(document)
             .SetProperty(e => e.Get<SelectionManager>().CurrentFrame, frame)
             .Commit();
@@ -502,7 +507,7 @@ public partial class TimelineAction : Container
         if (index < 0) return false;
 
         var cel = exposures.GetValueAtIndex(index);
-        if (cel.IsNull || !cel.IsAlive || !cel.Has<CommonLayerSetting>())
+        if (cel.IsNull || !cel.IsAlive || cel.IsCelFolder || !cel.Has<CommonLayerSetting>())
             return false;
 
         return TryParseCelLabel(cel.Get<CommonLayerSetting>().Name.Value, out number, out char suffix);

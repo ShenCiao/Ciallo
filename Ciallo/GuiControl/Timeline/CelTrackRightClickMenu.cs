@@ -64,6 +64,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
         Clear();
         _celListEntities.Clear();
 
+        _celListEntities.Add(_celFolderEntity);
         var children = _celFolderEntity.Get<LayerTreeNode>().Children;
         foreach (var celEntity in children)
         {
@@ -89,6 +90,12 @@ public partial class CelTrackRightClickMenu : PopupMenu
         {
             for (int i = 0; i < _celListEntities.Count; i++)
             {
+                if (_celListEntities[i].IsCelFolder)
+                {
+                    AddItem("  " + "Empty".Tr(), CelListIdBase + i);
+                    continue;
+                }
+
                 string name = _celListEntities[i].Get<CommonLayerSetting>().Name.Value;
                 AddItem("  " + (string.IsNullOrEmpty(name) ? "(unnamed)".Tr() : name), CelListIdBase + i);
             }
@@ -97,7 +104,10 @@ public partial class CelTrackRightClickMenu : PopupMenu
         if (_onCel)
         {
             AddSeparator();
-            AddItem("Delete Cel".Tr(), IdDeleteCel);
+            string deleteLabel = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder
+                ? "Delete Empty"
+                : "Delete Cel";
+            AddItem(deleteLabel.Tr(), IdDeleteCel);
         }
 
         AddSeparator();
@@ -143,7 +153,13 @@ public partial class CelTrackRightClickMenu : PopupMenu
         int targetFrame;
         string name;
 
-        if (_onCel)
+        if (_onCel && exposures[_rightClickedFrame].IsCelFolder)
+        {
+            targetFrame = _rightClickedFrame;
+            var usedNames = TimelineAction.GetUsedCelNames(_celFolderEntity);
+            name = TimelineAction.GetNewAnimationCelName(exposures, targetFrame, usedNames);
+        }
+        else if (_onCel)
         {
             (targetFrame, name) = TimelineAction.GetNewAnimationCelFrameName(
                 _celFolderEntity, _rightClickedFrame);
@@ -182,7 +198,8 @@ public partial class CelTrackRightClickMenu : PopupMenu
         int frame = _rightClickedFrame;
         if (!exposures.ContainsKey(frame)) return;
 
-        new CommandBuilder("Delete Cel")
+        string label = exposures[frame].IsCelFolder ? "Delete Empty" : "Delete Cel";
+        new CommandBuilder(label)
             .SetObservableCollection(exposures, exp => exp.Remove(frame))
             .Commit();
     }

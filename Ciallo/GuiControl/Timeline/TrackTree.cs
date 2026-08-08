@@ -209,7 +209,9 @@ public partial class TrackTree : LayerTreeBase
                 }
 
                 var cel = folderSetting.CurrentExposedCel.CurrentValue;
-                var target = cel.IsNull ? Entity.Null : cel.Get<LayerTreeNode>().GetLayerChildByName(name);
+                var target = cel.IsNull || cel.IsCelFolder
+                    ? Entity.Null
+                    : cel.Get<LayerTreeNode>().GetLayerChildByName(name);
                 if (target.IsNull)
                 {
                     // No matching child under the current cel (or no cel exposed): ignore the click.

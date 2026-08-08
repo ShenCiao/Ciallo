@@ -84,13 +84,12 @@ public partial class NullableColorPickerButton : ColorPickerButton
 
         if (HasColor) return;
 
-        var rect = new Rect2(new Vector2(3, 3), Size - new Vector2(6, 6));
+        var rect = new Rect2(new Vector2(2, 2), Size - new Vector2(4, 4));
         var markColor = GetNullMarkColor();
 
-        DrawRect(rect, new Color(0, 0, 0, 0.18f));
-        DrawRect(rect, markColor, filled: false, width: 1f);
-        DrawLine(rect.Position, rect.End, markColor, width: 2f);
-        DrawLine(new Vector2(rect.Position.X, rect.End.Y), new Vector2(rect.End.X, rect.Position.Y), markColor, width: 2f);
+        DrawRect(rect, markColor, filled: false, width: 1f, antialiased: true);
+        DrawLine(rect.Position, rect.End, markColor, width: 1f, antialiased: true);
+        DrawLine(new Vector2(rect.Position.X, rect.End.Y), new Vector2(rect.End.X, rect.Position.Y), markColor, width: 1f, antialiased: true);
     }
 
     private void OnHasColorToggled(bool hasColor)

@@ -14,7 +14,7 @@ namespace Ciallo.GuiControl;
 ///   <item>Lives as a normal (non-TopLevel) child of the <see cref="TrackRow"/> HSplitContainer
 ///         and fills the right panel via <see cref="SizeFlags.ExpandFill"/>.</item>
 ///   <item>Every exposure key draws a cel button; each cel exposure's button carries an outgoing
-///         hold arrow that spans until the next exposure.</item>
+///         exposure span that spans until the next exposure.</item>
 /// </list>
 /// Call <see cref="Observe"/> and <see cref="Bind"/> once after adding to the scene.
 /// </summary>
@@ -30,12 +30,12 @@ public partial class CelTrack : Control
     public float MaxCelButtonWidth = 24f;
     public float CelButtonWidth => Mathf.Min(_pixelsPerFrame * CelButtonWidthRatio, MaxCelButtonWidth);
 
-    public float HoldArrowHeadLength = 7f;
-    public float HoldArrowHeadHalfWidth = 4f;
+    public float SpanArrowHeadLength = 7f;
+    public float SpanArrowHeadHalfWidth = 4f;
     public float LabelPad = 3f;
 
-    /// <summary>Scales shaft width and head size of the hold arrow being dragged.</summary>
-    private const float DraggedHoldArrowThickness = 2f;
+    /// <summary>Scales shaft width and head size of the exposure span being dragged.</summary>
+    private const float DraggedSpanArrowThickness = 2f;
 
     private const string ChangeExposureDurationCommandName = "Change Cel Exposure Duration";
 
@@ -49,7 +49,7 @@ public partial class CelTrack : Control
 
     // ── Interaction state ─────────────────────────────────────────────────────
     private const float DragThreshold = 3f;
-    private const float EmptyExposureStrokeWidth = 6f;
+    private const float BlankExposureStrokeWidth = 6f;
     /// <summary>Press X of whichever gesture is active; both drags measure their threshold from it.</summary>
     private float _pressStartX;
 
@@ -59,9 +59,9 @@ public partial class CelTrack : Control
     private int? _celButtonDragSourceFrame;
     private int? _celButtonDragTargetFrame;
 
-    private HoldArrow? _pressedHoldArrow;
-    private bool _isHoldArrowDragging;
-    private int? _holdArrowDragTargetFrame;
+    private ExposureSpan? _pressedSpan;
+    private bool _isSpanDragging;
+    private int? _spanDragTargetFrame;
 
     // ── Right-click indicator ─────────────────────────────────────────────────
     private int? _rightClickIndicatorFrame;
@@ -79,7 +79,7 @@ public partial class CelTrack : Control
     public Color CelButtonHoverColor;
     public Color CelButtonPressedColor;
     public Color LabelColor;
-    public Color HoldArrowColor;
+    public Color ExposureSpanColor;
     public Font LabelFont;
     public int LabelFontSize;
     /// <summary>Hardcoded orange, identical to the Playhead's border color.</summary>
@@ -106,7 +106,7 @@ public partial class CelTrack : Control
         var pressedStyleBox = (StyleBoxFlat)GetThemeStylebox("pressed", "Button");
         CelButtonPressedColor = pressedStyleBox.BgColor;
         LabelColor = GetThemeColor("font_color", "Button");
-        HoldArrowColor = LabelColor with { A = 0.8f };
+        ExposureSpanColor = LabelColor with { A = 0.8f };
         LabelFont = GetThemeFont("font", "Button");
         LabelFontSize = (int)(GetThemeFontSize("font_size", "Button") * 0.8f);
     }
@@ -192,7 +192,7 @@ public partial class CelTrack : Control
             int frame = _exposures.GetKeyAtIndex(i);
             var exposureValue = _exposures.GetValueAtIndex(i);
             float x = FrameToX(frame);
-            bool isEmptyExposure = exposureValue.IsCelFolder;
+            bool isBlankExposure = exposureValue.IsCelFolder;
 
             // ── Cel button
             var buttonRect = new Rect2(x, 0f, buttonW, h);
@@ -208,16 +208,16 @@ public partial class CelTrack : Control
                 else
                     buttonColor = CelButtonNormalColor;
 
-                DrawCelButton(buttonRect, buttonColor, isEmptyExposure);
+                DrawCelButton(buttonRect, buttonColor, isBlankExposure);
             }
 
             // ── Layer name label (draw for any visible frame) ─────────────────
-            if (!isEmptyExposure)
+            if (!isBlankExposure)
             {
                 string name = exposureValue.Get<CommonLayerSetting>().Name.Value;
                 float labelX = x + buttonW + LabelPad;
                 float labelEnd = i + 1 < _exposures.Count
-                    ? FrameToX(_exposures.GetKeyAtIndex(i + 1)) - HoldArrowHeadLength - LabelPad
+                    ? FrameToX(_exposures.GetKeyAtIndex(i + 1)) - SpanArrowHeadLength - LabelPad
                     : w;
                 float maxW = labelEnd - labelX;
                 if (maxW > 0f && labelX < w)
@@ -225,11 +225,11 @@ public partial class CelTrack : Control
                         name, HorizontalAlignment.Left, maxW, LabelFontSize, LabelColor);
             }
 
-            // ── Hold arrow (the dragged one is drawn as a preview instead) ─────
-            if (TryGetHoldArrow(i, out var holdArrow) &&
-                holdArrow.SourceFrame != DraggedHoldArrowSourceFrame)
-                DrawHoldArrow(holdArrow.ShaftStartX, holdArrow.TipX, midY,
-                    GetHoldArrowColor(exposureValue));
+            // ── Exposure span (the dragged one is drawn as a preview instead) ─────
+            if (TryGetExposureSpan(i, out var span) &&
+                span.SourceFrame != DraggedSpanSourceFrame)
+                DrawSpanArrow(span.ShaftStartX, span.TipX, midY,
+                    GetExposureSpanColor(exposureValue));
         }
 
         // ── Right-click indicator line ────────────────────────────────────────
@@ -257,17 +257,17 @@ public partial class CelTrack : Control
             DrawRect(previewRect, isValid ? PlayheadAccentColor : Colors.Red, filled: false, width: 1f);
         }
 
-        // ── Hold arrow drag preview: thicker, in the Playhead's accent color ───
-        if (_isHoldArrowDragging &&
-            _pressedHoldArrow is { } draggedArrow &&
-            _holdArrowDragTargetFrame.HasValue)
+        // ── Exposure span drag preview: thicker, in the Playhead's accent color ───
+        if (_isSpanDragging &&
+            _pressedSpan is { } draggedArrow &&
+            _spanDragTargetFrame.HasValue)
         {
             // Recomputed rather than reused: scroll/zoom may have changed since the press.
             float shaftStartX = draggedArrow.SourceFrame < _playbackStart
                 ? FrameToX(_playbackStart)
                 : FrameToX(draggedArrow.SourceFrame) + buttonW;
-            float tipX = Mathf.Min(FrameToX(_holdArrowDragTargetFrame.Value), w + HoldArrowHeadLength);
-            DrawHoldArrow(shaftStartX, tipX, midY, PlayheadAccentColor, DraggedHoldArrowThickness);
+            float tipX = Mathf.Min(FrameToX(_spanDragTargetFrame.Value), w + SpanArrowHeadLength);
+            DrawSpanArrow(shaftStartX, tipX, midY, PlayheadAccentColor, DraggedSpanArrowThickness);
         }
 
         if (_isSelected)
@@ -278,33 +278,33 @@ public partial class CelTrack : Control
         }
     }
 
-    /// <summary>Draws a cel button: a hollow outline for an Empty exposure, a solid bar otherwise.</summary>
-    private void DrawCelButton(Rect2 rect, Color color, bool isEmptyExposure)
+    /// <summary>Draws a cel button: a hollow outline for an Blank exposure, a solid bar otherwise.</summary>
+    private void DrawCelButton(Rect2 rect, Color color, bool isBlankExposure)
     {
-        if (isEmptyExposure)
-            DrawRect(rect.Grow(-EmptyExposureStrokeWidth / 2f), color,
-                filled: false, width: EmptyExposureStrokeWidth);
+        if (isBlankExposure)
+            DrawRect(rect.Grow(-BlankExposureStrokeWidth / 2f), color,
+                filled: false, width: BlankExposureStrokeWidth);
         else
             DrawRect(rect, color);
     }
 
-    /// <summary>Draws a horizontal hold arrow. <paramref name="thickness"/> scales both shaft and head.</summary>
-    private void DrawHoldArrow(float shaftStartX, float tipX, float midY, Color color, float thickness = 1f)
+    /// <summary>Draws a horizontal exposure span. <paramref name="thickness"/> scales both shaft and head.</summary>
+    private void DrawSpanArrow(float shaftStartX, float tipX, float midY, Color color, float thickness = 1f)
     {
-        float headLength = HoldArrowHeadLength * thickness;
+        float headLength = SpanArrowHeadLength * thickness;
         if (tipX - shaftStartX <= headLength) return;
 
         DrawLine(new(shaftStartX, midY), new(tipX - headLength, midY), color, thickness);
 
-        float headHalfWidth = HoldArrowHeadHalfWidth * thickness;
+        float headHalfWidth = SpanArrowHeadHalfWidth * thickness;
         Vector2 tip = new(tipX, midY);
         Vector2 p1 = new(tipX - headLength, midY - headHalfWidth);
         Vector2 p2 = new(tipX - headLength, midY + headHalfWidth);
         DrawColoredPolygon([tip, p1, p2], color);
     }
 
-    private Color GetHoldArrowColor(Entity cel) =>
-        cel.Get<CommonLayerSetting>().MarkColor.Value ?? HoldArrowColor;
+    private Color GetExposureSpanColor(Entity cel) =>
+        cel.Get<CommonLayerSetting>().MarkColor.Value ?? ExposureSpanColor;
 
     // ── Coordinate helper ────────────────────────────────────────────────────
 
@@ -335,11 +335,17 @@ public partial class CelTrack : Control
     }
 
     /// <summary>
-    /// Geometry of one hold arrow. <c>NextFrame</c> is the following exposure key (null when
-    /// there is none); it equals <c>TipFrame</c> only when the arrow actually ends on that exposure
-    /// rather than running out to <see cref="_playbackEnd"/>.
+    /// One exposure span (the CONTEXT.md term for the interval an exposure covers), resolved to both
+    /// frames and pixels. <c>NextFrame</c> is the following exposure key (null when there is none);
+    /// it equals <c>TipFrame</c> only when the span actually ends on that exposure rather than
+    /// running out to <see cref="_playbackEnd"/>.
+    /// <para>
+    /// X-sheet tools call this a <i>hold</i> (Toon Boom Harmony: <c>Hold Exposure</c> /
+    /// <c>Extend Exposure</c>). This type carries the view geometry too (<c>ShaftStartX</c>,
+    /// <c>TipX</c>), so it is the drawable resolution of the span, not the domain concept alone.
+    /// </para>
     /// </summary>
-    private readonly record struct HoldArrow(
+    private readonly record struct ExposureSpan(
         int SourceFrame,
         int TipFrame,
         int? NextFrame,
@@ -351,13 +357,13 @@ public partial class CelTrack : Control
     }
 
     /// <summary>
-    /// Resolves the hold arrow leaving the exposure at <paramref name="index"/>. Returns false when
-    /// that exposure draws no arrow (Empty exposure, out of playback range, or too short to render).
+    /// Resolves the exposure span leaving the exposure at <paramref name="index"/>. Returns false when
+    /// that exposure draws no arrow (Blank exposure, out of playback range, or too short to render).
     /// Single source of truth for drawing, hit-testing and drag clamping.
     /// </summary>
-    private bool TryGetHoldArrow(int index, out HoldArrow holdArrow)
+    private bool TryGetExposureSpan(int index, out ExposureSpan span)
     {
-        holdArrow = default;
+        span = default;
         int source = _exposures.GetKeyAtIndex(index);
         if (source >= _playbackEnd) return false;
         if (_exposures.GetValueAtIndex(index).IsCelFolder) return false;
@@ -378,63 +384,63 @@ public partial class CelTrack : Control
             shaftStartX = FrameToX(source) + CelButtonWidth;
         }
 
-        float tipX = Mathf.Min(FrameToX(tip), Size.X + HoldArrowHeadLength);
-        if (tipX - shaftStartX <= HoldArrowHeadLength) return false;
+        float tipX = Mathf.Min(FrameToX(tip), Size.X + SpanArrowHeadLength);
+        if (tipX - shaftStartX <= SpanArrowHeadLength) return false;
 
-        holdArrow = new HoldArrow(source, tip, next, shaftStartX, tipX);
+        span = new ExposureSpan(source, tip, next, shaftStartX, tipX);
         return true;
     }
 
     /// <summary>
-    /// Returns the hold arrow whose head (a cel-button-wide grab zone behind the tip) contains posX.
+    /// Returns the exposure span whose head (a cel-button-wide grab zone behind the tip) contains posX.
     /// </summary>
-    private bool TryGetHoldArrowHeadAt(float posX, out HoldArrow holdArrow)
+    private bool TryGetSpanArrowHeadAt(float posX, out ExposureSpan span)
     {
-        holdArrow = default;
+        span = default;
         if (_pixelsPerFrame <= 0f || _exposures == null) return false;
 
         float grabWidth = CelButtonWidth;
         for (int i = 0; i < _exposures.Count; i++)
         {
-            if (!TryGetHoldArrow(i, out var candidate)) continue;
+            if (!TryGetExposureSpan(i, out var candidate)) continue;
 
             float tipX = candidate.TipX;
             if (tipX < 0f || tipX > Size.X) continue;
             if (posX < tipX - grabWidth || posX >= tipX) continue;
 
-            holdArrow = candidate;
+            span = candidate;
             return true;
         }
 
         return false;
     }
 
-    /// <summary>Source frame of the hold arrow currently being dragged, or null.</summary>
-    private int? DraggedHoldArrowSourceFrame =>
-        _isHoldArrowDragging ? _pressedHoldArrow?.SourceFrame : null;
+    /// <summary>Source frame of the exposure span currently being dragged, or null.</summary>
+    private int? DraggedSpanSourceFrame =>
+        _isSpanDragging ? _pressedSpan?.SourceFrame : null;
 
     /// <summary>Clamps a drag target so the arrow keeps at least one frame and never passes the next exposure.</summary>
-    private int ClampHoldArrowDragTarget(HoldArrow holdArrow, float posX)
+    private int ClampSpanDragTarget(ExposureSpan span, float posX)
     {
-        int target = Mathf.Max(holdArrow.SourceFrame + 1, PositionToFrame(posX));
+        int target = Mathf.Max(span.SourceFrame + 1, PositionToFrame(posX));
         // Retiming shifts later exposures, so only a next-ending arrow may grow past them.
-        if (holdArrow.NextFrame.HasValue && !holdArrow.EndsOnNextExposure)
-            target = Mathf.Min(target, holdArrow.NextFrame.Value);
+        if (span.NextFrame.HasValue && !span.EndsOnNextExposure)
+            target = Mathf.Min(target, span.NextFrame.Value);
         return target;
     }
 
-    private void CommitHoldArrowDrag()
+    private void CommitSpanDrag()
     {
-        if (!_isHoldArrowDragging ||
-            !_pressedHoldArrow.HasValue ||
-            !_holdArrowDragTargetFrame.HasValue)
+        if (!_isSpanDragging ||
+            !_pressedSpan.HasValue ||
+            !_spanDragTargetFrame.HasValue)
             return;
 
-        var holdArrow = _pressedHoldArrow.Value;
-        int tip = holdArrow.TipFrame;
-        int target = _holdArrowDragTargetFrame.Value;
+        var span = _pressedSpan.Value;
+        int tip = span.TipFrame;
+        int target = _spanDragTargetFrame.Value;
 
-        if (holdArrow.EndsOnNextExposure)
+        if (span.EndsOnNextExposure)
         {
             // Retime: grow by inserting frames at the tip, shrink by deleting back to the target.
             int delta = target - tip;
@@ -452,7 +458,7 @@ public partial class CelTrack : Control
         }
         else if (!_exposures.ContainsKey(target))
         {
-            // Arrow ran to playbackEnd: cap the exposure with an Empty exposure at the target.
+            // Arrow ran to playbackEnd: cap the exposure with an Blank exposure at the target.
             new CommandBuilder(ChangeExposureDurationCommandName)
                 .SetObservableCollection(_exposures,
                     exposures => exposures.Add(target, _celFolderEntity))
@@ -460,18 +466,18 @@ public partial class CelTrack : Control
         }
     }
 
-    private void ResetHoldArrowDrag()
+    private void ResetSpanDrag()
     {
-        _pressedHoldArrow = null;
-        _isHoldArrowDragging = false;
-        _holdArrowDragTargetFrame = null;
+        _pressedSpan = null;
+        _isSpanDragging = false;
+        _spanDragTargetFrame = null;
     }
 
     public override void _Input(InputEvent @event)
     {
-        if (!_pressedHoldArrow.HasValue || !AppHotkeys.UiCancel.IsPressedBy(@event)) return;
+        if (!_pressedSpan.HasValue || !AppHotkeys.UiCancel.IsPressedBy(@event)) return;
 
-        ResetHoldArrowDrag();
+        ResetSpanDrag();
         QueueRedraw();
         GetViewport().SetInputAsHandled();
     }
@@ -487,18 +493,18 @@ public partial class CelTrack : Control
                 QueueRedraw();
             }
 
-            // Hold arrow drag: activate once threshold is exceeded, then track target frame
-            if (_pressedHoldArrow.HasValue)
+            // Exposure span drag: activate once threshold is exceeded, then track target frame
+            if (_pressedSpan.HasValue)
             {
-                if (!_isHoldArrowDragging && Mathf.Abs(motion.Position.X - _pressStartX) > DragThreshold)
-                    _isHoldArrowDragging = true;
+                if (!_isSpanDragging && Mathf.Abs(motion.Position.X - _pressStartX) > DragThreshold)
+                    _isSpanDragging = true;
 
-                if (_isHoldArrowDragging)
+                if (_isSpanDragging)
                 {
-                    int newTarget = ClampHoldArrowDragTarget(_pressedHoldArrow.Value, motion.Position.X);
-                    if (newTarget != _holdArrowDragTargetFrame)
+                    int newTarget = ClampSpanDragTarget(_pressedSpan.Value, motion.Position.X);
+                    if (newTarget != _spanDragTargetFrame)
                     {
-                        _holdArrowDragTargetFrame = newTarget;
+                        _spanDragTargetFrame = newTarget;
                         QueueRedraw();
                     }
                 }
@@ -536,12 +542,12 @@ public partial class CelTrack : Control
         {
             if (lbtn.Pressed)
             {
-                if (TryGetHoldArrowHeadAt(lbtn.Position.X, out var holdArrow))
+                if (TryGetSpanArrowHeadAt(lbtn.Position.X, out var span))
                 {
-                    _pressedHoldArrow = holdArrow;
+                    _pressedSpan = span;
                     _pressStartX = lbtn.Position.X;
-                    _isHoldArrowDragging = false;
-                    _holdArrowDragTargetFrame = holdArrow.TipFrame;
+                    _isSpanDragging = false;
+                    _spanDragTargetFrame = span.TipFrame;
                     AcceptEvent();
                     return;
                 }
@@ -559,10 +565,10 @@ public partial class CelTrack : Control
             }
             else // released
             {
-                if (_pressedHoldArrow.HasValue)
+                if (_pressedSpan.HasValue)
                 {
-                    CommitHoldArrowDrag();
-                    ResetHoldArrowDrag();
+                    CommitSpanDrag();
+                    ResetSpanDrag();
                     QueueRedraw();
                     AcceptEvent();
                     return;
@@ -627,7 +633,7 @@ public partial class CelTrack : Control
 
     public override int _GetCursorShape(Vector2 atPosition)
     {
-        if (_pressedHoldArrow.HasValue || TryGetHoldArrowHeadAt(atPosition.X, out _))
+        if (_pressedSpan.HasValue || TryGetSpanArrowHeadAt(atPosition.X, out _))
             return (int)CursorShape.Hsize;
         return CelButtonFrameAt(atPosition.X).HasValue
             ? (int)CursorShape.PointingHand

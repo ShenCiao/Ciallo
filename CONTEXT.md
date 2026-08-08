@@ -1,5 +1,27 @@
 # Context
 
+## Terminology Basis
+
+The timeline model follows **Clip Studio Paint**: a cel folder holds cels, a cel is
+specified at a frame, and that cel shows until the next specification.
+
+CSP names the *actions* and the *objects* — Specify cel / Assign cels (セル指定),
+Animation folder (アニメーションフォルダー), blank cel (空セル) — but leaves unnamed both
+the stored *assignment* and the *interval* that assignment produces. This project takes
+both names from the X-sheet tradition: **Exposure** for the assignment (one cel exposed
+starting at one frame) and **Exposure Span** for the interval it covers.
+
+The word "exposure" carries duration by origin — to expose a drawing for N frames — so
+Harmony attaches it to the interval (`Hold Exposure` / `Extend Exposure`). Here the
+duration lives in the span instead, because the assignment is what the document actually
+stores and the interval is derived from it. Readers coming from Harmony should note this
+is not an X-sheet: there is no column of per-frame cells, so there is nothing to "hold".
+An exposure exists once, at its key frame, and its span is implied by the next key.
+
+So the split is deliberate: CSP defines the behavior, X-sheet terms supply the nouns.
+Where CSP does have a name and it does not collide, prefer CSP's — hence **Blank**
+(CSP `blank cel`, Toei timesheet 空セル) rather than "Empty".
+
 ## Glossary
 
 ### Document
@@ -56,11 +78,11 @@ A managed cloud copy is a device-local `.ciallo` file maintained by Ciallo for e
 
 ### Cel
 
-A cel is a direct child layer of a cel folder, whether or not it is currently assigned to an exposure.
+A cel is a direct child layer of a cel folder, whether or not any exposure currently exposes it.
 
 ### Cel Button
 
-A cel button is the clickable timeline control for an exposure key on a CelTrack. A cel exposure uses a labeled bar with an outgoing hold arrow. An Empty exposure uses an unlabeled X with no outgoing arrow. Both forms support the same click, drag, replace, delete, and undo workflows.
+A cel button is the clickable timeline control for one exposure on a CelTrack, drawn at its exposure key. Cel exposures and Blank exposures are visually distinguishable from each other, and both support the same click, drag, replace, delete, and undo workflows.
 
 ### Cel Folder
 
@@ -72,18 +94,32 @@ A cel child archetype is a shared editable setting grouped by layer name across 
 
 ### Preferred Cel Child Name
 
-A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the working layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the working layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Empty selects the cel folder itself without changing the preferred name. It is set only when the working layer becomes a direct cel child, and is empty by default.
+A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the working layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the working layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Blank selects the cel folder itself without changing the preferred name. It is set only when the working layer becomes a direct cel child, and is empty by default.
 
 ### Folder layer
 Any layer's parent must be a folder layer. The document entity is a folder layer entity.
 
 ### Exposure
 
-An exposure is a timeline assignment that says which cel, or Empty, is shown from a frame until the next exposure on the same cel folder.
+An exposure is one authored assignment on a cel folder, pairing an exposure key with the cel, or Blank, exposed from that key onward. It is the unit stored in a cel folder's exposure list and the unit a user adds, moves, replaces, and deletes. An exposure does not store its own length; the length is its exposure span.
 
-### Empty Exposure
+### Exposure Key
 
-An Empty exposure is an explicit blank interval on a cel folder. In `FolderLayerSetting.Exposures`, any value whose entity is a CelFolder represents Empty; authored Empty values are self-references to the owning CelFolder. Empty displays no current layer, contributes a blank onion-skin exposure offset, and preserves the cel folder as the working layer so later cel navigation can recover the preferred cel child.
+An exposure key is the frame at which an exposure begins, and is the key half of that exposure. No two exposures on the same cel folder share a key.
+
+### Exposed Cel
+
+The exposed cel is the value half of an exposure: the cel shown throughout that exposure's span. It is Blank when the value is the owning cel folder itself.
+
+### Exposure Span
+
+An exposure span is the interval an exposure covers. It begins at that exposure's key and ends where the next exposure's key on the same cel folder begins, or at the playback end when no exposure follows. A span is always at least one frame long, and is never stored: it is implied by the distance to the next key, so adding, moving, or deleting an exposure changes the spans around it.
+
+### Blank Exposure
+
+A Blank exposure is an exposure whose exposed cel is Blank, giving the cel folder an explicit empty span. In `FolderLayerSetting.Exposures`, any value whose entity is a CelFolder represents Blank; authored Blank values are self-references to the owning CelFolder. Blank displays no current layer, contributes a blank onion-skin exposure offset, and preserves the cel folder as the working layer so later cel navigation can recover the preferred cel child.
+
+Blank is an authored exposure, not the absence of one: a frame that no exposure's span covers is not Blank. This is why Blank occupies an exposure of its own.
 
 ### Frame Sequence
 
@@ -127,7 +163,7 @@ A paint stroke snap target is the reference curve and curve-local hit position t
 
 ### Paint Stroke Snap Hint
 
-A paint stroke snap hint is the user-visible dot that shows an available paint stroke snap target during hover or drawing.
+A paint stroke snap hint is the user-visible indicator that shows an available paint stroke snap target during hover or drawing.
 
 ### Gap Bridge
 
@@ -162,6 +198,11 @@ A command segment is one ordered part of an undoable action. Related gestures ma
 - Cloud operations require a **Cloud Authorization** belonging to the Steam user currently running Ciallo.
 - A **Cloud Authorization** expires 30 days after issuance and must then be renewed by the user.
 - Opening a **Cloud Saved Version** on a device without a linked local file creates a **Managed Cloud Copy**.
+- A **Cel Folder** holds zero or more **Exposures**, each at a distinct **Exposure Key**.
+- Every **Exposure** has exactly one **Exposure Span**, which is derived rather than stored.
+- An **Exposure** exposes exactly one **Cel**, or is a **Blank Exposure**.
+- A **Cel** may be exposed by zero or more **Exposures**; reusing one cel across several exposures is how a drawing repeats.
+- Adding, moving, or deleting an **Exposure** changes the **Exposure Spans** of its neighbours without changing their exposed cels.
 - A **Vector Fill Layer** can have zero or more **Reference Layers**.
 - A **Reference Layer** can provide boundary artwork for zero or more **Vector Fill Layers**.
 - When editing reference artwork from a **Vector Fill Layer**, the edited **Shape** remains owned by its original **Reference Layer**.

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -508,10 +508,10 @@ public class DurabilityTests
 
     [TestCase]
     [RequireGodotRuntime]
-    public void SaveRoundTripsEmptyExposureSelfReference()
+    public void SaveRoundTripsBlankExposureSelfReference()
     {
-        var path = Path.Combine(Path.GetTempPath(), "ciallo-empty-exposure-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
-        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Empty exposure" } });
+        var path = Path.Combine(Path.GetTempPath(), "ciallo-blank-exposure-test-" + Guid.NewGuid().ToString("N") + ".ciallo");
+        var document = AppDocumentManager.Create(new DocumentSetting { Name = { Value = "Blank exposure" } });
         var celFolder = document.World.Create();
         celFolder.Tag<ToSerializeTag>();
         celFolder.Add(new CommonLayerSetting { Name = { Value = "Animation" } });

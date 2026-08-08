@@ -250,7 +250,7 @@ public partial class TimelineAction : Container
         var document = celFolder.Document;
         var folderSetting = celFolder.Get<FolderLayerSetting>();
         var exposures = folderSetting.Exposures;
-        bool replaceEmptyExposure = exposures.ContainsKey(frame) && exposures[frame].IsCelFolder;
+        bool replaceBlankExposure = exposures.ContainsKey(frame) && exposures[frame].IsCelFolder;
         var celE = celFolder.World.Create();
 
         var cmd = new CommandBuilder("New Animation Cel", celE)
@@ -333,7 +333,7 @@ public partial class TimelineAction : Container
         cmd.SetTarget(celFolder)
             .SetObservableCollection(exposures, exp =>
             {
-                if (replaceEmptyExposure) exp.Remove(frame);
+                if (replaceBlankExposure) exp.Remove(frame);
                 exp.Add(frame, celE);
             })
             .SetTarget(document)

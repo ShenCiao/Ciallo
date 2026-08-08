@@ -65,7 +65,7 @@ public class SelectionManager
     /// <item>Returns the document entity when a working cel folder exists but the frame resolves
     ///   to no cel child (frame before the first cel, dead cel, or no direct child matching the
     ///   preferred name). The caller commits this so the working layer is cleared.</item>
-    /// <item>Returns the working cel folder itself for an Empty exposure.</item>
+    /// <item>Returns the working cel folder itself for a Blank exposure.</item>
     /// <item>Otherwise returns the matching cel child to switch to.</item>
     /// </list>
     /// </summary>
@@ -103,7 +103,7 @@ public class SelectionManager
     /// <list type="bullet">
     /// <item>Returns <see cref="Entity.Null"/> when the arguments are invalid, or the resolved
     ///   child is already the working layer (nothing to do).</item>
-    /// <item>Returns the cel folder itself when the clicked button is an Empty exposure.</item>
+    /// <item>Returns the cel folder itself when the clicked button is a Blank exposure.</item>
     /// <item>Returns the document entity when the clicked cel has no direct child matching the
     ///   preferred name, so the caller clears the working layer.</item>
     /// <item>Otherwise returns the matching cel child.</item>

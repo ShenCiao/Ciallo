@@ -92,7 +92,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
             {
                 if (_celListEntities[i].IsCelFolder)
                 {
-                    AddItem("  " + "Empty".Tr(), CelListIdBase + i);
+                    AddItem("  " + "Blank".Tr(), CelListIdBase + i);
                     continue;
                 }
 
@@ -105,7 +105,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
         {
             AddSeparator();
             string deleteLabel = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder
-                ? "Delete Empty"
+                ? "Delete Blank"
                 : "Delete Cel";
             AddItem(deleteLabel.Tr(), IdDeleteCel);
         }
@@ -198,7 +198,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
         int frame = _rightClickedFrame;
         if (!exposures.ContainsKey(frame)) return;
 
-        string label = exposures[frame].IsCelFolder ? "Delete Empty" : "Delete Cel";
+        string label = exposures[frame].IsCelFolder ? "Delete Blank" : "Delete Cel";
         new CommandBuilder(label)
             .SetObservableCollection(exposures, exp => exp.Remove(frame))
             .Commit();

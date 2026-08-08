@@ -202,6 +202,8 @@ Replace Cel:,Replace Cel:,替换赛璐珞:,取代賽璐珞：,セルを置き換
 Insert Cel:,Insert Cel:,插入赛璐珞:,插入賽璐珞：,セルを挿入:,셀 삽입:,Cel einfügen:,Insérer le cellulo :
 (no cels),(no cels),（无赛璐珞）,（無賽璐珞）,（セルなし）,(셀 없음),(keine Cels),(aucun cellulo)
 (unnamed),(unnamed),（未命名）,（未命名）,（無名）,(이름 없음),(unbenannt),(sans nom)
+Blank,Blank,空白,空白,空セル,빈 셀,Leer,Vide
+Delete Blank,Delete Blank,删除空白,刪除空白,空セルを削除,빈 셀 삭제,Leer löschen,Supprimer le vide
 Delete Cel,Delete Cel,删除赛璐珞,刪除賽璐珞,セルを削除,셀 삭제,Cel löschen,Supprimer le cellulo
 Insert Frame,Insert Frame,插入帧,插入影格,フレームを挿入,프레임 삽입,Bild einfügen,Insérer une image
 Delete Frame,Delete Frame,删除帧,刪除影格,フレームを削除,프레임 삭제,Bild löschen,Supprimer une image

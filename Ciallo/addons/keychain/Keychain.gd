@@ -1,5 +1,7 @@
 extends Node
 
+const ShortcutProfile = preload("res://addons/keychain/ShortcutProfile.gd")
+
 signal profile_switched(profile: ShortcutProfile)
 signal action_changed(action_name: String)
 

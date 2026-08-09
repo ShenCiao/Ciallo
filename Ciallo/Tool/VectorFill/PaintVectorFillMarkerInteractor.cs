@@ -7,7 +7,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
+public class PaintVectorFillMarkerInteractor : ActiveInteractionSessionBase
 {
     private VectorFillMarkerView _markerPreview;
     private Polygon2D _fillPreview;
@@ -73,6 +73,4 @@ public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
         Input.MouseMode = Input.MouseModeEnum.Visible;
         _fillBrush = Entity.Null;
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 }

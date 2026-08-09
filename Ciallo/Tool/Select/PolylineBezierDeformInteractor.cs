@@ -9,7 +9,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PolylineBezierDeformInteractor : InteractiveSessionBase
+public class PolylineBezierDeformInteractor : ActiveInteractionSessionBase
 {
     public BezierPoint[] Curve;
 
@@ -230,8 +230,6 @@ public class PolylineBezierDeformInteractor : InteractiveSessionBase
         }
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     private void Clear()
     {

@@ -9,7 +9,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PolylineTransformInteractor : InteractiveSessionBase
+public class PolylineTransformInteractor : ActiveInteractionSessionBase
 {
     private int _transformType = -1; // 0: Translate, 1: Rotate, 2~5: Scale corners
 
@@ -227,8 +227,6 @@ public class PolylineTransformInteractor : InteractiveSessionBase
         }
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     public void Clear()
     {

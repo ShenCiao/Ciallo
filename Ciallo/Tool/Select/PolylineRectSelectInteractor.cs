@@ -7,7 +7,7 @@ using ObservableCollections;
 
 namespace Ciallo.Tool;
 
-public class PolylineRectSelectInteractor : InteractiveSessionBase
+public class PolylineRectSelectInteractor : ActiveInteractionSessionBase
 {
     private StrokeView _boxSelectionDash;
     private Rect2 _boxSelectionRect;
@@ -99,6 +99,4 @@ public class PolylineRectSelectInteractor : InteractiveSessionBase
         _baseSelection = null;
         _selectedShapes = null;
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 }

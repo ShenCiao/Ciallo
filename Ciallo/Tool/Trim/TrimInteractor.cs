@@ -11,7 +11,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class TrimInteractor : InteractiveSessionBase
+public class TrimInteractor : ActiveInteractionSessionBase
 {
     public new TrimTool Tool => (TrimTool)base.Tool;
 
@@ -69,8 +69,6 @@ public class TrimInteractor : InteractiveSessionBase
     }
 
     public override void Cancel() => Clear();
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     private void UpdateGestureView()
     {

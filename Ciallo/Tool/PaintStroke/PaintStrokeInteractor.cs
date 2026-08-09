@@ -9,7 +9,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintStrokeInteractor : InteractiveSessionBase
+public class PaintStrokeInteractor : ActiveInteractionSessionBase
 {
     public new PaintStrokeTool Tool => (PaintStrokeTool)base.Tool;
     public Entity BrushE;
@@ -98,12 +98,13 @@ public class PaintStrokeInteractor : InteractiveSessionBase
         return true;
     }
 
-    public override void OnMouseButton(InputEventMouseButton button, CursorButtonData data)
+    public override bool OnMouseButton(InputEventMouseButton button, CursorButtonData data)
     {
         if (button.ButtonIndex == MouseButton.Left && button.IsReleased())
         {
             OnEndPaintButton();
         }
+        return true;
     }
 
     public void OnEndPaintButton()

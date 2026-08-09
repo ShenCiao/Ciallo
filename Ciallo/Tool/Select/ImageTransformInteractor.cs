@@ -4,7 +4,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class ImageTransformInteractor : InteractiveSessionBase
+public class ImageTransformInteractor : ActiveInteractionSessionBase
 {
     private int _transformType = -1; // 0: Rotate, 1: Move, 2~5: Corner Resize
 
@@ -177,10 +177,5 @@ public class ImageTransformInteractor : InteractiveSessionBase
     public void Clear()
     {
         _transformType = -1;
-    }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data)
-    {
-        return true;
     }
 }

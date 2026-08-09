@@ -12,8 +12,8 @@ namespace Ciallo.Tool;
 /// </summary>
 public interface ITool
 {
-    public void OnMouseButton(InputEventMouseButton button, CursorButtonData data);
     // Return true if the event is handled
+    public bool OnMouseButton(InputEventMouseButton button, CursorButtonData data);
     public bool OnKey(InputEventKey key);
 
     public void OnMoving(CursorMotionData data);

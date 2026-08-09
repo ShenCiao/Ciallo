@@ -8,7 +8,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintFillInteractor : InteractiveSessionBase
+public class PaintFillInteractor : ActiveInteractionSessionBase
 {
     private readonly PolylineInteractiveGenerator _generator = new()
     {
@@ -67,8 +67,6 @@ public class PaintFillInteractor : InteractiveSessionBase
     {
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     public void Clear()
     {

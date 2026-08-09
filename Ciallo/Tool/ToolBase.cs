@@ -20,8 +20,7 @@ using StateConfiguration = StateMachine<InteractiveSessionBase, ToolBase.Trigger
 /// See stateless library https://github.com/dotnet-state-machine/stateless for the state machine configuration api.
 /// </remarks>
 /// <remarks>
-/// By product design, all the interactions that involve active user input (not hover) should set key input as handled.
-/// i.e. bool OnKey(...) return true;
+/// Active interaction sessions consume key and mouse-button input by default.
 /// </remarks>
 /// <remarks>
 /// Initial states are configured to refresh (call End then Start) when user undo/redo.
@@ -115,15 +114,17 @@ public abstract partial class ToolBase : ITool
 
     #region ITool
 
-    public void OnMouseButton(InputEventMouseButton button, CursorButtonData data)
+    public bool OnMouseButton(InputEventMouseButton button, CursorButtonData data)
     {
         _accumulatedInterval = TimeSpan.Zero;
         _lastestCursor = data;
         var trigger = Trigger.Get(button.ButtonIndex, button.Pressed);
         if (Machine.CanFire(trigger))
+        {
             Machine.Fire(trigger);
-        else
-            Machine.State.OnMouseButton(button, data);
+            return true;
+        }
+        return Machine.State.OnMouseButton(button, data);
     }
 
     public bool OnKey(InputEventKey key)

@@ -10,7 +10,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class LiquifyInteractor : InteractiveSessionBase
+public class LiquifyInteractor : ActiveInteractionSessionBase
 {
     private Entity[] _processingEs;
     private Vector2[][] _origPolylines;
@@ -83,8 +83,6 @@ public class LiquifyInteractor : InteractiveSessionBase
         RestoreViews();
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     private void ApplyDab(Vector2 brushCenter, Vector2 brushDelta, float pressure)
     {

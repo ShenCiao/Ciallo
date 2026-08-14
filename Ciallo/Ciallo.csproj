@@ -21,6 +21,7 @@
         <PackageReference Include="MessagePackGodot" Version="1.0.2" />
         <PackageReference Include="DuckDB.NET.Data.Full" Version="1.5.3" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
         <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" />
         <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" />

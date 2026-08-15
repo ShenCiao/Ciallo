@@ -74,21 +74,22 @@ public abstract partial class ToolBase : ITool
     {
         session.Tool = this;
         session.Document = Document;
-        return Machine.Configure(session).SubstateOf(ToolActive.Instance)
+        return Machine.Configure(session)
+            .SubstateOf(ToolActive.Instance)
             .OnEntry(t =>
             {
                 t.Destination.Start(_lastestCursor);
             })
-            .OnExit((Action<StateMachine<InteractiveSessionBase, Trigger>.Transition>)(t =>
+            .OnExit(t =>
             {
                 t.Destination.BeforeTransitionSrcEnd(t.Source);
-                if (t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.Global.InteractionCancel, true) ||
-                    t.Trigger == Trigger.Get((AppHotkey)AppHotkeys.Global.InteractionCancel, false) ||
+                if (t.Trigger == Trigger.Get(AppHotkeys.Global.InteractionCancel, true) ||
+                    t.Trigger == Trigger.Get(AppHotkeys.Global.InteractionCancel, false) ||
                     t.Trigger == Trigger.Deactivate)
                     t.Source.Cancel();
                 else
                     t.Source.End(_lastestCursor);
-            }));
+            });
     }
 
     public StateConfiguration ConfigureInitial(InteractiveSessionBase session)
@@ -129,7 +130,7 @@ public abstract partial class ToolBase : ITool
 
     public bool OnKey(InputEventKey key)
     {
-        // Check trigger action
+        // Check trigger action (dirty implementation)
         var actionTrigger = DetectTriggerAction(key);
         if (actionTrigger != null && Machine.CanFire(actionTrigger))
         {

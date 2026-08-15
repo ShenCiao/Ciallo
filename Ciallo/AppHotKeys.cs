@@ -28,8 +28,8 @@ public record AppHotkey(StringName Name)
     public bool IsJustReleased => Input.IsActionJustReleased(Name);
     public float Strength => Input.GetActionStrength(Name);
 
-    public bool IsPressedBy(InputEvent inputEvent) => inputEvent.IsActionPressed(Name);
-    public bool IsReleasedBy(InputEvent inputEvent) => inputEvent.IsActionReleased(Name);
+    public bool IsPressedBy(InputEvent inputEvent) => Input.IsActionJustPressedByEvent(Name, inputEvent);
+    public bool IsReleasedBy(InputEvent inputEvent) => Input.IsActionJustReleasedByEvent(Name, inputEvent);
 
     public void Press() => Input.ActionPress(Name);
     public void Release() => Input.ActionRelease(Name);

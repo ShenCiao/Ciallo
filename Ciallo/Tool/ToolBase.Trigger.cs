@@ -59,5 +59,13 @@ public abstract partial class ToolBase
             }
             return trigger;
         }
+
+        public static Trigger Press(MouseButton button) => Get(button, true);
+        public static Trigger Release(MouseButton button) => Get(button, false);
+        public static Trigger Press(Key key) => Get(key, true);
+        public static Trigger Release(Key key) => Get(key, false);
+        public static Trigger Press(AppHotkey hotkey) => Get(hotkey, true);
+        public static Trigger Release(AppHotkey hotkey) => Get(hotkey, false);
+
     }
 }

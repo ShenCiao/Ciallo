@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Ciallo.Geometry;
@@ -23,13 +24,16 @@ public partial class WorldEventDispatcher : Container
 
     private Stopwatch _timer;
 
+    public Entity Document;
+    private ToolManager ToolManager => Document.Get<ToolManager>();
+
+    public CursorMotionData CurrentCursorMotion { get => throw new NotImplementedException(); internal set; }
+
+
     // ------------ Touch gesture state -------------
     private readonly Dictionary<int, Vector2> _activeTouches = new();
     private bool _isTouchDragging;
     private int _maxTouchCount;
-
-    public Entity Document;
-    private ToolManager ToolManager => Document.Get<ToolManager>();
 
     public override void _Ready()
     {

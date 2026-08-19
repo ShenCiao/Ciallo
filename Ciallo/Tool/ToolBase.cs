@@ -51,7 +51,7 @@ public abstract partial class ToolBase : ITool
     private CursorButtonData _lastestCursor;
     private TimeSpan _accumulatedInterval = TimeSpan.Zero;
 
-    private readonly HashSet<AppHotkey> _triggerActions = [];
+    private readonly HashSet<Hotkey> _triggerActions = [];
 
     private IDisposable _commandManagerSub;
 
@@ -224,12 +224,12 @@ public abstract partial class ToolBase : ITool
     protected Trigger Release(MouseButton button) => Trigger.Get(button, false);
     protected Trigger Press(Key key) => Trigger.Get(key, true);
     protected Trigger Release(Key key) => Trigger.Get(key, false);
-    protected Trigger Press(AppHotkey action)
+    protected Trigger Press(Hotkey action)
     {
         _triggerActions.Add(action);
         return Trigger.Get(action, true);
     }
-    protected Trigger Release(AppHotkey action)
+    protected Trigger Release(Hotkey action)
     {
         _triggerActions.Add(action);
         return Trigger.Get(action, false);

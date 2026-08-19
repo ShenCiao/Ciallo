@@ -1,10 +1,12 @@
 using Ciallo.Data;
 using Ciallo.GuiControl;
+using Ciallo.Misc;
 using Frent;
 using Godot;
 using Stateless;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using Ciallo.Widget;
 
 namespace Ciallo.Tool;
@@ -28,12 +30,15 @@ public interface IInteractionState
 // State hierarchy declaration convention:
 // - A scope's primary constructor is its complete DI constructor.
 // - Parameters marked with [Substate] are the scope's direct substates.
+// - Marked parameter order is the stable order of direct substate property branches.
 // - Unmarked parameters are ordinary services, helpers, or cross-scope state references.
-// - The source generator emits SubstateOf relationships only for [Substate] parameters.
+// - The source generator emits SubstateOf relationships only for [Substate] parameters and
+//   preserves parameter order when registering siblings.
 //
 // This keeps direct children visible in the scope declaration without overloading constructor
 // selection semantics. ConfigureStateMachine can focus on transitions, while Microsoft DI sees
-// one ordinary constructor containing all dependencies.
+// one ordinary constructor containing all dependencies. The same hierarchy is also used to
+// compose the normal tool-property GUI; a GUI-only grouping is not a reason to add a superstate.
 public interface IInteractiveScope : IInteractionState
 {
     void ConfigureStateMachine(StateMachine stateMachine);
@@ -115,6 +120,10 @@ public static partial class InteractionManager
         StateMachine.Configure(provider.GetService<SelectImageInteractor>())
             .SubstateOf(provider.GetService<SelectImageTool>());
         // and others...
+
+        // Finalize once, after every generated Configure/SubstateOf call. Consumers can now use
+        // the generic GetSubstates extension without owning another hierarchy representation.
+        StateMachine.BuildSubstateMap();
     }
 }
 
@@ -152,7 +161,7 @@ public partial class GlobalInteractiveScope(
 public class SelectImageTool(
     [Substate] SelectImageHover hover,
     [Substate] SelectImageInteractor left
-) : IInteractiveScope
+) : IInteractiveScope, IToolPropertyProvider
 {
     public void ConfigureStateMachine(StateMachine sm)
     {
@@ -173,11 +182,22 @@ public class SelectImageTool(
     {
         throw new NotImplementedException();
     }
+
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
+    {
+        // Properties shared by Hover and Interactor go above the active session properties.
+    }
+
+    public void DrawPropertyAfterSubstates(PropertyContainer container)
+    {
+        // Scope commands that should follow the active session properties go here.
+        // container.AddChild(CreateSelectionCommandButtons(document));
+    }
 }
 
 
 [RegisterService]
-public class SelectImageHover : InteractiveSession
+public class SelectImageHover : InteractiveSession, IToolPropertyProvider
 {
     public override void Cancel()
     {
@@ -202,6 +222,12 @@ public class SelectImageHover : InteractiveSession
     public override void Start(CursorButtonData data)
     {
         throw new NotImplementedException();
+    }
+
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
+    {
+        // Leaf-only properties use the same hook. A leaf normally needs only the Before hook.
+        // container.AddProperty("Hover option", CreateHoverOptionControl(document));
     }
 }
 
@@ -234,16 +260,88 @@ public class SelectImageInteractor : InteractiveSession
     }
 }
 
-// Use state hierarchy to draw property. States implement this interface
-// To register, call state's DrawProperty foreach 
+// A state's own properties are composed around its recursively-built direct substates.
+// This is intentionally a hierarchical composition API, not an arbitrary GUI-sharing API.
+// Reusable GUI shared by unrelated branches belongs to a separate property-block mechanism.
 public interface IToolPropertyProvider
 {
-    void DrawProperty(PropertyContainer container, Control substatesControl /*Could be null */)
+    // Called while ToolPropertyPanel builds controls for one specific WorkingDocument.
+    // Providers are application-lifetime singletons: create controls here, but never retain them.
+    void DrawPropertyBeforeSubstates(PropertyContainer container) { }
+
+    void DrawPropertyAfterSubstates(PropertyContainer container) { }
+}
+
+// Projection of the state-machine hierarchy into Godot controls. Direct-substate indexing is a
+// generic Stateless extension and is finalized independently with BuildSubstateMap.
+//
+// ToolPropertyPanel owns this object. It rebuilds the whole tree when WorkingDocument changes,
+// QueueFrees the previous RootControl, and keeps one application-lifetime state-transition
+// listener that calls RefreshVisibility on the current tree. This object deliberately does not
+// subscribe to StateMachine itself, so rebuilding a document cannot leak transition callbacks.
+public sealed class InteractionPropertyTree
+{
+    private readonly StateMachine _stateMachine;
+    private readonly Dictionary<IInteractionState, PropertyContainer> _stateBranches =
+        new(ReferenceEqualityComparer.Instance);
+
+    public PropertyContainer RootControl { get; }
+
+    private InteractionPropertyTree(
+        StateMachine stateMachine,
+        IInteractionState rootState,
+        Entity document)
     {
-        // Draw GUI before substates GUI
-        // container.AddChild(OwnControlNodesBefore);
-        // ...
-        container.AddChild(substatesControl);
-        // Draw GUI after substates GUI ...
+        _stateMachine = stateMachine;
+        RootControl = BuildBranch(rootState, document);
+        RefreshVisibility();
+    }
+
+    public static InteractionPropertyTree Build(
+        StateMachine stateMachine,
+        IInteractionState rootState,
+        Entity document)
+    {
+        return new(stateMachine, rootState, document);
+    }
+
+    // Stateless reports true for both the current leaf and each of its superstates. Therefore
+    // parent scope properties stay visible while exactly the active child branch is shown.
+    public void RefreshVisibility()
+    {
+        foreach (var (state, branch) in _stateBranches)
+        {
+            branch.Visible = _stateMachine.IsInState(state);
+        }
+    }
+
+    private PropertyContainer BuildBranch(
+        IInteractionState state,
+        Entity document)
+    {
+        var branch = new PropertyContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        _stateBranches.Add(state, branch);
+
+        var provider = state as IToolPropertyProvider;
+        provider?.DrawPropertyBeforeSubstates(branch, document);
+
+        // Always create the hierarchy slot. Hiding an empty leaf slot avoids layout spacing while
+        // keeping the recursive algorithm and the two hook positions identical for every state.
+        var substatesContainer = new VBoxContainer
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+        };
+        foreach (var substate in _stateMachine.GetSubstates(state))
+        {
+            substatesContainer.AddChild(BuildBranch(substate, document));
+        }
+        substatesContainer.Visible = substatesContainer.GetChildCount() > 0;
+        branch.AddChild(substatesContainer);
+
+        provider?.DrawPropertyAfterSubstates(branch, document);
+        return branch;
     }
 }

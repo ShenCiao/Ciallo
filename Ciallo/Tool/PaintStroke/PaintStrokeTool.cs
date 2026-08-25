@@ -14,8 +14,6 @@ namespace Ciallo.Tool;
 [RegisterTool(ToolButton.Paint)]
 public class PaintStrokeTool : ToolBase
 {
-    public readonly ReactiveProperty<Entity> BrushE = new(Entity.Null);
-
     public readonly PaintStrokeHover Hover = new();
     public readonly PaintStrokeInteractor Left = new();
     public readonly PaintStrokeOnVectorFill LeftOnFill = new();

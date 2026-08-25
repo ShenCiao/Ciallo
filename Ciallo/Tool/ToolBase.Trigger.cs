@@ -8,11 +8,13 @@ public abstract partial class ToolBase
 {
     public class Trigger
     {
-        public string Name { get; init; }
+        public string Name { get; }
+
         public Trigger(string name)
         {
             Name = name;
         }
+
         public static readonly Trigger Activate = new("Activate");
         public static readonly Trigger Deactivate = new("Deactivate");
         public static readonly Trigger Refresh = new("Refresh");
@@ -29,8 +31,7 @@ public abstract partial class ToolBase
             var dict = isPress ? MouseButtonPress : MouseButtonRelease;
             if (!dict.TryGetValue(button, out var trigger))
             {
-                var action = isPress ? "Press" : "Release";
-                trigger = new Trigger($"{action}({button})");
+                trigger = new Trigger($"{(isPress ? "Press" : "Release")}({button})");
                 dict[button] = trigger;
             }
             return trigger;
@@ -41,8 +42,7 @@ public abstract partial class ToolBase
             var dict = isPress ? KeyPress : KeyRelease;
             if (!dict.TryGetValue(key, out var trigger))
             {
-                var action = isPress ? "Press" : "Release";
-                trigger = new Trigger($"{action}({key})");
+                trigger = new Trigger($"{(isPress ? "Press" : "Release")}({key})");
                 dict[key] = trigger;
             }
             return trigger;
@@ -53,8 +53,7 @@ public abstract partial class ToolBase
             var dict = isPress ? AppActionPress : AppActionRelease;
             if (!dict.TryGetValue(action, out var trigger))
             {
-                var actionStr = isPress ? "Press" : "Release";
-                trigger = new Trigger($"{actionStr}({action.Name})");
+                trigger = new Trigger($"{(isPress ? "Press" : "Release")}({action.Name})");
                 dict[action] = trigger;
             }
             return trigger;
@@ -66,6 +65,5 @@ public abstract partial class ToolBase
         public static Trigger Release(Key key) => Get(key, false);
         public static Trigger Press(Hotkey hotkey) => Get(hotkey, true);
         public static Trigger Release(Hotkey hotkey) => Get(hotkey, false);
-
     }
 }

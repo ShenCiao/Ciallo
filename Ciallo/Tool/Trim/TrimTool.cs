@@ -1,12 +1,15 @@
 using System;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
+
+using StateMachine = StateMachine<InteractionState, Trigger>;
 
 /// <summary>
 /// Trim tool aims to be "visually/feelingly topologically robust"
@@ -14,46 +17,51 @@ namespace Ciallo.Tool;
 /// Ciallo is a drawing app, not a CAD topology editor: prefer visually
 /// correct 95% behavior over preserving every tiny real stroke or junction.
 /// </summary>
-[RegisterTool(ToolButton.Trim)]
-public class TrimTool : ToolBase
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.Trim)]
+public class TrimTool : InteractionScope, ILayerDependent
 {
-    public readonly TrimHover Hover = new();
-    public readonly TrimInteractor Trim = new();
+    [Substate]
+    internal TrimHover Hover = null!;
+
+    [Substate]
+    internal TrimInteractor Trim = null!;
 
     // Layer-owned ArrangementManager, shared with vector-fill and future topology tools.
     public ArrangementManager Arrangement { get; private set; }
 
     private IDisposable _arrReadySub;
 
-    protected override void ConfigureStateMachine()
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .PermitIf(Press(MouseButton.Left), Trim, () => Arrangement?.ArrReady.CurrentValue != null);
-
-        Configure(Trim)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .PermitIf(Trigger.Press(MouseButton.Left), Trim, () => Arrangement?.ArrReady.CurrentValue != null)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Trim)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var layerE = layerEs[0];
-        return layerE.Has<ShapeLayerSetting>() || layerE.Has<VectorFillLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 &&
+        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
 
-    public override void OnActivated()
+    protected override void OnActivated()
     {
         Arrangement = WorkingLayer.Get<ArrangementManager>();
 
         _arrReadySub = Arrangement.ArrReady.Subscribe(_ =>
         {
-            if (Machine.State is TrimHover hover)
+            if (InteractionManager.StateMachine.State is TrimHover hover)
                 hover.RefreshCursor();
         });
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         _arrReadySub?.Dispose();
         _arrReadySub = null;

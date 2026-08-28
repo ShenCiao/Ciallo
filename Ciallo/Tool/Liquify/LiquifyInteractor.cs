@@ -10,8 +10,12 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class LiquifyInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class LiquifyInteractor : CapturingInteraction
 {
+    [StateAccess]
+    public LiquifyTool Tool { get; set; } = null!;
+
     private Entity[] _processingEs;
     private Vector2[][] _origPolylines;
     private Vector2[][] _currPolylines;
@@ -86,7 +90,7 @@ public class LiquifyInteractor : ActiveInteractionSessionBase
 
     private void ApplyDab(Vector2 brushCenter, Vector2 brushDelta, float pressure)
     {
-        var liquifyTool = (LiquifyTool)Tool;
+        var liquifyTool = Tool;
         var mode = liquifyTool.Mode.Value;
         var dab = new LiquifyDab(
             brushCenter,

@@ -5,6 +5,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
+[RegisterState]
 public class PaintStrokeOnVectorFill : PaintStrokeInteractor
 {
     public override void End(CursorButtonData data)

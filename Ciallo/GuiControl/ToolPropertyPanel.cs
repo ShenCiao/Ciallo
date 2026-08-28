@@ -37,23 +37,29 @@ public partial class ToolPropertyPanel : Container
             document.Add(holderPerDocument);
             PropertyHolder.AddChild(holderPerDocument);
 
-            var toolManager = document.Get<ToolManager>();
-            foreach (var tool in toolManager.Tools)
-            {
-                var container = new PropertyContainer();
-                container.VisibleIf(toolManager.WorkingTool, tool);
-                container.QueueFreeChildren();
-                tool.DrawProperty(container);
+            var tree = InteractionPropertyTree.Build(
+                InteractionManager.StateMachine,
+                InteractionManager.Global,
+                document);
+            holderPerDocument.AddChild(tree.RootControl);
 
-                holderPerDocument.AddChild(container);
+            var cannotToolLabel = new Label
+            {
+                Text = "[Cannot Tool Layer]".Tr(),
+                AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            };
+            holderPerDocument.AddChild(cannotToolLabel);
+
+            void Refresh()
+            {
+                tree.RefreshVisibility();
+                cannotToolLabel.Visible = InteractionManager.StateMachine.State is
+                    GlobalInteractiveScope or NoDocument or TimelineRolling;
             }
 
-            holderPerDocument.AddChild(new Label
-                {
-                    Text = "[Cannot Tool Layer]".Tr(),
-                    AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                }
-                .VisibleIf(toolManager.WorkingTool, (ITool)null));
+            InteractionManager.StateChanged += Refresh;
+            holderPerDocument.TreeExiting += () => InteractionManager.StateChanged -= Refresh;
+            Refresh();
         }).AddTo(this);
     }
 }

@@ -1,32 +1,37 @@
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Frent;
 using Godot;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.PaintFill)]
-public class PaintFillTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.PaintFill)]
+public class PaintFillTool : InteractionScope, ILayerDependent
 {
-    public readonly PaintFillHover Hover = new();
-    public readonly PaintFillInteractor Left = new();
+    [Substate]
+    internal PaintFillHover Hover = null!;
 
-    protected override void ConfigureStateMachine()
+    [Substate]
+    internal PaintFillInteractor Left = null!;
+
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .Permit(Press(MouseButton.Left), Left);
-
-        Configure(Left)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionConfirm), Hover);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Left)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return !e.IsDyingOrDead && e.Has<ShapeLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
 }

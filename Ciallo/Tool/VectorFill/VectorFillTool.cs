@@ -1,39 +1,48 @@
 using System.Collections.Generic;
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Rendering;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.VectorFill)]
-public class VectorFillTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+// Editing an existing fill outranks creating a new one: on a layer that is already a vector fill
+// layer, the button edits rather than creates.
+[RequestedByToolButton(ToolButton.Type.VectorFill, Priority = 0)]
+public class VectorFillTool : InteractionScope, ILayerDependent
 {
-    public readonly VectorFillHover Hover = new();
-    public readonly PaintVectorFillMarkerInteractor Left = new();
+    [Substate]
+    internal VectorFillHover Hover = null!;
 
-    protected override void ConfigureStateMachine()
-    {
-        ConfigureInitial(Hover)
-            .Permit(Press(MouseButton.Left), Left);
-        Configure(Left)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionConfirm), Hover);
-    }
-
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return e.Has<VectorFillLayerSetting>();
-    }
+    [Substate]
+    internal PaintVectorFillMarkerInteractor Left = null!;
 
     public readonly Subject<Unit> DeactivateSignal = new();
-    public override void OnActivated()
+
+    public override void ConfigureStateMachine(StateMachine sm)
+    {
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Left)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
+    }
+
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 && layers[0].Has<VectorFillLayerSetting>();
+
+    protected override void OnActivated()
     {
         if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
         WorkingLayer.Get<OverlayHolder>().Visible = true;
@@ -45,7 +54,7 @@ public class VectorFillTool : ToolBase
                 _ => SetWireframeVisibility(referenceLayers, false));
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         DeactivateSignal.OnNext(Unit.Default);
         if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;

@@ -4,7 +4,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class ImageTransformInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class ImageTransformInteractor : CapturingInteraction
 {
     private int _transformType = -1; // 0: Rotate, 1: Move, 2~5: Corner Resize
 
@@ -13,7 +14,7 @@ public class ImageTransformInteractor : ActiveInteractionSessionBase
     private Transform2D _startTransform;
     private Vector2[] _startCorners = [];
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase session)
+    public override void BeforeSourceExit(Interaction session)
     {
         if (session is not ImageLayerSelectHover hover) return;
         if (hover.RotationBody.IsHovered)

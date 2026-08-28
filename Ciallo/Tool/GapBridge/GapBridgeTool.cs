@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -11,31 +12,34 @@ using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.GapBridge)]
-public class GapBridgeTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.GapBridge)]
+public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
-    public readonly GapBridgeHover Hover = new();
+    [Substate]
+    internal GapBridgeHover Hover = null!;
 
     public ArrangementManager Arrangement { get; private set; }
 
     private GapBridgePreviewManager _preview;
     private IDisposable _arrReadySub;
 
-    protected override void ConfigureStateMachine()
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .InternalTransition(Press(MouseButton.Left), OnClick);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .InternalTransition(Trigger.Press(MouseButton.Left), OnClick)
+            .PermitReentry(Trigger.Refresh);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var layerE = layerEs[0];
-        return !layerE.IsDyingOrDead
-            && (layerE.Has<ShapeLayerSetting>() || layerE.Has<VectorFillLayerSetting>());
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 &&
+        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         container.AddProperty("Max gap length",
             new SpinSlider
@@ -46,11 +50,9 @@ public class GapBridgeTool : ToolBase
                 ExpEdit = true,
                 AllowGreater = true,
             }.BindNumber(AppPreference.GapBridgeDetectMaxGapLength));
-
-        base.DrawProperty(container);
     }
 
-    public override void OnActivated()
+    protected override void OnActivated()
     {
         Arrangement = WorkingLayer.Get<ArrangementManager>();
         _preview = new GapBridgePreviewManager(Document.Get<WorldOverlay>(), Arrangement.SourceShapes);
@@ -59,12 +61,12 @@ public class GapBridgeTool : ToolBase
         _arrReadySub = Arrangement.ArrReady.Subscribe(arr =>
         {
             _preview.Refresh(arr);
-            if (Machine.State is GapBridgeHover hover)
+            if (InteractionManager.StateMachine.State is GapBridgeHover hover)
                 hover.RefreshCursor();
         });
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         _arrReadySub.Dispose();
         _arrReadySub = null;
@@ -89,7 +91,7 @@ public class GapBridgeTool : ToolBase
             return;
 
         CommitBridge(bridge);
-        if (Machine.State is GapBridgeHover hover)
+        if (InteractionManager.StateMachine.State is GapBridgeHover hover)
             hover.RefreshHover(clickPosition);
     }
 

@@ -65,12 +65,11 @@ public static class AppBugReport
 
     public static void Redo(string actionName) => Note($"Redo: {actionName}");
 
-    public static void ToolSwitch(ToolButton? button, ITool oldTool, ITool targetTool, Entity layerE)
+    public static void ToolSwitch(ToolButton.Type? button, InteractionState state, Entity layerE)
     {
-        string oldName = oldTool?.GetType().Name ?? "<none>";
-        string targetName = targetTool?.GetType().Name ?? "<none>";
+        string stateName = state?.GetType().Name ?? "<none>";
         string buttonName = button?.ToString() ?? "<none>";
-        Note($"Tool switch: {buttonName}; {oldName} -> {targetName}; layer={DescribeLayer(layerE)}");
+        Note($"Tool switch: {buttonName}; {stateName}; layer={DescribeLayer(layerE)}");
     }
 
     public static void CopyMarkdownToClipboard()
@@ -198,9 +197,8 @@ public static class AppBugReport
 
         var settings = document.Get<DocumentSetting>();
         var selection = document.Get<SelectionManager>();
-        var toolManager = document.Get<ToolManager>();
-        string toolButton = toolManager.PressedToolButton.Value?.ToString() ?? "<none>";
-        string workingTool = toolManager.WorkingTool.Value?.GetType().Name ?? "<none>";
+        string toolButton = ToolButton.ActiveToolButton.Value?.ToString() ?? "<none>";
+        string workingTool = InteractionManager.StateMachine.State.GetType().Name;
         int layerCount = document.Get<LayerTreeNode>().CountSubtreeNodes(LayerTreeChildIsAlive) - 1;
 
         return

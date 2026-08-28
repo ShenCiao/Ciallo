@@ -8,7 +8,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintFillInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class PaintFillInteractor : CapturingInteraction
 {
     private readonly PolylineInteractiveGenerator _generator = new()
     {
@@ -18,7 +19,7 @@ public class PaintFillInteractor : ActiveInteractionSessionBase
     private StrokeView _dashPreview;
     private Entity _fillBrush;
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase session)
+    public override void BeforeSourceExit(Interaction session)
     {
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
     }

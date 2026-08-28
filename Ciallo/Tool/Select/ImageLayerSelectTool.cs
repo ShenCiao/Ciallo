@@ -1,30 +1,39 @@
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Frent;
 using Godot;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.Select)]
-public class ImageLayerSelectTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+// Image and polyline select accept disjoint layer types, so order is not observable today; declared
+// anyway so adding a broader Select candidate cannot silently reorder these two.
+[RequestedByToolButton(ToolButton.Type.Select, Priority = 0)]
+public class ImageLayerSelectTool : InteractionScope, ILayerDependent
 {
-    public readonly ImageLayerSelectHover Hover = new();
-    public readonly ImageTransformInteractor Left = new();
+    [Substate]
+    internal ImageLayerSelectHover Hover = null!;
 
-    protected override void ConfigureStateMachine()
+    [Substate]
+    internal ImageTransformInteractor Left = null!;
+
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .Permit(Press(MouseButton.Left), Left);
-
-        Configure(Left)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionConfirm), Hover);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Left)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        return layerEs.Length == 1 && layerEs.Single().Has<ImageLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 && layers[0].Has<ImageLayerSetting>();
 }

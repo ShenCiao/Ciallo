@@ -9,7 +9,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PolylineTransformInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class PolylineTransformInteractor : CapturingInteraction
 {
     private int _transformType = -1; // 0: Translate, 1: Rotate, 2~5: Scale corners
 
@@ -22,7 +23,7 @@ public class PolylineTransformInteractor : ActiveInteractionSessionBase
     private TransformOverlayBox _transformBox;
     private Vector2 _center;
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase session)
+    public override void BeforeSourceExit(Interaction session)
     {
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         if (session is PolylineTransformHover hover)

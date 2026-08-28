@@ -5,7 +5,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class ImageLayerSelectHover : InteractiveSessionBase
+[RegisterState]
+public class ImageLayerSelectHover : Interaction
 {
     public Body RotationBody;
     public Body TranslationBody;

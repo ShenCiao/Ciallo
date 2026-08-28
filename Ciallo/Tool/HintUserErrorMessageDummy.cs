@@ -4,7 +4,7 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class HintUserErrorMessageDummy : InteractiveSessionBase
+public class HintUserErrorMessageDummy : Interaction, IPropertyProvider
 {
     private Label _label;
 
@@ -35,7 +35,7 @@ public class HintUserErrorMessageDummy : InteractiveSessionBase
     }
     public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         _label = new() { Text = FormatMessage(Message) };
         container.AddChild(_label);

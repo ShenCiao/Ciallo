@@ -25,7 +25,6 @@ public partial class WorldEventDispatcher : Container
     private Stopwatch _timer;
 
     public Entity Document;
-    private ToolManager ToolManager => Document.Get<ToolManager>();
 
     public CursorMotionData CurrentCursorMotion { get => throw new NotImplementedException(); internal set; }
 
@@ -339,17 +338,17 @@ public partial class WorldEventDispatcher : Container
 
     private void DispatchKey(InputEventKey key)
     {
-        if (ToolManager.WorkingTool.CurrentValue?.OnKey(key) == true)
+        if (InteractionManager.DispatchKey(key))
             GetViewport().SetInputAsHandled();
     }
 
     private bool DispatchMouseButton(InputEventMouseButton mouse, CursorButtonData data)
     {
-        return ToolManager.WorkingTool.CurrentValue?.OnMouseButton(mouse, data) == true;
+        return InteractionManager.DispatchMouseButton(mouse, data);
     }
 
     public void DispatchMotion(CursorMotionData data)
     {
-        ToolManager.WorkingTool.CurrentValue?.OnMoving(data);
+        InteractionManager.DispatchMotion(data);
     }
 }

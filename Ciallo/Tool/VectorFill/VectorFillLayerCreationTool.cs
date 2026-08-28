@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
@@ -8,11 +9,16 @@ using Frent;
 using Godot;
 using ObservableCollections;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.VectorFill)]
-public class VectorFillLayerCreationTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+// Falls behind VectorFillTool: only reached on a shape layer, where there is no fill to edit yet.
+[RequestedByToolButton(ToolButton.Type.VectorFill, Priority = 1)]
+public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
     {
@@ -24,25 +30,23 @@ public class VectorFillLayerCreationTool : ToolBase
     }
 
     public readonly ReactiveProperty<CreationStrategy> Strategy = new(CreationStrategy.WithinAllCels);
-    public readonly VectorFillLayerCreationHover Hover = new();
+    [Substate]
+    internal VectorFillLayerCreationHover Hover = null!;
 
-    protected override void ConfigureStateMachine()
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .InternalTransition(Press(MouseButton.Left), OnCreate);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .InternalTransition(Trigger.Press(MouseButton.Left), OnCreate)
+            .PermitReentry(Trigger.Refresh);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return e.Has<ShapeLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
-        base.DrawProperty(container);
-
         container.AddChild(new Label
         {
             Text = "[Vector Fill On Shape Layer Hint]".Tr(),
@@ -345,7 +349,8 @@ public class VectorFillLayerCreationTool : ToolBase
     private readonly record struct CelVectorFillPlan(Entity SourceCel, List<Entity> ReferenceLayers);
 }
 
-public class VectorFillLayerCreationHover : InteractiveSessionBase
+[RegisterState]
+public class VectorFillLayerCreationHover : Interaction
 {
     public override void Start(CursorButtonData data)
     {

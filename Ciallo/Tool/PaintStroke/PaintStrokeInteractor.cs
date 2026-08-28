@@ -9,9 +9,11 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintStrokeInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class PaintStrokeInteractor : CapturingInteraction
 {
-    public new PaintStrokeTool Tool => (PaintStrokeTool)base.Tool;
+    [StateAccess]
+    public PaintStrokeTool Tool { get; set; } = null!;
     public Entity BrushE;
     public StrokeView StrokePreview;
     public readonly PolylineInteractiveGenerator Generator = new()
@@ -23,12 +25,9 @@ public class PaintStrokeInteractor : ActiveInteractionSessionBase
     private readonly List<Vector2> _snapHintPoints = new(2);
     private MultiMeshInstance2D _snapDots;
 
-    public static readonly ToolBase.Trigger PaintEnd = new("PaintEnd");
+    public static readonly Trigger PaintEnd = new("PaintEnd");
 
-    public PaintStrokeInteractor()
-    {
-        MovingMinInterval = TimeSpan.Zero;
-    }
+    public override TimeSpan MovingMinInterval => TimeSpan.Zero;
 
     public override void Start(CursorButtonData data)
     {
@@ -109,7 +108,7 @@ public class PaintStrokeInteractor : ActiveInteractionSessionBase
 
     public void OnEndPaintButton()
     {
-        Tool.Machine.Fire(PaintEnd);
+        Fire(PaintEnd);
     }
 
     public void Clear()

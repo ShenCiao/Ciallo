@@ -1,0 +1,823 @@
+using System.Collections.Immutable;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+
+namespace SourceGeneration;
+
+[Generator]
+public sealed class RegisterStateGenerator : IIncrementalGenerator
+{
+    private const string RegisterStateFqn = "Ciallo.Tool.RegisterStateAttribute";
+    private const string SubstateFqn = "Ciallo.Tool.SubstateAttribute";
+    private const string StateAccessFqn = "Ciallo.Tool.StateAccessAttribute";
+    private const string ToolButtonFqn = "Ciallo.Tool.RequestedByToolButtonAttribute";
+    private const string LayerDependentFqn = "Ciallo.Tool.ILayerDependent";
+    private const string ScopeName = "InteractionScope";
+    private const string ConfigureMethodName = "ConfigureStateMachine";
+    private const string LayersTriggerName = "WorkingLayersChanged";
+
+    private static readonly DiagnosticDescriptor ButtonToolNotRegistered = new(
+        id: "CIALLO003",
+        title: "Tool-button tool is not registered",
+        messageFormat:
+            "'{0}' has [RequestedByToolButton] but not [RegisterState], so it is never instantiated "
+            + "and the button can never resolve to it",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor ButtonToolNotScope = new(
+        id: "CIALLO004",
+        title: "Tool-button tool is not an InteractionScope",
+        messageFormat:
+            "'{0}' has [RequestedByToolButton] but does not derive from InteractionScope; "
+            + "a tool button can only resolve to a scope",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor DuplicateLayersTrigger = new(
+        id: "CIALLO005",
+        title: "Working-layer trigger configured twice",
+        messageFormat:
+            "'{0}' implements ILayerDependent, so {1} is generated for it; its {2} also configures "
+            + "{1}. Stateless rejects two transitions for one trigger at the first fire, not at "
+            + "build time. Remove the hand-written configuration.",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor UnreachableButtonTool = new(
+        id: "CIALLO006",
+        title: "Tool-button candidate is unreachable",
+        messageFormat:
+            "'{0}' can never be resolved: '{1}' also answers button '{2}' and, not implementing "
+            + "ILayerDependent, accepts every context. Implement ILayerDependent on one of them, or "
+            + "give them distinct buttons.",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor UnusedLayerPredicate = new(
+        id: "CIALLO007",
+        title: "Layer predicate is never consulted",
+        messageFormat:
+            "'{0}' implements ILayerDependent but has no [RequestedByToolButton], so nothing calls "
+            + "CanHandleLayers. A manually configured tool decides its own entry in "
+            + "GlobalInteractiveScope.ConfigureManualTools.",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor ButtonWithoutTool = new(
+        id: "CIALLO008",
+        title: "Tool button has no tool",
+        messageFormat:
+            "ToolButton.Type.{0} has no tool with [RequestedByToolButton]; the button renders but "
+            + "always resolves to unavailable",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    private static readonly DiagnosticDescriptor AmbiguousButtonOrder = new(
+        id: "CIALLO009",
+        title: "Tool-button candidates are unordered",
+        messageFormat:
+            "'{0}' and '{1}' both answer button '{2}' with equal Priority. Resolution order decides "
+            + "which wins when both accept the same layers; set Priority on [RequestedByToolButton] "
+            + "to make the intent explicit.",
+        category: "InteractionState",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        IncrementalValuesProvider<StateModel> states = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                RegisterStateFqn,
+                predicate: static (node, _) => node is ClassDeclarationSyntax,
+                transform: static (ctx, _) => GetState(ctx));
+
+        // Tools carrying only [RequestedByToolButton] or ILayerDependent never reach the provider
+        // above, so they would be invisible to diagnostics. Collect them separately.
+        IncrementalValuesProvider<StrayModel> strays = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 }
+                    or ClassDeclarationSyntax { BaseList: not null },
+                transform: static (ctx, _) => GetStray(ctx))
+            .Where(static stray => stray.Fqn is not null);
+
+        IncrementalValueProvider<ImmutableArray<string>> buttons = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (node, _) => node is EnumDeclarationSyntax,
+                transform: static (ctx, _) => GetButtonNames(ctx))
+            .Where(static names => !names.IsDefault)
+            .Collect()
+            .Select(static (collected, _) =>
+                collected.Length > 0 ? collected[0] : ImmutableArray<string>.Empty);
+
+        var combined = states.Collect().Combine(strays.Collect()).Combine(buttons);
+        context.RegisterSourceOutput(combined, static (spc, data) =>
+            Execute(spc, data.Left.Left, data.Left.Right, data.Right));
+    }
+
+    // ToolButton.Type members in declaration order: the outer ordering key for candidates.
+    private static ImmutableArray<string> GetButtonNames(GeneratorSyntaxContext ctx)
+    {
+        if (ctx.Node is not EnumDeclarationSyntax syntax)
+            return default;
+        if (ctx.SemanticModel.GetDeclaredSymbol(syntax) is not INamedTypeSymbol symbol)
+            return default;
+        if (symbol.Name != "Type" || symbol.ContainingType?.ToDisplayString() != "Ciallo.Tool.ToolButton")
+            return default;
+
+        var names = ImmutableArray.CreateBuilder<string>();
+        foreach (var member in symbol.GetMembers())
+        {
+            if (member is IFieldSymbol { HasConstantValue: true } field)
+                names.Add(field.Name);
+        }
+
+        return names.ToImmutable();
+    }
+
+    // A class carrying the tool-button attribute or the layer contract WITHOUT [RegisterState].
+    // Diagnostics only; never emitted.
+    private static StrayModel GetStray(GeneratorSyntaxContext ctx)
+    {
+        if (ctx.Node is not ClassDeclarationSyntax syntax)
+            return default;
+        if (ctx.SemanticModel.GetDeclaredSymbol(syntax) is not INamedTypeSymbol type)
+            return default;
+        if (GetAttribute(type, RegisterStateFqn) is not null)
+            return default;
+
+        bool hasButton = GetAttribute(type, ToolButtonFqn) is not null;
+        bool isLayerDependent = ImplementsLayerDependent(type);
+        if (!hasButton && !isLayerDependent)
+            return default;
+
+        return new StrayModel(
+            type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            type.Name,
+            hasButton,
+            isLayerDependent,
+            IsScope(type),
+            type.Locations.Length > 0 ? type.Locations[0] : Location.None);
+    }
+
+    private static bool ImplementsLayerDependent(INamedTypeSymbol type)
+    {
+        foreach (var iface in type.AllInterfaces)
+        {
+            if (iface.ToDisplayString() == LayerDependentFqn)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsScope(INamedTypeSymbol type)
+    {
+        for (var baseType = type.BaseType; baseType is not null; baseType = baseType.BaseType)
+        {
+            if (baseType.Name == ScopeName)
+                return true;
+        }
+
+        return false;
+    }
+
+    // Scans this type's own ConfigureStateMachine for any Permit*/Ignore whose trigger argument
+    // mentions WorkingLayersChanged. Syntactic and deliberately broad: the realistic mistake is
+    // pasting the old PermitReentryIf line into a tool that now gets one generated (CIALLO005).
+    private static Location? FindLayersTriggerConfiguration(INamedTypeSymbol type)
+    {
+        foreach (var member in type.GetMembers(ConfigureMethodName))
+        {
+            if (member is not IMethodSymbol method)
+                continue;
+
+            foreach (var reference in method.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax() is not MethodDeclarationSyntax declaration)
+                    continue;
+
+                foreach (var invocation in declaration.DescendantNodes().OfType<InvocationExpressionSyntax>())
+                {
+                    if (invocation.Expression is not MemberAccessExpressionSyntax access)
+                        continue;
+
+                    string name = access.Name.Identifier.ValueText;
+                    if (!name.StartsWith("Permit") && name != "Ignore" && name != "InternalTransition")
+                        continue;
+                    if (invocation.ArgumentList.Arguments.Count == 0)
+                        continue;
+
+                    var trigger = invocation.ArgumentList.Arguments[0].Expression;
+                    if (trigger.ToString().Contains(LayersTriggerName))
+                        return trigger.GetLocation();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static StateModel GetState(GeneratorAttributeSyntaxContext ctx)
+    {
+        if (ctx.TargetSymbol is not INamedTypeSymbol type)
+            return default;
+
+        var substates = ImmutableArray.CreateBuilder<MemberRef>();
+        var accesses = ImmutableArray.CreateBuilder<MemberRef>();
+        CollectMembers(type, substates, accesses, inheritedAccessOnly: false);
+
+        for (var baseType = type.BaseType; baseType is { SpecialType: not SpecialType.System_Object }; baseType = baseType.BaseType)
+            CollectMembers(baseType, substates, accesses, inheritedAccessOnly: true);
+
+        string? button = null;
+        int priority = 0;
+        var buttonAttribute = GetAttribute(type, ToolButtonFqn);
+        if (buttonAttribute is not null)
+        {
+            if (buttonAttribute.ConstructorArguments.Length == 1)
+            {
+                button = ResolveEnumMemberName(
+                    buttonAttribute.ConstructorArguments[0].Type,
+                    buttonAttribute.ConstructorArguments[0].Value);
+            }
+
+            foreach (var named in buttonAttribute.NamedArguments)
+            {
+                if (named.Key == "Priority" && named.Value.Value is int priorityValue)
+                    priority = priorityValue;
+            }
+        }
+
+        bool isLayerDependent = ImplementsLayerDependent(type);
+
+        return new StateModel(
+            type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            type.Name,
+            type.Name == "GlobalInteractiveScope",
+            type.Name == "NoDocument",
+            substates.ToImmutable(),
+            accesses.ToImmutable(),
+            button,
+            priority,
+            isLayerDependent,
+            IsScope(type),
+            isLayerDependent ? FindLayersTriggerConfiguration(type) : null,
+            type.Locations.Length > 0 ? type.Locations[0] : Location.None);
+    }
+
+    // The attribute stores ToolButton.Type as its underlying int; recover the member name so the
+    // emitted switch reads ToolButton.Type.Select rather than a bare literal.
+    private static string? ResolveEnumMemberName(ITypeSymbol? enumType, object? value)
+    {
+        if (enumType is not INamedTypeSymbol named || value is null)
+            return null;
+
+        foreach (var member in named.GetMembers())
+        {
+            if (member is IFieldSymbol { HasConstantValue: true } field &&
+                Equals(field.ConstantValue, value))
+            {
+                return field.Name;
+            }
+        }
+
+        return null;
+    }
+    private static void CollectMembers(
+        INamedTypeSymbol declaringType,
+        ImmutableArray<MemberRef>.Builder substates,
+        ImmutableArray<MemberRef>.Builder accesses,
+        bool inheritedAccessOnly)
+    {
+        foreach (var member in declaringType.GetMembers())
+        {
+            if (member.IsStatic)
+                continue;
+
+            ITypeSymbol? memberType = member switch
+            {
+                IFieldSymbol field => field.Type,
+                IPropertySymbol property => property.Type,
+                _ => null,
+            };
+            if (memberType is not INamedTypeSymbol namedType)
+                continue;
+
+            int declOrder = member.Locations.Length > 0 ? member.Locations[0].SourceSpan.Start : 0;
+            string memberFqn = namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+            if (!inheritedAccessOnly)
+            {
+                var substate = GetAttribute(member, SubstateFqn);
+                if (substate is not null)
+                {
+                    int order = 0;
+                    if (substate.ConstructorArguments.Length == 1 &&
+                        substate.ConstructorArguments[0].Value is int orderValue)
+                        order = orderValue;
+                    substates.Add(new MemberRef(member.Name, memberFqn, namedType.Name, order, declOrder));
+                }
+            }
+
+            var access = GetAttribute(member, StateAccessFqn);
+            if (access is not null)
+                accesses.Add(new MemberRef(member.Name, memberFqn, namedType.Name, 0, declOrder));
+        }
+    }
+
+    private static AttributeData? GetAttribute(ISymbol symbol, string fqn)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            string? name = attribute.AttributeClass?.ToDisplayString();
+            if (name == fqn)
+                return attribute;
+        }
+
+        return null;
+    }
+
+    // Resolution order for candidates of one button: declared Priority, then ToolButton.Type
+    // declaration order (stable across files, unlike source spans), then name for determinism.
+    private static List<StateModel> OrderCandidates(
+        IEnumerable<StateModel> candidates,
+        ImmutableArray<string> buttonOrder)
+    {
+        return candidates
+            .OrderBy(static c => c.Priority)
+            .ThenBy(c => buttonOrder.IsDefaultOrEmpty ? 0 : buttonOrder.IndexOf(c.Button!))
+            .ThenBy(static c => c.Name, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static void ReportDiagnostics(
+        SourceProductionContext context,
+        StateModel[] valid,
+        ImmutableArray<StrayModel> strays,
+        ImmutableArray<string> buttonOrder)
+    {
+        foreach (var stray in strays)
+        {
+            if (stray.HasButton)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ButtonToolNotRegistered, stray.Location, stray.Name));
+            }
+            else if (stray.IsLayerDependent)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    UnusedLayerPredicate, stray.Location, stray.Name));
+            }
+        }
+
+        foreach (var state in valid)
+        {
+            if (state.Button is not null && !state.IsScope)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ButtonToolNotScope, state.Location, state.Name));
+            }
+
+            if (state.Button is null && state.IsLayerDependent)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    UnusedLayerPredicate, state.Location, state.Name));
+            }
+
+            // Stateless rejects two transitions for one trigger only at the first fire (verified),
+            // so this is the difference between a build error and a crash on the first layer change.
+            if (state.LayersTriggerLocation is not null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    DuplicateLayersTrigger,
+                    state.LayersTriggerLocation,
+                    state.Name,
+                    LayersTriggerName,
+                    ConfigureMethodName));
+            }
+        }
+
+        var byButton = valid
+            .Where(static s => s.Button is not null && s.IsScope)
+            .GroupBy(static s => s.Button!);
+
+        foreach (var group in byButton)
+        {
+            var ordered = OrderCandidates(group, buttonOrder);
+
+            // A candidate that is not ILayerDependent matches unconditionally, so anything after it
+            // in resolution order is dead code.
+            for (int i = 0; i < ordered.Count - 1; i++)
+            {
+                if (ordered[i].IsLayerDependent)
+                    continue;
+
+                for (int j = i + 1; j < ordered.Count; j++)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        UnreachableButtonTool,
+                        ordered[j].Location,
+                        ordered[j].Name,
+                        ordered[i].Name,
+                        group.Key));
+                }
+
+                break;
+            }
+
+            // Equal priority means resolution order is incidental, which only matters when two
+            // candidates can accept the same layers. Predicate overlap is not decidable here, so
+            // this asks for the intent to be written down rather than claiming a conflict.
+            for (int i = 1; i < ordered.Count; i++)
+            {
+                if (ordered[i].Priority == ordered[i - 1].Priority)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        AmbiguousButtonOrder,
+                        ordered[i].Location,
+                        ordered[i - 1].Name,
+                        ordered[i].Name,
+                        group.Key));
+                }
+            }
+        }
+
+        var covered = new HashSet<string>(valid
+            .Where(static s => s.Button is not null)
+            .Select(static s => s.Button!));
+
+        foreach (var button in buttonOrder)
+        {
+            if (!covered.Contains(button))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ButtonWithoutTool, Location.None, button));
+            }
+        }
+    }
+
+    private static void Execute(
+        SourceProductionContext context,
+        ImmutableArray<StateModel> states,
+        ImmutableArray<StrayModel> strays,
+        ImmutableArray<string> buttonOrder)
+    {
+        var valid = states.Where(static s => s.Fqn is not null).ToArray();
+        if (valid.Length == 0)
+            return;
+
+        ReportDiagnostics(context, valid, strays, buttonOrder);
+
+        var byFqn = valid.ToDictionary(static s => s.Fqn);
+        var byName = new Dictionary<string, StateModel>();
+        foreach (var state in valid)
+            byName[state.Name] = state;
+
+        var global = valid.FirstOrDefault(static s => s.IsGlobal);
+        var buttonTools = valid.Where(static s => s.Button is not null && s.IsScope).ToArray();
+
+        // Substates of Global that the generator owns: declared by attribute, not by a field.
+        var generatedGlobalSubstates = OrderCandidates(buttonTools, buttonOrder);
+
+        var builder = new StringBuilder();
+        builder.AppendLine(
+            """
+            // <auto-generated/>
+            #nullable enable
+
+            using System.Collections.Immutable;
+            using System.Linq;
+            using Ciallo.Misc;
+            using Frent;
+            using Stateless;
+
+            namespace Ciallo.Tool;
+
+            using StateMachine = Stateless.StateMachine<InteractionState, Trigger>;
+
+            internal static class InteractionStateGraph
+            {
+            """);
+
+        foreach (var state in valid)
+        {
+            builder.AppendLine($"    internal static {state.Fqn} {LocalName(state)} = null!;");
+        }
+
+        builder.AppendLine("    internal static InteractionState[] States = null!;");
+        builder.AppendLine();
+        builder.AppendLine("    internal static void Create(out GlobalInteractiveScope outGlobal, out NoDocument outNoDocument)");
+        builder.AppendLine("    {");
+
+        foreach (var state in valid)
+        {
+            builder.AppendLine($"        {LocalName(state)} = new {state.Fqn}();");
+        }
+
+        builder.AppendLine();
+        foreach (var parent in valid)
+        {
+            string parentLocal = LocalName(parent);
+            foreach (var child in parent.Substates.OrderBy(static s => s.Order).ThenBy(static s => s.DeclOrder))
+            {
+                if (!byFqn.TryGetValue(child.TypeFqn, out var childState) &&
+                    !byName.TryGetValue(child.TypeName, out childState))
+                    continue;
+                builder.AppendLine($"        {parentLocal}.{child.MemberName} = {LocalName(childState)};");
+            }
+
+            foreach (var access in parent.Accesses)
+            {
+                if (!byFqn.TryGetValue(access.TypeFqn, out var target) &&
+                    !byName.TryGetValue(access.TypeName, out target))
+                    continue;
+                builder.AppendLine($"        {parentLocal}.{access.MemberName} = {LocalName(target)};");
+            }
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("        States =");
+        builder.AppendLine("        [");
+        foreach (var state in OrderStates(valid, byFqn, byName, generatedGlobalSubstates, global))
+            builder.AppendLine($"            {LocalName(state)},");
+        builder.AppendLine("        ];");
+        builder.AppendLine("        outGlobal = global;");
+        builder.AppendLine("        outNoDocument = noDocument;");
+        builder.AppendLine("    }");
+        builder.AppendLine();
+        builder.AppendLine("    internal static void Configure(StateMachine stateMachine)");
+        builder.AppendLine("    {");
+        builder.AppendLine(
+            """
+                    foreach (var state in States)
+                    {
+                        stateMachine.Configure(state)
+                            .OnEntry(state.OnEntry)
+                            .OnExit(state.OnExit);
+                    }
+            """);
+
+        foreach (var parent in valid)
+        {
+            string parentLocal = LocalName(parent);
+            foreach (var child in parent.Substates.OrderBy(static s => s.Order).ThenBy(static s => s.DeclOrder))
+            {
+                if (!byFqn.TryGetValue(child.TypeFqn, out var childState) &&
+                    !byName.TryGetValue(child.TypeName, out childState))
+                    continue;
+                builder.AppendLine($"        stateMachine.Configure({LocalName(childState)}).SubstateOf({parentLocal});");
+            }
+        }
+
+        // Tool-button tools hang under Global without a field on it.
+        if (global.Fqn is not null)
+        {
+            foreach (var tool in generatedGlobalSubstates)
+            {
+                builder.AppendLine(
+                    $"        stateMachine.Configure({LocalName(tool)}).SubstateOf({LocalName(global)});");
+            }
+        }
+
+        builder.AppendLine(
+            """
+                    foreach (var scope in States.OfType<InteractionScope>())
+                    {
+                        scope.ConfigureStateMachine(stateMachine);
+                    }
+            """);
+
+        // Working-layer reentry. Without it Stateless keeps the scope active as common ancestor when
+        // the parent's PermitDynamic resolves back to the same tool, so only the leaf session
+        // re-enters and the scope's layer-bound state stays bound to the previous layer.
+        //
+        // The guard takes the layers from the trigger parameter: InteractionManager.WorkingLayers is
+        // still the pre-transition snapshot while a guard runs. Guard failure falls through to
+        // GlobalInteractiveScope's PermitDynamic, which performs the tool switch.
+        var reentryTools = generatedGlobalSubstates.Where(static t => t.IsLayerDependent).ToArray();
+        if (reentryTools.Length > 0 && global.Fqn is not null)
+        {
+            builder.AppendLine();
+            foreach (var tool in reentryTools)
+            {
+                builder.AppendLine(
+                    $"        stateMachine.Configure({LocalName(tool)})");
+                builder.AppendLine(
+                    "            .PermitReentryIf(");
+                builder.AppendLine(
+                    "                InteractionManager.WorkingLayersChanged,");
+                builder.AppendLine(
+                    $"                layers => {LocalName(global)}.ResolvesTo({LocalName(tool)}, layers));");
+            }
+        }
+
+        builder.AppendLine();
+        builder.AppendLine("        stateMachine.BuildSubstateMap();");
+        builder.AppendLine("    }");
+        builder.AppendLine("}");
+
+        EmitResolver(builder, generatedGlobalSubstates, buttonOrder);
+
+        context.AddSource("InteractionStateGraph.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+    }
+
+    // GlobalInteractiveScope.ResolveToolButton: ordered first-match over candidates. Emitted as the
+    // implementation of a partial method so the hand-written policy (arity, liveness, resolution
+    // fallback) stays in source and only the mechanical dispatch is generated.
+    private static void EmitResolver(
+        StringBuilder builder,
+        List<StateModel> tools,
+        ImmutableArray<string> buttonOrder)
+    {
+        builder.AppendLine();
+        builder.AppendLine(
+            """
+            public partial class GlobalInteractiveScope
+            {
+                private partial InteractionState? ResolveToolButton(
+                    ToolButton.Type toolButton,
+                    ImmutableArray<Entity> layers)
+                {
+                    return toolButton switch
+                    {
+            """);
+
+        var groups = tools
+            .Where(static t => t.Button is not null)
+            .GroupBy(static t => t.Button!)
+            .OrderBy(g => buttonOrder.IsDefaultOrEmpty ? 0 : buttonOrder.IndexOf(g.Key))
+            .ThenBy(static g => g.Key, StringComparer.Ordinal);
+
+        foreach (var group in groups)
+        {
+            foreach (var tool in OrderCandidates(group, buttonOrder))
+            {
+                // A tool that is not ILayerDependent accepts any context this button reaches.
+                string guard = tool.IsLayerDependent
+                    ? $" when {tool.Fqn}.CanHandleLayers(layers)"
+                    : string.Empty;
+                builder.AppendLine(
+                    $"            ToolButton.Type.{group.Key}{guard} =>");
+                builder.AppendLine(
+                    $"                InteractionStateGraph.{LocalName(tool)},");
+            }
+        }
+
+        builder.AppendLine(
+            """
+                        _ => null,
+                    };
+                }
+            }
+            """);
+    }
+
+
+    private static string LocalName(StateModel state)
+    {
+        if (state.IsGlobal)
+            return "global";
+        if (state.IsNoDocument)
+            return "noDocument";
+        string name = state.Name;
+        return char.ToLowerInvariant(name[0]) + name.Substring(1);
+    }
+
+    private static List<StateModel> OrderStates(
+        StateModel[] states,
+        Dictionary<string, StateModel> byFqn,
+        Dictionary<string, StateModel> byName,
+        List<StateModel> generatedGlobalSubstates,
+        StateModel global)
+    {
+        var result = new List<StateModel>(states.Length);
+        var seen = new HashSet<string>();
+        if (global.Fqn is not null)
+            Visit(global);
+
+        // Tools attached to Global by attribute rather than by field: keep them adjacent to Global,
+        // in resolution order, so the emitted States array still reads as a hierarchy walk.
+        foreach (var tool in generatedGlobalSubstates)
+            Visit(tool);
+
+        foreach (var state in states)
+            Visit(state);
+
+        return result;
+
+        void Visit(StateModel state)
+        {
+            if (state.Fqn is null || !seen.Add(state.Fqn))
+                return;
+            result.Add(state);
+            foreach (var child in state.Substates.OrderBy(static s => s.Order).ThenBy(static s => s.DeclOrder))
+            {
+                if (byFqn.TryGetValue(child.TypeFqn, out var childState) ||
+                    byName.TryGetValue(child.TypeName, out childState))
+                    Visit(childState);
+            }
+        }
+    }
+
+    private readonly struct MemberRef
+    {
+        public MemberRef(string memberName, string typeFqn, string typeName, int order, int declOrder)
+        {
+            MemberName = memberName;
+            TypeFqn = typeFqn;
+            TypeName = typeName;
+            Order = order;
+            DeclOrder = declOrder;
+        }
+
+        public string MemberName { get; }
+        public string TypeFqn { get; }
+        public string TypeName { get; }
+        public int Order { get; }
+        public int DeclOrder { get; }
+    }
+
+    // A class with [RequestedByToolButton] or ILayerDependent but no [RegisterState]. Diagnostics only.
+    private readonly struct StrayModel
+    {
+        public StrayModel(
+            string fqn,
+            string name,
+            bool hasButton,
+            bool isLayerDependent,
+            bool isScope,
+            Location location)
+        {
+            Fqn = fqn;
+            Name = name;
+            HasButton = hasButton;
+            IsLayerDependent = isLayerDependent;
+            IsScope = isScope;
+            Location = location;
+        }
+
+        public string Fqn { get; }
+        public string Name { get; }
+        public bool HasButton { get; }
+        public bool IsLayerDependent { get; }
+        public bool IsScope { get; }
+        public Location Location { get; }
+    }
+
+    private readonly struct StateModel
+    {
+        public StateModel(
+            string fqn,
+            string name,
+            bool isGlobal,
+            bool isNoDocument,
+            ImmutableArray<MemberRef> substates,
+            ImmutableArray<MemberRef> accesses,
+            string? button,
+            int priority,
+            bool isLayerDependent,
+            bool isScope,
+            Location? layersTriggerLocation,
+            Location location)
+        {
+            Fqn = fqn;
+            Name = name;
+            IsGlobal = isGlobal;
+            IsNoDocument = isNoDocument;
+            Substates = substates;
+            Accesses = accesses;
+            Button = button;
+            Priority = priority;
+            IsLayerDependent = isLayerDependent;
+            IsScope = isScope;
+            LayersTriggerLocation = layersTriggerLocation;
+            Location = location;
+        }
+
+        public string Fqn { get; }
+        public string Name { get; }
+        public bool IsGlobal { get; }
+        public bool IsNoDocument { get; }
+        public ImmutableArray<MemberRef> Substates { get; }
+        public ImmutableArray<MemberRef> Accesses { get; }
+
+        // ToolButton.Type member name, or null for a manually configured tool.
+        public string? Button { get; }
+        public int Priority { get; }
+        public bool IsLayerDependent { get; }
+        public bool IsScope { get; }
+
+        // Where this type hand-configures WorkingLayersChanged, when it also gets one generated.
+        public Location? LayersTriggerLocation { get; }
+        public Location Location { get; }
+    }
+}

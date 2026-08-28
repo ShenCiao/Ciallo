@@ -44,8 +44,6 @@ public static partial class AppDocumentManager
         document.Get<SelectionManager>().InitWorkingCelFolder(root);
         document.Add(new CommandManager());
         document.Add(new BrushManager());
-        document.Add(new ToolManager());
-        document.Get<ToolManager>().ObserveTimelineRolling(document.Get<TimelineSetting>().IsRollingFrame);
 
         WorldToDocument.Add(world, document);
 
@@ -100,7 +98,7 @@ public static partial class AppDocumentManager
         }
 
         cmd.Do();
-        document.Get<ToolManager>().ActivatePaintTool();
+        InteractionManager.RequestTool(ToolButton.Type.PaintStroke);
     }
 
     public static void Remove(Entity document)
@@ -108,7 +106,7 @@ public static partial class AppDocumentManager
         DisplayServer.WindowSetTitle("Ciallo");
 
         AppDocumentDurability.OnDocumentClosing(document);
-        document.Get<ToolManager>().DeactivateWorkingTool();
+        InteractionManager.CloseDocument();
         WorkingDocument.Value = Entity.Null;
 
         // Dispose world

@@ -1,6 +1,5 @@
 using System;
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Ciallo.Rendering;
@@ -8,22 +7,36 @@ using Ciallo.Widget;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.Paint)]
-public class PaintStrokeTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.PaintStroke)]
+public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
-    public readonly PaintStrokeHover Hover = new();
-    public readonly PaintStrokeInteractor Left = new();
-    public readonly PaintStrokeOnVectorFill LeftOnFill = new();
+    [Substate]
+    internal PaintStrokeHover Hover = null!;
+
+    [Substate]
+    internal PaintStrokeInteractor Left = null!;
+
+    [Substate]
+    internal PaintStrokeOnVectorFill LeftOnFill = null!;
+
     private readonly PaintStrokeSnap _snap = new();
     public ArrangementManager Arrangement { get; private set; }
 
-    protected override void ConfigureStateMachine()
+    public readonly Subject<Unit> DeactivateSignal = new();
+
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .PermitDynamicIf(Press(MouseButton.Left), () =>
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
                 if (WorkingLayer.Has<ShapeLayerSetting>())
                     return Left;
@@ -34,32 +47,29 @@ public class PaintStrokeTool : ToolBase
             {
                 var brushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
                 return !brushE.IsDyingOrDead || AppStrokeBrushLibrary.HasSelection;
-            });
+            })
+            .PermitReentry(Trigger.Refresh);
 
-        Configure(Left)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
+        sm.Configure(Left)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover)
             .Permit(PaintStrokeInteractor.PaintEnd, Hover);
 
-        Configure(LeftOnFill)
-            .Permit(Release(MouseButton.Left), Hover)
+        sm.Configure(LeftOnFill)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover)
             .Permit(PaintStrokeInteractor.PaintEnd, Hover);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 &&
+        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
+
+    public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        bool isShapeLayer = e.Has<ShapeLayerSetting>();
-        bool isVectorFillLayer = e.Has<VectorFillLayerSetting>();
-        return isShapeLayer || isVectorFillLayer;
-    }
-
-    public readonly Subject<Unit> DeactivateSignal = new();
-
-    public override void DrawProperty(PropertyContainer container)
-    {
-        base.DrawProperty(container);
-
         container.AddProperty("Snapping", new CheckBox
         {
             ToggleMode = true,
@@ -76,7 +86,7 @@ public class PaintStrokeTool : ToolBase
             }.BindNumber(AppPreference.PaintStrokeSnapDistance));
     }
 
-    public override void OnActivated()
+    protected override void OnActivated()
     {
         Arrangement = WorkingLayer.Get<ArrangementManager>();
 
@@ -89,7 +99,7 @@ public class PaintStrokeTool : ToolBase
                 _ => VectorFillTool.SetWireframeVisibility(referenceLayers, false));
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         Arrangement = null;
         DeactivateSignal.OnNext(Unit.Default);

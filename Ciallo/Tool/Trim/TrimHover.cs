@@ -3,9 +3,11 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class TrimHover : InteractiveSessionBase
+[RegisterState]
+public class TrimHover : Interaction
 {
-    public new TrimTool Tool => (TrimTool)base.Tool;
+    [StateAccess]
+    public TrimTool Tool { get; set; } = null!;
 
     public override void Start(CursorButtonData data) => RefreshCursor();
     public override void Moving(CursorMotionData data) { }

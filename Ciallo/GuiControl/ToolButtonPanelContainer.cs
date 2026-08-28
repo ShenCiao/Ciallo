@@ -27,7 +27,7 @@ public partial class ToolButtonPanelContainer : Container
             if (document.IsNull) return;
 
             var panel = ToolButtonPanel.Instantiate();
-            panel.Bind(document.Get<ToolManager>().PressedToolButton);
+            panel.Bind();
             document.Add(panel);
             AddChild(panel);
         }).AddTo(this);

@@ -11,9 +11,11 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class TrimInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class TrimInteractor : CapturingInteraction
 {
-    public new TrimTool Tool => (TrimTool)base.Tool;
+    [StateAccess]
+    public TrimTool Tool { get; set; } = null!;
 
     // Undercut intentionally leaves a tiny amount of source geometry around cuts so the rebuilt
     // arrangement feels connected. This is a drawing-tool heuristic, not a topology guarantee.
@@ -32,11 +34,8 @@ public class TrimInteractor : ActiveInteractionSessionBase
     private Arrangement _arrSnapshot;
     private HashSet<Entity> _sourceSnapshot;
 
-    public TrimInteractor()
-    {
-        // Throttle the per-frame work (CGAL query + preview update) to ~60Hz.
-        MovingMinInterval = TimeSpan.FromMilliseconds(16.6);
-    }
+    // Throttle the per-frame work (CGAL query + preview update) to ~60Hz.
+    public override TimeSpan MovingMinInterval => TimeSpan.FromMilliseconds(16.6);
 
     public override void Start(CursorButtonData data)
     {
@@ -51,7 +50,7 @@ public class TrimInteractor : ActiveInteractionSessionBase
         UpdateGestureView();
     }
 
-    // Our system generates that during interactor sessions moving, no change applies to the arrangement.
+    // Our system generates that during interactor moving, no change applies to the arrangement.
     public override void Moving(CursorMotionData data)
     {
         _gesture.Add(data.WorldPosition);

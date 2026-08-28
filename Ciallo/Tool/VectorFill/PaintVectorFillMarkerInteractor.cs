@@ -7,7 +7,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintVectorFillMarkerInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class PaintVectorFillMarkerInteractor : CapturingInteraction
 {
     private VectorFillMarkerView _markerPreview;
     private Polygon2D _fillPreview;

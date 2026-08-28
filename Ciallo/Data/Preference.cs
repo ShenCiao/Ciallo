@@ -42,7 +42,7 @@ public class Preference
     [DataMember]
     public ObservableList<string> RecentFiles = [];
     [DataMember]
-    public ReactiveProperty<ToolButton?> PressedToolButton = new(null);
+    public ReactiveProperty<ToolButton.Type?> PressedToolButton = new(ToolButton.Type.PaintStroke);
     [DataMember]
     public ReactiveProperty<int> CommandHistoryLimit = new(50);
 

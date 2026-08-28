@@ -9,7 +9,8 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class PolylineNoSelectionHover : InteractiveSessionBase
+[RegisterState]
+public class PolylineNoSelectionHover : Interaction
 {
     public Entity CurrHoveredShape;
 
@@ -77,7 +78,7 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes.ToArray();
             AppClipboardManager.CopyShapes(selectedShapes);
             DeleteShapes(selectedShapes);
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
@@ -87,21 +88,21 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
             selectedShapes.Clear();
             selectedShapes.AddRange(pastedShapes);
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
         if (AppHotkeys.Global.InteractionCancel.IsPressedBy(key))
         {
             Document.Get<SelectionManager>().SelectedShapes.Clear();
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
         if (AppHotkeys.Global.EditDelete.IsPressedBy(key))
         {
             DeleteShapes(Document.Get<SelectionManager>().SelectedShapes.ToArray());
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
@@ -130,5 +131,4 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
         cmd.Commit();
     }
 
-    public override void DrawProperty(PropertyContainer container) { }
 }

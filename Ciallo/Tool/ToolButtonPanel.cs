@@ -1,32 +1,50 @@
+using System.Collections.Generic;
 using Godot;
 using R3;
 
 namespace Ciallo.Tool;
 
-/// <remarks>
-/// Button enum generate an enum containing all buttons' node name in the tool button panel.
-/// </remarks>
-[ButtonEnum("ToolButton")]
+[Tool]
 public partial class ToolButtonPanel : Container
 {
     public ButtonGroup ToolButtonGroup { get; } = new();
+    private readonly Dictionary<ToolButton.Type, Button> _buttons = new();
 
     [OnInstantiate]
     private void Initialise()
     {
-        // Set button group
-        foreach (var child in GetChildren())
+        while (GetChildCount() > 0)
         {
-            var button = (Button)child;
-            button.ButtonGroup = ToolButtonGroup;
+            var child = GetChild(0);
+            RemoveChild(child);
+            child.QueueFree();
+        }
+
+        foreach (var definition in ToolButton.Definitions)
+        {
+            var button = new Button
+            {
+                CustomMinimumSize = new(40, 40),
+                TooltipText = definition.Tooltip,
+                ThemeTypeVariation = "IconToggleButton",
+                ToggleMode = true,
+                ActionMode = BaseButton.ActionModeEnum.Press,
+                Icon = GD.Load<Texture2D>(definition.IconPath),
+                ExpandIcon = true,
+                ButtonGroup = ToolButtonGroup,
+            };
+            if (definition.Shortcut is { } hotkey)
+                button.Shortcut = hotkey.Shortcut;
+            _buttons[definition.Type] = button;
+            AddChild(button);
         }
     }
 
-    public ToolButtonPanel Bind(ReactiveProperty<ToolButton?> property)
+    public ToolButtonPanel Bind()
     {
-        property.Subscribe(toolButton =>
+        ToolButton.ActiveToolButton.Subscribe(toolButton =>
         {
-            if (toolButton == null)
+            if (toolButton is null)
                 UnpressActiveButton();
             else
                 PressButton(toolButton.Value);
@@ -36,16 +54,21 @@ public partial class ToolButtonPanel : Container
             .DistinctUntilChanged()
             .Subscribe(button =>
             {
-                var toolButton = GetButtonEnum(button);
-                property.Value = toolButton;
+                foreach (var (type, mapped) in _buttons)
+                {
+                    if (!ReferenceEquals(mapped, button)) continue;
+                    InteractionManager.RequestTool(type);
+                    return;
+                }
             }).AddTo(this);
 
         return this;
     }
 
-    public void PressButton(ToolButton toolButton)
+    public void PressButton(ToolButton.Type toolButton)
     {
-        GetButton(toolButton).ButtonPressed = true;
+        if (_buttons.TryGetValue(toolButton, out var button))
+            button.ButtonPressed = true;
     }
 
     public void UnpressActiveButton()

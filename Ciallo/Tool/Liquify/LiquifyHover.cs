@@ -3,8 +3,12 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class LiquifyHover : InteractiveSessionBase
+[RegisterState]
+public class LiquifyHover : Interaction
 {
+    [StateAccess]
+    public LiquifyTool Tool { get; set; } = null!;
+
     private StrokeView _brushCircle;
 
     public override void Start(CursorButtonData data)
@@ -33,7 +37,7 @@ public class LiquifyHover : InteractiveSessionBase
 
     private void UpdateBrushCircle(Vector2 center)
     {
-        var liquifyTool = (LiquifyTool)Tool;
+        var liquifyTool = Tool;
         _brushCircle.SetGeometry(CreateCircle(center, liquifyTool.Radius.Value, 64), AppPreference.StrokeWireframeRadius);
     }
 

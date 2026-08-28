@@ -11,7 +11,8 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class VectorFillHover : InteractiveSessionBase
+[RegisterState]
+public class VectorFillHover : Interaction, IPropertyProvider
 {
     private readonly List<StrokeView> _contours = [];
     // ponytail: cache leans on PointQueryFace returning a stable Rid per face (native arrangement_2d). Same face -> equal Rid -> skip redraw.
@@ -93,7 +94,7 @@ public class VectorFillHover : InteractiveSessionBase
             sv.Multimesh.InstanceCount = 0;
     }
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         container.AddChild(new Label
         {

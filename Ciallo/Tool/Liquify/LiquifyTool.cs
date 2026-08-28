@@ -1,42 +1,47 @@
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Widget;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.Liquify)]
-public class LiquifyTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.Liquify)]
+public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public readonly ReactiveProperty<LiquifyMode> Mode = new(LiquifyMode.Push);
     public readonly ReactiveProperty<float> Radius = new(64f);
     public readonly ReactiveProperty<float> Strength = new(0.5f);
 
-    public readonly LiquifyHover Hover = new();
-    public readonly LiquifyInteractor Left = new();
+    [Substate]
+    internal LiquifyHover Hover = null!;
 
-    protected override void ConfigureStateMachine()
+    [Substate]
+    internal LiquifyInteractor Left = null!;
+
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .Permit(Press(MouseButton.Left), Left);
-
-        Configure(Left)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionCancel), Hover)
-            .Permit(Press(AppHotkeys.Global.InteractionConfirm), Hover);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Left)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.ConfirmRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return !e.IsDyingOrDead && e.Has<ShapeLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         container.AddProperty("Mode",
             new OptionButton()
@@ -62,7 +67,5 @@ public class LiquifyTool : ToolBase
                 Step = 0.01f,
                 AllowGreater = true,
             }.BindNumber(Strength));
-
-        base.DrawProperty(container);
     }
 }

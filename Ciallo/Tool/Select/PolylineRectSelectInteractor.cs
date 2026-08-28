@@ -7,7 +7,8 @@ using ObservableCollections;
 
 namespace Ciallo.Tool;
 
-public class PolylineRectSelectInteractor : ActiveInteractionSessionBase
+[RegisterState]
+public class PolylineRectSelectInteractor : CapturingInteraction
 {
     private StrokeView _boxSelectionDash;
     private Rect2 _boxSelectionRect;
@@ -21,7 +22,7 @@ public class PolylineRectSelectInteractor : ActiveInteractionSessionBase
             e.Get<PolylineWireframe>().Visible = visible;
     }
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase src)
+    public override void BeforeSourceExit(Interaction src)
     {
         if (src is PolylineNoSelectionHover hover)
         {
@@ -37,7 +38,7 @@ public class PolylineRectSelectInteractor : ActiveInteractionSessionBase
         _boxSelectionRect.Position = data.WorldPosition;
         _boxSelectionRect.Size = Vector2.Zero;
         _selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
-        _baseSelection = [.._selectedShapes];
+        _baseSelection = [.. _selectedShapes];
         if (!Input.IsKeyPressed(Key.Shift))
             _selectedShapes.Clear();
         if (!_initialHoveredShape.IsNull && !_selectedShapes.Remove(_initialHoveredShape))
@@ -49,7 +50,7 @@ public class PolylineRectSelectInteractor : ActiveInteractionSessionBase
     {
         _boxSelectionRect.Size = data.WorldPosition - _boxSelectionRect.Position;
         var points = _boxSelectionRect.GetCorners();
-        _boxSelectionDash.SetGeometry([..points, points[0]], AppPreference.StrokeWireframeRadius);
+        _boxSelectionDash.SetGeometry([.. points, points[0]], AppPreference.StrokeWireframeRadius);
 
         // Selection
         var es = Document.Get<WorldBody>().RectQuery(_boxSelectionRect);

@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using Ciallo.Command;
 using R3;
@@ -57,13 +56,11 @@ public static partial class ToolButton
     }
 
     // A button without ShortcutMember has no Hotkey (nullable). TryResolveHotkey skips it.
-#nullable enable annotations
     public sealed record Descriptor(
         Type Type,
         string IconPath,
         string Tooltip,
-        Hotkey? Shortcut);
-#nullable restore annotations
+        Hotkey Shortcut);
 
     // User selection state. null is valid "no latched tool". Panel observes; RequestTool is sole writer.
     // Nullable type is resevered for future tools without a tool button (this will be light table related functionality), cannot be null now

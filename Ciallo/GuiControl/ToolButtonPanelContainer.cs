@@ -6,11 +6,18 @@ using R3;
 
 namespace Ciallo.GuiControl;
 
+[Tool]
 public partial class ToolButtonPanelContainer : Container
 {
     public override void _Ready()
     {
         this.QueueFreeChildren();
+
+        if (Engine.IsEditorHint())
+        {
+            var panel = ToolButtonPanel.Instantiate();
+            AddChild(panel);
+        }
 
         AppDocumentManager.WorkingDocument.Pairwise().Subscribe(pair =>
         {

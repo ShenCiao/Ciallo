@@ -7,7 +7,7 @@ namespace Ciallo.Tool;
 public class TrimHover : Interaction
 {
     [StateAccess]
-    public TrimTool Tool { get; set; } = null!;
+    public TrimTool Tool { get; set; }
 
     public override void Start(CursorButtonData data) => RefreshCursor();
     public override void Moving(CursorMotionData data) { }

@@ -8,7 +8,7 @@ namespace Ciallo.GuiControl;
 
 internal static class LayerContextActions
 {
-    private static int s_plainShapeLayerId = 1;
+    private static int _plainShapeLayerId = 1;
 
     public static void NewShapeLayer(Entity targetLayer)
     {
@@ -19,7 +19,7 @@ internal static class LayerContextActions
         var (parentE, index) = GetNewLayerInsertPosition(targetLayer);
         new CommandBuilder("New Shape Layer", document.World.Create())
             .NewShapeLayer()
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, $"{"Shape layer".Tr()} {s_plainShapeLayerId++}")
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, $"{"Shape layer".Tr()} {_plainShapeLayerId++}")
             .AddToLayerTree(parentE, index)
             .SetWorkingLayer()
             .Commit();
@@ -260,7 +260,7 @@ internal static class LayerContextActions
 
         // One shared name across every cel, so the new layers collapse into a single archetype row.
         // Reuse the plain-path counter (one bump per batch) — laziest way to keep repeated batches distinct.
-        string sharedName = $"{"Shape layer".Tr()} {s_plainShapeLayerId++}";
+        string sharedName = $"{"Shape layer".Tr()} {_plainShapeLayerId++}";
 
         var cmd = new CommandBuilder("Add Shape Layer to All Cels", celFolder.Document);
         Entity workingLayerE = Entity.Null;
@@ -294,7 +294,7 @@ internal static class LayerContextActions
         // Single-cel edit gets a '_' prefix to stay out of the archetype — except when this is the
         // folder's only cel, where the edit defines the archetype and must NOT be hidden from it.
         bool isBatch = celCount <= 1;
-        string baseName = $"{"Shape layer".Tr()} {s_plainShapeLayerId++}";
+        string baseName = $"{"Shape layer".Tr()} {_plainShapeLayerId++}";
         string name = isBatch ? baseName : "_" + baseName;
 
         var shapeE = cel.World.Create();

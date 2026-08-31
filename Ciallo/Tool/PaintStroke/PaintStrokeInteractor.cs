@@ -13,7 +13,7 @@ namespace Ciallo.Tool;
 public class PaintStrokeInteractor : CapturingInteraction
 {
     [StateAccess]
-    public PaintStrokeTool Tool { get; set; } = null!;
+    public PaintStrokeTool Tool { get; set; }
     public Entity BrushE;
     public StrokeView StrokePreview;
     public readonly PolylineInteractiveGenerator Generator = new()

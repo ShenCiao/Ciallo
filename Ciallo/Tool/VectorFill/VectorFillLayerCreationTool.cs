@@ -16,8 +16,7 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-// Falls behind VectorFillTool: only reached on a shape layer, where there is no fill to edit yet.
-[RequestedByToolButton(ToolButton.Type.VectorFill, Priority = 1)]
+[RequestedByToolButton(ToolButton.Type.VectorFill)]
 public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
@@ -31,7 +30,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 
     public readonly ReactiveProperty<CreationStrategy> Strategy = new(CreationStrategy.WithinAllCels);
     [Substate]
-    internal VectorFillLayerCreationHover Hover = null!;
+    internal VectorFillLayerCreationHover Hover;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {

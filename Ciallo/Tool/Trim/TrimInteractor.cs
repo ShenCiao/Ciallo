@@ -15,7 +15,7 @@ namespace Ciallo.Tool;
 public class TrimInteractor : CapturingInteraction
 {
     [StateAccess]
-    public TrimTool Tool { get; set; } = null!;
+    public TrimTool Tool { get; set; }
 
     // Undercut intentionally leaves a tiny amount of source geometry around cuts so the rebuilt
     // arrangement feels connected. This is a drawing-tool heuristic, not a topology guarantee.

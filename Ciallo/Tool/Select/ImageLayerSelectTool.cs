@@ -9,16 +9,14 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-// Image and polyline select accept disjoint layer types, so order is not observable today; declared
-// anyway so adding a broader Select candidate cannot silently reorder these two.
-[RequestedByToolButton(ToolButton.Type.Select, Priority = 0)]
+[RequestedByToolButton(ToolButton.Type.Select)]
 public class ImageLayerSelectTool : InteractionScope, ILayerDependent
 {
     [Substate]
-    internal ImageLayerSelectHover Hover = null!;
+    internal ImageLayerSelectHover Hover;
 
     [Substate]
-    internal ImageTransformInteractor Left = null!;
+    internal ImageTransformInteractor Left;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {

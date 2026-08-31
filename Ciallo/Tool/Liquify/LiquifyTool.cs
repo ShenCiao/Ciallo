@@ -19,10 +19,10 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     public readonly ReactiveProperty<float> Strength = new(0.5f);
 
     [Substate]
-    internal LiquifyHover Hover = null!;
+    internal LiquifyHover Hover;
 
     [Substate]
-    internal LiquifyInteractor Left = null!;
+    internal LiquifyInteractor Left;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {

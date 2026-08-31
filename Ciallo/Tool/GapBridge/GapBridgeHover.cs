@@ -7,7 +7,7 @@ namespace Ciallo.Tool;
 public class GapBridgeHover : Interaction
 {
     [StateAccess]
-    public GapBridgeTool Tool { get; set; } = null!;
+    public GapBridgeTool Tool { get; set; }
 
     private Vector2 _lastWorldPosition = Vector2.Inf;
     private GapBridge _hoveredBridge;

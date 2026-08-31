@@ -14,7 +14,7 @@ namespace Ciallo.Tool;
 public class PaintStrokeHover : Interaction, IPropertyProvider
 {
     [StateAccess]
-    public PaintStrokeTool Tool { get; set; } = null!;
+    public PaintStrokeTool Tool { get; set; }
 
     private MultiMeshInstance2D _snapDots;
 

@@ -13,10 +13,10 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 public class PaintFillTool : InteractionScope, ILayerDependent
 {
     [Substate]
-    internal PaintFillHover Hover = null!;
+    internal PaintFillHover Hover;
 
     [Substate]
-    internal PaintFillInteractor Left = null!;
+    internal PaintFillInteractor Left;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {

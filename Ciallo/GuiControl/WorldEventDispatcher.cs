@@ -26,8 +26,6 @@ public partial class WorldEventDispatcher : Container
 
     public Entity Document;
 
-    public CursorMotionData CurrentCursorMotion { get => throw new NotImplementedException(); internal set; }
-
 
     // ------------ Touch gesture state -------------
     private readonly Dictionary<int, Vector2> _activeTouches = new();

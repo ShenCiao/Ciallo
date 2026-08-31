@@ -19,7 +19,7 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-[RequestedByToolButton(ToolButton.Type.Select, Priority = 1)]
+[RequestedByToolButton(ToolButton.Type.Select)]
 public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum EditMode { RectTransform, BezierDeform, }
@@ -28,22 +28,22 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     public readonly ReactiveProperty<float> SimplificationRatio = new(0.25f);
 
     [Substate]
-    internal PolylineNoSelectionHover HoverWithoutSelection = null!;
+    internal PolylineNoSelectionHover HoverWithoutSelection;
 
     [Substate]
-    internal PolylineTransformHover TransformHover = null!;
+    internal PolylineTransformHover TransformHover;
 
     [Substate]
-    internal PolylineBezierDeformHover BezierDeformHover = null!;
+    internal PolylineBezierDeformHover BezierDeformHover;
 
     [Substate]
-    internal PolylineRectSelectInteractor Select = null!;
+    internal PolylineRectSelectInteractor Select;
 
     [Substate]
-    internal PolylineTransformInteractor RectTransform = null!;
+    internal PolylineTransformInteractor RectTransform;
 
     [Substate]
-    internal PolylineBezierDeformInteractor BezierDeform = null!;
+    internal PolylineBezierDeformInteractor BezierDeform;
 
     public Trigger EditModeChanged = new("EditModeChanged");
 

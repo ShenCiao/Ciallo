@@ -14,7 +14,7 @@ namespace Ciallo.Tool;
 public class LiquifyInteractor : CapturingInteraction
 {
     [StateAccess]
-    public LiquifyTool Tool { get; set; } = null!;
+    public LiquifyTool Tool { get; set; }
 
     private Entity[] _processingEs;
     private Vector2[][] _origPolylines;

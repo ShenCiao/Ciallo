@@ -81,17 +81,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
 
-    private static readonly DiagnosticDescriptor AmbiguousButtonOrder = new(
-        id: "CIALLO009",
-        title: "Tool-button candidates are unordered",
-        messageFormat:
-            "'{0}' and '{1}' both answer button '{2}' with equal Priority. Resolution order decides "
-            + "which wins when both accept the same layers; set Priority on [RequestedByToolButton] "
-            + "to make the intent explicit.",
-        category: "InteractionState",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValuesProvider<StateModel> states = context.SyntaxProvider
@@ -123,7 +112,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             Execute(spc, data.Left.Left, data.Left.Right, data.Right));
     }
 
-    // ToolButton.Type members in declaration order: the outer ordering key for candidates.
     private static ImmutableArray<string> GetButtonNames(GeneratorSyntaxContext ctx)
     {
         if (ctx.Node is not EnumDeclarationSyntax syntax)
@@ -143,7 +131,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         return names.ToImmutable();
     }
 
-    // A class carrying the tool-button attribute or the layer contract WITHOUT [RegisterState].
     // Diagnostics only; never emitted.
     private static StrayModel GetStray(GeneratorSyntaxContext ctx)
     {
@@ -239,7 +226,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             CollectMembers(baseType, substates, accesses, inheritedAccessOnly: true);
 
         string? button = null;
-        int priority = 0;
         var buttonAttribute = GetAttribute(type, ToolButtonFqn);
         if (buttonAttribute is not null)
         {
@@ -250,11 +236,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                     buttonAttribute.ConstructorArguments[0].Value);
             }
 
-            foreach (var named in buttonAttribute.NamedArguments)
-            {
-                if (named.Key == "Priority" && named.Value.Value is int priorityValue)
-                    priority = priorityValue;
-            }
         }
 
         bool isLayerDependent = ImplementsLayerDependent(type);
@@ -267,7 +248,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             substates.ToImmutable(),
             accesses.ToImmutable(),
             button,
-            priority,
             isLayerDependent,
             IsScope(type),
             isLayerDependent ? FindLayersTriggerConfiguration(type) : null,
@@ -346,18 +326,10 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         return null;
     }
 
-    // Resolution order for candidates of one button: declared Priority, then ToolButton.Type
-    // declaration order (stable across files, unlike source spans), then name for determinism.
-    private static List<StateModel> OrderCandidates(
-        IEnumerable<StateModel> candidates,
-        ImmutableArray<string> buttonOrder)
-    {
-        return candidates
-            .OrderBy(static c => c.Priority)
-            .ThenBy(c => buttonOrder.IsDefaultOrEmpty ? 0 : buttonOrder.IndexOf(c.Button!))
-            .ThenBy(static c => c.Name, StringComparer.Ordinal)
-            .ToList();
-    }
+    // Type name only: candidates accept disjoint layers, so this order should never be observable.
+    // It exists to make codegen deterministic; real overlap is caught by the emitted assertion.
+    private static List<StateModel> OrderCandidates(IEnumerable<StateModel> candidates) =>
+        candidates.OrderBy(static c => c.Name, StringComparer.Ordinal).ToList();
 
     private static void ReportDiagnostics(
         SourceProductionContext context,
@@ -412,7 +384,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
 
         foreach (var group in byButton)
         {
-            var ordered = OrderCandidates(group, buttonOrder);
+            var ordered = OrderCandidates(group);
 
             // A candidate that is not ILayerDependent matches unconditionally, so anything after it
             // in resolution order is dead code.
@@ -432,22 +404,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                 }
 
                 break;
-            }
-
-            // Equal priority means resolution order is incidental, which only matters when two
-            // candidates can accept the same layers. Predicate overlap is not decidable here, so
-            // this asks for the intent to be written down rather than claiming a conflict.
-            for (int i = 1; i < ordered.Count; i++)
-            {
-                if (ordered[i].Priority == ordered[i - 1].Priority)
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(
-                        AmbiguousButtonOrder,
-                        ordered[i].Location,
-                        ordered[i - 1].Name,
-                        ordered[i].Name,
-                        group.Key));
-                }
             }
         }
 
@@ -485,16 +441,18 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         var global = valid.FirstOrDefault(static s => s.IsGlobal);
         var buttonTools = valid.Where(static s => s.Button is not null && s.IsScope).ToArray();
 
-        // Substates of Global that the generator owns: declared by attribute, not by a field.
-        var generatedGlobalSubstates = OrderCandidates(buttonTools, buttonOrder);
+        var generatedGlobalSubstates = OrderCandidates(buttonTools);
 
         var builder = new StringBuilder();
         builder.AppendLine(
             """
             // <auto-generated/>
-            #nullable enable
+            // Deliberately no #nullable enable: this project does not use nullable reference types,
+            // and opting in here would force every hand-written partial half to opt in as well.
 
+            using System.Collections.Generic;
             using System.Collections.Immutable;
+            using System.Diagnostics;
             using System.Linq;
             using Ciallo.Misc;
             using Frent;
@@ -578,7 +536,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             }
         }
 
-        // Tool-button tools hang under Global without a field on it.
         if (global.Fqn is not null)
         {
             foreach (var tool in generatedGlobalSubstates)
@@ -630,36 +587,38 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         context.AddSource("InteractionStateGraph.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
-    // GlobalInteractiveScope.ResolveToolButton: ordered first-match over candidates. Emitted as the
-    // implementation of a partial method so the hand-written policy (arity, liveness, resolution
-    // fallback) stays in source and only the mechanical dispatch is generated.
+    // Emitted as a partial-method implementation so the hand-written policy (arity, liveness,
+    // fallback) stays in GlobalInteractiveScope and only the dispatch is generated.
     private static void EmitResolver(
         StringBuilder builder,
         List<StateModel> tools,
         ImmutableArray<string> buttonOrder)
     {
+        var groups = tools
+            .Where(static t => t.Button is not null)
+            .GroupBy(static t => t.Button!)
+            .OrderBy(g => buttonOrder.IsDefaultOrEmpty ? 0 : buttonOrder.IndexOf(g.Key))
+            .ThenBy(static g => g.Key, StringComparer.Ordinal)
+            .ToArray();
+
         builder.AppendLine();
         builder.AppendLine(
             """
             public partial class GlobalInteractiveScope
             {
-                private partial InteractionState? ResolveToolButton(
+                private partial InteractionState ResolveToolButton(
                     ToolButton.Type toolButton,
                     ImmutableArray<Entity> layers)
                 {
+                    AssertSingleCandidate(toolButton, layers);
+
                     return toolButton switch
                     {
             """);
 
-        var groups = tools
-            .Where(static t => t.Button is not null)
-            .GroupBy(static t => t.Button!)
-            .OrderBy(g => buttonOrder.IsDefaultOrEmpty ? 0 : buttonOrder.IndexOf(g.Key))
-            .ThenBy(static g => g.Key, StringComparer.Ordinal);
-
         foreach (var group in groups)
         {
-            foreach (var tool in OrderCandidates(group, buttonOrder))
+            foreach (var tool in OrderCandidates(group))
             {
                 // A tool that is not ILayerDependent accepts any context this button reaches.
                 string guard = tool.IsLayerDependent
@@ -677,7 +636,72 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                         _ => null,
                     };
                 }
+            """);
+
+        EmitCandidateAssertion(builder, groups);
+        builder.AppendLine("}");
+    }
+
+    // Asserts the disjointness the switch above assumes, at the one moment it can be checked: with
+    // real layers in hand. Cheaper than making every tool declare a priority to prove it does not care.
+    private static void EmitCandidateAssertion(
+        StringBuilder builder,
+        IEnumerable<IGrouping<string, StateModel>> groups)
+    {
+        var contested = groups
+            .Select(static g => (Button: g.Key, Tools: OrderCandidates(g)))
+            .Where(static g => g.Tools.Count > 1)
+            .ToArray();
+
+        builder.AppendLine();
+        builder.AppendLine("    [Conditional(\"DEBUG\")]");
+        builder.AppendLine(
+            "    private static void AssertSingleCandidate(ToolButton.Type toolButton, ImmutableArray<Entity> layers)");
+        builder.AppendLine("    {");
+
+        if (contested.Length == 0)
+        {
+            builder.AppendLine("        // Every tool button has a single candidate; nothing can overlap.");
+            builder.AppendLine("    }");
+            return;
+        }
+
+        builder.AppendLine("        var matched = new List<string>();");
+        foreach (var (button, candidateTools) in contested)
+        {
+            builder.AppendLine();
+            builder.AppendLine($"        if (toolButton == ToolButton.Type.{button})");
+            builder.AppendLine("        {");
+            foreach (var tool in candidateTools)
+            {
+                if (tool.IsLayerDependent)
+                {
+                    builder.AppendLine($"            if ({tool.Fqn}.CanHandleLayers(layers))");
+                    builder.AppendLine($"                matched.Add(\"{tool.Name}\");");
+                }
+                else
+                {
+                    // Unconditional candidate: CIALLO006 already rejects this at build time.
+                    builder.AppendLine($"            matched.Add(\"{tool.Name}\");");
+                }
             }
+
+            builder.AppendLine("        }");
+        }
+
+        builder.AppendLine();
+        builder.AppendLine(
+            """
+                    if (matched.Count > 1)
+                    {
+                        string names = string.Join(", ", matched);
+                        Debug.Assert(
+                            false,
+                            $"Tool button {toolButton} has {matched.Count} candidates accepting the same "
+                            + $"layers ({names}), so which one wins is decided by type-name order rather "
+                            + "than by intent. Narrow one tool's CanHandleLayers.");
+                    }
+                }
             """);
     }
 
@@ -704,8 +728,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         if (global.Fqn is not null)
             Visit(global);
 
-        // Tools attached to Global by attribute rather than by field: keep them adjacent to Global,
-        // in resolution order, so the emitted States array still reads as a hierarchy walk.
+        // Keep attribute-attached tools adjacent to Global so States still reads as a hierarchy walk.
         foreach (var tool in generatedGlobalSubstates)
             Visit(tool);
 
@@ -746,7 +769,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         public int DeclOrder { get; }
     }
 
-    // A class with [RequestedByToolButton] or ILayerDependent but no [RegisterState]. Diagnostics only.
     private readonly struct StrayModel
     {
         public StrayModel(
@@ -783,7 +805,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             ImmutableArray<MemberRef> substates,
             ImmutableArray<MemberRef> accesses,
             string? button,
-            int priority,
             bool isLayerDependent,
             bool isScope,
             Location? layersTriggerLocation,
@@ -796,7 +817,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             Substates = substates;
             Accesses = accesses;
             Button = button;
-            Priority = priority;
             IsLayerDependent = isLayerDependent;
             IsScope = isScope;
             LayersTriggerLocation = layersTriggerLocation;
@@ -810,9 +830,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         public ImmutableArray<MemberRef> Substates { get; }
         public ImmutableArray<MemberRef> Accesses { get; }
 
-        // ToolButton.Type member name, or null for a manually configured tool.
         public string? Button { get; }
-        public int Priority { get; }
         public bool IsLayerDependent { get; }
         public bool IsScope { get; }
 

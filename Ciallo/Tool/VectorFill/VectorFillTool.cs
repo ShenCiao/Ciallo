@@ -12,16 +12,14 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-// Editing an existing fill outranks creating a new one: on a layer that is already a vector fill
-// layer, the button edits rather than creates.
-[RequestedByToolButton(ToolButton.Type.VectorFill, Priority = 0)]
+[RequestedByToolButton(ToolButton.Type.VectorFill)]
 public class VectorFillTool : InteractionScope, ILayerDependent
 {
     [Substate]
-    internal VectorFillHover Hover = null!;
+    internal VectorFillHover Hover;
 
     [Substate]
-    internal PaintVectorFillMarkerInteractor Left = null!;
+    internal PaintVectorFillMarkerInteractor Left;
 
     public readonly Subject<Unit> DeactivateSignal = new();
 

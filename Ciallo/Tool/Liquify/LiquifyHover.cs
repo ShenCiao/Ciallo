@@ -7,7 +7,7 @@ namespace Ciallo.Tool;
 public class LiquifyHover : Interaction
 {
     [StateAccess]
-    public LiquifyTool Tool { get; set; } = null!;
+    public LiquifyTool Tool { get; set; }
 
     private StrokeView _brushCircle;
 

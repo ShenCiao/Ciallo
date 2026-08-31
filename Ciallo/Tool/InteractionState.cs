@@ -26,18 +26,13 @@ public abstract class InteractionState
     public virtual void OnExit(StateMachine.Transition transition) { }
 }
 
-// Base for non-leaf states in the hierarchy. Super states share input handling or object lifecycle.
-// OnActivated/OnDeactivated own scope-level resources: preview nodes, overlays, subscriptions.
-// Per-document state (e.g., ArrangementManager reference, reactive subscriptions) is loaded from
-// Document/WorkingLayers in OnActivated, stored in instance fields, and cleared in OnDeactivated.
-// Scopes are process-lifetime singletons; reentry on WorkingLayersChanged refreshes document context.
+// Scopes are process-lifetime singletons, so they hold no per-document state of their own: anything
+// bound to a document or layer is loaded from Document/WorkingLayers in OnActivated, kept in instance
+// fields, and released in OnDeactivated.
 public abstract class InteractionScope : InteractionState
 {
     public abstract void ConfigureStateMachine(StateMachine stateMachine);
 
-    // Scope owns document/layer-bound resources. Reentry tears down against old context then
-    // rebuilds against new context. Per-document state is loaded from Document/WorkingLayers here,
-    // not stored in separate per-document component instances.
     protected virtual void OnActivated() { }
     protected virtual void OnDeactivated() { }
 
@@ -45,11 +40,10 @@ public abstract class InteractionScope : InteractionState
     public sealed override void OnExit(StateMachine.Transition transition) => OnDeactivated();
 }
 
-// Base for leaf states: one continuous stretch of user input, from entry to End or Cancel.
-// Interactions publish semantic events via Fire(Trigger) but never own the machine.
+// One continuous stretch of user input, from entry to End or Cancel. An interaction publishes semantic
+// events with Fire(Trigger) but never drives the machine itself.
 public abstract class Interaction : InteractionState
 {
-    // Per-interaction throttling config. Read once per motion event; override the property, don't assign.
     /// <summary>
     /// Tell the tool to throttle update interval in this interaction.
     /// Set this to 0 if need raw input data.
@@ -61,15 +55,13 @@ public abstract class Interaction : InteractionState
     /// </remarks>
     public virtual TimeSpan MovingMinInterval => TimeSpan.FromMilliseconds(5);
 
-    // Replace the `BeforeTransitionSrcEnd` in lagacy code.
-    // Called on destination before source exits. Allows reading transient source state before teardown.
-    // Source == this means reentry. Runs before CancelsOn/End/Cancel regardless of disposition.
-    // Current use case: transfer accumulated stroke data when switching paint interactions without lifting pen.
+    // Called on the DESTINATION before the source exits, so transient source state can still be read.
+    // Runs ahead of the source's End/Cancel either way. `source == this` is a reentry.
+    // Used to carry accumulated stroke data across a paint-interaction switch without lifting the pen.
     public virtual void BeforeSourceExit(Interaction source) { }
 
-    // The exiting interaction decides whether this transition cancels. Transitions to scopes/sentinels
-    // (not interactions) are decided by trigger identity. Hover interactions whose End is aliased to Cancel
-    // never need to override this.
+    // Whether leaving via this transition should Cancel instead of End; the exiting interaction decides.
+    // Override when a transition means abandonment rather than completion — see CapturingInteraction.
     protected virtual bool CancelsOn(StateMachine.Transition transition) => false;
 
     public abstract void Start(CursorButtonData data);
@@ -92,8 +84,6 @@ public abstract class Interaction : InteractionState
             destination.BeforeSourceExit(this);
         }
 
-        // Refresh and normal completion both use End before destination entry. CapturingInteraction
-        // should not permit Refresh unless normal End is valid.
         if (CancelsOn(transition))
         {
             Cancel();
@@ -104,9 +94,8 @@ public abstract class Interaction : InteractionState
     }
 }
 
-// Capturing interactions consume all input by default. Override OnKey/OnMouseButton to process events.
-// Default cancellation: loses context (cancel key, capture loss, document close, timeline rolling,
-// tool switch, layer change). Override CancelsOn for different behavior.
+// Consumes all input by default; override OnKey/OnMouseButton to act on specific events, returning
+// true to keep consuming. Cancels on every trigger that costs it the context it was working against.
 public abstract class CapturingInteraction : Interaction
 {
     public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
@@ -121,55 +110,47 @@ public abstract class CapturingInteraction : Interaction
         transition.Trigger == InteractionManager.WorkingLayersChanged.Trigger;
 }
 
-// State hierarchy declaration attributes:
-// - [RegisterState]: marks a state for registration in InteractionManager
-// - [Substate]: declares child + assigns reference (implies access)
-// - [StateAccess]: access-only reference without parent-child relationship
+// Required on every state class: the generator only sees states carrying this.
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class RegisterStateAttribute : Attribute { }
 
-// Tool scopes reachable from a tool-panel button. The generator emits the button-to-tool resolution
-// and the substate wiring under GlobalInteractiveScope, so annotated tools need no field there.
+// Makes this tool reachable from a tool-panel button. The generator wires it as a substate of
+// GlobalInteractiveScope and adds it to the button resolver, so an annotated tool needs no field there.
 //
-// Candidates sharing one button are tried by Priority (lower first), ties broken by type name for
-// determinism. Set Priority whenever two candidates can accept the same context; leaving such a pair
-// unordered is CIALLO009, because then only the name decides which one wins.
+// Several tools may share one button; they are expected to accept disjoint layer contexts, so at most
+// one answers and the order between them is not observable. There is no priority to declare — if two
+// ever do accept the same layers, a DEBUG assertion in the generated resolver names both.
 //
-// A tool NOT annotated here is manual: it declares its own [Substate] field on
-// GlobalInteractiveScope and configures its own entry trigger. See GlobalInteractiveScope.
+// Without this attribute a tool is manual: declare a [Substate] field on GlobalInteractiveScope and
+// configure its own entry trigger there. That is the path for a tool no button reaches.
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class RequestedByToolButtonAttribute(ToolButton.Type button) : Attribute
 {
     public ToolButton.Type Button { get; } = button;
-
-    public int Priority { get; init; }
 }
 
-// A tool scope whose availability depends on the working layers. Implementing this interface is the
-// declaration; there is no companion attribute to keep in sync.
+// Implement on a tool whose availability depends on the working layers. Implementing it is the whole
+// declaration — there is no attribute to keep in sync.
 //
-// The generator emits, for every implementor that is also [RequestedByToolButton]:
-//   .PermitReentryIf(WorkingLayersChanged, layers => resolves back to this tool)
-// so a working-layer change inside one tool re-runs OnDeactivated/OnActivated against the new
-// layers. Without it Stateless keeps the scope active as common ancestor and only the leaf
-// interaction re-enters, leaving layer-bound state (ArrangementManager, BodyHolder.ProcessMode)
-// pointing at the previous layer.
+// Besides answering the button, this makes the generator emit a guarded reentry on WorkingLayersChanged
+// for the tool. Without it Stateless would keep the scope active as common ancestor and re-enter only
+// the leaf interaction, leaving layer-bound state (ArrangementManager, BodyHolder.ProcessMode) pointing
+// at the previous layer.
 //
-// CanHandleLayers is called only with a non-empty snapshot of live non-document layers, so it needs
-// no null, liveness or document checks. It must stay a pure function of its argument: it is called
-// before the transition, when InteractionManager.WorkingLayers still holds the OLD snapshot.
+// CanHandleLayers only ever receives a non-empty snapshot of live non-document layers, so skip null,
+// liveness and document checks. Decide from the argument alone: at call time
+// InteractionManager.WorkingLayers still holds the pre-transition snapshot.
 public interface ILayerDependent
 {
     static abstract bool CanHandleLayers(ImmutableArray<Entity> layers);
 }
 
-// Access to another registered state without parent-child relationship.
-// Annotated member must be writable by machine owner's bootstrap.
+// Reference another registered state without implying a parent-child relationship.
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public sealed class StateAccessAttribute : Attribute { }
 
-// Declares direct child and assigns reference. [StateAccess] not needed.
-// Integer is priority, not position; equal priorities preserve declaration order.
+// Declares a direct child and assigns the reference; [StateAccess] is then unnecessary. Order affects
+// only sibling sequence, not nesting; equal orders keep declaration order.
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 public sealed class SubstateAttribute : Attribute
 {

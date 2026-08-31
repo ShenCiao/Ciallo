@@ -18,13 +18,13 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     [Substate]
-    internal PaintStrokeHover Hover = null!;
+    internal PaintStrokeHover Hover;
 
     [Substate]
-    internal PaintStrokeInteractor Left = null!;
+    internal PaintStrokeInteractor Left;
 
     [Substate]
-    internal PaintStrokeOnVectorFill LeftOnFill = null!;
+    internal PaintStrokeOnVectorFill LeftOnFill;
 
     private readonly PaintStrokeSnap _snap = new();
     public ArrangementManager Arrangement { get; private set; }

@@ -19,7 +19,7 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     [Substate]
-    internal GapBridgeHover Hover = null!;
+    internal GapBridgeHover Hover;
 
     public ArrangementManager Arrangement { get; private set; }
 

@@ -22,10 +22,10 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 public class TrimTool : InteractionScope, ILayerDependent
 {
     [Substate]
-    internal TrimHover Hover = null!;
+    internal TrimHover Hover;
 
     [Substate]
-    internal TrimInteractor Trim = null!;
+    internal TrimInteractor Trim;
 
     // Layer-owned ArrangementManager, shared with vector-fill and future topology tools.
     public ArrangementManager Arrangement { get; private set; }

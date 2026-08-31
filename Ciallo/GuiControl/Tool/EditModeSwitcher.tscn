@@ -1,12 +1,13 @@
 [gd_scene format=3 uid="uid://blhimtydy7lcc"]
 
 [ext_resource type="Theme" uid="uid://cmwretuqbofqt" path="res://MainTheme.tres" id="1_wc121"]
-[ext_resource type="ButtonGroup" uid="uid://drtmraai1sm8n" path="res://Tool/Select/EditModeSwitcherButtonGroup.tres" id="2_gm8as"]
-[ext_resource type="Script" uid="uid://cnsa5sgjtvksd" path="res://Tool/Select/EditModeSwitcher.cs" id="2_u8bem"]
+[ext_resource type="ButtonGroup" uid="uid://drtmraai1sm8n" path="res://GuiControl/Tool/EditModeSwitcherButtonGroup.tres" id="2_gm8as"]
+[ext_resource type="Script" uid="uid://cnsa5sgjtvksd" path="res://GuiControl/Tool/EditModeSwitcher.cs" id="2_u8bem"]
 [ext_resource type="Texture2D" uid="uid://bo63m2cbcxckq" path="res://Icon/transform-box.svg" id="3_tbtaq"]
 [ext_resource type="Texture2D" uid="uid://8bmp8mbehv18" path="res://Icon/vector-curve.svg" id="5_frfv6"]
 
 [node name="EditModeSwitcher" type="HFlowContainer" unique_id=439818538]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_right = -1700.0

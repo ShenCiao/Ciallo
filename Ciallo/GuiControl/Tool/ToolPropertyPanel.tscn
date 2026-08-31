@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cbe5uqtdiejke"]
 
-[ext_resource type="Script" uid="uid://dwqgl55qqqtv7" path="res://GuiControl/ToolPropertyPanel.cs" id="1_5ce2c"]
+[ext_resource type="Script" uid="uid://dwqgl55qqqtv7" path="res://GuiControl/Tool/ToolPropertyPanel.cs" id="1_5ce2c"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5ce2c"]
 

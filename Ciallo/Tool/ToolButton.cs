@@ -17,7 +17,7 @@ public static partial class ToolButton
         public string Tooltip { get; } = tooltip;
 
         // nameof keeps AppHotkeys member compile-checked; generator emits strongly typed access.
-        public string? ShortcutMember { get; set; }
+        public string ShortcutMember { get; set; }
     }
 
     public enum Type

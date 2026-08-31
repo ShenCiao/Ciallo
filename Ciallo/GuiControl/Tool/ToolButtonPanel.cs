@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using Godot;
 using R3;
+using Ciallo.Tool;
 
-namespace Ciallo.Tool;
+namespace Ciallo.GuiControl;
 
 [Tool]
 public partial class ToolButtonPanel : Container

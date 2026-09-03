@@ -25,8 +25,6 @@ public class PaintStrokeInteractor : CapturingInteraction
     private readonly List<Vector2> _snapHintPoints = new(2);
     private MultiMeshInstance2D _snapDots;
 
-    public static readonly Trigger PaintEnd = new("PaintEnd");
-
     public override TimeSpan MovingMinInterval => TimeSpan.Zero;
 
     public override void Start(CursorButtonData data)
@@ -88,28 +86,6 @@ public class PaintStrokeInteractor : CapturingInteraction
     }
 
     public override void Cancel() => Clear();
-    public override bool OnKey(InputEventKey key, CursorButtonData data)
-    {
-        if (AppHotkeys.Global.InteractionConfirm.IsPressedBy(key))
-        {
-            OnEndPaintButton();
-        }
-        return true;
-    }
-
-    public override bool OnMouseButton(InputEventMouseButton button, CursorButtonData data)
-    {
-        if (button.ButtonIndex == MouseButton.Left && button.IsReleased())
-        {
-            OnEndPaintButton();
-        }
-        return true;
-    }
-
-    public void OnEndPaintButton()
-    {
-        Fire(PaintEnd);
-    }
 
     public void Clear()
     {

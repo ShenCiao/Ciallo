@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Reflection;
 using Ciallo.Command;
+using Godot;
 using R3;
 
 namespace Ciallo.Tool;
 
-// Application-level tool-button catalog. Source generator reads enum declaration order, emits
-// Definitions/GetDefinition/TryResolveHotkey, and reports errors.
-public static partial class ToolButton
+// Application-level tool-button catalog. Definitions initialized via reflection.
+public static class ToolButton
 {
     [AttributeUsage(AttributeTargets.Field)]
     public sealed class DefinitionAttribute(
@@ -61,6 +64,56 @@ public static partial class ToolButton
         string IconPath,
         string Tooltip,
         Hotkey Shortcut);
+
+    public static ImmutableArray<Descriptor> Definitions { get; } = InitializeDefinitions();
+
+    private static ImmutableArray<Descriptor> InitializeDefinitions()
+    {
+        return typeof(Type)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.GetCustomAttribute<DefinitionAttribute>() != null)
+            .OrderBy(f => f.MetadataToken)
+            .Select(f =>
+            {
+                var type = (Type)f.GetValue(null)!;
+                var attr = f.GetCustomAttribute<DefinitionAttribute>()!;
+
+                Hotkey shortcut = null;
+                if (!string.IsNullOrEmpty(attr.ShortcutMember))
+                {
+                    var hotkeyField = typeof(AppHotkeys.Global).GetField(attr.ShortcutMember, BindingFlags.Public | BindingFlags.Static);
+                    shortcut = (Hotkey)hotkeyField?.GetValue(null);
+                }
+
+                return new Descriptor(type, attr.IconPath, attr.Tooltip, shortcut);
+            })
+            .ToImmutableArray();
+    }
+
+    public static Descriptor GetDefinition(Type type)
+    {
+        foreach (var def in Definitions)
+        {
+            if (def.Type == type)
+                return def;
+        }
+        throw new ArgumentOutOfRangeException(nameof(type), type, null);
+    }
+
+    public static bool TryResolveHotkey(InputEvent key, out Type type)
+    {
+        foreach (var definition in Definitions)
+        {
+            if (definition.Shortcut?.IsPressedBy(key) == true)
+            {
+                type = definition.Type;
+                return true;
+            }
+        }
+
+        type = default;
+        return false;
+    }
 
     // User selection state. null is valid "no latched tool". Panel observes; RequestTool is sole writer.
     // Nullable type is resevered for future tools without a tool button (this will be light table related functionality), cannot be null now

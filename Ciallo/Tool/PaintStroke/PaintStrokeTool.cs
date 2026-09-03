@@ -51,16 +51,12 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .PermitReentry(Trigger.Refresh);
 
         sm.Configure(Left)
-            .Permit(InteractionManager.CancelRequested, Hover)
-            .Permit(InteractionManager.ConfirmRequested, Hover)
-            .Permit(InteractionManager.InputCaptureLost, Hover)
-            .Permit(Trigger.Release(MouseButton.Left), Hover);
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .PermitStandardExits(Hover);
 
         sm.Configure(LeftOnFill)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
-            .Permit(InteractionManager.CancelRequested, Hover)
-            .Permit(InteractionManager.ConfirmRequested, Hover)
-            .Permit(InteractionManager.InputCaptureLost, Hover);
+            .PermitStandardExits(Hover);
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>

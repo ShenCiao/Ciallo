@@ -33,9 +33,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
             .PermitReentry(Trigger.Refresh);
         sm.Configure(Left)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
-            .Permit(InteractionManager.CancelRequested, Hover)
-            .Permit(InteractionManager.ConfirmRequested, Hover)
-            .Permit(InteractionManager.InputCaptureLost, Hover);
+            .PermitStandardExits(Hover);
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>

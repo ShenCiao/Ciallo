@@ -184,7 +184,6 @@ public static partial class AppDocumentManager
             EnsureSaveDirectory(settings.FilePath.Value);
             Save(WorkingDocument.Value, settings.FilePath.Value);
             WorkingDocument.CurrentValue.Get<CommandManager>().OnSave();
-            AppDocumentDurability.EnqueueManualSave(WorkingDocument.CurrentValue, settings.FilePath.Value);
             return true;
         }
         catch (Exception exception)
@@ -209,7 +208,6 @@ public static partial class AppDocumentManager
             settings.FilePath.Value = filePath;
             Save(WorkingDocument.Value, filePath);
             WorkingDocument.CurrentValue.Get<CommandManager>().OnSave();
-            AppDocumentDurability.EnqueueManualSave(WorkingDocument.CurrentValue, filePath);
             return true;
         }
         catch (Exception exception)

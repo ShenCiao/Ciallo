@@ -10,20 +10,20 @@ namespace Ciallo;
 public partial class SteamManager : Node
 {
     public const uint AppId = 4103990;
-    private static SteamCloudCoordinator _cloud;
+    private static SteamCloudRecoveryCoordinator _recovery;
 
-    public static bool IsCloudAvailable => _cloud != null;
-    public static SteamCloudAuthorizationStatus CloudAuthorizationStatus => _cloud.AuthorizationStatus;
-    public static SteamCloudCatalogSnapshot CloudCatalog => _cloud.Catalog;
+    public static bool IsRecoveryCloudAvailable => _recovery != null;
+    public static SteamCloudAuthorizationStatus CloudAuthorizationStatus => _recovery.AuthorizationStatus;
+    public static SteamCloudRecoveryCatalogSnapshot RecoveryCatalog => _recovery.Catalog;
     public static event Action<SteamCloudAuthorizationStatus> CloudAuthorizationStatusChanged
     {
-        add => _cloud.AuthorizationStatusChanged += value;
-        remove => _cloud.AuthorizationStatusChanged -= value;
+        add => _recovery.AuthorizationStatusChanged += value;
+        remove => _recovery.AuthorizationStatusChanged -= value;
     }
-    public static event Action<SteamCloudCatalogSnapshot> CloudCatalogChanged
+    public static event Action<SteamCloudRecoveryCatalogSnapshot> RecoveryCatalogChanged
     {
-        add => _cloud.CatalogChanged += value;
-        remove => _cloud.CatalogChanged -= value;
+        add => _recovery.CatalogChanged += value;
+        remove => _recovery.CatalogChanged -= value;
     }
 
     public override void _EnterTree()
@@ -37,7 +37,7 @@ public partial class SteamManager : Node
                 throw new Exception();
 
             var options = SteamCloudOptions.Load(AppId);
-            _cloud = new SteamCloudCoordinator(
+            _recovery = new SteamCloudRecoveryCoordinator(
                 options,
                 SteamClient.SteamId,
                 AppDocumentDurability.FileStore,
@@ -46,20 +46,20 @@ public partial class SteamManager : Node
         catch (Exception e)
         {
             GD.Print($"Steam initialization failed: {e.Message}");
-            AppDocumentDurability.SetCloudStatus(SteamCloudSyncState.Offline, e.Message);
+            AppDocumentDurability.SetRecoveryCloudStatus(SteamCloudRecoveryState.Offline, e.Message);
             return;
         }
     }
 
     public override void _Process(double delta)
     {
-        _cloud?.ProcessNotifications();
+        _recovery?.ProcessNotifications();
     }
 
     public override void _ExitTree()
     {
         // Only pure synchronous teardown here. The cloud coordinator is disposed asynchronously
-        // during the normal close flow (ShutdownCloudAsync) so we never block the main thread on a
+        // during the normal close flow (ShutdownRecoveryCloudAsync) so we never block the main thread on a
         // sync-over-async wait while a captured SynchronizationContext continuation is queued to it.
         if (SteamClient.IsValid)
             SteamClient.Shutdown();
@@ -70,35 +70,29 @@ public partial class SteamManager : Node
     /// coordinator's own DisposeAsync guards against a second call, and a null coordinator (Steam
     /// never initialized, or already shut down) is a no-op.
     /// </summary>
-    public static async Task ShutdownCloudAsync()
+    public static async Task ShutdownRecoveryCloudAsync()
     {
-        if (_cloud == null)
+        if (_recovery == null)
             return;
-        var cloud = _cloud;
-        _cloud = null;
-        await cloud.DisposeAsync();
+        var recovery = _recovery;
+        _recovery = null;
+        await recovery.DisposeAsync();
     }
 
     public static Task AuthorizeCloudAsync(CancellationToken cancellationToken = default)
-        => _cloud.AuthorizeAsync(uri => { OS.ShellOpen(uri); }, cancellationToken);
+        => _recovery.AuthorizeAsync(uri => { OS.ShellOpen(uri); }, cancellationToken);
 
-    public static void ClearCloudAuthorization() => _cloud.ClearAuthorization();
+    public static void ClearCloudAuthorization() => _recovery.ClearAuthorization();
 
-    public static Task FlushCloudSessionAsync(TimeSpan timeout)
-        => _cloud.FlushSessionStateAsync(timeout);
+    public static Task FlushRecoverySessionAsync(TimeSpan timeout)
+        => _recovery.FlushSessionStateAsync(timeout);
 
-    public static Task<SteamCloudCatalogSnapshot> RefreshCloudCatalogAsync(
+    public static Task<SteamCloudRecoveryCatalogSnapshot> RefreshRecoveryCatalogAsync(
         CancellationToken cancellationToken = default)
-        => _cloud.RefreshCatalogAsync(cancellationToken);
+        => _recovery.RefreshCatalogAsync(cancellationToken);
 
-    public static Task<ManagedCloudCopyInfo> DownloadCloudRevisionAsync(
+    public static Task<LocalRecoverySnapshotInfo> DownloadRecoverySnapshotAsync(
         Guid revisionId,
         CancellationToken cancellationToken = default)
-        => _cloud.DownloadRevisionAsync(revisionId, cancellationToken);
-
-    public static Task<SteamCloudCatalogSnapshot> ResolveCloudConflictAsync(
-        Guid documentId,
-        Guid chosenRevisionId,
-        CancellationToken cancellationToken = default)
-        => _cloud.ResolveConflictAsync(documentId, chosenRevisionId, AppDocumentDurability.DeviceId, cancellationToken);
+        => _recovery.DownloadSnapshotAsync(revisionId, cancellationToken);
 }

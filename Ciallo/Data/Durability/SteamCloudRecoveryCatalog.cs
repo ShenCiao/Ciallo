@@ -10,28 +10,28 @@ using Steamworks.WebApi;
 
 namespace Ciallo.Data;
 
-internal sealed class SteamCloudCatalogService
+internal sealed class SteamCloudRecoveryCatalog
 {
     private const int DeleteBatchSize = 100;
 
     private readonly SteamCloudOptions _options;
     private readonly DurabilityFileStore _files;
-    private readonly CloudOutboxStore _outbox;
+    private readonly SteamCloudRecoveryOutbox _outbox;
     private readonly AuthorizedSteamCloudClient _webApi;
     private readonly SteamCloudWebApiClient _downloads;
     private Dictionary<string, SteamCloudFile> _remoteFiles = new(StringComparer.Ordinal);
-    private Dictionary<Guid, CloudRevisionManifest> _revisions = [];
-    private Dictionary<string, (string Sha1, CloudRevisionManifest Manifest)> _revisionCache =
+    private Dictionary<Guid, SteamCloudRecoveryManifest> _revisions = [];
+    private Dictionary<string, (string Sha1, SteamCloudRecoveryManifest Manifest)> _revisionCache =
         new(StringComparer.Ordinal);
     private Dictionary<string, (string Sha1, EditingSessionInfo Manifest)> _sessionCache =
         new(StringComparer.Ordinal);
 
-    public SteamCloudCatalogSnapshot Catalog { get; private set; } = new();
+    public SteamCloudRecoveryCatalogSnapshot Catalog { get; private set; } = new();
 
-    public SteamCloudCatalogService(
+    public SteamCloudRecoveryCatalog(
         SteamCloudOptions options,
         DurabilityFileStore files,
-        CloudOutboxStore outbox,
+        SteamCloudRecoveryOutbox outbox,
         AuthorizedSteamCloudClient webApi,
         SteamCloudWebApiClient downloads)
     {
@@ -42,17 +42,17 @@ internal sealed class SteamCloudCatalogService
         _downloads = downloads;
     }
 
-    public async Task<SteamCloudCatalogSnapshot> RefreshAsync(CancellationToken cancellationToken)
+    public async Task<SteamCloudRecoveryCatalogSnapshot> RefreshAsync(CancellationToken cancellationToken)
     {
         _remoteFiles = (await _webApi.EnumerateFilesAsync(cancellationToken))
             .ToDictionary(file => file.FileName, StringComparer.Ordinal);
 
         var revisionFiles = _remoteFiles.Values
-            .Where(file => file.FileName.StartsWith(SteamCloudPaths.Prefix + "/revisions/", StringComparison.Ordinal) &&
+            .Where(file => file.FileName.StartsWith(SteamCloudRecoveryPaths.RecoveryRevisionPrefix, StringComparison.Ordinal) &&
                            file.FileName.EndsWith(".json", StringComparison.Ordinal))
             .ToArray();
-        var revisions = new Dictionary<Guid, CloudRevisionManifest>();
-        var revisionCache = new Dictionary<string, (string, CloudRevisionManifest)>(StringComparer.Ordinal);
+        var revisions = new Dictionary<Guid, SteamCloudRecoveryManifest>();
+        var revisionCache = new Dictionary<string, (string, SteamCloudRecoveryManifest)>(StringComparer.Ordinal);
         foreach (var file in revisionFiles)
         {
             var revision = await ReadManifestAsync(
@@ -71,7 +71,7 @@ internal sealed class SteamCloudCatalogService
         var sessions = new Dictionary<Guid, EditingSessionInfo>();
         var sessionCache = new Dictionary<string, (string, EditingSessionInfo)>(StringComparer.Ordinal);
         foreach (var file in _remoteFiles.Values.Where(file =>
-                     file.FileName.StartsWith(SteamCloudPaths.Prefix + "/sessions/", StringComparison.Ordinal) &&
+                     file.FileName.StartsWith(SteamCloudRecoveryPaths.SessionPrefix, StringComparison.Ordinal) &&
                      file.FileName.EndsWith(".json", StringComparison.Ordinal)))
         {
             var session = await ReadManifestAsync(
@@ -86,49 +86,25 @@ internal sealed class SteamCloudCatalogService
         }
         _sessionCache = sessionCache;
 
-        var saved = revisions.Values.Where(revision => revision.Kind == CloudRevisionKind.Saved).ToArray();
-        var documents = saved
-            .GroupBy(revision => revision.DocumentId)
-            .Select(group =>
-            {
-                var heads = FindHeads(group).OrderByDescending(head => head.CapturedAtUtc).ToArray();
-                var preservedIds = group.SelectMany(revision => revision.SupersededRevisionIds)
-                    .ToHashSet();
-                return new CloudDocumentInfo
-                {
-                    DocumentId = group.Key,
-                    DocumentName = heads.FirstOrDefault()?.DocumentName ?? group.First().DocumentName,
-                    SavedHeads = heads,
-                    PreservedConflictCandidates = group
-                        .Where(revision => preservedIds.Contains(revision.RevisionId))
-                        .OrderByDescending(revision => revision.CapturedAtUtc)
-                        .ToArray(),
-                };
-            })
-            .OrderBy(document => document.DocumentName, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
         var now = DateTimeOffset.UtcNow;
         var interruptedSessionIds = sessions.Values
             .Where(session => session.IsInterrupted(now))
             .Select(session => session.SessionId)
             .ToHashSet();
         var recoveryCandidates = revisions.Values
-            .Where(revision => revision.Kind == CloudRevisionKind.Recovery &&
-                               interruptedSessionIds.Contains(revision.SessionId!.Value))
+            .Where(revision => interruptedSessionIds.Contains(revision.SessionId!.Value))
             .OrderByDescending(revision => revision.CapturedAtUtc)
             .ToArray();
 
-        Catalog = new SteamCloudCatalogSnapshot
+        Catalog = new SteamCloudRecoveryCatalogSnapshot
         {
             RefreshedAtUtc = now,
-            Documents = documents,
             RecoveryCandidates = recoveryCandidates,
         };
         return Catalog;
     }
 
-    public async Task<ManagedCloudCopyInfo> DownloadRevisionAsync(
+    public async Task<LocalRecoverySnapshotInfo> DownloadSnapshotAsync(
         Guid revisionId,
         CancellationToken cancellationToken)
     {
@@ -138,14 +114,9 @@ internal sealed class SteamCloudCatalogService
             revision = _revisions[revisionId];
         }
 
-        var documentDirectory = Path.Combine(_files.ManagedCloudRootPath, revision.DocumentId.ToString("N"));
-        Directory.CreateDirectory(documentDirectory);
-        var targetFileName = revision.Kind == CloudRevisionKind.Saved
-            ? "document.ciallo"
-            : "recovery-" + revision.RevisionId.ToString("N") + ".ciallo";
-        var targetPath = Path.Combine(documentDirectory, targetFileName);
-        var temporaryPath = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
-
+        var temporaryPath = Path.Combine(
+            _files.RecoveryRootPath,
+            "." + revision.RevisionId.ToString("N") + "." + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
             using var fullHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -160,7 +131,7 @@ internal sealed class SteamCloudCatalogService
             {
                 foreach (var chunk in revision.Chunks.OrderBy(chunk => chunk.Index))
                 {
-                    var remoteName = SteamCloudPaths.Chunk(chunk.Sha256);
+                    var remoteName = SteamCloudRecoveryPaths.Chunk(chunk.Sha256);
                     if (!_remoteFiles.TryGetValue(remoteName, out var remoteFile))
                         throw new IOException($"Steam Cloud revision {revision.RevisionId} is missing chunk {remoteName}.");
                     var bytes = await _downloads.DownloadFileAsync(remoteFile, cancellationToken);
@@ -177,61 +148,33 @@ internal sealed class SteamCloudCatalogService
             var contentSha256 = Convert.ToHexString(fullHash.GetHashAndReset()).ToLowerInvariant();
             if (contentSha256 != revision.ContentSha256 || byteLength != revision.ByteLength)
                 throw new IOException($"Steam Cloud revision {revision.RevisionId} failed validation.");
-            File.Move(temporaryPath, targetPath, true);
+
+            var installed = _files.InstallDownloadedSnapshot(
+                revision,
+                temporaryPath,
+                new RecoveryRetentionPolicy(
+                    _options.RecoveryPerDocumentLimit,
+                    _options.RecoveryAccountFileLimit,
+                    _options.RecoveryAccountByteLimit));
+            _outbox.RecordReceipt(
+                revision.RevisionId,
+                revision.DocumentId,
+                SteamCloudRecoveryKind.Recovery,
+                DateTimeOffset.UtcNow);
+            return installed;
         }
         finally
         {
             if (File.Exists(temporaryPath))
                 File.Delete(temporaryPath);
         }
-
-        return new ManagedCloudCopyInfo { LocalFilePath = targetPath, Revision = revision };
-    }
-
-    public async Task<SteamCloudCatalogSnapshot> ResolveConflictAsync(
-        Guid documentId,
-        Guid chosenRevisionId,
-        Guid deviceId,
-        CancellationToken cancellationToken)
-    {
-        await RefreshAsync(cancellationToken);
-        var document = Catalog.Documents.Single(item => item.DocumentId == documentId);
-        if (!document.HasConflict)
-            throw new InvalidOperationException($"Document {documentId} has no cloud conflict.");
-        var chosen = document.SavedHeads.Single(head => head.RevisionId == chosenRevisionId);
-
-        var resolution = chosen with
-        {
-            RevisionId = Guid.NewGuid(),
-            ParentRevisionId = chosen.RevisionId,
-            SupersededRevisionIds = document.PreservedConflictCandidates
-                .Select(candidate => candidate.RevisionId)
-                .Concat(document.SavedHeads
-                    .Where(head => head.RevisionId != chosen.RevisionId)
-                    .Select(head => head.RevisionId))
-                .Distinct()
-                .ToArray(),
-            DeviceId = deviceId,
-            CapturedAtUtc = DateTimeOffset.UtcNow,
-        };
-        var remoteName = SteamCloudPaths.RevisionManifest(
-            CloudRevisionKind.Saved,
-            documentId,
-            resolution.RevisionId);
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(resolution, DurabilityFiles.JsonOptions);
-        await _webApi.ModifyBatchAsync([new SteamCloudUploadFile(remoteName, bytes)], [], cancellationToken);
-        _outbox.SetCloudBaseRevision(
-            documentId,
-            resolution.RevisionId,
-            resolution.SupersededRevisionIds);
-        return await RefreshAsync(cancellationToken);
     }
 
     public async Task<bool> ReconcileRecoveryRetentionAsync(CancellationToken cancellationToken)
     {
         await RefreshAsync(cancellationToken);
         var plan = RecoveryRetentionPlanner.Plan(
-            _revisions.Values.Where(revision => revision.Kind == CloudRevisionKind.Recovery),
+            _revisions.Values,
             revision => revision.RevisionId,
             revision => revision.DocumentId,
             revision => revision.CapturedAtUtc,
@@ -243,34 +186,17 @@ internal sealed class SteamCloudCatalogService
         var retainedRecovery = plan.Retained;
         var limitExceeded = plan.LimitExceeded;
 
-        var saved = _revisions.Values.Where(revision => revision.Kind == CloudRevisionKind.Saved).ToArray();
-        var savedContentIds = saved
-            .GroupBy(revision => revision.DocumentId)
-            .SelectMany(FindHeads)
-            .Select(revision => revision.RevisionId)
-            .Concat(saved.SelectMany(revision => revision.SupersededRevisionIds))
-            .ToHashSet();
-        var contentManifests = saved.Where(revision => savedContentIds.Contains(revision.RevisionId))
-            .Concat(retainedRecovery)
-            .ToArray();
-        var referencedChunks = contentManifests
+        var referencedChunks = retainedRecovery
             .SelectMany(revision => revision.Chunks)
-            .Select(chunk => SteamCloudPaths.Chunk(chunk.Sha256))
+            .Select(chunk => SteamCloudRecoveryPaths.Chunk(chunk.Sha256))
             .ToHashSet(StringComparer.Ordinal);
 
         var deletes = plan.Evicted
-            .Select(revision => SteamCloudPaths.RevisionManifest(
-                CloudRevisionKind.Recovery,
-                revision.DocumentId,
-                revision.RevisionId))
-            .Concat(saved
-                .Where(revision => !savedContentIds.Contains(revision.RevisionId))
-                .Select(revision => SteamCloudPaths.RevisionManifest(
-                    CloudRevisionKind.Saved,
-                    revision.DocumentId,
-                    revision.RevisionId)))
+            .Select(revision => SteamCloudRecoveryPaths.RevisionManifest(revision.DocumentId, revision.RevisionId))
             .Concat(_remoteFiles.Keys.Where(fileName =>
-                fileName.StartsWith(SteamCloudPaths.Prefix + "/chunks/", StringComparison.Ordinal) &&
+                fileName.StartsWith(SteamCloudRecoveryPaths.SavedRevisionPrefix, StringComparison.Ordinal)))
+            .Concat(_remoteFiles.Keys.Where(fileName =>
+                fileName.StartsWith(SteamCloudRecoveryPaths.ChunkPrefix, StringComparison.Ordinal) &&
                 !referencedChunks.Contains(fileName) &&
                 DateTimeOffset.FromUnixTimeSeconds(checked((long)_remoteFiles[fileName].Timestamp)) <
                 DateTimeOffset.UtcNow - TimeSpan.FromDays(1)))
@@ -284,52 +210,26 @@ internal sealed class SteamCloudCatalogService
         return limitExceeded;
     }
 
-    internal static IEnumerable<CloudRevisionManifest> FindHeads(IEnumerable<CloudRevisionManifest> revisions)
-    {
-        var all = revisions.ToArray();
-        var superseded = all
-            .SelectMany(revision => revision.SupersededRevisionIds)
-            .ToHashSet();
-        foreach (var revision in all)
-        {
-            if (revision.ParentRevisionId.HasValue)
-                superseded.Add(revision.ParentRevisionId.Value);
-        }
-        return all.Where(revision => !superseded.Contains(revision.RevisionId));
-    }
-
-    private static void ValidateRevision(CloudRevisionManifest revision, string remoteFileName)
+    private static void ValidateRevision(SteamCloudRecoveryManifest revision, string remoteFileName)
     {
         if (revision.SchemaVersion != 1 ||
             revision.RevisionId == Guid.Empty ||
             revision.DocumentId == Guid.Empty ||
             revision.DeviceId == Guid.Empty ||
             revision.DocumentName == null ||
+            revision.OriginalFilePath == null ||
             revision.ContentSha256 == null ||
-            revision.SupersededRevisionIds == null ||
             revision.Chunks == null)
             throw new IOException($"Steam Cloud revision {revision.RevisionId} contains null metadata.");
         if (revision.Chunks.Any(chunk => chunk == null))
             throw new IOException($"Steam Cloud revision {revision.RevisionId} contains a null chunk.");
-        if (revision.SessionId == Guid.Empty ||
-            revision.ParentRevisionId == Guid.Empty ||
-            revision.SupersededRevisionIds.Any(revisionId => revisionId == Guid.Empty))
+        if (revision.SessionId == Guid.Empty)
             throw new IOException($"Steam Cloud revision {revision.RevisionId} contains an empty identifier.");
-        if (revision.ParentRevisionId == revision.RevisionId ||
-            revision.SupersededRevisionIds.Contains(revision.RevisionId) ||
-            revision.SupersededRevisionIds.Distinct().Count() !=
-            revision.SupersededRevisionIds.Length)
-            throw new IOException($"Steam Cloud revision {revision.RevisionId} has invalid ancestry metadata.");
-        if (revision.Kind is not (CloudRevisionKind.Saved or CloudRevisionKind.Recovery))
+        if (revision.Kind != SteamCloudRecoveryKind.Recovery)
             throw new IOException($"Steam Cloud revision {revision.RevisionId} has invalid kind {revision.Kind}.");
-        if (revision.Kind == CloudRevisionKind.Recovery && !revision.SessionId.HasValue)
+        if (!revision.SessionId.HasValue)
             throw new IOException($"Steam Cloud recovery revision {revision.RevisionId} has no editing session.");
-        if (revision.Kind == CloudRevisionKind.Saved && revision.SessionId.HasValue)
-            throw new IOException($"Steam Cloud saved revision {revision.RevisionId} has an editing session.");
-        if (remoteFileName != SteamCloudPaths.RevisionManifest(
-                revision.Kind,
-                revision.DocumentId,
-                revision.RevisionId))
+        if (remoteFileName != SteamCloudRecoveryPaths.RevisionManifest(revision.DocumentId, revision.RevisionId))
             throw new IOException($"Steam Cloud revision path {remoteFileName} does not match its content.");
 
         if (revision.ByteLength < 0)
@@ -379,7 +279,7 @@ internal sealed class SteamCloudCatalogService
     private static void ValidateSessionFile(EditingSessionInfo session, string remoteFileName)
     {
         ValidateSession(session);
-        if (remoteFileName != SteamCloudPaths.Session(session.DocumentId, session.SessionId))
+        if (remoteFileName != SteamCloudRecoveryPaths.Session(session.DocumentId, session.SessionId))
             throw new IOException($"Steam Cloud session path {remoteFileName} does not match its content.");
     }
 
@@ -412,5 +312,4 @@ internal sealed class SteamCloudCatalogService
             throw new IOException($"Steam Cloud file {remoteFileName} contains invalid JSON.", exception);
         }
     }
-
 }

@@ -83,10 +83,7 @@ internal sealed class DurabilityFileStore
     public string RecoveryRootPath { get; }
     public string SessionRootPath { get; }
     public string OutboxRootPath { get; }
-    public string ManualSourceRootPath { get; }
-    public string ManagedCloudRootPath { get; }
     public string CloudReceiptRootPath { get; }
-    public string DocumentCloudStateRootPath { get; }
     public Guid DeviceId { get; }
 
     public DurabilityFileStore(string userDataPath)
@@ -95,18 +92,12 @@ internal sealed class DurabilityFileStore
         RecoveryRootPath = Path.Combine(RootPath, "recovery");
         SessionRootPath = Path.Combine(RootPath, "sessions");
         OutboxRootPath = Path.Combine(RootPath, "outbox");
-        ManualSourceRootPath = Path.Combine(RootPath, "manual-sources");
-        ManagedCloudRootPath = Path.Combine(userDataPath, "CloudDocuments");
         CloudReceiptRootPath = Path.Combine(RootPath, "cloud-receipts");
-        DocumentCloudStateRootPath = Path.Combine(RootPath, "document-cloud-state");
 
         Directory.CreateDirectory(RecoveryRootPath);
         Directory.CreateDirectory(SessionRootPath);
         Directory.CreateDirectory(OutboxRootPath);
-        Directory.CreateDirectory(ManualSourceRootPath);
-        Directory.CreateDirectory(ManagedCloudRootPath);
         Directory.CreateDirectory(CloudReceiptRootPath);
-        Directory.CreateDirectory(DocumentCloudStateRootPath);
         DeviceId = LoadOrCreateDeviceId();
     }
 
@@ -142,6 +133,55 @@ internal sealed class DurabilityFileStore
         var retention = ApplyRecoveryRetention(request.RetentionPolicy);
         return new RecoverySnapshotWriteResult(info, retention);
     }
+
+    public LocalRecoverySnapshotInfo InstallDownloadedSnapshot(
+        SteamCloudRecoveryManifest revision,
+        string assembledPath,
+        RecoveryRetentionPolicy retentionPolicy)
+    {
+        var documentDirectory = Path.Combine(RecoveryRootPath, revision.DocumentId.ToString("N"));
+        Directory.CreateDirectory(documentDirectory);
+
+        var timestamp = revision.CapturedAtUtc.UtcDateTime.ToString(
+            "yyyyMMdd'T'HHmmssfff'Z'",
+            CultureInfo.InvariantCulture);
+        var fileName = timestamp + "_" + revision.RevisionId.ToString("N") + ".ciallo";
+        var snapshotPath = Path.Combine(documentDirectory, fileName);
+        var temporaryPath = snapshotPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.Copy(assembledPath, temporaryPath, false);
+            using (var stream = new FileStream(temporaryPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                stream.Flush(true);
+            File.Move(temporaryPath, snapshotPath, true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+                File.Delete(temporaryPath);
+        }
+
+        var info = new LocalRecoverySnapshotInfo
+        {
+            RevisionId = revision.RevisionId,
+            DocumentId = revision.DocumentId,
+            SessionId = revision.SessionId!.Value,
+            DeviceId = revision.DeviceId,
+            DocumentName = revision.DocumentName,
+            OriginalFilePath = revision.OriginalFilePath,
+            SnapshotFileName = fileName,
+            ContentSha256 = revision.ContentSha256,
+            ByteLength = revision.ByteLength,
+            PersistenceEpoch = revision.PersistenceEpoch,
+            CapturedAtUtc = revision.CapturedAtUtc,
+        };
+        DurabilityFiles.WriteJson(Path.ChangeExtension(snapshotPath, ".json"), info);
+        ApplyRecoveryRetention(retentionPolicy);
+        return info;
+    }
+
+    public LocalRecoverySnapshotInfo GetRecoverySnapshot(Guid revisionId)
+        => ReadRecoverySnapshots().Single(snapshot => snapshot.RevisionId == revisionId);
 
     public IReadOnlyList<LocalRecoverySnapshotInfo> ListRecoverySnapshots(Guid documentId)
     {

@@ -8,19 +8,19 @@ using Steamworks.WebApi;
 
 namespace Ciallo.Data;
 
-internal sealed record CloudRevisionPackage(
-    CloudRevisionManifest Manifest,
+internal sealed record SteamCloudRecoveryPackage(
+    SteamCloudRecoveryManifest Manifest,
     string ManifestFileName,
     IReadOnlyList<SteamCloudUploadFile> UploadFiles);
 
-internal static class CloudRevisionPackageBuilder
+internal static class SteamCloudRecoveryPackageBuilder
 {
-    public static CloudRevisionPackage Build(CloudOutboxRecord record)
+    public static SteamCloudRecoveryPackage Build(SteamCloudRecoveryOutboxRecord record)
     {
-        if (record.Kind is not (CloudRevisionKind.Saved or CloudRevisionKind.Recovery))
+        if (record.Kind != SteamCloudRecoveryKind.Recovery)
             throw new InvalidOperationException($"Cannot package cloud revision kind {record.Kind}.");
 
-        var chunks = new List<CloudChunkDescriptor>();
+        var chunks = new List<SteamCloudRecoveryChunk>();
         var uploadsByName = new Dictionary<string, SteamCloudUploadFile>(StringComparer.Ordinal);
         using var fullHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         using (var stream = File.OpenRead(record.SourcePath))
@@ -36,7 +36,7 @@ internal static class CloudRevisionPackageBuilder
                 fullHash.AppendData(chunkBytes);
                 var sha256 = Convert.ToHexString(SHA256.HashData(chunkBytes)).ToLowerInvariant();
                 var sha1 = Convert.ToHexString(SHA1.HashData(chunkBytes)).ToLowerInvariant();
-                var remoteName = SteamCloudPaths.Chunk(sha256);
+                var remoteName = SteamCloudRecoveryPaths.Chunk(sha256);
                 var capturedOffset = offset;
                 if (!uploadsByName.ContainsKey(remoteName))
                 {
@@ -48,7 +48,7 @@ internal static class CloudRevisionPackageBuilder
                             sha1,
                             () => ReadSegment(record.SourcePath, capturedOffset, byteLength)));
                 }
-                chunks.Add(new CloudChunkDescriptor
+                chunks.Add(new SteamCloudRecoveryChunk
                 {
                     Index = index,
                     ByteLength = byteLength,
@@ -66,30 +66,28 @@ internal static class CloudRevisionPackageBuilder
         if (contentSha256 != record.ContentSha256)
             throw new IOException($"Cloud outbox source {record.SourcePath} changed content.");
 
-        var manifest = new CloudRevisionManifest
+        var manifest = new SteamCloudRecoveryManifest
         {
             RevisionId = record.RevisionId,
             DocumentId = record.DocumentId,
             Kind = record.Kind,
-            ParentRevisionId = record.ParentRevisionId,
-            SupersededRevisionIds = record.SupersededRevisionIds,
             SessionId = record.SessionId,
             DeviceId = record.DeviceId,
             DocumentName = record.DocumentName,
+            OriginalFilePath = record.OriginalFilePath,
             CapturedAtUtc = record.CapturedAtUtc,
             PersistenceEpoch = record.PersistenceEpoch,
             ByteLength = record.ByteLength,
             ContentSha256 = record.ContentSha256,
             Chunks = chunks.ToArray(),
         };
-        var manifestFileName = SteamCloudPaths.RevisionManifest(
-            record.Kind,
+        var manifestFileName = SteamCloudRecoveryPaths.RevisionManifest(
             record.DocumentId,
             record.RevisionId);
         var manifestBytes = JsonSerializer.SerializeToUtf8Bytes(manifest, DurabilityFiles.JsonOptions);
         var uploads = uploadsByName.Values.ToList();
         uploads.Add(new SteamCloudUploadFile(manifestFileName, manifestBytes));
-        return new CloudRevisionPackage(manifest, manifestFileName, uploads);
+        return new SteamCloudRecoveryPackage(manifest, manifestFileName, uploads);
     }
 
     private static byte[] ReadSegment(string path, long offset, int byteLength)

@@ -10,7 +10,7 @@ public enum LocalRecoveryState
     Failed,
 }
 
-public enum SteamCloudSyncState
+public enum SteamCloudRecoveryState
 {
     Unconfigured,
     AuthorizationRequired,
@@ -24,15 +24,15 @@ public sealed record DocumentDurabilityStatus
 {
     public Guid DocumentId { get; init; }
     public LocalRecoveryState LocalState { get; init; } = LocalRecoveryState.Idle;
-    public SteamCloudSyncState CloudState { get; init; } = SteamCloudSyncState.Unconfigured;
+    public SteamCloudRecoveryState RecoveryCloudState { get; init; } = SteamCloudRecoveryState.Unconfigured;
     public int PendingUploadCount { get; init; }
     public DateTimeOffset? LatestLocalSnapshotUtc { get; init; }
-    public DateTimeOffset? LatestCloudProtectionUtc { get; init; }
+    public DateTimeOffset? LatestRecoveryProtectionUtc { get; init; }
     public bool LocalRetentionLimitExceeded { get; init; }
-    public bool CloudRetentionLimitExceeded { get; init; }
+    public bool RecoveryCloudRetentionLimitExceeded { get; init; }
     public string LastLocalError { get; init; } = "";
-    public string LastCloudError { get; init; } = "";
-    public string LastExternalError => LastLocalError.Length > 0 ? LastLocalError : LastCloudError;
+    public string LastRecoveryCloudError { get; init; } = "";
+    public string LastExternalError => LastLocalError.Length > 0 ? LastLocalError : LastRecoveryCloudError;
 }
 
 public sealed record LocalRecoverySnapshotInfo

@@ -102,9 +102,9 @@ public partial class AutoloadData : Node
             // Everything is awaited on the main thread — no sync-over-async anywhere, so the
             // captured SynchronizationContext can always run these continuations.
             await AppDocumentDurability.ShutdownAsync();
-            if (SteamManager.IsCloudAvailable)
-                await SteamManager.FlushCloudSessionAsync(TimeSpan.FromSeconds(5));
-            await SteamManager.ShutdownCloudAsync();
+            if (SteamManager.IsRecoveryCloudAvailable)
+                await SteamManager.FlushRecoverySessionAsync(TimeSpan.FromSeconds(5));
+            await SteamManager.ShutdownRecoveryCloudAsync();
             AppStrokeBrushLibrary.Save();
             AppMarkerTextureLibrary.Save();
             AppPreference.Save();

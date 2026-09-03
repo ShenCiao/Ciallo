@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -23,66 +23,33 @@ namespace Ciallo.Tests;
 public class DurabilityTests
 {
     [TestCase]
-    public void RevisionGraphKeepsConcurrentHeadsUntilResolution()
-    {
-        var documentId = Guid.NewGuid();
-        var root = Revision(documentId, Guid.NewGuid());
-        var branchA = Revision(documentId, Guid.NewGuid(), root.RevisionId);
-        var branchB = Revision(documentId, Guid.NewGuid(), root.RevisionId);
-
-        var conflictedHeads = SteamCloudCatalogService.FindHeads([root, branchA, branchB])
-            .Select(revision => revision.RevisionId)
-            .Order()
-            .ToArray();
-        AssertThat(conflictedHeads).ContainsExactly(
-            new[] { branchA.RevisionId, branchB.RevisionId }.Order().ToArray());
-
-        var resolution = Revision(
-            documentId,
-            Guid.NewGuid(),
-            branchA.RevisionId,
-            [branchB.RevisionId]);
-        var resolvedHeads = SteamCloudCatalogService.FindHeads([root, branchA, branchB, resolution])
-            .Select(revision => revision.RevisionId)
-            .ToArray();
-        AssertThat(resolvedHeads).ContainsExactly(resolution.RevisionId);
-    }
-
-    [TestCase]
-    public void CloudOutboxPrioritizesSessionBeforeSavedAndRecoveryUploads()
+    public void CloudOutboxPrioritizesSessionBeforeRecoveryUploads()
     {
         var now = DateTimeOffset.UtcNow;
-        var saved = new CloudOutboxRecord
+        var olderRecovery = new SteamCloudRecoveryOutboxRecord
         {
             RevisionId = Guid.NewGuid(),
-            Kind = CloudRevisionKind.Saved,
-            CapturedAtUtc = now.AddMinutes(-2),
-        };
-        var olderRecovery = new CloudOutboxRecord
-        {
-            RevisionId = Guid.NewGuid(),
-            Kind = CloudRevisionKind.Recovery,
+            Kind = SteamCloudRecoveryKind.Recovery,
             CapturedAtUtc = now.AddMinutes(-3),
         };
-        var newerRecovery = new CloudOutboxRecord
+        var newerRecovery = new SteamCloudRecoveryOutboxRecord
         {
             RevisionId = Guid.NewGuid(),
-            Kind = CloudRevisionKind.Recovery,
+            Kind = SteamCloudRecoveryKind.Recovery,
             CapturedAtUtc = now.AddMinutes(-1),
         };
-        var session = new CloudOutboxRecord
+        var session = new SteamCloudRecoveryOutboxRecord
         {
             RevisionId = Guid.NewGuid(),
-            Kind = CloudRevisionKind.Session,
+            Kind = SteamCloudRecoveryKind.Session,
             CapturedAtUtc = now,
         };
 
-        var ordered = SteamCloudCoordinator.OrderPending(
-            [olderRecovery, saved, newerRecovery, session]);
+        var ordered = SteamCloudRecoveryCoordinator.OrderPending(
+            [olderRecovery, newerRecovery, session]);
 
         AssertThat(ordered.Select(record => record.RevisionId).ToArray()).ContainsExactly(
             session.RevisionId,
-            saved.RevisionId,
             newerRecovery.RevisionId,
             olderRecovery.RevisionId);
     }
@@ -99,27 +66,26 @@ public class DurabilityTests
             System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
             await File.WriteAllBytesAsync(path, bytes);
             var contentSha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
-            var preservedConflictId = Guid.NewGuid();
-            var record = new CloudOutboxRecord
+            var record = new SteamCloudRecoveryOutboxRecord
             {
                 RevisionId = Guid.NewGuid(),
                 DocumentId = Guid.NewGuid(),
-                Kind = CloudRevisionKind.Recovery,
-                SupersededRevisionIds = [preservedConflictId],
+                Kind = SteamCloudRecoveryKind.Recovery,
                 SessionId = Guid.NewGuid(),
                 DeviceId = Guid.NewGuid(),
+                OriginalFilePath = @"C:\work\coast.ciallo",
                 SourcePath = path,
                 ByteLength = bytes.Length,
                 ContentSha256 = contentSha256,
                 CapturedAtUtc = DateTimeOffset.UtcNow,
             };
 
-            var package = CloudRevisionPackageBuilder.Build(record);
+            var package = SteamCloudRecoveryPackageBuilder.Build(record);
             AssertThat(package.Manifest.Chunks.Length).IsEqual(2);
             AssertThat(package.Manifest.Chunks[0].ByteLength).IsEqual(SteamCloudOptions.ChunkByteLength);
             AssertThat(package.Manifest.Chunks[1].ByteLength).IsEqual(31);
             AssertThat(package.Manifest.ContentSha256).IsEqual(contentSha256);
-            AssertThat(package.Manifest.SupersededRevisionIds).ContainsExactly(preservedConflictId);
+            AssertThat(package.Manifest.OriginalFilePath).IsEqual(record.OriginalFilePath);
             AssertThat(package.UploadFiles[^1].FileName).IsEqual(package.ManifestFileName);
             foreach (var chunk in package.Manifest.Chunks)
             {
@@ -137,7 +103,7 @@ public class DurabilityTests
     }
 
     [TestCase]
-    public async Task CloudCatalogCachesOnlyManifestsWithSha1()
+    public async Task RecoveryCatalogCachesOnlyManifestsWithSha1()
     {
         var directory = Path.Combine(Path.GetTempPath(), "ciallo-catalog-cache-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
@@ -159,37 +125,50 @@ public class DurabilityTests
             var protocol = new SteamCloudWebApiClient(httpClient);
             var authorization = new SteamCloudAuthorization(options, steamId, files.RootPath, httpClient);
             var authorized = new AuthorizedSteamCloudClient(protocol, options, authorization);
-            var catalog = new SteamCloudCatalogService(
+            var catalog = new SteamCloudRecoveryCatalog(
                 options,
                 files,
-                new CloudOutboxStore(files),
+                new SteamCloudRecoveryOutbox(files),
                 authorized,
                 protocol);
-            var manifest = new CloudRevisionManifest
+            var sessionId = Guid.NewGuid();
+            var documentId = Guid.NewGuid();
+            var deviceId = Guid.NewGuid();
+            var manifest = new SteamCloudRecoveryManifest
             {
                 RevisionId = Guid.NewGuid(),
-                DocumentId = Guid.NewGuid(),
-                Kind = CloudRevisionKind.Saved,
-                DeviceId = Guid.NewGuid(),
+                DocumentId = documentId,
+                Kind = SteamCloudRecoveryKind.Recovery,
+                SessionId = sessionId,
+                DeviceId = deviceId,
                 DocumentName = "First",
                 CapturedAtUtc = DateTimeOffset.UnixEpoch,
                 ContentSha256 = Convert.ToHexString(SHA256.HashData(Array.Empty<byte>())).ToLowerInvariant(),
             };
+            var session = new EditingSessionInfo
+            {
+                SessionId = sessionId,
+                DocumentId = documentId,
+                DeviceId = deviceId,
+                DocumentName = "First",
+                OpenedAtUtc = DateTimeOffset.UnixEpoch,
+                LastHeartbeatUtc = DateTimeOffset.UtcNow - TimeSpan.FromMinutes(20),
+            };
 
-            handler.SetManifest(manifest, includeSha1: true);
+            handler.SetCatalog(manifest, session, includeSha1: true);
             var first = await catalog.RefreshAsync(CancellationToken.None);
-            AssertThat(first.Documents.Single().DocumentName).IsEqual("First");
+            AssertThat(first.RecoveryCandidates.Single().DocumentName).IsEqual("First");
             AssertThat(handler.ManifestDownloadCount).IsEqual(1);
 
             await catalog.RefreshAsync(CancellationToken.None);
             AssertThat(handler.ManifestDownloadCount).IsEqual(1);
 
-            handler.SetManifest(manifest with { DocumentName = "Changed" }, includeSha1: true);
+            handler.SetCatalog(manifest with { DocumentName = "Changed" }, session, includeSha1: true);
             var changed = await catalog.RefreshAsync(CancellationToken.None);
-            AssertThat(changed.Documents.Single().DocumentName).IsEqual("Changed");
+            AssertThat(changed.RecoveryCandidates.Single().DocumentName).IsEqual("Changed");
             AssertThat(handler.ManifestDownloadCount).IsEqual(2);
 
-            handler.SetManifest(manifest with { DocumentName = "No hash" }, includeSha1: false);
+            handler.SetCatalog(manifest with { DocumentName = "No hash" }, session, includeSha1: false);
             await catalog.RefreshAsync(CancellationToken.None);
             await catalog.RefreshAsync(CancellationToken.None);
             AssertThat(handler.ManifestDownloadCount).IsEqual(4);
@@ -291,37 +270,32 @@ public class DurabilityTests
     {
         var revisionId = Guid.NewGuid();
         var documentId = Guid.NewGuid();
-        var parentRevisionId = Guid.NewGuid();
-        var supersededRevisionId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
         var deviceId = Guid.NewGuid();
-        var manifest = new CloudRevisionManifest
+        var manifest = new SteamCloudRecoveryManifest
         {
             RevisionId = revisionId,
             DocumentId = documentId,
-            ParentRevisionId = parentRevisionId,
-            SupersededRevisionIds = [supersededRevisionId],
+            Kind = SteamCloudRecoveryKind.Recovery,
             SessionId = sessionId,
             DeviceId = deviceId,
+            OriginalFilePath = @"D:\art\doc.ciallo",
         };
 
         var json = System.Text.Json.JsonSerializer.Serialize(manifest, DurabilityFiles.JsonOptions);
-        var roundTrip = System.Text.Json.JsonSerializer.Deserialize<CloudRevisionManifest>(
+        var roundTrip = System.Text.Json.JsonSerializer.Deserialize<SteamCloudRecoveryManifest>(
             json,
             DurabilityFiles.JsonOptions)!;
 
         AssertThat(json.Contains(revisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
         AssertThat(json.Contains(documentId.ToString("N"), StringComparison.Ordinal)).IsTrue();
-        AssertThat(json.Contains(parentRevisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
-        AssertThat(json.Contains(supersededRevisionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
         AssertThat(json.Contains(sessionId.ToString("N"), StringComparison.Ordinal)).IsTrue();
         AssertThat(json.Contains(deviceId.ToString("N"), StringComparison.Ordinal)).IsTrue();
         AssertThat(roundTrip.RevisionId).IsEqual(revisionId);
         AssertThat(roundTrip.DocumentId).IsEqual(documentId);
-        AssertThat(roundTrip.ParentRevisionId).IsEqual(parentRevisionId);
-        AssertThat(roundTrip.SupersededRevisionIds).ContainsExactly(supersededRevisionId);
         AssertThat(roundTrip.SessionId).IsEqual(sessionId);
         AssertThat(roundTrip.DeviceId).IsEqual(deviceId);
+        AssertThat(roundTrip.OriginalFilePath).IsEqual(@"D:\art\doc.ciallo");
     }
 
     [TestCase]
@@ -591,22 +565,6 @@ public class DurabilityTests
         }
     }
 
-    private static CloudRevisionManifest Revision(
-        Guid documentId,
-        Guid revisionId,
-        Guid? parentRevisionId = null,
-        Guid[] supersededRevisionIds = null)
-    {
-        return new CloudRevisionManifest
-        {
-            RevisionId = revisionId,
-            DocumentId = documentId,
-            Kind = CloudRevisionKind.Saved,
-            ParentRevisionId = parentRevisionId,
-            SupersededRevisionIds = supersededRevisionIds ?? [],
-        };
-    }
-
     private static void DisposeWorld(World world)
     {
         var query = world.CreateQuery().Build();
@@ -659,20 +617,23 @@ public class DurabilityTests
     private sealed class CatalogManifestHandler : HttpMessageHandler
     {
         private byte[] _manifestBytes;
+        private byte[] _sessionBytes;
         private string _manifestFileName;
+        private string _sessionFileName;
         private bool _includeSha1;
 
         public int ManifestDownloadCount { get; private set; }
 
-        public void SetManifest(CloudRevisionManifest manifest, bool includeSha1)
+        public void SetCatalog(SteamCloudRecoveryManifest manifest, EditingSessionInfo session, bool includeSha1)
         {
             _manifestBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
                 manifest,
                 DurabilityFiles.JsonOptions);
-            _manifestFileName = SteamCloudPaths.RevisionManifest(
-                manifest.Kind,
-                manifest.DocumentId,
-                manifest.RevisionId);
+            _sessionBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(
+                session,
+                DurabilityFiles.JsonOptions);
+            _manifestFileName = SteamCloudRecoveryPaths.RevisionManifest(manifest.DocumentId, manifest.RevisionId);
+            _sessionFileName = SteamCloudRecoveryPaths.Session(session.DocumentId, session.SessionId);
             _includeSha1 = includeSha1;
         }
 
@@ -682,6 +643,15 @@ public class DurabilityTests
         {
             if (request.RequestUri!.Host == "download.test")
             {
+                var target = request.RequestUri.AbsolutePath.Trim('/');
+                if (target == "session")
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(_sessionBytes),
+                    });
+                }
+
                 ManifestDownloadCount++;
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -692,27 +662,17 @@ public class DurabilityTests
             if (!request.RequestUri.AbsolutePath.Contains("/ICloudService/EnumerateUserFiles/", StringComparison.Ordinal))
                 throw new InvalidOperationException("Unexpected Steam Cloud request " + request.RequestUri);
 
-            var file = new Dictionary<string, object>
+            var files = new[]
             {
-                ["appid"] = 4103990,
-                ["ugcid"] = "11",
-                ["filename"] = _manifestFileName,
-                ["timestamp"] = "1710000000",
-                ["file_size"] = _manifestBytes.Length,
-                ["url"] = "https://download.test/manifest",
-                ["steamid_creator"] = "76561198000000000",
-                ["flags"] = 0,
-                ["platforms_to_sync"] = new[] { SteamCloudPlatforms.All },
+                EnumeratedFile(_manifestFileName, _manifestBytes, "https://download.test/manifest", _includeSha1),
+                EnumeratedFile(_sessionFileName, _sessionBytes, "https://download.test/session", includeSha1: true),
             };
-            if (_includeSha1)
-                file["file_sha"] = Convert.ToHexString(SHA1.HashData(_manifestBytes)).ToLowerInvariant();
-
             var json = System.Text.Json.JsonSerializer.Serialize(new
             {
                 response = new
                 {
-                    files = new[] { file },
-                    total_files = 1,
+                    files,
+                    total_files = files.Length,
                 },
             });
             var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -721,6 +681,29 @@ public class DurabilityTests
             };
             response.Headers.Add("x-eresult", "1");
             return Task.FromResult(response);
+        }
+
+        private static Dictionary<string, object> EnumeratedFile(
+            string fileName,
+            byte[] bytes,
+            string url,
+            bool includeSha1)
+        {
+            var file = new Dictionary<string, object>
+            {
+                ["appid"] = 4103990,
+                ["ugcid"] = "11",
+                ["filename"] = fileName,
+                ["timestamp"] = "1710000000",
+                ["file_size"] = bytes.Length,
+                ["url"] = url,
+                ["steamid_creator"] = "76561198000000000",
+                ["flags"] = 0,
+                ["platforms_to_sync"] = new[] { SteamCloudPlatforms.All },
+            };
+            if (includeSha1)
+                file["file_sha"] = Convert.ToHexString(SHA1.HashData(bytes)).ToLowerInvariant();
+            return file;
         }
     }
 

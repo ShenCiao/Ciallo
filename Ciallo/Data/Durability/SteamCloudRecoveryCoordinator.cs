@@ -11,38 +11,42 @@ using Steamworks.WebApi;
 
 namespace Ciallo.Data;
 
-internal sealed class SteamCloudCoordinator : IAsyncDisposable
+// Steam's client-managed session sync runs around application sessions and cannot confirm a
+// recovery snapshot while Ciallo is still running. ISteamRemoteStorage write completion only
+// confirms a local write. Ciallo uses ICloudService so a recovery snapshot can become a confirmed
+// cloud protection point before exit.
+internal sealed class SteamCloudRecoveryCoordinator : IAsyncDisposable
 {
     private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan CatalogRefreshInterval = TimeSpan.FromMinutes(5);
-    private const string CloudRetentionLimitMessage =
+    private const string RecoveryCloudRetentionLimitMessage =
         "The newest recovery snapshot exceeds the configured Steam Cloud recovery storage limit.";
 
     private readonly SteamCloudOptions _options;
-    private readonly CloudOutboxStore _outbox;
+    private readonly SteamCloudRecoveryOutbox _outbox;
     private readonly HttpClient _httpClient;
     private readonly SteamCloudAuthorization _authorization;
     private readonly AuthorizedSteamCloudClient _webApi;
-    private readonly SteamCloudCatalogService _catalogService;
+    private readonly SteamCloudRecoveryCatalog _catalogService;
     private readonly SemaphoreSlim _uploadSignal = new(0, 1);
     private readonly SemaphoreSlim _cloudOperationLock = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
     private readonly Task _uploadLoop;
     private readonly ConcurrentQueue<SteamCloudAuthorizationStatus> _authorizationNotifications = new();
-    private readonly ConcurrentQueue<SteamCloudCatalogSnapshot> _catalogNotifications = new();
+    private readonly ConcurrentQueue<SteamCloudRecoveryCatalogSnapshot> _catalogNotifications = new();
     private DateTimeOffset _nextCatalogRefreshUtc = DateTimeOffset.MinValue;
     private int _disposed;
 
     public SteamCloudAuthorizationStatus AuthorizationStatus => _authorization.Status;
-    public SteamCloudCatalogSnapshot Catalog => _catalogService.Catalog;
+    public SteamCloudRecoveryCatalogSnapshot Catalog => _catalogService.Catalog;
     public event Action<SteamCloudAuthorizationStatus> AuthorizationStatusChanged;
-    public event Action<SteamCloudCatalogSnapshot> CatalogChanged;
+    public event Action<SteamCloudRecoveryCatalogSnapshot> CatalogChanged;
 
-    public SteamCloudCoordinator(
+    public SteamCloudRecoveryCoordinator(
         SteamCloudOptions options,
         ulong currentSteamId,
         DurabilityFileStore files,
-        CloudOutboxStore outbox)
+        SteamCloudRecoveryOutbox outbox)
     {
         _options = options;
         _outbox = outbox;
@@ -57,7 +61,7 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
             protocol,
             options,
             _authorization);
-        _catalogService = new SteamCloudCatalogService(options, files, outbox, _webApi, protocol);
+        _catalogService = new SteamCloudRecoveryCatalog(options, files, outbox, _webApi, protocol);
 
         _authorization.StatusChanged += OnAuthorizationStatusChanged;
         _outbox.PendingChanged += SignalUpload;
@@ -87,7 +91,7 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
         var drained = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnPendingChanged()
         {
-            if (!_outbox.ListPending().Any(record => record.Kind == CloudRevisionKind.Session))
+            if (!_outbox.ListPending().Any(record => record.Kind == SteamCloudRecoveryKind.Session))
                 drained.TrySetResult();
         }
 
@@ -106,7 +110,7 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
         }
     }
 
-    public async Task<SteamCloudCatalogSnapshot> RefreshCatalogAsync(
+    public async Task<SteamCloudRecoveryCatalogSnapshot> RefreshCatalogAsync(
         CancellationToken cancellationToken = default)
     {
         await _cloudOperationLock.WaitAsync(cancellationToken);
@@ -123,7 +127,7 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
         }
     }
 
-    public async Task<ManagedCloudCopyInfo> DownloadRevisionAsync(
+    public async Task<LocalRecoverySnapshotInfo> DownloadSnapshotAsync(
         Guid revisionId,
         CancellationToken cancellationToken = default)
     {
@@ -131,37 +135,13 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
         try
         {
             var previousRefreshUtc = _catalogService.Catalog.RefreshedAtUtc;
-            var copy = await _catalogService.DownloadRevisionAsync(revisionId, cancellationToken);
+            var snapshot = await _catalogService.DownloadSnapshotAsync(revisionId, cancellationToken);
             if (_catalogService.Catalog.RefreshedAtUtc != previousRefreshUtc)
             {
                 _nextCatalogRefreshUtc = DateTimeOffset.UtcNow + CatalogRefreshInterval;
                 PublishCatalog(_catalogService.Catalog);
             }
-            return copy;
-        }
-        finally
-        {
-            _cloudOperationLock.Release();
-        }
-    }
-
-    public async Task<SteamCloudCatalogSnapshot> ResolveConflictAsync(
-        Guid documentId,
-        Guid chosenRevisionId,
-        Guid deviceId,
-        CancellationToken cancellationToken = default)
-    {
-        await _cloudOperationLock.WaitAsync(cancellationToken);
-        try
-        {
-            var catalog = await _catalogService.ResolveConflictAsync(
-                documentId,
-                chosenRevisionId,
-                deviceId,
-                cancellationToken);
-            _nextCatalogRefreshUtc = DateTimeOffset.UtcNow + CatalogRefreshInterval;
-            PublishCatalog(catalog);
-            return catalog;
+            return snapshot;
         }
         finally
         {
@@ -209,47 +189,47 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
                 await _cloudOperationLock.WaitAsync(_shutdown.Token);
                 try
                 {
-                var pending = OrderPending(_outbox.ListPending());
-                if (pending.Count == 0)
-                {
-                    if (DateTimeOffset.UtcNow < _nextCatalogRefreshUtc)
-                        continue;
+                    var pending = OrderPending(_outbox.ListPending());
+                    if (pending.Count == 0)
+                    {
+                        if (DateTimeOffset.UtcNow < _nextCatalogRefreshUtc)
+                            continue;
 
-                    var retentionLimitExceeded =
+                        var retentionLimitExceeded =
+                            await _catalogService.ReconcileRecoveryRetentionAsync(_shutdown.Token);
+                        _nextCatalogRefreshUtc = DateTimeOffset.UtcNow + CatalogRefreshInterval;
+                        PublishCatalog(_catalogService.Catalog);
+                        AppDocumentDurability.SetRecoveryCloudStatus(
+                            SteamCloudRecoveryState.Ready,
+                            retentionLimitExceeded ? RecoveryCloudRetentionLimitMessage : "",
+                            retentionLimitExceeded: retentionLimitExceeded);
+                        continue;
+                    }
+
+                    AppDocumentDurability.SetRecoveryCloudStatus(SteamCloudRecoveryState.Uploading);
+                    var remoteFiles = (await _webApi.EnumerateFilesAsync(_shutdown.Token))
+                        .ToDictionary(file => file.FileName, StringComparer.Ordinal);
+                    foreach (var record in pending)
+                    {
+                        if (!await UploadRecordAsync(record, remoteFiles, _shutdown.Token))
+                            continue;
+                        var uploadedAt = DateTimeOffset.UtcNow;
+                        _outbox.MarkUploaded(record, uploadedAt);
+                        if (record.Kind != SteamCloudRecoveryKind.Session)
+                        {
+                            AppDocumentDurability.SetRecoveryCloudStatus(
+                                SteamCloudRecoveryState.Uploading,
+                                protectionPointUtc: uploadedAt);
+                        }
+                    }
+                    var cloudRetentionLimitExceeded =
                         await _catalogService.ReconcileRecoveryRetentionAsync(_shutdown.Token);
                     _nextCatalogRefreshUtc = DateTimeOffset.UtcNow + CatalogRefreshInterval;
                     PublishCatalog(_catalogService.Catalog);
-                    AppDocumentDurability.SetCloudStatus(
-                        SteamCloudSyncState.Ready,
-                        retentionLimitExceeded ? CloudRetentionLimitMessage : "",
-                        retentionLimitExceeded: retentionLimitExceeded);
-                    continue;
-                }
-
-                AppDocumentDurability.SetCloudStatus(SteamCloudSyncState.Uploading);
-                var remoteFiles = (await _webApi.EnumerateFilesAsync(_shutdown.Token))
-                    .ToDictionary(file => file.FileName, StringComparer.Ordinal);
-                foreach (var record in pending)
-                {
-                    if (!await UploadRecordAsync(record, remoteFiles, _shutdown.Token))
-                        continue;
-                    var uploadedAt = DateTimeOffset.UtcNow;
-                    _outbox.MarkUploaded(record, uploadedAt);
-                    if (record.Kind != CloudRevisionKind.Session)
-                    {
-                        AppDocumentDurability.SetCloudStatus(
-                            SteamCloudSyncState.Uploading,
-                            protectionPointUtc: uploadedAt);
-                    }
-                }
-                var cloudRetentionLimitExceeded =
-                    await _catalogService.ReconcileRecoveryRetentionAsync(_shutdown.Token);
-                _nextCatalogRefreshUtc = DateTimeOffset.UtcNow + CatalogRefreshInterval;
-                PublishCatalog(_catalogService.Catalog);
-                AppDocumentDurability.SetCloudStatus(
-                    SteamCloudSyncState.Ready,
-                    cloudRetentionLimitExceeded ? CloudRetentionLimitMessage : "",
-                    retentionLimitExceeded: cloudRetentionLimitExceeded);
+                    AppDocumentDurability.SetRecoveryCloudStatus(
+                        SteamCloudRecoveryState.Ready,
+                        cloudRetentionLimitExceeded ? RecoveryCloudRetentionLimitMessage : "",
+                        retentionLimitExceeded: cloudRetentionLimitExceeded);
                 }
                 finally
                 {
@@ -265,38 +245,38 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
             }
             catch (OperationCanceledException exception)
             {
-                AppDocumentDurability.SetCloudStatus(SteamCloudSyncState.Offline, exception.Message);
+                AppDocumentDurability.SetRecoveryCloudStatus(SteamCloudRecoveryState.Offline, exception.Message);
             }
             catch (HttpRequestException exception)
             {
-                AppDocumentDurability.SetCloudStatus(SteamCloudSyncState.Offline, exception.Message);
+                AppDocumentDurability.SetRecoveryCloudStatus(SteamCloudRecoveryState.Offline, exception.Message);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
-                AppDocumentDurability.SetCloudStatus(SteamCloudSyncState.Failed, exception.Message);
+                AppDocumentDurability.SetRecoveryCloudStatus(SteamCloudRecoveryState.Failed, exception.Message);
             }
         }
     }
 
     private async Task<bool> UploadRecordAsync(
-        CloudOutboxRecord record,
+        SteamCloudRecoveryOutboxRecord record,
         Dictionary<string, SteamCloudFile> remoteFiles,
         CancellationToken cancellationToken)
     {
         IReadOnlyList<SteamCloudUploadFile> uploadFiles;
-        if (record.Kind == CloudRevisionKind.Session)
+        if (record.Kind == SteamCloudRecoveryKind.Session)
         {
             var bytes = await File.ReadAllBytesAsync(record.SourcePath, cancellationToken);
             var contentSha256 = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
             if (contentSha256 != record.ContentSha256)
                 return false;
             uploadFiles = [new SteamCloudUploadFile(
-                SteamCloudPaths.Session(record.DocumentId, record.SessionId!.Value),
+                SteamCloudRecoveryPaths.Session(record.DocumentId, record.SessionId!.Value),
                 bytes)];
         }
         else
         {
-            uploadFiles = CloudRevisionPackageBuilder.Build(record).UploadFiles;
+            uploadFiles = SteamCloudRecoveryPackageBuilder.Build(record).UploadFiles;
         }
 
         var requiredUploads = uploadFiles
@@ -337,17 +317,17 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
     {
         var cloudState = status.State switch
         {
-            SteamCloudAuthorizationState.Unconfigured => SteamCloudSyncState.Unconfigured,
-            SteamCloudAuthorizationState.AuthorizationRequired => SteamCloudSyncState.AuthorizationRequired,
-            SteamCloudAuthorizationState.Authorizing => SteamCloudSyncState.AuthorizationRequired,
-            SteamCloudAuthorizationState.Authorized => SteamCloudSyncState.Ready,
-            SteamCloudAuthorizationState.Failed => SteamCloudSyncState.Failed,
+            SteamCloudAuthorizationState.Unconfigured => SteamCloudRecoveryState.Unconfigured,
+            SteamCloudAuthorizationState.AuthorizationRequired => SteamCloudRecoveryState.AuthorizationRequired,
+            SteamCloudAuthorizationState.Authorizing => SteamCloudRecoveryState.AuthorizationRequired,
+            SteamCloudAuthorizationState.Authorized => SteamCloudRecoveryState.Ready,
+            SteamCloudAuthorizationState.Failed => SteamCloudRecoveryState.Failed,
             _ => throw new ArgumentOutOfRangeException(nameof(status.State), status.State, null),
         };
-        AppDocumentDurability.SetCloudStatus(cloudState, status.LastExternalError);
+        AppDocumentDurability.SetRecoveryCloudStatus(cloudState, status.LastExternalError);
     }
 
-    private void PublishCatalog(SteamCloudCatalogSnapshot catalog)
+    private void PublishCatalog(SteamCloudRecoveryCatalogSnapshot catalog)
         => _catalogNotifications.Enqueue(catalog);
 
     private void SignalUpload()
@@ -356,18 +336,17 @@ internal sealed class SteamCloudCoordinator : IAsyncDisposable
             _uploadSignal.Release();
     }
 
-    internal static IReadOnlyList<CloudOutboxRecord> OrderPending(
-        IReadOnlyList<CloudOutboxRecord> pending)
+    internal static IReadOnlyList<SteamCloudRecoveryOutboxRecord> OrderPending(
+        IReadOnlyList<SteamCloudRecoveryOutboxRecord> pending)
     {
         return pending
             .OrderBy(record => record.Kind switch
             {
-                CloudRevisionKind.Session => 0,
-                CloudRevisionKind.Saved => 1,
-                CloudRevisionKind.Recovery => 2,
+                SteamCloudRecoveryKind.Session => 0,
+                SteamCloudRecoveryKind.Recovery => 1,
                 _ => throw new ArgumentOutOfRangeException(nameof(record.Kind), record.Kind, null),
             })
-            .ThenBy(record => record.Kind == CloudRevisionKind.Recovery
+            .ThenBy(record => record.Kind == SteamCloudRecoveryKind.Recovery
                 ? -record.CapturedAtUtc.ToUnixTimeMilliseconds()
                 : record.CapturedAtUtc.ToUnixTimeMilliseconds())
             .ToArray();

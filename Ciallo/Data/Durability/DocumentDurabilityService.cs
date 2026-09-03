@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -18,7 +17,7 @@ internal sealed class DocumentDurabilityService
         "The newest recovery snapshot exceeds the configured local recovery storage limit.";
 
     private readonly DurabilityFileStore _fileStore;
-    private readonly CloudOutboxStore _outboxStore;
+    private readonly SteamCloudRecoveryOutbox _outboxStore;
     private readonly Channel<RecoveryWriteRequest> _recoveryWrites;
     private readonly Task _recoveryWriterTask;
     private readonly ConcurrentQueue<DocumentDurabilityStatus> _statusNotifications = new();
@@ -48,12 +47,12 @@ internal sealed class DocumentDurabilityService
 
     public Guid DeviceId => _fileStore.DeviceId;
     public DurabilityFileStore FileStore => _fileStore;
-    public CloudOutboxStore OutboxStore => _outboxStore;
+    public SteamCloudRecoveryOutbox OutboxStore => _outboxStore;
 
     public DocumentDurabilityService(string userDataPath)
     {
         _fileStore = new DurabilityFileStore(userDataPath);
-        _outboxStore = new CloudOutboxStore(_fileStore);
+        _outboxStore = new SteamCloudRecoveryOutbox(_fileStore);
         _outboxStore.PendingChanged += UpdatePendingUploadCount;
         _recoveryWrites = Channel.CreateBounded<RecoveryWriteRequest>(new BoundedChannelOptions(1)
         {
@@ -123,8 +122,7 @@ internal sealed class DocumentDurabilityService
 
     public Entity OpenRecoverySnapshot(Guid revisionId)
     {
-        var info = _fileStore.ListRecoveryCandidates(DateTimeOffset.UtcNow)
-            .Single(snapshot => snapshot.RevisionId == revisionId);
+        var info = _fileStore.GetRecoverySnapshot(revisionId);
         var path = _fileStore.GetRecoverySnapshotPath(info);
         var dataDocument = AppDocumentManager.Load(path);
         dataDocument.Get<DocumentSetting>().FilePath.Value = info.OriginalFilePath;
@@ -134,56 +132,18 @@ internal sealed class DocumentDurabilityService
         return workingDocument;
     }
 
-    public Entity OpenManagedCloudCopy(ManagedCloudCopyInfo copy)
-    {
-        if (copy.Revision.Kind == CloudRevisionKind.Session)
-            throw new InvalidOperationException("An editing-session record is not a document revision.");
-
-        var dataDocument = AppDocumentManager.Load(copy.LocalFilePath);
-        var documentDirectory = Path.GetDirectoryName(copy.LocalFilePath)!;
-        dataDocument.Get<DocumentSetting>().FilePath.Value = copy.Revision.Kind == CloudRevisionKind.Saved
-            ? copy.LocalFilePath
-            : Path.Combine(documentDirectory, "document.ciallo");
-        AppDocumentManager.CopyWorldByData(dataDocument);
-        var workingDocument = AppDocumentManager.WorkingDocument.CurrentValue;
-
-        Guid? cloudBase = copy.Revision.Kind == CloudRevisionKind.Saved
-            ? copy.Revision.RevisionId
-            : copy.Revision.ParentRevisionId;
-        if (cloudBase.HasValue)
-            _outboxStore.SetCloudBaseRevision(
-                copy.Revision.DocumentId,
-                cloudBase.Value,
-                copy.Revision.SupersededRevisionIds);
-        if (copy.Revision.Kind == CloudRevisionKind.Recovery)
-            workingDocument.Get<CommandManager>().MarkUnsaved();
-        return workingDocument;
-    }
-
-    public void EnqueueManualSave(Entity document, string filePath)
-    {
-        try
-        {
-            _outboxStore.EnqueueManualSave(document, filePath);
-        }
-        catch (Exception exception)
-        {
-            UpdateStatus(status => status with { LastLocalError = exception.Message });
-        }
-    }
-
-    public void SetCloudStatus(
-        SteamCloudSyncState state,
+    public void SetRecoveryCloudStatus(
+        SteamCloudRecoveryState state,
         string externalError = "",
         DateTimeOffset? protectionPointUtc = null,
         bool? retentionLimitExceeded = null)
     {
         UpdateStatus(status => status with
         {
-            CloudState = state,
-            LastCloudError = externalError,
-            LatestCloudProtectionUtc = protectionPointUtc ?? status.LatestCloudProtectionUtc,
-            CloudRetentionLimitExceeded = retentionLimitExceeded ?? status.CloudRetentionLimitExceeded,
+            RecoveryCloudState = state,
+            LastRecoveryCloudError = externalError,
+            LatestRecoveryProtectionUtc = protectionPointUtc ?? status.LatestRecoveryProtectionUtc,
+            RecoveryCloudRetentionLimitExceeded = retentionLimitExceeded ?? status.RecoveryCloudRetentionLimitExceeded,
         });
     }
 

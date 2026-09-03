@@ -2,16 +2,19 @@
 
 ## Supported behavior
 
-Ciallo maintains local recovery snapshots and mirrors document protection data to Steam Cloud while the application is running.
+Ciallo maintains local recovery snapshots and mirrors those snapshots, plus editing-session records, to Steam Cloud while the application is running.
 
 - Every five minutes, the working document's current committed persistence epoch is captured when that epoch is not already written or queued.
 - Capture runs on the Godot main thread and detaches persistence data from the live Frent world. Entity references and mutable collections are copied, while immutable geometry arrays are shared.
 - DuckDB serialization, hashing, recovery retention, and recovery outbox creation run on one background writer.
 - The background queue retains one pending automatic capture. A newer capture replaces an older pending capture while a write is in progress.
 - A failed write leaves the persistence epoch unprotected so a later interval retries it.
-- Every successful manual save creates an immutable upload source and a persistent Steam Cloud outbox record.
+- Every successful recovery snapshot write enqueues that same snapshot file for Steam Cloud.
+- Editing-session open, heartbeat, and close records are mirrored to Steam Cloud so another device can detect an interrupted session.
+- Manual save writes only the user's local document file. It does not create a cloud object.
 - The outbox is retried while Ciallo is running and survives application restarts.
 - Steam Cloud is refreshed and reconciled every five minutes while authorized, including when there are no pending uploads.
+- Leftover `ciallo/v1/revisions/saved/` files from the withdrawn saved-revision path are deleted during reconcile.
 
 The persistence world must contain only committed interaction state. In-progress image transforms, timeline drags, and similar interactions use preview buffers and publish one persistence epoch only when the interaction commits.
 
@@ -24,14 +27,12 @@ The durability root is `user://DocumentDurability/v1`.
 | `recovery/<document-id>/` | Atomic `.ciallo` recovery snapshots and JSON metadata |
 | `sessions/<document-id>/` | Editing-session heartbeat and closed markers |
 | `outbox/` | Persistent pending Steam Cloud operations |
-| `manual-sources/` | Immutable copies of manually saved files awaiting upload |
 | `cloud-receipts/` | Completed upload receipts |
-| `document-cloud-state/` | Per-document cloud base and preserved conflict candidates |
 | `steam-oauth-token.json` | User OAuth token and authorized Steam account |
 
-Managed copies downloaded from Steam Cloud are stored under `user://CloudDocuments/<document-id>/`.
-
 Recovery snapshot and metadata writes use sibling temporary files followed by an atomic replacement. A recovery snapshot contains document content but no command history.
+
+A cloud recovery download writes into the same local recovery directory, then opens through `OpenRecoverySnapshot`.
 
 ## Scheduling and retention
 
@@ -44,9 +45,9 @@ The preferences are:
 | `RecoverySnapshotAccountFileLimit` | 256 | Maximum retained recovery snapshots across documents |
 | `RecoverySnapshotAccountByteLimit` | 2 GiB | Maximum logical recovery bytes across documents |
 
-Local and Steam Cloud recovery retention remove the oldest recovery snapshots first. At least the newest recovery snapshot is preserved even when that one file exceeds an account limit. `DocumentDurabilityStatus.LocalRetentionLimitExceeded` or `CloudRetentionLimitExceeded` remains available for the GUI to show that condition.
+Local and Steam Cloud recovery retention remove the oldest recovery snapshots first. At least the newest recovery snapshot is preserved even when that one file exceeds an account limit. `DocumentDurabilityStatus.LocalRetentionLimitExceeded` or `RecoveryCloudRetentionLimitExceeded` remains available for the GUI to show that condition.
 
-Manually saved cloud revisions are not retained as linear history. Cloud cleanup keeps current saved heads and explicitly preserved conflict candidates. Unreferenced chunks are deleted only after they have been orphaned for at least one day.
+Unreferenced chunks are deleted only after they have been orphaned for at least one day.
 
 ## Recovery sessions
 
@@ -70,8 +71,7 @@ Configure the issued OAuth Client ID through either:
 
 `ShenCiao.Facepunch.Steamworks` provides the complete documented
 `ICloudService` and OAuth protocol implementation. Ciallo owns token
-persistence, account and scope validation, document packaging, retention, and
-conflict behavior.
+persistence, account and scope validation, snapshot packaging, and retention.
 
 Ciallo binds the callback only to `127.0.0.1`, verifies a random OAuth state, and verifies that the authorized SteamID matches the Steam account running Ciallo. The token is stored outside preferences. Unix token permissions are `0600`; Windows uses the user-profile ACL inherited by the Godot user directory.
 
@@ -79,22 +79,18 @@ Authorization persists across launches, and Steam enforces the configured token 
 
 ## Cloud format and commit point
 
-Saved and recovery revisions are immutable packages:
+Recovery snapshots are immutable packages:
 
-- document, revision, parent revision, conflict, session, and device identities use `System.Guid` throughout the application;
+- document, revision, session, and device identities use `System.Guid` throughout the application;
 - JSON, local paths, and Steam Remote Storage names encode those identities as lowercase 32-digit `N` strings only at their storage boundary;
 - document content is split into 8 MiB content-addressed chunks;
 - each chunk records SHA-256 content identity and uses SHA-1 for Steam transport validation;
-- the revision manifest records identity, ancestry, session, device, byte length, hashes, and ordered chunk descriptors;
+- the revision manifest records identity, session, device, original file path, byte length, hashes, and ordered chunk descriptors;
 - chunks are uploaded before the manifest.
 
-Each modification uses the Steam batch sequence `BeginAppUploadBatch`, `BeginHTTPUpload`, HTTP `PUT`, `CommitHTTPUpload`, optional `Delete`, and `CompleteAppUploadBatch`. A revision becomes a cloud protection point only after every required file is committed and the batch completes. Batch completion has an independent ten-second shutdown bound.
+Each modification uses the Steam batch sequence `BeginAppUploadBatch`, `BeginHTTPUpload`, HTTP `PUT`, `CommitHTTPUpload`, optional `Delete`, and `CompleteAppUploadBatch`. A snapshot becomes a cloud protection point only after every required file is committed and the batch completes. Batch completion has an independent ten-second shutdown bound.
 
-## Conflicts
-
-Each manually saved revision names the cloud revision it was based on. Two saved revisions with the same ancestor and neither as an ancestor of the other are concurrent heads and form a conflict.
-
-Conflict resolution creates a new saved head using the selected candidate's content. Other heads and previously preserved conflict candidates remain downloadable. Their identities propagate through later saves and recovery snapshots so ordinary history cleanup cannot remove them. To turn a preserved candidate into an independent document, download and open it, then use Save As to assign a new document identity.
+Steam Remote Storage names use the prefix `ciallo/v1/`: recovery manifests under `revisions/recovery/`, session records under `sessions/`, and chunks under `chunks/`.
 
 ## Runtime API
 
@@ -103,22 +99,20 @@ Conflict resolution creates a new saved head using the selected candidate's cont
 - `Status` and main-thread `StatusChanged` notifications;
 - `ListLocalSnapshots(documentId)`;
 - `ListRecoveryCandidates()`;
-- `OpenRecoverySnapshot(revisionId)`;
-- `OpenManagedCloudCopy(copy)`.
+- `OpenRecoverySnapshot(revisionId)`.
 
-`DocumentDurabilityStatus` separates `LastLocalError` and `LastCloudError`; `LastExternalError` returns the local error first for compatibility. It also reports pending upload count, latest local snapshot, latest confirmed cloud protection point, local/cloud state, and both retention-limit flags.
+`DocumentDurabilityStatus` separates `LastLocalError` and `LastRecoveryCloudError`; `LastExternalError` returns the local error first for compatibility. It also reports pending upload count, latest local snapshot, latest confirmed cloud protection point, local/cloud state, and both retention-limit flags.
 
 `SteamManager` exposes:
 
-- `IsCloudAvailable`, `CloudAuthorizationStatus`, and `CloudCatalog`;
-- main-thread `CloudAuthorizationStatusChanged` and `CloudCatalogChanged` notifications;
+- `IsRecoveryCloudAvailable`, `CloudAuthorizationStatus`, and `RecoveryCatalog`;
+- main-thread `CloudAuthorizationStatusChanged` and `RecoveryCatalogChanged` notifications;
 - `AuthorizeCloudAsync()` and `ClearCloudAuthorization()`;
-- `RefreshCloudCatalogAsync()`;
-- `DownloadCloudRevisionAsync(revisionId)`;
-- `ResolveCloudConflictAsync(documentId, chosenRevisionId)`;
-- `FlushCloudSessionAsync(timeout)` for bounded normal-exit flushing.
+- `RefreshRecoveryCatalogAsync()`;
+- `DownloadRecoverySnapshotAsync(revisionId)`, which installs the snapshot into local recovery storage;
+- `FlushRecoverySessionAsync(timeout)` for bounded normal-exit flushing.
 
-No durability GUI is currently provided. UI code consumes these status, catalog, and action APIs.
+`SteamCloudRecoveryCatalogSnapshot.RecoveryCandidates` lists interrupted-session snapshots only. No durability GUI is currently provided. UI code consumes these status, catalog, and action APIs.
 
 ## Verification
 
@@ -129,4 +123,4 @@ dotnet build Ciallo/Ciallo.csproj --no-restore
 dotnet test Ciallo/Ciallo.csproj --no-build --filter FullyQualifiedName~DurabilityTests
 ```
 
-The suite covers revision conflict heads, upload priority, manifest/chunk construction, detached snapshot serialization, over-limit newest-snapshot retention, the Steam upload batch sequence, and revoked-token handling. A live Steam Cloud integration test additionally requires the issued OAuth Client ID and a Steam account licensed for AppID `4103990`.
+The suite covers upload priority, manifest/chunk construction, catalog SHA-1 caching, detached snapshot serialization, over-limit newest-snapshot retention, the Steam upload batch sequence, and revoked-token handling. A live Steam Cloud integration test additionally requires the issued OAuth Client ID and a Steam account licensed for AppID `4103990`.

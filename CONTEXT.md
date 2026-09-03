@@ -46,19 +46,11 @@ A document identity distinguishes one document across changes to its name, local
 
 ### Recovery Snapshot
 
-A recovery snapshot is an automatically captured version of the working document reserved for restoring work after an unexpected interruption and is never a manually saved document version.
-
-### Cloud Saved Version
-
-A cloud saved version is a manually saved version of a document made available for normal opening on another device.
-
-### Document Version Conflict
-
-A document version conflict exists when multiple devices independently save different versions of the same document without observing each other's save.
+A recovery snapshot is an automatically captured version of the working document reserved for restoring work after an unexpected interruption. It stores committed document content and excludes command history. It is never a manually saved document version.
 
 ### Recovery Retention
 
-Recovery retention is the per-document recovery snapshot history maintained within the account-wide storage limit.
+Recovery retention is the per-document recovery snapshot history maintained within the account-wide storage limit. The same policy applies to local snapshots and their Steam Cloud copies.
 
 ### Recovered Working State
 
@@ -66,15 +58,11 @@ A recovered working state is a recovery snapshot opened as unsaved working docum
 
 ### Cloud Protection Point
 
-A cloud protection point is the newest document state confirmed to be stored in Steam Cloud.
+A cloud protection point is the newest recovery snapshot confirmed to be stored in Steam Cloud. Cloud protection stores the same content as the local recovery snapshot; it does not store a separate manually saved document version.
 
 ### Cloud Authorization
 
-A cloud authorization is a Steam user's scoped permission for Ciallo to read and write that user's document files in Steam Cloud.
-
-### Managed Cloud Copy
-
-A managed cloud copy is a device-local `.ciallo` file maintained by Ciallo for editing a document obtained from Steam Cloud.
+A cloud authorization is a Steam user's scoped permission for Ciallo to read and write that user's recovery snapshots and editing-session records in Steam Cloud.
 
 ### Cel
 
@@ -185,19 +173,16 @@ A command segment is one ordered part of an undoable action. Related gestures ma
 
 - Every **Document** has exactly one **Document Identity**.
 - Saving a **Document** as a new file creates a new **Document** with a new **Document Identity**.
-- A **Document** has at most one current **Cloud Saved Version**.
-- An unresolved **Document Version Conflict** has at least two candidate **Cloud Saved Versions** and no current version.
-- Resolving a **Document Version Conflict** selects one candidate as current while leaving every other candidate available to become a new **Document**.
 - A **Recovery Snapshot** belongs to exactly one **Document**.
 - A **Recovery Snapshot** contains only completed **Undoable Actions** and excludes an interaction still in progress.
 - A **Recovery Snapshot** excludes **Command History**.
 - A **Recovery Snapshot** from an active **Editing Session** becomes a recovery candidate only after that session becomes an **Interrupted Editing Session**.
-- **Recovery Retention** may remove the oldest **Recovery Snapshots** but never a **Cloud Saved Version** or an unresolved **Document Version Conflict** candidate.
-- A **Recovered Working State** becomes a **Cloud Saved Version** only after the user actively saves it.
+- **Recovery Retention** may remove the oldest **Recovery Snapshots**, locally and in Steam Cloud, using the same limits.
+- A **Recovered Working State** does not become a manually saved **Document** until the user saves it.
+- Steam Cloud work protection copies **Recovery Snapshots** and **Editing Session** records. It does not copy manually saved document files.
 - A **Cloud Protection Point** may lag behind the newest local **Recovery Snapshot** while cloud storage is unavailable or an upload is pending.
 - Cloud operations require a **Cloud Authorization** belonging to the Steam user currently running Ciallo.
 - A **Cloud Authorization** expires 30 days after issuance and must then be renewed by the user.
-- Opening a **Cloud Saved Version** on a device without a linked local file creates a **Managed Cloud Copy**.
 - A **Cel Folder** holds zero or more **Exposures**, each at a distinct **Exposure Key**.
 - Every **Exposure** has exactly one **Exposure Span**, which is derived rather than stored.
 - An **Exposure** exposes exactly one **Cel**, or is a **Blank Exposure**.
@@ -212,3 +197,4 @@ A command segment is one ordered part of an undoable action. Related gestures ma
 - "Project" was used to mean a **Document** stored in one `.ciallo` file; **Document** is the canonical term and does not contain multiple documents.
 - "One `.ciallo` file" describes the format of one **Document** version, not a single physical copy across all devices.
 - "Autosave" was used to mean both recovery and normal document saving; **Recovery Snapshot** is non-authoritative, and normal reopening after choosing not to save uses the last manually saved **Document** version.
+- "Cloud saved version", "document version conflict", and "managed cloud copy" described a Steam-netdisk model that work protection does not use. Steam Cloud work protection mirrors **Recovery Snapshots**, not manually saved files.

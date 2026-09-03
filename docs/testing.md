@@ -6,7 +6,7 @@ GdUnit4 test project, and `Ciallo/.runsettings` is loaded automatically by `dotn
 ## Test Scope
 
 Global suites cover complex, error-prone boundaries such as persistence graph integrity,
-durability conflict handling, native DuckDB composite vectors, resource retention, and external
+durability snapshot packaging, native DuckDB composite vectors, resource retention, and external
 authorization state. Common entry points belong in a global suite only when they exercise one of
 these failure-prone contracts and are not already covered by a downstream scenario.
 

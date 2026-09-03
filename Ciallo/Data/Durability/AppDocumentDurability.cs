@@ -19,7 +19,7 @@ public static class AppDocumentDurability
     }
 
     internal static DurabilityFileStore FileStore => _service.FileStore;
-    internal static CloudOutboxStore OutboxStore => _service.OutboxStore;
+    internal static SteamCloudRecoveryOutbox OutboxStore => _service.OutboxStore;
 
     internal static void Initialize(string userDataPath)
     {
@@ -32,15 +32,12 @@ public static class AppDocumentDurability
 
     internal static Task ShutdownAsync() => _service.ShutdownAsync();
 
-    internal static void EnqueueManualSave(Entity document, string filePath)
-        => _service.EnqueueManualSave(document, filePath);
-
-    internal static void SetCloudStatus(
-        SteamCloudSyncState state,
+    internal static void SetRecoveryCloudStatus(
+        SteamCloudRecoveryState state,
         string externalError = "",
         DateTimeOffset? protectionPointUtc = null,
         bool? retentionLimitExceeded = null)
-        => _service.SetCloudStatus(state, externalError, protectionPointUtc, retentionLimitExceeded);
+        => _service.SetRecoveryCloudStatus(state, externalError, protectionPointUtc, retentionLimitExceeded);
 
     public static IReadOnlyList<LocalRecoverySnapshotInfo> ListLocalSnapshots(Guid documentId)
         => _service.ListRecoverySnapshots(documentId);
@@ -50,7 +47,4 @@ public static class AppDocumentDurability
 
     public static Entity OpenRecoverySnapshot(Guid revisionId)
         => _service.OpenRecoverySnapshot(revisionId);
-
-    public static Entity OpenManagedCloudCopy(ManagedCloudCopyInfo copy)
-        => _service.OpenManagedCloudCopy(copy);
 }

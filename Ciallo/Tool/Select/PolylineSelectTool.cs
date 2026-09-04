@@ -87,21 +87,15 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         sm.Configure(BezierDeform)
             .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(InteractionManager.CancelRequested, TransToHover)
-            .PermitDynamic(InteractionManager.ConfirmRequested, TransToHover)
-            .PermitDynamic(InteractionManager.InputCaptureLost, TransToHover);
+            .PermitStandardExitsDynamic(TransToHover);
 
         sm.Configure(RectTransform)
             .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(InteractionManager.CancelRequested, TransToHover)
-            .PermitDynamic(InteractionManager.ConfirmRequested, TransToHover)
-            .PermitDynamic(InteractionManager.InputCaptureLost, TransToHover);
+            .PermitStandardExitsDynamic(TransToHover);
 
         sm.Configure(Select)
             .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(InteractionManager.CancelRequested, TransToHover)
-            .PermitDynamic(InteractionManager.ConfirmRequested, TransToHover)
-            .PermitDynamic(InteractionManager.InputCaptureLost, TransToHover);
+            .PermitStandardExitsDynamic(TransToHover);
 
         InteractionState TransToHover()
         {

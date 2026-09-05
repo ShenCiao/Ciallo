@@ -24,6 +24,9 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     internal PaintStrokeInteractor Left;
 
     [Substate]
+    internal PaintStrokeBezierInteractor LeftBezier;
+
+    [Substate]
     internal PaintStrokeOnVectorFill LeftOnFill;
 
     private readonly PaintStrokeSnap _snap = new();
@@ -38,11 +41,14 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         sm.Configure(Hover)
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
-                if (WorkingLayer.Has<ShapeLayerSetting>())
-                    return Left;
                 if (WorkingLayer.Has<VectorFillLayerSetting>())
                     return LeftOnFill;
-                throw new InvalidOperationException("Unreachable code: layer type is guaranteed by CanHandleLayer");
+
+                // Route to bezier or freehand based on mode
+                if (AppPreference.PaintStrokeMode.Value == 1)
+                    return LeftBezier;
+
+                return Left;
             }, () =>
             {
                 var brushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
@@ -53,6 +59,11 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         sm.Configure(Left)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
             .PermitStandardExits(Hover);
+
+        sm.Configure(LeftBezier)
+            .Permit(PaintStrokeBezierInteractor.QuadBezierEnd, Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
 
         sm.Configure(LeftOnFill)
             .Permit(Trigger.Release(MouseButton.Left), Hover)

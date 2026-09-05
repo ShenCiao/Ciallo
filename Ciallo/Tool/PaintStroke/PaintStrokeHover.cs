@@ -41,6 +41,16 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        // ---- Mode selector
+        var modeButton = new OptionButton
+        {
+            CustomMinimumSize = new(0, 32),
+        };
+        modeButton.AddItem("Freehand");
+        modeButton.AddItem("Bezier");
+        modeButton.BindSelectionIndex(AppPreference.PaintStrokeMode);
+        container.AddProperty("Mode", modeButton);
+
         // ---- App brush library
         var brushSelector = new OptionButton()
         {

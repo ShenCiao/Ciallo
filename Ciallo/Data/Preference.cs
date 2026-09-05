@@ -69,6 +69,8 @@ public class Preference
     public ReactiveProperty<bool> PaintStrokeSnapEnabled = new(false);
     [DataMember]
     public ReactiveProperty<float> PaintStrokeSnapDistance = new(24f);
+    [DataMember]
+    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier
 
     #region Save Load Json
 

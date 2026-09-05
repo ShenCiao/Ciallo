@@ -94,12 +94,12 @@ public abstract class Interaction : InteractionState
     }
 }
 
-// Consumes all input by default; override OnKey/OnMouseButton to act on specific events, returning
+// Consumes all key input by default; override OnKey/OnMouseButton to act on specific events, returning
 // true to keep consuming. Cancels on every trigger that costs it the context it was working against.
 public abstract class CapturingInteraction : Interaction
 {
     public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
-    public override bool OnMouseButton(InputEventMouseButton button, CursorButtonData data) => true;
+    public override bool OnMouseButton(InputEventMouseButton button, CursorButtonData data) => false;
 
     protected override bool CancelsOn(StateMachine.Transition transition) =>
         transition.Trigger == InteractionManager.CancelRequested ||

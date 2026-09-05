@@ -21,13 +21,16 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     internal PaintStrokeHover Hover;
 
     [Substate]
-    internal PaintStrokeInteractor Left;
+    internal PaintStrokeInteractor freehand;
 
     [Substate]
-    internal PaintStrokeBezierInteractor LeftBezier;
+    internal PaintStrokeBezierInteractor quadBezier;
 
     [Substate]
-    internal PaintStrokeOnVectorFill LeftOnFill;
+    internal PaintStrokePolyCubicBezierInteractor polyCubicBezier;
+
+    [Substate]
+    internal PaintStrokeOnVectorFill FreehandOnFill;
 
     private readonly PaintStrokeSnap _snap = new();
     public ArrangementManager Arrangement { get; private set; }
@@ -42,13 +45,16 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
                 if (WorkingLayer.Has<VectorFillLayerSetting>())
-                    return LeftOnFill;
+                    return FreehandOnFill;
 
                 // Route to bezier or freehand based on mode
                 if (AppPreference.PaintStrokeMode.Value == 1)
-                    return LeftBezier;
+                    return quadBezier;
 
-                return Left;
+                if (AppPreference.PaintStrokeMode.Value == 2)
+                    return polyCubicBezier;
+
+                return freehand;
             }, () =>
             {
                 var brushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
@@ -56,16 +62,19 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             })
             .PermitReentry(Trigger.Refresh);
 
-        sm.Configure(Left)
+        sm.Configure(freehand)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
             .PermitStandardExits(Hover);
 
-        sm.Configure(LeftBezier)
+        sm.Configure(quadBezier)
             .Permit(PaintStrokeBezierInteractor.QuadBezierEnd, Hover)
             .Permit(InteractionManager.CancelRequested, Hover)
             .Permit(InteractionManager.InputCaptureLost, Hover);
 
-        sm.Configure(LeftOnFill)
+        sm.Configure(polyCubicBezier)
+            .PermitStandardExits(Hover);
+
+        sm.Configure(FreehandOnFill)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
             .PermitStandardExits(Hover);
     }

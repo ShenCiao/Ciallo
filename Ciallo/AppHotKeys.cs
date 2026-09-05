@@ -24,12 +24,12 @@ public record Hotkey(StringName Name)
     };
 
     public bool IsPressed => Input.IsActionPressed(Name);
-    public bool IsJustPressed => Input.IsActionJustPressed(Name);
-    public bool IsJustReleased => Input.IsActionJustReleased(Name);
+    public bool IsJustPressed => Input.IsActionJustPressed(Name, true);
+    public bool IsJustReleased => Input.IsActionJustReleased(Name, true);
     public float Strength => Input.GetActionStrength(Name);
 
-    public bool IsPressedBy(InputEvent inputEvent) => Input.IsActionJustPressedByEvent(Name, inputEvent);
-    public bool IsReleasedBy(InputEvent inputEvent) => Input.IsActionJustReleasedByEvent(Name, inputEvent);
+    public bool IsPressedBy(InputEvent inputEvent) => Input.IsActionJustPressedByEvent(Name, inputEvent, true);
+    public bool IsReleasedBy(InputEvent inputEvent) => Input.IsActionJustReleasedByEvent(Name, inputEvent, true);
 
     public void Press() => Input.ActionPress(Name);
     public void Release() => Input.ActionRelease(Name);

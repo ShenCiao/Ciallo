@@ -48,6 +48,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         };
         modeButton.AddItem("Freehand");
         modeButton.AddItem("Bezier");
+        modeButton.AddItem("Poly Cubic Bézier");
         modeButton.BindSelectionIndex(AppPreference.PaintStrokeMode);
         container.AddProperty("Mode", modeButton);
 

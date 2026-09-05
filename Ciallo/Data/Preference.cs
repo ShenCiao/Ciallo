@@ -70,7 +70,7 @@ public class Preference
     [DataMember]
     public ReactiveProperty<float> PaintStrokeSnapDistance = new(24f);
     [DataMember]
-    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier
+    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
 
     #region Save Load Json
 

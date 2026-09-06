@@ -75,10 +75,16 @@ public class PaintStrokeInteractor : CapturingInteraction
     {
         Generator.End(data);
         var geometry = BuildCommitGeometry(data);
+        var targetLayer = Tool.ResolveStrokeTargetLayer();
+        if (targetLayer.IsNull || targetLayer.IsDyingOrDead)
+        {
+            Clear();
+            return;
+        }
 
         new CommandBuilder("Paint Stroke", WorkingLayer.World.Create())
             .NewStroke()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)
             .Commit();

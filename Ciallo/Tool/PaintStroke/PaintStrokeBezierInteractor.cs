@@ -253,6 +253,10 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
     private void CommitStroke(CursorButtonData data)
     {
+        var targetLayer = Tool.ResolveStrokeTargetLayer();
+        if (targetLayer.IsNull || targetLayer.IsDyingOrDead)
+            return;
+
         // P2 is confirmed at the end of Phase 1. The Phase 3 release position only
         // controls the weights and must never become the stroke's endpoint snap.
         RefreshEndSnapTarget(_p2);
@@ -294,7 +298,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
         new CommandBuilder("Paint Stroke (Bezier)", WorkingLayer.World.Create())
             .NewStroke()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(
                 positions.ToImmutableArray(),

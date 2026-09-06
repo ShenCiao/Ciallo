@@ -29,9 +29,6 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     [Substate]
     internal PaintStrokePolyCubicBezierInteractor polyCubicBezier;
 
-    [Substate]
-    internal PaintStrokeOnVectorFill FreehandOnFill;
-
     private readonly PaintStrokeSnap _snap = new();
     public ArrangementManager Arrangement { get; private set; }
 
@@ -44,9 +41,6 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         sm.Configure(Hover)
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
-                if (WorkingLayer.Has<VectorFillLayerSetting>())
-                    return FreehandOnFill;
-
                 // Route to bezier or freehand based on mode
                 if (AppPreference.PaintStrokeMode.Value == 1)
                     return quadBezier;
@@ -74,9 +68,6 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         sm.Configure(polyCubicBezier)
             .PermitStandardExits(Hover);
 
-        sm.Configure(FreehandOnFill)
-            .Permit(Trigger.Release(MouseButton.Left), Hover)
-            .PermitStandardExits(Hover);
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
@@ -133,5 +124,16 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             arr,
             worldPosition,
             AppPreference.PaintStrokeSnapDistance.Value);
+    }
+
+    internal Entity ResolveStrokeTargetLayer()
+    {
+        if (!WorkingLayer.Has<VectorFillLayerSetting>())
+            return WorkingLayer;
+
+        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        foreach (var referenceLayer in referenceLayers)
+            return referenceLayer;
+        return Entity.Null;
     }
 }

@@ -285,6 +285,8 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
     {
         var points = BuildPolyline(_pendingEnd, includePending: false);
         if (points.Count < 2) return;
+        var targetLayer = Tool.ResolveStrokeTargetLayer();
+        if (targetLayer.IsNull || targetLayer.IsDyingOrDead) return;
         var sampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
         var radii = new float[points.Count];
         var pressures = new float[points.Count];
@@ -297,7 +299,7 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
             _anchorSnapTargets.Count > 0 ? _anchorSnapTargets[^1] : null,
             AppPreference.PaintStrokeSnapDistance.Value);
         new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", WorkingLayer.World.Create())
-            .NewStroke().AddToLayerTree(WorkingLayer)
+            .NewStroke().AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)
             .Commit();

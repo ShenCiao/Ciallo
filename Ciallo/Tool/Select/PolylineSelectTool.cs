@@ -102,7 +102,12 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             var shapes = Document.Get<SelectionManager>().SelectedShapes;
             if (shapes.Count <= 0)
                 return HoverWithoutSelection;
-            if (Mode.Value == EditMode.RectTransform)
+
+            // A single-point selection has no meaningful Bezier deformation.
+            // Route it through the existing transform workflow so it remains movable
+            // without creating degenerate curve or transform-box controls.
+            bool canBezierDeform = shapes.Sum(e => e.Get<SampledPolyline>().Count) > 1;
+            if (Mode.Value == EditMode.RectTransform || !canBezierDeform)
                 return TransformHover;
             if (Mode.Value == EditMode.BezierDeform)
                 return BezierDeformHover;

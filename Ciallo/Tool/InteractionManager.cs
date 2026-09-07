@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Frent;
 using Godot;
+using R3;
 using Stateless;
 
 namespace Ciallo.Tool;
@@ -43,6 +44,20 @@ public static partial class InteractionManager
     internal static Entity Document => _document;
     internal static ImmutableArray<Entity> WorkingLayers => _workingLayers;
     internal static CursorButtonData LatestCursor => _latestCursor;
+
+    // This is the machine-level context boundary. Tool predicates only decide whether their own
+    // scope fits; they must not also reimplement document/layer liveness checks.
+    internal static bool HasUsableLayers(ImmutableArray<Entity> layers)
+    {
+        if (layers.IsEmpty) return false;
+
+        foreach (var layer in layers)
+        {
+            if (layer.IsDyingOrDead || layer.IsDocument) return false;
+        }
+
+        return true;
+    }
 
     // Canonical trigger instances for reference equality comparison in CancelsOn.
     internal static readonly Trigger CancelRequested =
@@ -111,6 +126,17 @@ public static partial class InteractionManager
         StateMachine.OnTransitionCompleted(_ => StateChanged?.Invoke());
 
         InteractionStateGraph.Configure(StateMachine);
+
+        // One process-lifetime subscription. Property panels only bind the shared selection.
+        BucketFillOptions.Mode.Skip(1).Subscribe(_ =>
+        {
+            if (ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill)
+            {
+                // Re-resolve the selected button after a mode change. The same user-facing button
+                // can map Marker output to either VectorFillTool or VectorFillLayerCreationTool.
+                StateMachine.Fire(ToolButtonSwitch, ToolButton.Type.BucketFill);
+            }
+        });
     }
 
     // AutoloadTool calls this in _Ready to force static bootstrap. The empty body is intentional.

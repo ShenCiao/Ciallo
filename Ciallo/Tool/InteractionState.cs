@@ -96,6 +96,10 @@ public abstract class Interaction : InteractionState
 
 // Consumes all key input by default; override OnKey/OnMouseButton to act on specific events, returning
 // true to keep consuming. Cancels on every trigger that costs it the context it was working against.
+// Business invariant: capture permits only transitions explicitly designed in the state graph.
+// A tool/mode switch immediately cancels the current interaction before entering the target scope;
+// it never commits partial work or waits for mouse release. Unexpected transitions are programming
+// errors: let Stateless throw. Do not add deferred switches or recovery for invalid internal events.
 public abstract class CapturingInteraction : Interaction
 {
     public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
@@ -122,20 +126,21 @@ public sealed class RegisterStateAttribute : Attribute { }
 // ever do accept the same layers, a DEBUG assertion in the generated resolver names both.
 //
 // Without this attribute a tool is manual: declare a [Substate] field on GlobalInteractiveScope and
-// configure its own entry trigger there. That is the path for a tool no button reaches.
+// configure its own entry trigger there. Shared buttons with mode-dependent routing use this path too.
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class RequestedByToolButtonAttribute(ToolButton.Type button) : Attribute
 {
     public ToolButton.Type Button { get; } = button;
 }
 
-// Implement on a tool whose availability depends on the working layers. Implementing it is the whole
-// declaration — there is no attribute to keep in sync.
+// Implement on a tool scope whose context depends on the working layers. This is independent of
+// [RequestedByToolButton]: both manually registered and button-registered scopes get layer reentry.
 //
-// Besides answering the button, this makes the generator emit a guarded reentry on WorkingLayersChanged
-// for the tool. Without it Stateless would keep the scope active as common ancestor and re-enter only
-// the leaf interaction, leaving layer-bound state (ArrangementManager, BodyHolder.ProcessMode) pointing
-// at the previous layer.
+// The generator emits a guarded reentry on WorkingLayersChanged when this scope still accepts the
+// incoming layers. This exits and reactivates the whole scope so its layer-bound state (ArrangementManager,
+// BodyHolder.ProcessMode) is refreshed along with the leaf interaction. If the guard fails, the trigger
+// bubbles to GlobalInteractiveScope, which resolves the selected button to another scope or fallback.
+// Generated button routing consults CanHandleLayers; manual routing should also use this predicate.
 //
 // CanHandleLayers only ever receives a non-empty snapshot of live non-document layers, so skip null,
 // liveness and document checks. Decide from the argument alone: at call time

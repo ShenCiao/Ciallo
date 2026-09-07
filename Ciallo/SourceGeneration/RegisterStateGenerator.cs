@@ -60,27 +60,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    private static readonly DiagnosticDescriptor UnusedLayerPredicate = new(
-        id: "CIALLO007",
-        title: "Layer predicate is never consulted",
-        messageFormat:
-            "'{0}' implements ILayerDependent but has no [RequestedByToolButton], so nothing calls "
-            + "CanHandleLayers. A manually configured tool decides its own entry in "
-            + "GlobalInteractiveScope.ConfigureManualTools.",
-        category: "InteractionState",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
-    private static readonly DiagnosticDescriptor ButtonWithoutTool = new(
-        id: "CIALLO008",
-        title: "Tool button has no tool",
-        messageFormat:
-            "ToolButton.Type.{0} has no tool with [RequestedByToolButton]; the button renders but "
-            + "always resolves to unavailable",
-        category: "InteractionState",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true);
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValuesProvider<StateModel> states = context.SyntaxProvider
@@ -89,12 +68,11 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                 predicate: static (node, _) => node is ClassDeclarationSyntax,
                 transform: static (ctx, _) => GetState(ctx));
 
-        // Tools carrying only [RequestedByToolButton] or ILayerDependent never reach the provider
+        // Tools carrying only [RequestedByToolButton] never reach the provider
         // above, so they would be invisible to diagnostics. Collect them separately.
         IncrementalValuesProvider<StrayModel> strays = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 }
-                    or ClassDeclarationSyntax { BaseList: not null },
+                predicate: static (node, _) => node is ClassDeclarationSyntax { AttributeLists.Count: > 0 },
                 transform: static (ctx, _) => GetStray(ctx))
             .Where(static stray => stray.Fqn is not null);
 
@@ -141,17 +119,12 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         if (GetAttribute(type, RegisterStateFqn) is not null)
             return default;
 
-        bool hasButton = GetAttribute(type, ToolButtonFqn) is not null;
-        bool isLayerDependent = ImplementsLayerDependent(type);
-        if (!hasButton && !isLayerDependent)
+        if (GetAttribute(type, ToolButtonFqn) is null)
             return default;
 
         return new StrayModel(
             type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             type.Name,
-            hasButton,
-            isLayerDependent,
-            IsScope(type),
             type.Locations.Length > 0 ? type.Locations[0] : Location.None);
     }
 
@@ -250,7 +223,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             button,
             isLayerDependent,
             IsScope(type),
-            isLayerDependent ? FindLayersTriggerConfiguration(type) : null,
+            isLayerDependent && IsScope(type) ? FindLayersTriggerConfiguration(type) : null,
             type.Locations.Length > 0 ? type.Locations[0] : Location.None);
     }
 
@@ -334,21 +307,12 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
     private static void ReportDiagnostics(
         SourceProductionContext context,
         StateModel[] valid,
-        ImmutableArray<StrayModel> strays,
-        ImmutableArray<string> buttonOrder)
+        ImmutableArray<StrayModel> strays)
     {
         foreach (var stray in strays)
         {
-            if (stray.HasButton)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    ButtonToolNotRegistered, stray.Location, stray.Name));
-            }
-            else if (stray.IsLayerDependent)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    UnusedLayerPredicate, stray.Location, stray.Name));
-            }
+            context.ReportDiagnostic(Diagnostic.Create(
+                ButtonToolNotRegistered, stray.Location, stray.Name));
         }
 
         foreach (var state in valid)
@@ -357,12 +321,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     ButtonToolNotScope, state.Location, state.Name));
-            }
-
-            if (state.Button is null && state.IsLayerDependent)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    UnusedLayerPredicate, state.Location, state.Name));
             }
 
             // Stateless rejects two transitions for one trigger only at the first fire (verified),
@@ -406,19 +364,6 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                 break;
             }
         }
-
-        var covered = new HashSet<string>(valid
-            .Where(static s => s.Button is not null)
-            .Select(static s => s.Button!));
-
-        foreach (var button in buttonOrder)
-        {
-            if (!covered.Contains(button))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    ButtonWithoutTool, Location.None, button));
-            }
-        }
     }
 
     private static void Execute(
@@ -431,7 +376,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         if (valid.Length == 0)
             return;
 
-        ReportDiagnostics(context, valid, strays, buttonOrder);
+        ReportDiagnostics(context, valid, strays);
 
         var byFqn = valid.ToDictionary(static s => s.Fqn);
         var byName = new Dictionary<string, StateModel>();
@@ -554,13 +499,14 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             """);
 
         // Working-layer reentry. Without it Stateless keeps the scope active as common ancestor when
-        // the parent's PermitDynamic resolves back to the same tool, so only the leaf session
-        // re-enters and the scope's layer-bound state stays bound to the previous layer.
+        // the layer context changes, so only the leaf session re-enters and the scope's layer-bound
+        // state stays bound to the previous layer.
         //
         // The guard takes the layers from the trigger parameter: InteractionManager.WorkingLayers is
         // still the pre-transition snapshot while a guard runs. Guard failure falls through to
         // GlobalInteractiveScope's PermitDynamic, which performs the tool switch.
-        var reentryTools = generatedGlobalSubstates.Where(static t => t.IsLayerDependent).ToArray();
+        // Layer dependency applies equally to manually registered and button-registered scopes.
+        var reentryTools = valid.Where(static t => t.IsScope && t.IsLayerDependent).ToArray();
         if (reentryTools.Length > 0 && global.Fqn is not null)
         {
             builder.AppendLine();
@@ -573,7 +519,8 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                 builder.AppendLine(
                     "                InteractionManager.WorkingLayersChanged,");
                 builder.AppendLine(
-                    $"                layers => {LocalName(global)}.ResolvesTo({LocalName(tool)}, layers));");
+                    $"                layers => InteractionManager.HasUsableLayers(layers) && "
+                    + $"{tool.Fqn}.CanHandleLayers(layers));");
             }
         }
 
@@ -774,24 +721,15 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         public StrayModel(
             string fqn,
             string name,
-            bool hasButton,
-            bool isLayerDependent,
-            bool isScope,
             Location location)
         {
             Fqn = fqn;
             Name = name;
-            HasButton = hasButton;
-            IsLayerDependent = isLayerDependent;
-            IsScope = isScope;
             Location = location;
         }
 
         public string Fqn { get; }
         public string Name { get; }
-        public bool HasButton { get; }
-        public bool IsLayerDependent { get; }
-        public bool IsScope { get; }
         public Location Location { get; }
     }
 

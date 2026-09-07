@@ -8,10 +8,8 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 
 // Root of the interaction hierarchy, and the resting state whenever the context resolves to no tool.
 //
-// The tools are not listed here: each reaches this scope by carrying [RequestedByToolButton] on its own
-// class, and the generator wires it as a substate. Adding a button-driven tool touches only that tool's
-// file — search RequestedByToolButton for the full set. Declare a [Substate] field below only for a
-// state this scope must reach some other way.
+// Most tools use [RequestedByToolButton] for generated routing. Bucket Fill has explicit sibling
+// scopes because its shared button selects between independent marker and polygon interactions.
 [RegisterState]
 public partial class GlobalInteractiveScope : InteractionScope
 {
@@ -20,6 +18,15 @@ public partial class GlobalInteractiveScope : InteractionScope
 
     [Substate]
     internal TimelineRolling TimelineRolling;
+
+    [Substate]
+    internal VectorFillTool VectorFill;
+
+    [Substate]
+    internal VectorFillLayerCreationTool VectorFillLayerCreation;
+
+    [Substate]
+    internal BucketFillTool BucketFill;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
@@ -59,20 +66,23 @@ public partial class GlobalInteractiveScope : InteractionScope
         ToolButton.Type? toolButton,
         ImmutableArray<Entity> layers)
     {
-        if (toolButton is null || layers.IsEmpty) return this;
+        if (toolButton is null || !InteractionManager.HasUsableLayers(layers)) return this;
 
-        foreach (var layer in layers)
+        if (toolButton == ToolButton.Type.BucketFill)
         {
-            if (layer.IsDyingOrDead || layer.IsDocument) return this;
+            return BucketFillOptions.Mode.Value switch
+            {
+                BucketFillOutput.Marker when VectorFillTool.CanHandleLayers(layers) => VectorFill,
+                BucketFillOutput.Marker when VectorFillLayerCreationTool.CanHandleLayers(layers) =>
+                    VectorFillLayerCreation,
+                BucketFillOutput.Marker => this,
+                BucketFillOutput.Polygon => BucketFillTool.CanHandleLayers(layers) ? BucketFill : this,
+                _ => throw new System.ArgumentOutOfRangeException(nameof(BucketFillOptions.Mode)),
+            };
         }
 
         return ResolveToolButton(toolButton.Value, layers) ?? this;
     }
-
-    // Called by the generated reentry guards, always with the trigger's layers: at guard time
-    // InteractionManager.WorkingLayers still holds the pre-transition snapshot.
-    internal bool ResolvesTo(InteractionState tool, ImmutableArray<Entity> layers) =>
-        ReferenceEquals(ResolveContext(ToolButton.ActiveToolButton.Value, layers), tool);
 
     private partial InteractionState ResolveToolButton(
         ToolButton.Type toolButton,

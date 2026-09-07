@@ -12,7 +12,6 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-[RequestedByToolButton(ToolButton.Type.VectorFill)]
 public class VectorFillTool : InteractionScope, ILayerDependent
 {
     [Substate]

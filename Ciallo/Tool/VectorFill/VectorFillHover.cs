@@ -96,6 +96,8 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        BucketFillOptions.DrawModeProperty(container);
+
         container.AddChild(new Label
         {
             Text = "Fill brush".Tr(),

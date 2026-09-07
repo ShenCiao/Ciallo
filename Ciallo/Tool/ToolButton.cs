@@ -45,8 +45,8 @@ public static class ToolButton
             ShortcutMember = nameof(AppHotkeys.Global.ToolPaintFill))]
         PaintFill = 3,
 
-        [Definition("res://Icon/bucket-fill-marker.svg", "Vector Fill")]
-        VectorFill = 4,
+        [Definition("res://Icon/bucket-fill-marker.svg", "Bucket Fill")]
+        BucketFill = 4,
 
         [Definition("res://Icon/water-drop.svg", "Liquify")]
         Liquify = 5,

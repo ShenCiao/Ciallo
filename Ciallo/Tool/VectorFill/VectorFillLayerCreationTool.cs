@@ -16,7 +16,6 @@ namespace Ciallo.Tool;
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
 [RegisterState]
-[RequestedByToolButton(ToolButton.Type.VectorFill)]
 public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
@@ -349,8 +348,11 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 }
 
 [RegisterState]
-public class VectorFillLayerCreationHover : Interaction
+public class VectorFillLayerCreationHover : Interaction, IPropertyProvider
 {
+    public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
+        BucketFillOptions.DrawModeProperty(container);
+
     public override void Start(CursorButtonData data)
     {
         Document.Get<WorldBody>().DefaultCursorShape = Control.CursorShape.PointingHand;

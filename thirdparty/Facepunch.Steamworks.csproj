@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Steamworks</RootNamespace>
+    <LangVersion>10</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <FileVersion>2.5.2</FileVersion>
+    <NoWarn>$(NoWarn);1701;1702;1705;618;1591</NoWarn>
+    <Configurations>Debug;Release;ExportDebug;ExportRelease</Configurations>
+    <_FacepunchRid>$(FacepunchRuntimeIdentifier)</_FacepunchRid>
+    <_FacepunchRid Condition="'$(_FacepunchRid)' == '' And '$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_FacepunchRid>
+    <_FacepunchRid Condition="'$(_FacepunchRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_FacepunchRid>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'ExportDebug'">
+    <DefineConstants>$(DefineConstants);DEBUG</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'ExportRelease'">
+    <DefineConstants>$(DefineConstants);RELEASE</DefineConstants>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_FacepunchRid)' == 'win-x64'">
+    <AssemblyName>Facepunch.Steamworks.Win64</AssemblyName>
+    <DefineConstants>$(DefineConstants);PLATFORM_WIN64;PLATFORM_WIN;PLATFORM_64</DefineConstants>
+    <_FacepunchNative>steam_api64.dll</_FacepunchNative>
+    <_FacepunchNativePath>Facepunch.Steamworks/Facepunch.Steamworks/steam_api64.dll</_FacepunchNativePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_FacepunchRid)' == 'linux-x64' Or '$(_FacepunchRid)' == 'osx-arm64'">
+    <AssemblyName>Facepunch.Steamworks.Posix</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DefineConstants>$(DefineConstants);PLATFORM_POSIX</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_FacepunchRid)' == 'linux-x64'">
+    <_FacepunchNative>libsteam_api.so</_FacepunchNative>
+    <_FacepunchNativePath>Facepunch.Steamworks/UnityPlugin/redistributable_bin/linux64/libsteam_api.so</_FacepunchNativePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_FacepunchRid)' == 'osx-arm64'">
+    <_FacepunchNative>libsteam_api.dylib</_FacepunchNative>
+    <_FacepunchNativePath>Facepunch.Steamworks/UnityPlugin/redistributable_bin/osx/libsteam_api.dylib</_FacepunchNativePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Facepunch.Steamworks/Facepunch.Steamworks/**/*.cs"
+             Exclude="Facepunch.Steamworks/Facepunch.Steamworks/**/obj/**;Facepunch.Steamworks/Facepunch.Steamworks/**/bin/**;Facepunch.Steamworks/Facepunch.Steamworks/*AssemblyInfo.cs" />
+    <None Include="$(_FacepunchNativePath)"
+          TargetPath="$(_FacepunchNative)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+    <None Include="Facepunch.Steamworks.LICENSES.md"
+          TargetPath="Facepunch.Steamworks.LICENSES.md"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="ValidateFacepunchRuntimeIdentifier" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)/Facepunch.Steamworks/Facepunch.Steamworks/SteamClient.cs')"
+           Text="Facepunch.Steamworks submodule is missing. Run git submodule update --init --recursive from the repository root." />
+    <Error Condition="'$(_FacepunchRid)' != 'win-x64' And '$(_FacepunchRid)' != 'linux-x64' And '$(_FacepunchRid)' != 'osx-arm64'"
+           Text="Facepunch.Steamworks supports only win-x64, linux-x64, and osx-arm64. Selected RuntimeIdentifier: '$(_FacepunchRid)'." />
+  </Target>
+</Project>

@@ -69,8 +69,9 @@ Configure the issued OAuth Client ID through either:
 - environment variable `CIALLO_STEAM_OAUTH_CLIENT_ID`; or
 - Godot project setting `steam/cloud/oauth_client_id`.
 
-`ShenCiao.Facepunch.Steamworks` provides the complete documented
-`ICloudService` and OAuth protocol implementation. Ciallo owns token
+`Ciallo/Steamworks/WebApi` provides the documented `ICloudService` and OAuth
+protocol implementation, alongside the [Facepunch.Steamworks submodule](../.github/CONTRIBUTING.md#facepunchsteamworks-dependency).
+Ciallo owns token
 persistence, account and scope validation, snapshot packaging, and retention.
 
 Ciallo binds the callback only to `127.0.0.1`, verifies a random OAuth state, and verifies that the authorized SteamID matches the Steam account running Ciallo. The token is stored outside preferences. Unix token permissions are `0600`; Windows uses the user-profile ACL inherited by the Godot user directory.

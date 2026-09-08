@@ -17,10 +17,20 @@ Ciallo is built on Godot. Building the core part of Ciallo is similar to buildin
 
 - Install Git LFS, the .NET 10 SDK, and the latest release of [our custom Godot editor](https://github.com/ShenCiao/godot/releases). You can follow a [video guide](https://www.youtube.com/watch?v=7nExKQn1CAw).
 - The provided editor supports Windows and Linux x86_64, and macOS arm64.
-- Restore and build from the repository root:
+- Clone with submodules. Use the Ciallo repository URL you have access to:
 
 ```sh
 git lfs install
+git clone --recurse-submodules <Ciallo-repository-url> Ciallo
+cd Ciallo
+```
+
+- For an existing checkout, initialize the pinned submodules, restore, and build
+  from the repository root. These commands also apply after cloning:
+
+```sh
+git lfs install
+git submodule update --init --recursive
 git lfs pull
 dotnet restore Ciallo/Ciallo.csproj --configfile NuGet.Config
 dotnet build Ciallo/Ciallo.csproj --no-restore
@@ -31,6 +41,68 @@ dotnet build Ciallo/Ciallo.csproj --no-restore
 - Enable the "Embedded game size stretches..." option in the game run window.
 
 ![](/.github/EnableStretch.png)
+
+Facepunch.Steamworks builds automatically through `ProjectReference`. It requires
+an initialized submodule; it does not require a Facepunch NuGet feed or a native
+Steamworks SDK build.
+
+### Keeping submodules synchronized
+
+Enable recursion once per checkout so supported operations such as `pull`,
+`switch`, and `checkout` also synchronize initialized submodules:
+
+```sh
+git config submodule.recurse true
+```
+
+After pulling or switching branches, this explicit command initializes newly added
+submodules and checks out the exact dependency commits recorded by Ciallo:
+
+```sh
+git submodule update --init --recursive
+```
+
+The dependency changes only when Ciallo records a different submodule commit.
+Do not use `git submodule update --remote` for normal builds. If `.gitmodules`
+changes a repository URL, run `git submodule sync --recursive` before updating.
+
+### Facepunch.Steamworks dependency
+
+`thirdparty/Facepunch.Steamworks` is a submodule of the
+[official Facepunch repository](https://github.com/Facepunch/Facepunch.Steamworks).
+Its gitlink pins the exact upstream commit. The Ciallo-owned
+`thirdparty/Facepunch.Steamworks.csproj` compiles the checked-out binding sources
+for .NET 10. Generated bindings are already present, so the generator is not run.
+The project supports `Debug`, `Release`, `ExportDebug`, and `ExportRelease`.
+
+Ciallo forwards its target RID as `FacepunchRuntimeIdentifier` because the .NET
+SDK removes `RuntimeIdentifier` from referenced library builds. Standalone library
+builds use `RuntimeIdentifier`; ordinary editor builds fall back to the SDK host
+RID. Supported outputs are:
+
+| RID | Managed assembly | Native library |
+| --- | --- | --- |
+| `win-x64` | `Facepunch.Steamworks.Win64.dll` | `steam_api64.dll` |
+| `linux-x64` | `Facepunch.Steamworks.Posix.dll` | `libsteam_api.so` |
+| `osx-arm64` | `Facepunch.Steamworks.Posix.dll` | `libsteam_api.dylib` |
+
+The selected native binary and `Facepunch.Steamworks.LICENSES.md` propagate to build
+and publish output. Cross-platform publishes must specify the target RID, such as
+`dotnet publish -r osx-arm64`. CI initializes the submodule and checks that each
+export contains the correct platform's managed and native libraries.
+
+Steam Cloud WebAPI and OAuth extensions are maintained in
+`Ciallo/Steamworks/WebApi`. They originate from the Ciallo fork commit
+`77e3c7c269076ff3ba5e5d2f567bd3727418d48a` and are compiled into Ciallo.
+
+To upgrade Facepunch, fetch the official repository inside the submodule, check
+out the reviewed tag or commit, build Ciallo, run the durability tests, and verify
+all three platform exports. Then stage `thirdparty/Facepunch.Steamworks` in Ciallo
+to record the new gitlink. Normal submodule checkouts have a detached HEAD. Local
+changes inside the submodule are not included in a Ciallo commit; any dependency
+commit must be available from the configured remote before publishing the updated
+gitlink. Keep Ciallo-specific build configuration and WebAPI extensions outside
+the submodule.
 
 ### No need to build the Godot editor
 

@@ -351,7 +351,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 public class VectorFillLayerCreationHover : Interaction, IPropertyProvider
 {
     public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
-        BucketFillOptions.DrawModeProperty(container);
+        AppPreference.BucketFill.DrawModeProperty(container);
 
     public override void Start(CursorButtonData data)
     {

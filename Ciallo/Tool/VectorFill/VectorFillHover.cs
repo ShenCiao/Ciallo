@@ -96,7 +96,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
-        BucketFillOptions.DrawModeProperty(container);
+        AppPreference.BucketFill.DrawModeProperty(container);
 
         container.AddChild(new Label
         {

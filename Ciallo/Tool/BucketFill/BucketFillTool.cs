@@ -12,6 +12,7 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 [RegisterState]
 public class BucketFillTool : InteractionScope, ILayerDependent
 {
+    internal BucketFillContext Context { get; private set; }
     [Substate]
     internal BucketFillHover Hover;
 
@@ -23,17 +24,21 @@ public class BucketFillTool : InteractionScope, ILayerDependent
         sm.Configure(this)
             .InitialTransition(Hover);
         sm.Configure(Hover)
-            // Keep the mode selector available on other layer types, but only capture on ShapeLayer.
-            .PermitIf(Trigger.Press(MouseButton.Left), Left, () => CanFillLayers(WorkingLayers))
+            .Permit(Trigger.Press(MouseButton.Left), Left)
             .PermitReentry(Trigger.Refresh);
         sm.Configure(Left)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
             .PermitStandardExits(Hover);
     }
 
-    // Hover remains available for mode selection; CanFillLayers separately gates polygon capture.
-    public static bool CanHandleLayers(ImmutableArray<Entity> layers) => true;
-
-    internal static bool CanFillLayers(ImmutableArray<Entity> layers) =>
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
         layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
+
+    protected override void OnActivated() => Context = new BucketFillContext(WorkingLayer);
+
+    protected override void OnDeactivated()
+    {
+        Context.Dispose();
+        Context = null;
+    }
 }

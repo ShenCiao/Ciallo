@@ -128,7 +128,7 @@ public static partial class InteractionManager
         InteractionStateGraph.Configure(StateMachine);
 
         // One process-lifetime subscription. Property panels only bind the shared selection.
-        BucketFillOptions.Mode.Skip(1).Subscribe(_ =>
+        AppPreference.BucketFill.Mode.Skip(1).Subscribe(_ =>
         {
             if (ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill)
             {

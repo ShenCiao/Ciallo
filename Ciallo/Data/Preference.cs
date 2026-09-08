@@ -76,6 +76,10 @@ public class Preference
 
     public static readonly string Path = "user://Preference.json";
 
+    // Nested preference objects use [DataContract] and [DataMember], just like this root.
+    // Their initialized fields supply defaults when loading older JSON that omits them.
+    // PopulateObject reuses nested instances; ReactivePropertyConverter updates Value in place,
+    // preserving existing bindings/subscriptions while storing only the inner value in JSON.
     public static readonly JsonSerializerSettings JsonOptions = new()
     {
         Converters =
@@ -112,6 +116,9 @@ public class Preference
     #endregion
 
     #region Tool
+
+    [DataMember]
+    public BucketFillOptions BucketFill = new();
 
     [DataMember]
     public ReactiveProperty<float> VectorFillMarkerRadius = new(15.0f);

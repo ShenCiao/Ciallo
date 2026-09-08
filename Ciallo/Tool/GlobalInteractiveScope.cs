@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Ciallo.Widget;
 using Frent;
 using Stateless;
 
@@ -11,7 +12,7 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 // Most tools use [RequestedByToolButton] for generated routing. Bucket Fill has explicit sibling
 // scopes because its shared button selects between independent marker and polygon interactions.
 [RegisterState]
-public partial class GlobalInteractiveScope : InteractionScope
+public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvider
 {
     [Substate]
     internal NoDocument NoDocument;
@@ -27,6 +28,20 @@ public partial class GlobalInteractiveScope : InteractionScope
 
     [Substate]
     internal BucketFillTool BucketFill;
+
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
+    {
+        // Temporary GUI hack: InteractionPropertyTree has no cross-scope property-section host.
+        // Tool controls are hidden with their state branch, but this selector must remain reachable
+        // when no Bucket Fill scope accepts the layer. TODO: Move it to a shared property section
+        // when that infrastructure exists; its visibility must be independent of tool activation.
+        var mode = AppPreference.BucketFill.DrawModeProperty(container);
+        void Refresh() => mode.Visible = InteractionManager.StateMachine.State == this &&
+            ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill;
+        InteractionManager.StateChanged += Refresh;
+        container.TreeExiting += () => InteractionManager.StateChanged -= Refresh;
+        Refresh();
+    }
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
@@ -70,7 +85,7 @@ public partial class GlobalInteractiveScope : InteractionScope
 
         if (toolButton == ToolButton.Type.BucketFill)
         {
-            return BucketFillOptions.Mode.Value switch
+            return AppPreference.BucketFill.Mode.Value switch
             {
                 BucketFillOutput.Marker when VectorFillTool.CanHandleLayers(layers) => VectorFill,
                 BucketFillOutput.Marker when VectorFillLayerCreationTool.CanHandleLayers(layers) =>

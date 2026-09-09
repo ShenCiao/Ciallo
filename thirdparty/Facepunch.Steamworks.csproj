@@ -43,6 +43,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Facepunch.NativeLibrary.cs" />
     <Compile Include="Facepunch.Steamworks/Facepunch.Steamworks/**/*.cs"
              Exclude="Facepunch.Steamworks/Facepunch.Steamworks/**/obj/**;Facepunch.Steamworks/Facepunch.Steamworks/**/bin/**;Facepunch.Steamworks/Facepunch.Steamworks/*AssemblyInfo.cs" />
     <None Include="$(_FacepunchNativePath)"

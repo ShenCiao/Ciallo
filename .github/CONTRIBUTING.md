@@ -70,39 +70,6 @@ changes a repository URL, run `git submodule sync --recursive` before updating.
 
 `thirdparty/Facepunch.Steamworks` is a submodule of the
 [official Facepunch repository](https://github.com/Facepunch/Facepunch.Steamworks).
-Its gitlink pins the exact upstream commit. The Ciallo-owned
-`thirdparty/Facepunch.Steamworks.csproj` compiles the checked-out binding sources
-for .NET 10. Generated bindings are already present, so the generator is not run.
-The project supports `Debug`, `Release`, `ExportDebug`, and `ExportRelease`.
-
-Ciallo forwards its target RID as `FacepunchRuntimeIdentifier` because the .NET
-SDK removes `RuntimeIdentifier` from referenced library builds. Standalone library
-builds use `RuntimeIdentifier`; ordinary editor builds fall back to the SDK host
-RID. Supported outputs are:
-
-| RID | Managed assembly | Native library |
-| --- | --- | --- |
-| `win-x64` | `Facepunch.Steamworks.Win64.dll` | `steam_api64.dll` |
-| `linux-x64` | `Facepunch.Steamworks.Posix.dll` | `libsteam_api.so` |
-| `osx-arm64` | `Facepunch.Steamworks.Posix.dll` | `libsteam_api.dylib` |
-
-The selected native binary and `Facepunch.Steamworks.LICENSES.md` propagate to build
-and publish output. Cross-platform publishes must specify the target RID, such as
-`dotnet publish -r osx-arm64`. CI initializes the submodule and checks that each
-export contains the correct platform's managed and native libraries.
-
-Steam Cloud WebAPI and OAuth extensions are maintained in
-`Ciallo/Steamworks/WebApi`. They originate from the Ciallo fork commit
-`77e3c7c269076ff3ba5e5d2f567bd3727418d48a` and are compiled into Ciallo.
-
-To upgrade Facepunch, fetch the official repository inside the submodule, check
-out the reviewed tag or commit, build Ciallo, run the durability tests, and verify
-all three platform exports. Then stage `thirdparty/Facepunch.Steamworks` in Ciallo
-to record the new gitlink. Normal submodule checkouts have a detached HEAD. Local
-changes inside the submodule are not included in a Ciallo commit; any dependency
-commit must be available from the configured remote before publishing the updated
-gitlink. Keep Ciallo-specific build configuration and WebAPI extensions outside
-the submodule.
 
 ### No need to build the Godot editor
 

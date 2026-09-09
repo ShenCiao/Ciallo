@@ -10,6 +10,46 @@ internal static class LayerContextActions
 {
     private static int _plainShapeLayerId = 1;
 
+    public static void SplitStrokeAndFill(Entity targetLayer)
+    {
+        var layerNode = targetLayer.Get<LayerTreeNode>();
+        var name = targetLayer.Get<CommonLayerSetting>().Name.Value;
+        var fills = layerNode.Children.Where(e => e.Has<FilledPolygonSetting>()).ToArray();
+        var fillLayer = targetLayer.World.Create();
+        var cmd = new CommandBuilder("Split Stroke and Fill", targetLayer);
+        var parent = layerNode.ParentValue;
+        int index = layerNode.Index;
+
+        // An exposure must still display both halves of a split cel together.
+        if (targetLayer.Tagged<CelTag>())
+        {
+            parent = WrapSelfInFolder(cmd, targetLayer);
+            index = 0;
+        }
+
+        // Keep the source entity for strokes so every VectorFill reference stays valid.
+        // Layer children are ordered bottom to top: insert fill just before the source.
+        cmd.SetTarget(fillLayer)
+            .NewShapeLayer(targetLayer)
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " fill")
+            .AddToLayerTree(parent, index);
+
+        cmd.SetTarget(targetLayer.Document)
+            .SetObservableCollection(e => e.Get<SelectionManager>().SelectedShapes, selected =>
+            {
+                foreach (var fill in fills)
+                    selected.Remove(fill);
+            });
+
+        for (int i = 0; i < fills.Length; i++)
+            cmd.SetTarget(targetLayer.Document).MoveLayer(fills[i], fillLayer, i);
+
+        cmd.SetTarget(targetLayer)
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " stroke")
+            .SetWorkingLayer(recordCelSelectionPreference: true)
+            .Commit();
+    }
+
     public static void NewShapeLayer(Entity targetLayer)
     {
         if (TryAddShapeLayerInCelContext(targetLayer))
@@ -160,13 +200,23 @@ internal static class LayerContextActions
         var parentE = node.ParentValue;
         if (parentE.IsNull) return;
 
+        var cmd = new CommandBuilder("Wrap Self in Folder", targetLayer.Document);
+        WrapSelfInFolder(cmd, targetLayer);
+        cmd.SetTarget(targetLayer)
+            .SetWorkingLayer()
+            .Commit();
+    }
+
+    private static Entity WrapSelfInFolder(CommandBuilder cmd, Entity targetLayer)
+    {
+        var node = targetLayer.Get<LayerTreeNode>();
+        var parentE = node.ParentValue;
         var document = targetLayer.Document;
         var name = targetLayer.Get<CommonLayerSetting>().Name.Value;
         var index = node.Index;
         var wrapper = document.World.Create();
 
-        var cmd = new CommandBuilder("Wrap Self in Folder", document)
-            .SetTarget(wrapper)
+        cmd.SetTarget(wrapper)
             .NewFolderLayer()
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, name)
             .AddToLayerTree(parentE, index);
@@ -190,9 +240,7 @@ internal static class LayerContextActions
         cmd.SetTarget(document)
             .MoveLayer(targetLayer, wrapper, 0);
 
-        cmd.SetTarget(targetLayer)
-            .SetWorkingLayer()
-            .Commit();
+        return wrapper;
     }
 
     /// <summary>

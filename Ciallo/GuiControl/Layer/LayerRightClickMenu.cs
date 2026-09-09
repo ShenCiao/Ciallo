@@ -23,6 +23,7 @@ public partial class LayerRightClickMenu : PopupMenu
         RenameCelsByExposure,
         WrapChildrenInFolders,
         WrapSelfInFolder,
+        SplitStrokeAndFill,
     }
 
     public override void _Ready()
@@ -54,6 +55,8 @@ public partial class LayerRightClickMenu : PopupMenu
         AddSeparator();
         AddItem("Delete Layer".Tr(), (int)MenuItem.DeleteLayer);
         AddItem("Wrap Self into Folder".Tr(), (int)MenuItem.WrapSelfInFolder);
+        if (_targetLayer.Has<ShapeLayerSetting>())
+            AddItem("Split Stroke and Fill".Tr(), (int)MenuItem.SplitStrokeAndFill);
         if (_targetLayer.Has<FolderLayerSetting>())
         {
             if (_targetLayer.Get<FolderLayerSetting>().IsCelFolder)
@@ -93,6 +96,9 @@ public partial class LayerRightClickMenu : PopupMenu
                 break;
             case MenuItem.WrapSelfInFolder:
                 LayerContextActions.WrapSelfInFolder(_targetLayer);
+                break;
+            case MenuItem.SplitStrokeAndFill:
+                LayerContextActions.SplitStrokeAndFill(_targetLayer);
                 break;
         }
     }

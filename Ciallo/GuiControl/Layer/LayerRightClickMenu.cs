@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Linq;
 using Ciallo.Data;
 using Frent;
 using Godot;
@@ -11,6 +13,7 @@ namespace Ciallo.GuiControl;
 public partial class LayerRightClickMenu : PopupMenu
 {
     private Entity _targetLayer;
+    private ImmutableArray<Entity> _targetLayers;
     private bool _showTimelineLayerActions;
 
     private enum MenuItem
@@ -24,6 +27,7 @@ public partial class LayerRightClickMenu : PopupMenu
         WrapChildrenInFolders,
         WrapSelfInFolder,
         SplitStrokeAndFill,
+        MergeLayers,
     }
 
     public override void _Ready()
@@ -34,6 +38,7 @@ public partial class LayerRightClickMenu : PopupMenu
     public void Popup(Entity targetLayer, bool showTimelineLayerActions)
     {
         _targetLayer = targetLayer;
+        _targetLayers = LayerSelectionActions.ContextLayers(targetLayer);
         _showTimelineLayerActions = showTimelineLayerActions;
 
         RebuildMenu();
@@ -53,13 +58,19 @@ public partial class LayerRightClickMenu : PopupMenu
             AddItem("New Cel Folder Layer".Tr(), (int)MenuItem.NewCelFolderLayer);
 
         AddSeparator();
-        AddItem("Delete Layer".Tr(), (int)MenuItem.DeleteLayer);
-        AddItem("Wrap Self into Folder".Tr(), (int)MenuItem.WrapSelfInFolder);
-        if (_targetLayer.Has<ShapeLayerSetting>())
+        AddItem((_targetLayers.Length > 1 ? "Delete Layers" : "Delete Layer").Tr(), (int)MenuItem.DeleteLayer);
+        AddItem((_targetLayers.Length > 1 ? "Group Layers" : "Wrap Self into Folder").Tr(), (int)MenuItem.WrapSelfInFolder);
+        SetItemDisabled(GetItemIndex((int)MenuItem.WrapSelfInFolder), !LayerContextActions.CanGroupLayers(_targetLayers));
+        if (_targetLayers.All(e => e.Has<ShapeLayerSetting>()))
             AddItem("Split Stroke and Fill".Tr(), (int)MenuItem.SplitStrokeAndFill);
-        if (_targetLayer.Has<FolderLayerSetting>())
+        if (_targetLayers.Length > 1)
         {
-            if (_targetLayer.Get<FolderLayerSetting>().IsCelFolder)
+            AddItem("Merge Layers".Tr(), (int)MenuItem.MergeLayers);
+            SetItemDisabled(GetItemIndex((int)MenuItem.MergeLayers), !LayerConversionActions.CanMerge(_targetLayers));
+        }
+        if (_targetLayers.All(e => e.Has<FolderLayerSetting>()))
+        {
+            if (_targetLayers.All(e => e.Get<FolderLayerSetting>().IsCelFolder))
                 AddItem("Rename Cels by Exposure".Tr(), (int)MenuItem.RenameCelsByExposure);
             AddItem("Wrap Children in Folders".Tr(), (int)MenuItem.WrapChildrenInFolders);
             AddItem("Ungroup Folder".Tr(), (int)MenuItem.UngroupFolder);
@@ -68,7 +79,7 @@ public partial class LayerRightClickMenu : PopupMenu
 
     private void OnMenuSelected(long id)
     {
-        if (_targetLayer.IsNull || !_targetLayer.IsAlive)
+        if (_targetLayers.Any(e => !e.IsAlive || !e.Tagged<ToSerializeTag>()))
             return;
 
         switch ((MenuItem)id)
@@ -83,22 +94,27 @@ public partial class LayerRightClickMenu : PopupMenu
                 LayerContextActions.NewCelFolderLayer(_targetLayer);
                 break;
             case MenuItem.DeleteLayer:
-                LayerContextActions.DeleteLayer(_targetLayer);
+                LayerContextActions.DeleteLayers(_targetLayers);
                 break;
             case MenuItem.UngroupFolder:
-                LayerContextActions.UngroupFolder(_targetLayer);
+                LayerContextActions.UngroupFolders(_targetLayers);
                 break;
             case MenuItem.RenameCelsByExposure:
-                LayerContextActions.RenameCelsByExposure(_targetLayer);
+                LayerContextActions.RenameCelsByExposure(_targetLayers);
                 break;
             case MenuItem.WrapChildrenInFolders:
-                LayerContextActions.WrapChildrenInFolders(_targetLayer);
+                LayerContextActions.WrapChildrenInFolders(_targetLayers);
                 break;
             case MenuItem.WrapSelfInFolder:
-                LayerContextActions.WrapSelfInFolder(_targetLayer);
+                if (LayerContextActions.CanGroupLayers(_targetLayers))
+                    LayerContextActions.GroupLayers(_targetLayers);
                 break;
             case MenuItem.SplitStrokeAndFill:
-                LayerContextActions.SplitStrokeAndFill(_targetLayer);
+                LayerContextActions.SplitStrokeAndFill(_targetLayers);
+                break;
+            case MenuItem.MergeLayers:
+                if (LayerConversionActions.CanMerge(_targetLayers))
+                    LayerConversionActions.Merge(_targetLayers);
                 break;
         }
     }

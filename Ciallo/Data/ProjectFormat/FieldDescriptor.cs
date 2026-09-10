@@ -186,6 +186,8 @@ internal sealed class FieldDescriptor
         var def = valueType.GetGenericTypeDefinition();
         var args = valueType.GetGenericArguments();
 
+        if (def == typeof(ImmutableArray<>) && args[0] == typeof(Entity))
+            return (FieldShape.EntityArray, typeof(Entity), ContainerKind.ImmutableArray, null);
         if (def == typeof(List<>) && args[0] == typeof(Entity))
             return (FieldShape.EntityArray, typeof(Entity), ContainerKind.List, null);
         if (def == typeof(ObservableList<>) && args[0] == typeof(Entity))

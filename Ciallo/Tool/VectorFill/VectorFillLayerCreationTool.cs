@@ -41,7 +41,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
+        layers[0].Has<ShapeLayerSetting>();
 
     public void DrawPropertyAfterSubstates(PropertyContainer container)
     {

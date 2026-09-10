@@ -473,7 +473,7 @@ public partial class TimelineRuler : Control
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
                         var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
+                        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
                             cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
                     }
                     cmd.CommitOpenSequence();
@@ -486,7 +486,7 @@ public partial class TimelineRuler : Control
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
                         var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
+                        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
                             cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
                     }
                     cmd.CommitOpenSequence();
@@ -589,7 +589,7 @@ public partial class TimelineRuler : Control
         if (_currentFrame.Value != _frameAtDragStart)
         {
             var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-            if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
+            if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
                 cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
         }
         cmd.CommitToLatest();

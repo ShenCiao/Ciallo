@@ -19,10 +19,10 @@ public partial class LayerAction : Control
         var subs = new CompositeDisposable();
         Root.ConvertToShape.VisibleIf(sm.WorkingLayer,
             e => e.TryHas<VectorFillLayerSetting>() || e.TryHas<ImageLayerSetting>(), subs);
-        var clippingMask = sm.WorkingLayer
-            .Select(e => e.TryGet<CommonLayerSetting>()?.ClippingMask)
-            .Flatten().AddTo(Document);
-        Root.ClippingMask.BindBool(clippingMask, subs);
+        LayerSelectionActions.ObservePrimary(sm, s => s.ClippingMask)
+            .Subscribe(Root.ClippingMask.SetPressedNoSignal).AddTo(subs);
+        Root.ClippingMask.OnToggledAsObservable().Subscribe(v => LayerSelectionActions.SetProperty(
+            "Layer Clipping Mask", sm.WorkingLayers.Value, s => s.ClippingMask, v)).AddTo(subs);
         subs.AddTo(Document);
     }
 
@@ -38,7 +38,7 @@ public partial class LayerAction : Control
 
     public void OnNewShapeLayer()
     {
-        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.Value;
+        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
         LayerContextActions.NewShapeLayer(workingLayerE.IsNull ? Document : workingLayerE);
     }
 
@@ -54,39 +54,7 @@ public partial class LayerAction : Control
 
     public void OnRemoveLayer()
     {
-        var document = Document;
-        var currentLayerE = document.Get<SelectionManager>().WorkingLayer.Value;
-        if (currentLayerE.IsNull) return;
-
-        var workingLayerE = document.Get<SelectionManager>().WorkingLayer.Value;
-        var root = document.Get<LayerTreeNode>();
-        var workingLayerPath = root.FindPathTo(workingLayerE);
-        var nextLayerPath = root.GetNextFocusPathAfterDeletion(workingLayerPath);
-        var nextLayerE = nextLayerPath.IsEmpty ? document : root.GetDescendant(nextLayerPath);
-
-        var cmd = new CommandBuilder("Delete Layer", nextLayerE)
-            .SetWorkingLayer();
-
-        if (currentLayerE.Tagged<CelTag>())
-        {
-            var celFolderE = currentLayerE.Get<LayerTreeNode>().ParentValue;
-            cmd.SetTarget(celFolderE)
-                .SetObservableCollection(
-                    e => e.Get<FolderLayerSetting>().Exposures,
-                    exposures =>
-                    {
-                        foreach (var (frame, celE) in exposures.ToArray())
-                        {
-                            if (celE == currentLayerE)
-                                exposures.Remove(frame);
-                        }
-                    });
-        }
-
-        cmd.SetTarget(currentLayerE)
-            .RemoveFromLayerTree()
-            .DeleteLayer()
-            .Commit();
+        LayerContextActions.DeleteLayers(Document.Get<SelectionManager>().WorkingLayers.Value);
     }
 
     public void OnNewImage()
@@ -122,7 +90,7 @@ public partial class LayerAction : Control
     public void OnConvertToShape()
     {
         LayerConversionActions.ConvertToShape(
-            Document.Get<SelectionManager>().WorkingLayer.Value);
+            Document.Get<SelectionManager>().WorkingLayer.CurrentValue);
     }
 
     /// <summary>
@@ -131,7 +99,7 @@ public partial class LayerAction : Control
     /// </summary>
     private (Entity parentE, int index) GetNewLayerInsertPosition()
     {
-        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.Value;
+        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
         if (workingLayerE.IsNull || workingLayerE.IsDocument)
             return (AppDocumentManager.WorkingDocument.Value, -1);
 

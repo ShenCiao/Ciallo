@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -117,9 +118,7 @@ public partial class TrackTree : LayerTreeBase
             if (blocks.ContainsKey(name)) return;
 
             var block = LayerBlock.New();
-            // The working button is shown but deliberately NOT added to WorkingLayerButtonGroup:
-            // an archetype is not itself a selectable layer, its pressed state is derived (see BindArchetype)
-            // and its click navigates to a same-named cel child instead of toggling group membership.
+            // Selection operates on the corresponding layer in the currently exposed cel.
             block.WorkingButton.Visible = true;
             block.DropdownArrow.Visible = false;
             block.FolderIcon.Visible = false;
@@ -176,55 +175,51 @@ public partial class TrackTree : LayerTreeBase
                 {
                     var renameMembers = celChildrenByName[name];
                     var cmd = PushToMembers(name, e => e.Get<CommonLayerSetting>().Name, v);
-                    if (renameMembers.Contains(sm.WorkingLayer.Value))
+                    if (renameMembers.Contains(sm.WorkingLayer.CurrentValue))
                         cmd.SetProperty(folderSetting.PreferredNameForCelSelection, v);
                     cmd.Commit();
                 }).AddTo(bs);
 
-            // Derived pressed state: lit when the working layer is a current member of this archetype
-            // (which, since members are this folder's cel children, also implies WorkingCelFolder == layerE).
-            // It is NOT owned by the button group, so we always drive it via SetPressedNoSignal.
-            void SyncPressed() =>
-                block.WorkingButton.SetPressedNoSignal(
-                    sm.WorkingCelFolder.CurrentValue == layerE && members.Contains(sm.WorkingLayer.CurrentValue));
+            Entity ResolveTarget()
+            {
+                var cel = folderSetting.CurrentExposedCel.CurrentValue;
+                return cel.IsNull || cel.IsCelFolder
+                    ? Entity.Null : cel.Get<LayerTreeNode>().GetLayerChildByName(name);
+            }
 
-            // Recompute on: working-layer switch, working-cel-folder resettle (debounced), and member-set
-            // mutation. The last one matters because renaming the working layer moves it between name groups
-            // (an inner-set add/remove) without changing the working-layer entity or the dict keys.
-            sm.WorkingLayer.CombineLatest(sm.WorkingCelFolder, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
+            void SyncPressed()
+            {
+                var target = ResolveTarget();
+                LayerSelectionActions.ShowSelection(block.WorkingButton,
+                    !target.IsNull && sm.WorkingLayer.CurrentValue == target,
+                    !target.IsNull && sm.WorkingLayers.Value.Contains(target));
+            }
+
+            sm.WorkingLayers.CombineLatest(folderSetting.CurrentExposedCel, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
                 .DebounceFrame(1)
                 .Subscribe(_ => SyncPressed()).AddTo(bs);
             SyncPressed();
 
-            // Click navigates the working layer to this archetype's same-named child under the currently
-            // exposed cel, without moving the playhead. The button is a derived indicator, so we ignore the
-            // toggle value and recompute/correct the visual ourselves.
             block.WorkingButton.OnToggledAsObservable().Subscribe(_ =>
             {
-                // Already the working layer's archetype: nothing to navigate to.
-                if (sm.WorkingCelFolder.CurrentValue == layerE && members.Contains(sm.WorkingLayer.CurrentValue))
+                var target = ResolveTarget();
+                if (!target.IsNull) LayerSelectionActions.Toggle(target);
+                SyncPressed();
+            }).AddTo(bs);
+            block.LabelLineEdit.SignalAsObservable<InputEvent>(Control.SignalName.GuiInput)
+                .OfType<InputEvent, InputEventMouseButton>()
+                .Where(_ => !block.LabelLineEdit.IsEditing())
+                .Subscribe(button =>
+            {
+                var target = ResolveTarget();
+                if (target.IsNull) return;
+                if (button.ButtonIndex == MouseButton.Left && !button.Pressed)
+                    LayerSelectionActions.SelectOnly(target);
+                else if (button.ButtonIndex == MouseButton.Right && button.Pressed)
                 {
-                    SyncPressed();
-                    return;
+                    block.LabelLineEdit.AcceptEvent();
+                    ShowLayerMenu(target, block.LabelLineEdit);
                 }
-
-                var cel = folderSetting.CurrentExposedCel.CurrentValue;
-                var target = cel.IsNull || cel.IsCelFolder
-                    ? Entity.Null
-                    : cel.Get<LayerTreeNode>().GetLayerChildByName(name);
-                if (target.IsNull)
-                {
-                    // No matching child under the current cel (or no cel exposed): ignore the click.
-                    SyncPressed();
-                    return;
-                }
-
-                new CommandBuilder("Select Cel Child Archetype", target)
-                    .SetWorkingLayer(recordCelSelectionPreference: true)
-                    .CommitToLatest();
-                // The target carries this archetype's name and is a cel child of this folder, so it is a member:
-                // light the button optimistically (WorkingCelFolder resettles a frame later via the sub above).
-                block.WorkingButton.SetPressedNoSignal(true);
             }).AddTo(bs);
         }
 

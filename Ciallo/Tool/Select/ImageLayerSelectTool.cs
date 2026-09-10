@@ -31,5 +31,5 @@ public class ImageLayerSelectTool : InteractionScope, ILayerDependent
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 && layers[0].Has<ImageLayerSetting>();
+        layers[0].Has<ImageLayerSetting>();
 }

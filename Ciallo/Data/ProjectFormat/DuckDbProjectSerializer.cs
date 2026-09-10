@@ -527,6 +527,12 @@ public static class DuckDbProjectSerializer
 
     private static void PopulateEntityArray(FieldDescriptor field, object instance, List<Entity> entities)
     {
+        if (field.IsReactive)
+        {
+            field.SetProjectValue(instance,
+                ContainerFactory.Build(field.ContainerKind, typeof(Entity), entities.Cast<object>().ToList()));
+            return;
+        }
         var existing = field.GetFieldStorageObject(instance);
         if (existing != null)
         {

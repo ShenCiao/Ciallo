@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
@@ -6,17 +7,25 @@ using Frent;
 
 namespace Ciallo.GuiControl;
 
-internal static class LayerContextActions
+internal static partial class LayerContextActions
 {
     private static int _plainShapeLayerId = 1;
 
-    public static void SplitStrokeAndFill(Entity targetLayer)
+    public static void SplitStrokeAndFill(ImmutableArray<Entity> layers)
+    {
+        var cmd = new CommandBuilder("Split Stroke and Fill", layers[0].Document);
+        // Higher siblings first: inserting a new fill below a layer cannot shift later targets.
+        foreach (var layer in OperationRoots(layers).Reverse())
+            SplitStrokeAndFill(cmd, layer);
+        cmd.SetTarget(layers[0].Document).SetWorkingLayer(true, layers).Commit();
+    }
+
+    private static void SplitStrokeAndFill(CommandBuilder cmd, Entity targetLayer)
     {
         var layerNode = targetLayer.Get<LayerTreeNode>();
         var name = targetLayer.Get<CommonLayerSetting>().Name.Value;
         var fills = layerNode.Children.Where(e => e.Has<FilledPolygonSetting>()).ToArray();
         var fillLayer = targetLayer.World.Create();
-        var cmd = new CommandBuilder("Split Stroke and Fill", targetLayer);
         var parent = layerNode.ParentValue;
         int index = layerNode.Index;
 
@@ -45,9 +54,7 @@ internal static class LayerContextActions
             cmd.SetTarget(targetLayer.Document).MoveLayer(fills[i], fillLayer, i);
 
         cmd.SetTarget(targetLayer)
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " stroke")
-            .SetWorkingLayer(recordCelSelectionPreference: true)
-            .Commit();
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " stroke");
     }
 
     public static void NewShapeLayer(Entity targetLayer)
@@ -87,21 +94,18 @@ internal static class LayerContextActions
             .Commit();
     }
 
-    public static void DeleteLayer(Entity targetLayer)
+    public static void UngroupFolders(ImmutableArray<Entity> layers)
     {
-        var nextLayer = GetNextFocusLayerAfterDeletion(targetLayer);
-        var cmd = new CommandBuilder("Delete Layer", nextLayer)
-            .SetWorkingLayer();
-
-        RemoveParentCelFolderExposures(cmd, targetLayer);
-
-        cmd.SetTarget(targetLayer)
-            .RemoveFromLayerTree()
-            .DeleteLayer()
-            .Commit();
+        var roots = OperationRoots(layers);
+        var document = layers[0].Document;
+        var cmd = new CommandBuilder("Ungroup Folders", document)
+            .SetWorkingLayer(layers: [.. roots.Reverse().SelectMany(e => e.Get<LayerTreeNode>().Children.Reverse())]);
+        foreach (var folder in roots.Reverse())
+            UngroupFolder(cmd, folder);
+        cmd.Commit();
     }
 
-    public static void UngroupFolder(Entity targetFolder)
+    private static void UngroupFolder(CommandBuilder cmd, Entity targetFolder)
     {
         if (!targetFolder.Has<FolderLayerSetting>()) return;
 
@@ -110,11 +114,7 @@ internal static class LayerContextActions
         if (parentE.IsNull) return;
 
         var children = folderNode.Children.ToArray();
-        var nextLayer = GetNextFocusLayerAfterDeletion(targetFolder);
         int insertIndex = folderNode.Index;
-
-        var cmd = new CommandBuilder("Ungroup Folder", nextLayer)
-            .SetWorkingLayer();
 
         RemoveParentCelFolderExposures(cmd, targetFolder);
 
@@ -126,15 +126,21 @@ internal static class LayerContextActions
 
         cmd.SetTarget(targetFolder)
             .RemoveFromLayerTree()
-            .DeleteLayer()
-            .Commit();
+            .DeleteLayer();
     }
 
-    public static void RenameCelsByExposure(Entity celFolder)
+    public static void RenameCelsByExposure(ImmutableArray<Entity> layers)
+    {
+        var cmd = new CommandBuilder("Rename Cels by Exposure", layers[0].Document);
+        foreach (var layer in OperationRoots(layers))
+            RenameCelsByExposure(cmd, layer);
+        cmd.Commit();
+    }
+
+    private static void RenameCelsByExposure(CommandBuilder cmd, Entity celFolder)
     {
         var exposures = celFolder.Get<FolderLayerSetting>().Exposures;
         var renamedCels = new HashSet<Entity>();
-        var cmd = new CommandBuilder("Rename Cels by Exposure", celFolder);
         int name = 1;
 
         foreach (var cel in exposures.Values)
@@ -146,17 +152,22 @@ internal static class LayerContextActions
                 .SetProperty(e => e.Get<CommonLayerSetting>().Name, name.ToString());
             name++;
         }
+    }
 
+    public static void WrapChildrenInFolders(ImmutableArray<Entity> layers)
+    {
+        var cmd = new CommandBuilder("Wrap Children in Folders", layers[0].Document);
+        foreach (var layer in OperationRoots(layers))
+            WrapChildrenInFolders(cmd, layer);
         cmd.Commit();
     }
 
-    public static void WrapChildrenInFolders(Entity targetFolder)
+    private static void WrapChildrenInFolders(CommandBuilder cmd, Entity targetFolder)
     {
         var children = targetFolder.Get<LayerTreeNode>().Children.ToArray();
         if (children.Length == 0) return;
 
         var document = targetFolder.Document;
-        var cmd = new CommandBuilder("Wrap Children in Folders", document);
         bool targetIsCelFolder = targetFolder.Get<FolderLayerSetting>().IsCelFolder;
 
         foreach (var child in children)
@@ -188,23 +199,6 @@ internal static class LayerContextActions
             cmd.SetTarget(document)
                 .MoveLayer(child, wrapper, 0);
         }
-
-        cmd.Commit();
-    }
-
-    public static void WrapSelfInFolder(Entity targetLayer)
-    {
-        if (targetLayer.IsNull || targetLayer.IsDocument) return;
-
-        var node = targetLayer.Get<LayerTreeNode>();
-        var parentE = node.ParentValue;
-        if (parentE.IsNull) return;
-
-        var cmd = new CommandBuilder("Wrap Self in Folder", targetLayer.Document);
-        WrapSelfInFolder(cmd, targetLayer);
-        cmd.SetTarget(targetLayer)
-            .SetWorkingLayer()
-            .Commit();
     }
 
     private static Entity WrapSelfInFolder(CommandBuilder cmd, Entity targetLayer)
@@ -400,15 +394,6 @@ internal static class LayerContextActions
 
         var layerNode = targetLayer.Get<LayerTreeNode>();
         return (layerNode.ParentValue, layerNode.Index + 1);
-    }
-
-    private static Entity GetNextFocusLayerAfterDeletion(Entity targetLayer)
-    {
-        var document = targetLayer.Document;
-        var root = document.Get<LayerTreeNode>();
-        var targetPath = root.FindPathTo(targetLayer);
-        var nextLayerPath = root.GetNextFocusPathAfterDeletion(targetPath);
-        return nextLayerPath.IsEmpty ? document : root.GetDescendant(nextLayerPath);
     }
 
     private static void RemoveParentCelFolderExposures(CommandBuilder cmd, Entity targetLayer)

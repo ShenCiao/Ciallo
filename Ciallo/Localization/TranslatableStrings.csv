@@ -194,6 +194,9 @@ Remove marker,Remove marker,移除标记,移除標記,マーカーを削除,마�
 Add Shape Layer to All Cels,Add Shape Layer to All Cels,添加形状图层到所有赛璐珞,將形狀圖層新增到所有賽璐珞,すべてのセルにシェイプレイヤーを追加,모든 셀에 쉐이프 레이어 추가,Formebene zu allen Cels hinzufügen,Ajouter un calque de forme à tous les cellulos
 New Shape Layer,New Shape Layer,新建形状图层,新增形狀圖層,新しいシェイプレイヤー,새 쉐이프 레이어,Neue Formebene,Nouveau calque de forme
 Split Stroke and Fill,Split Stroke and Fill,分割线条和填色,分割線條和填色,線と塗りを分離,선과 채우기 분리,Konturen und Füllungen trennen,Séparer les traits et le remplissage
+Merge Layers,Merge Layers,合并图层,合併圖層,レイヤーを結合,레이어 병합,Ebenen zusammenführen,Fusionner les calques
+Group Layers,Group Layers,将图层放入文件夹,將圖層放入資料夾,レイヤーをフォルダーにまとめる,레이어를 폴더로 묶기,Ebenen in Ordner gruppieren,Regrouper les calques dans un dossier
+Delete Layers,Delete Layers,删除图层,刪除圖層,レイヤーを削除,레이어 삭제,Ebenen löschen,Supprimer les calques
 New Folder Layer,New Folder Layer,新建文件夹图层,新增資料夾圖層,新しいフォルダーレイヤー,새 폴더 레이어,Neue Ordnerebene,Nouveau calque dossier
 New Cel Folder Layer,New Cel Folder Layer,新建赛璐珞文件夹图层,新增賽璐珞資料夾圖層,新しいセルフォルダーレイヤー,새 셀 폴더 레이어,Neue Cel-Ordnerebene,Nouveau calque dossier de cellulos
 Delete Layer,Delete Layer,删除图层,刪除圖層,レイヤーを削除,레이어 삭제,Ebene löschen,Supprimer le calque

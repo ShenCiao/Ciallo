@@ -1,5 +1,5 @@
+using System.Collections.Immutable;
 using Ciallo.Data;
-using Ciallo.GuiControl;
 using Frent;
 
 namespace Ciallo.Command;
@@ -11,17 +11,24 @@ public class SetWorkingLayerCmd : CommandBase
     private Entity _celSelectionPreferenceFolder = Entity.Null;
     private string _oldPreferredName;
     private string _newPreferredName;
-    public Entity OldLayerE;
+    private ImmutableArray<Entity> _oldLayers;
+    private ImmutableArray<Entity> _newLayers;
 
-    public SetWorkingLayerCmd(bool recordCelSelectionPreference = false)
+    public SetWorkingLayerCmd(bool recordCelSelectionPreference = false, ImmutableArray<Entity> layers = default)
     {
         _recordCelSelectionPreference = recordCelSelectionPreference;
+        _newLayers = layers;
     }
 
     public override void BeforeFirstDo(Entity newLayerE)
     {
         var sm = Document.Get<SelectionManager>();
-        OldLayerE = sm.WorkingLayer.Value;
+        _oldLayers = sm.WorkingLayers.Value;
+        if (_newLayers.IsDefault)
+            _newLayers = newLayerE.IsDocument ? [] : [newLayerE];
+        if (_newLayers.IsEmpty)
+            return;
+        newLayerE = _newLayers[0];
 
         if (!_recordCelSelectionPreference)
             return;
@@ -37,33 +44,13 @@ public class SetWorkingLayerCmd : CommandBase
     {
         SetCelSelectionPreferenceName(_newPreferredName);
 
-        // Selection manager
-        var sm = Document.Get<SelectionManager>();
-        sm.WorkingLayer.Value = newLayerE;
-
-        // Layer panel
-        var layerTree = Document.Get<LayerTree>();
-        layerTree.SetWorkingLayerNoSignal(newLayerE);
-
-        // Timeline panel
-        var trackTree = Document.Get<TrackTree>();
-        trackTree.SetWorkingLayerNoSignal(newLayerE);
+        Document.Get<SelectionManager>().WorkingLayers.Value = _newLayers;
     }
 
     public override void Undo(Entity newLayerE)
     {
-        var trackTree = Document.Get<TrackTree>();
-        trackTree.SetWorkingLayerNoSignal(OldLayerE);
-
-        // Layer panel
-        var layerTree = Document.Get<LayerTree>();
-        layerTree.SetWorkingLayerNoSignal(OldLayerE);
-
-        // Selection manager
-        var sm = Document.Get<SelectionManager>();
-        sm.WorkingLayer.Value = OldLayerE;
-
         SetCelSelectionPreferenceName(_oldPreferredName);
+        Document.Get<SelectionManager>().WorkingLayers.Value = _oldLayers;
     }
 
     private void SetCelSelectionPreferenceName(string name)

@@ -87,6 +87,18 @@ A preferred cel child name is a cel folder's runtime memory of which cel child l
 ### Folder layer
 Any layer's parent must be a folder layer. The document entity is a folder layer entity.
 
+### Working Layers
+
+Working layers are an ordered selection. The first layer is the primary drawing target and shows a brush icon; additional selected layers show checkmarks. Clicking a layer name selects only that layer. Its selection button toggles additional membership, while the primary layer's button cannot deselect it. Current drawing tools judge and edit only the primary layer. Navigating between cels resets the selection to the newly resolved primary layer.
+
+Right-clicking a selected layer targets the whole selection. Right-clicking an unselected layer targets only that layer and leaves the selection unchanged. Delete, group, split, and drag operate on these targets as one undoable action. Structural operations treat a selected ancestor as covering its selected descendants and preserve visual stacking order. Visibility and the layer panel's opacity, mark color, blend mode, and clipping controls edit the selected layers together.
+
+### Layer Merge
+
+Merge accepts two or more Shape or Vector Fill layers with the same parent, excluding direct cels. All Vector Fill markers are materialized as filled polygons from their current bounded faces before any source layer changes. The result is one Shape layer at the primary layer's position, with shapes ordered by the source layers' visual stacking. The primary layer supplies the name and layer settings, even when this changes the appearance.
+
+A Shape primary retains its entity and existing incoming Vector Fill references. References to other merged layers are removed rather than redirected. A Vector Fill primary becomes a new Shape layer with its common settings. Undo restores layers, selection, and removed references. Merge is unavailable while a source Vector Fill arrangement is rebuilding. Layers in different cels cannot be merged or grouped into one folder; they can still be selected, deleted, and moved together.
+
 ### Exposure
 
 An exposure is one authored assignment on a cel folder, pairing an exposure key with the cel, or Blank, exposed from that key onward. It is the unit stored in a cel folder's exposure list and the unit a user adds, moves, replaces, and deletes. An exposure does not store its own length; the length is its exposure span.
@@ -123,7 +135,7 @@ A vector fill layer is a fill layer whose filled regions are bounded by referenc
 
 ### Reference Layer
 
-A reference layer is a shape layer that provides boundary artwork for a vector fill layer.
+A reference layer is a shape layer whose strokes provide boundary artwork for a vector fill layer. Only sampled polylines with a `StrokeSetting` component contribute to its arrangement; filled polygons do not form boundaries. Splitting stroke and fill retains the original layer entity for strokes, so its incoming references remain valid.
 
 ### Shape
 

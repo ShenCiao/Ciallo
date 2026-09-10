@@ -37,7 +37,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
+        layers[0].Has<ShapeLayerSetting>();
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {

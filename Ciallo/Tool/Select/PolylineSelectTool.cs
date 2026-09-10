@@ -116,7 +116,6 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 &&
         (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
 
     protected override void OnActivated()
@@ -147,7 +146,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectAllButton = container.CreateButton("Select all").AddToChildOf(selectionButtonGroup);
         selectAllButton.Pressed += () =>
         {
-            var layerE = selectionManager.WorkingLayer.Value;
+            var layerE = selectionManager.WorkingLayer.CurrentValue;
             if (layerE.IsDyingOrDead) return;
             selectionManager.SelectedShapes.Clear();
             selectionManager.SelectedShapes.AddRange(layerE.Get<LayerTreeNode>().Children);

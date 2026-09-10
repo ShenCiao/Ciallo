@@ -31,5 +31,5 @@ public class PaintFillTool : InteractionScope, ILayerDependent
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 && layers[0].Has<ShapeLayerSetting>();
+        layers[0].Has<ShapeLayerSetting>();
 }

@@ -207,8 +207,8 @@ public static class AppBugReport
             Document path: {{RedactPath(settings.FilePath.Value)}}
             Modified: {{AppDocumentManager.WorkingDocumentModified}}
             Current frame: {{selection.CurrentFrame.Value}}
-            Working layer: {{DescribeLayer(selection.WorkingLayer.Value)}}
-            Selected layers: {{selection.SelectedLayers.Count}}
+            Working layer: {{DescribeLayer(selection.WorkingLayer.CurrentValue)}}
+            Selected layers: {{selection.WorkingLayers.Value.Length}}
             Selected shapes: {{selection.SelectedShapes.Count}}
             Tool button: {{toolButton}}
             Working tool: {{workingTool}}

@@ -82,18 +82,63 @@ internal static class LayerConversionActions
 
     private static void ConvertVectorFillToShape(Entity vectorFillLayer)
     {
-        var arrangement = vectorFillLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         var layerNode = vectorFillLayer.Get<LayerTreeNode>();
-        var markers = layerNode.Children.ToList();
         var shapeLayer = vectorFillLayer.World.Create();
         var command = new CommandBuilder("Convert Vector Fill to Shape", shapeLayer)
-            .NewShapeLayer()
+            .NewShapeLayer(vectorFillLayer)
             .AddToLayerTree(layerNode.ParentValue, layerNode.Index)
             .SetProperty(
                 e => e.Get<CommonLayerSetting>().Name,
                 vectorFillLayer.Get<CommonLayerSetting>().Name.Value + " Converted");
 
-        foreach (var marker in markers)
+        AppendVectorFillPolygons(command, vectorFillLayer, shapeLayer, 0);
+        ReplaceSourceLayer(command, vectorFillLayer, shapeLayer);
+    }
+
+    public static bool CanMerge(ImmutableArray<Entity> layers) => layers.Length >= 2
+        && layers.All(e => e.Has<ShapeLayerSetting>() || e.Has<VectorFillLayerSetting>())
+        && layers.All(e => e.Get<LayerTreeNode>().ParentValue == layers[0].Get<LayerTreeNode>().ParentValue)
+        && !layers.Any(e => e.Tagged<CelTag>())
+        && layers.All(e => !e.Has<VectorFillLayerSetting>() || e.Get<ArrangementManager>().ArrReady.CurrentValue != null);
+
+    public static void Merge(ImmutableArray<Entity> layers)
+    {
+        var primary = layers[0];
+        var document = primary.Document;
+        var result = primary.Has<ShapeLayerSetting>() ? primary : primary.World.Create();
+        var command = new CommandBuilder("Merge Layers", document);
+        if (result != primary)
+        {
+            var node = primary.Get<LayerTreeNode>();
+            command.SetTarget(result).NewShapeLayer(primary).AddToLayerTree(node.ParentValue, node.Index);
+        }
+
+        // All polygon queries happen while composing commands, before any reference artwork moves.
+        int index = 0;
+        foreach (var layer in LayerContextActions.OperationRoots(layers))
+        {
+            if (layer.Has<VectorFillLayerSetting>())
+            {
+                index = AppendVectorFillPolygons(command, layer, result, index);
+                continue;
+            }
+            foreach (var shape in layer.Get<LayerTreeNode>().Children)
+                command.SetTarget(document).MoveLayer(shape, result, index++);
+        }
+
+        command.SetTarget(result).SetWorkingLayer(recordCelSelectionPreference: true);
+        foreach (var layer in layers)
+        {
+            if (layer == result) continue;
+            command.SetTarget(layer).RemoveFromLayerTree().DeleteLayer();
+        }
+        command.Commit();
+    }
+
+    private static int AppendVectorFillPolygons(CommandBuilder command, Entity vectorFillLayer, Entity shapeLayer, int index)
+    {
+        var arrangement = vectorFillLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
+        foreach (var marker in vectorFillLayer.Get<LayerTreeNode>().Children)
         {
             var markerPosition = marker.Get<SampledPolyline>().Positions.Value[0];
             var face = arrangement.PointQueryFace(markerPosition);
@@ -111,17 +156,18 @@ internal static class LayerConversionActions
                 command,
                 shapeLayer,
                 polygon,
-                marker.Get<VectorFillMarkerSetting>().BrushE.Value);
+                marker.Get<VectorFillMarkerSetting>().BrushE.Value,
+                index++);
         }
-
-        ReplaceSourceLayer(command, vectorFillLayer, shapeLayer);
+        return index;
     }
 
     private static void AddFilledPolygon(
         CommandBuilder command,
         Entity shapeLayer,
         IReadOnlyList<Vector2> polygon,
-        Entity brush)
+        Entity brush,
+        int index)
     {
         ImmutableArray<Vector2> positions = [.. polygon, polygon[0]];
         ImmutableArray<float> ones = [.. Enumerable.Repeat(1.0f, positions.Length)];
@@ -129,7 +175,7 @@ internal static class LayerConversionActions
 
         command.SetTarget(shapeLayer.World.Create())
             .NewFilledPolygon()
-            .AddToLayerTree(shapeLayer)
+            .AddToLayerTree(shapeLayer, index)
             .SetSampledPolyline(positions, ones, ones, zeros)
             .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush);
     }

@@ -97,7 +97,7 @@ public partial class TimelineAction : Container
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
         var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(newFrame);
-        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
+        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
             cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
 
         cmd.CommitOpenSequence();
@@ -185,14 +185,14 @@ public partial class TimelineAction : Container
 
         int currentFrame = _selectionManager.CurrentFrame.Value;
         var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(currentFrame);
-        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
+        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
             new CommandBuilder("Playback Select Working Layer", newWorkingLayer).SetWorkingLayer().Do();
     }
 
     private void OnAddCelFolder()
     {
         var folder = Document.World.Create();
-        var workingLayer = Document.Get<SelectionManager>().WorkingLayer.Value;
+        var workingLayer = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
         var cursor = workingLayer.IsNull ? Document : workingLayer;
         Entity firstNonAnimFolder = Entity.Null;
         Entity animFolderParent = Entity.Null;

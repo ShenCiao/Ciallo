@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.Serialization;
 using Frent;
 using ObservableCollections;
@@ -12,14 +13,11 @@ public class SelectionManager
     /// <summary>Current playhead position.</summary>
     [DataMember, ProjectField] public ReactiveProperty<int> CurrentFrame = new(1);
 
+    // Ordered selection. The first layer is the drawing target; the others join layer operations.
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Required)]
-    public ObservableList<Entity> SelectedLayers = [];
+    public ReactiveProperty<ImmutableArray<Entity>> WorkingLayers = new([]);
 
-    // Note: although current frame sync working layer on user side, the two properties are not directly synced on Data side.
-    // The logics are implemented here but called by corresponding GUI control side.
-    // Which make sure everything works OK even though CurrentFrame and WorkingLayer are not in sync.
-    [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Nullable)]
-    public ReactiveProperty<Entity> WorkingLayer = new(Entity.Null);
+    public ReadOnlyReactiveProperty<Entity> WorkingLayer { get; }
     public ReadOnlyReactiveProperty<Entity> WorkingCelFolder; // Null if the working layer is not under any cel folder.
 
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Nullable)]
@@ -29,6 +27,12 @@ public class SelectionManager
     public ReactiveProperty<Entity> WorkingVectorFillBrush = new(Entity.Null);
 
     public ObservableList<Entity> SelectedShapes = [];
+
+    public SelectionManager()
+    {
+        WorkingLayer = WorkingLayers.Select(layers => layers.IsEmpty ? Entity.Null : layers[0])
+            .ToReadOnlyReactiveProperty();
+    }
 
     public void InitWorkingCelFolder(LayerTreeNode root)
     {
@@ -141,7 +145,7 @@ public class SelectionManager
         }
 
         // Already the working layer (including already-cleared): nothing to do.
-        return result == WorkingLayer.Value ? Entity.Null : result;
+        return result == WorkingLayer.CurrentValue && WorkingLayers.Value.Length == 1 ? Entity.Null : result;
     }
 
     /// <summary>

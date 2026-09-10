@@ -36,7 +36,6 @@ public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependen
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers.Length == 1 &&
         (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)

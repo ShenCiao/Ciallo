@@ -1,7 +1,4 @@
-using System.Collections.Immutable;
-using Ciallo.Command;
 using Ciallo.Data;
-using Frent;
 using Godot;
 using R3;
 
@@ -19,11 +16,11 @@ public partial class AutoloadTool : Node
         {
             if (document.IsNull) return;
 
-            InteractionManager.OpenDocument(document, ToLayers(document.Get<SelectionManager>().WorkingLayer.Value));
+            InteractionManager.OpenDocument(document, document.Get<SelectionManager>().WorkingLayers.Value);
 
-            document.Get<SelectionManager>().WorkingLayer
+            document.Get<SelectionManager>().WorkingLayers
                 .Skip(1)
-                .Subscribe(layer => InteractionManager.ChangeWorkingLayers(ToLayers(layer)))
+                .Subscribe(InteractionManager.ChangeWorkingLayers)
                 .AddTo(document);
 
             document.Get<TimelineSetting>().IsRollingFrame
@@ -42,7 +39,4 @@ public partial class AutoloadTool : Node
         if (what == NotificationApplicationFocusOut || what == NotificationWMWindowFocusOut)
             InteractionManager.CancelForInputCaptureLoss();
     }
-
-    private static ImmutableArray<Entity> ToLayers(Entity layer) =>
-        layer.IsNull ? ImmutableArray<Entity>.Empty : [layer];
 }

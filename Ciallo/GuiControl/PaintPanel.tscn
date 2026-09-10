@@ -142,7 +142,7 @@ unique_name_in_owner = true
 visibility_layer = 2
 material = ExtResource("4_pm3jj")
 
-[node name="WorldView" type="CanvasGroup" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=445565768]
+[node name="WorldView" type="Layer2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=445565768]
 unique_name_in_owner = true
 script = ExtResource("5_pm3jj")
 

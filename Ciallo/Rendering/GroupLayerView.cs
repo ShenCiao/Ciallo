@@ -7,16 +7,10 @@ using DataLayerBlendMode = Ciallo.Data.LayerBlendMode;
 namespace Ciallo.Rendering;
 
 /// <summary>
-/// For layers using CanvasGroup, i.e. ShapeLayer and FolderLayer. CelLayer uses a custom CelFolderView instead.
+/// For composite-capable Ciallo layers, i.e. ShapeLayer and FolderLayer. CelLayer uses a custom CelFolderView instead.
 /// </summary>
-public partial class GroupLayerView : CanvasGroup
+public partial class GroupLayerView : Layer2D
 {
-    // if true, this node can be replaced by a regular node2D
-    public bool IsDefault =>
-        SelfModulate.IsEqualApprox(Colors.White) &&
-        GetLayerBlendMode() == LayerBlendModeEnum.Normal &&
-        !IsClippingMask();
-
     public CompositeDisposable ObserveLayerSetting(CommonLayerSetting setting)
     {
         CompositeDisposable subs = new();
@@ -30,11 +24,13 @@ public partial class GroupLayerView : CanvasGroup
         return subs;
     }
 
-    private static CanvasGroup.LayerBlendModeEnum ToGodotBlendMode(DataLayerBlendMode mode) => mode switch
+    private static Layer2D.LayerBlendModeEnum ToGodotBlendMode(DataLayerBlendMode mode) => mode switch
     {
-        DataLayerBlendMode.Normal => CanvasGroup.LayerBlendModeEnum.Normal,
-        DataLayerBlendMode.Add => CanvasGroup.LayerBlendModeEnum.Add,
-        DataLayerBlendMode.Multiply => CanvasGroup.LayerBlendModeEnum.Multiply,
+        // Ciallo's ordinary Normal mode is the default selection. This keeps
+        // an unchanged layer eligible for direct Node2D rendering.
+        DataLayerBlendMode.Normal => Layer2D.LayerBlendModeEnum.Default,
+        DataLayerBlendMode.Add => Layer2D.LayerBlendModeEnum.Add,
+        DataLayerBlendMode.Multiply => Layer2D.LayerBlendModeEnum.Multiply,
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 }

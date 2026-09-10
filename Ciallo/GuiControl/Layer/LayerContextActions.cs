@@ -17,7 +17,7 @@ internal static partial class LayerContextActions
         // Higher siblings first: inserting a new fill below a layer cannot shift later targets.
         foreach (var layer in OperationRoots(layers).Reverse())
             SplitStrokeAndFill(cmd, layer);
-        cmd.SetTarget(layers[0].Document).SetWorkingLayer(true, layers).Commit();
+        cmd.SetTarget(layers[0].Document).SetLayerSelection(true, layers).Commit();
     }
 
     private static void SplitStrokeAndFill(CommandBuilder cmd, Entity targetLayer)
@@ -68,7 +68,7 @@ internal static partial class LayerContextActions
             .NewShapeLayer()
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, $"{"Shape layer".Tr()} {_plainShapeLayerId++}")
             .AddToLayerTree(parentE, index)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
@@ -79,7 +79,7 @@ internal static partial class LayerContextActions
         new CommandBuilder("New Folder Layer", document.World.Create())
             .NewFolderLayer()
             .AddToLayerTree(parentE, index)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
@@ -90,7 +90,7 @@ internal static partial class LayerContextActions
         new CommandBuilder("New Cel Folder", document.World.Create())
             .NewCelFolder()
             .AddToLayerTree(parentE, index)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
@@ -99,7 +99,7 @@ internal static partial class LayerContextActions
         var roots = OperationRoots(layers);
         var document = layers[0].Document;
         var cmd = new CommandBuilder("Ungroup Folders", document)
-            .SetWorkingLayer(layers: [.. roots.Reverse().SelectMany(e => e.Get<LayerTreeNode>().Children.Reverse())]);
+            .SetLayerSelection(layers: [.. roots.Reverse().SelectMany(e => e.Get<LayerTreeNode>().Children.Reverse())]);
         foreach (var folder in roots.Reverse())
             UngroupFolder(cmd, folder);
         cmd.Commit();
@@ -305,7 +305,7 @@ internal static partial class LayerContextActions
         string sharedName = $"{"Shape layer".Tr()} {_plainShapeLayerId++}";
 
         var cmd = new CommandBuilder("Add Shape Layer to All Cels", celFolder.Document);
-        Entity workingLayerE = Entity.Null;
+        Entity primaryLayerE = Entity.Null;
         var exposedCel = celFolder.Get<FolderLayerSetting>().CurrentExposedCel.CurrentValue;
 
         foreach (var cel in folderCels)
@@ -317,13 +317,13 @@ internal static partial class LayerContextActions
                 .AddToLayerTree(cel); // -1 default = last child = visual top
 
             if (cel == exposedCel)
-                workingLayerE = shapeE;
+                primaryLayerE = shapeE;
         }
 
-        // Land the working layer on the new layer in the currently-exposed cel, so the user can draw at once.
+        // Land the primary layer on the new layer in the currently-exposed cel, so the user can draw at once.
         // Record the preference so cel navigation follows the just-added shared layer, not the old archetype row.
-        if (!workingLayerE.IsNull)
-            cmd.SetTarget(workingLayerE).SetWorkingLayer(recordCelSelectionPreference: true);
+        if (!primaryLayerE.IsNull)
+            cmd.SetTarget(primaryLayerE).SetLayerSelection(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -345,7 +345,7 @@ internal static partial class LayerContextActions
             .NewShapeLayer()
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, name)
             .AddToLayerTree(cel)
-            .SetWorkingLayer(recordCelSelectionPreference: true)
+            .SetLayerSelection(recordCelSelectionPreference: true)
             .Commit();
     }
 

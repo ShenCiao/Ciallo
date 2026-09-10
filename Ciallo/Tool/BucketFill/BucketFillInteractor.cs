@@ -22,7 +22,7 @@ public class BucketFillInteractor : CapturingInteraction
         _context.SourceChanged += CancelForSourceChange;
         _brush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
         _atBottom = AppPreference.BucketFill.PlaceAtBottom.Value;
-        _preview = new BucketFillPreview(WorkingLayer);
+        _preview = new BucketFillPreview(PrimaryLayer);
         Query(data.WorldPosition);
     }
 

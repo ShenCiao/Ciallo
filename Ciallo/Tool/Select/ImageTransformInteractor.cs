@@ -37,7 +37,7 @@ public class ImageTransformInteractor : CapturingInteraction
 
     public override void Start(CursorButtonData data)
     {
-        _setting = WorkingLayer.Get<ImageLayerSetting>();
+        _setting = PrimaryLayer.Get<ImageLayerSetting>();
         _startPos = data.WorldPosition;
         _startTransform = _setting.ImageTransform.Value;
         _startCorners = _setting.GetCorners();
@@ -163,7 +163,7 @@ public class ImageTransformInteractor : CapturingInteraction
 
     public override void End(CursorButtonData data)
     {
-        new CommandBuilder("Transform Image Layer", WorkingLayer)
+        new CommandBuilder("Transform Image Layer", PrimaryLayer)
             .SetProperty(_startTransform, e => e.Get<ImageLayerSetting>().ImageTransform)
             .Commit();
         Clear();

@@ -126,7 +126,7 @@ internal static class LayerConversionActions
                 command.SetTarget(document).MoveLayer(shape, result, index++);
         }
 
-        command.SetTarget(result).SetWorkingLayer(recordCelSelectionPreference: true);
+        command.SetTarget(result).SetLayerSelection(recordCelSelectionPreference: true);
         foreach (var layer in layers)
         {
             if (layer == result) continue;
@@ -186,7 +186,7 @@ internal static class LayerConversionActions
         Entity shapeLayer)
     {
         command.SetTarget(shapeLayer)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .SetTarget(sourceLayer)
             .RemoveFromLayerTree()
             .DeleteLayer()

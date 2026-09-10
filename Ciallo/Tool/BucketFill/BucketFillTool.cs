@@ -34,7 +34,7 @@ public class BucketFillTool : InteractionScope, ILayerDependent
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
         layers[0].Has<ShapeLayerSetting>();
 
-    protected override void OnActivated() => Context = new BucketFillContext(WorkingLayer);
+    protected override void OnActivated() => Context = new BucketFillContext(PrimaryLayer);
 
     protected override void OnDeactivated()
     {

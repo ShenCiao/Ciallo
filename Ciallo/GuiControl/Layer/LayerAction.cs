@@ -17,12 +17,12 @@ public partial class LayerAction : Control
         Document = document;
         var sm = Document.Get<SelectionManager>();
         var subs = new CompositeDisposable();
-        Root.ConvertToShape.VisibleIf(sm.WorkingLayer,
+        Root.ConvertToShape.VisibleIf(sm.PrimaryLayer,
             e => e.TryHas<VectorFillLayerSetting>() || e.TryHas<ImageLayerSetting>(), subs);
         LayerSelectionActions.ObservePrimary(sm, s => s.ClippingMask)
             .Subscribe(Root.ClippingMask.SetPressedNoSignal).AddTo(subs);
         Root.ClippingMask.OnToggledAsObservable().Subscribe(v => LayerSelectionActions.SetProperty(
-            "Layer Clipping Mask", sm.WorkingLayers.Value, s => s.ClippingMask, v)).AddTo(subs);
+            "Layer Clipping Mask", sm.SelectedLayers.Value, s => s.ClippingMask, v)).AddTo(subs);
         subs.AddTo(Document);
     }
 
@@ -38,8 +38,8 @@ public partial class LayerAction : Control
 
     public void OnNewShapeLayer()
     {
-        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
-        LayerContextActions.NewShapeLayer(workingLayerE.IsNull ? Document : workingLayerE);
+        var primaryLayerE = Document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
+        LayerContextActions.NewShapeLayer(primaryLayerE.IsNull ? Document : primaryLayerE);
     }
 
     public void OnNewFolderLayer()
@@ -48,13 +48,13 @@ public partial class LayerAction : Control
         new CommandBuilder("New Folder Layer", Document.World.Create())
             .NewFolderLayer()
             .AddToLayerTree(parentE, index)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
     public void OnRemoveLayer()
     {
-        LayerContextActions.DeleteLayers(Document.Get<SelectionManager>().WorkingLayers.Value);
+        LayerContextActions.DeleteLayers(Document.Get<SelectionManager>().SelectedLayers.Value);
     }
 
     public void OnNewImage()
@@ -90,24 +90,24 @@ public partial class LayerAction : Control
     public void OnConvertToShape()
     {
         LayerConversionActions.ConvertToShape(
-            Document.Get<SelectionManager>().WorkingLayer.CurrentValue);
+            Document.Get<SelectionManager>().PrimaryLayer.CurrentValue);
     }
 
     /// <summary>
-    /// Returns the parent entity and insertion index for a new layer based on the current working layer.
-    /// Folder working layer → last child (visual top). Regular layer → sibling above. No selection → append to root.
+    /// Returns the parent entity and insertion index for a new layer based on the current primary layer.
+    /// Folder primary layer → last child (visual top). Regular layer → sibling above. No selection → append to root.
     /// </summary>
     private (Entity parentE, int index) GetNewLayerInsertPosition()
     {
-        var workingLayerE = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
-        if (workingLayerE.IsNull || workingLayerE.IsDocument)
+        var primaryLayerE = Document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
+        if (primaryLayerE.IsNull || primaryLayerE.IsDocument)
             return (AppDocumentManager.WorkingDocument.Value, -1);
 
-        if (workingLayerE.Has<FolderLayerSetting>())
-            return (workingLayerE, -1); // -1 resolves to Children.Count = last child = visual top
+        if (primaryLayerE.Has<FolderLayerSetting>())
+            return (primaryLayerE, -1); // -1 resolves to Children.Count = last child = visual top
 
         // Regular layer: insert as sibling just above in screen (higher index in reversed display)
-        var layerNode = workingLayerE.Get<LayerTreeNode>();
+        var layerNode = primaryLayerE.Get<LayerTreeNode>();
         return (layerNode.ParentValue, layerNode.Index + 1);
     }
 }

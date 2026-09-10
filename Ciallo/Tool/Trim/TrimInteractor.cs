@@ -171,7 +171,7 @@ public class TrimInteractor : CapturingInteraction
 
                 if (PieceTooSmall(pieceGeom.positions)) continue;
 
-                var newE = WorkingLayer.World.Create();
+                var newE = PrimaryLayer.World.Create();
                 AddShapeCreation(cmd.SetTarget(newE), sourceE)
                     .AddToLayerTree(entry.SourceLayer, originalIndex + insertOffset)
                     .SetSampledPolyline(

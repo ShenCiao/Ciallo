@@ -39,10 +39,10 @@ public class VectorFillTool : InteractionScope, ILayerDependent
 
     protected override void OnActivated()
     {
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
-        WorkingLayer.Get<OverlayHolder>().Visible = true;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
+        PrimaryLayer.Get<OverlayHolder>().Visible = true;
 
-        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
         AppPreference.ShowVectorFillReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => SetWireframeVisibility(referenceLayers, visible),
@@ -52,8 +52,8 @@ public class VectorFillTool : InteractionScope, ILayerDependent
     protected override void OnDeactivated()
     {
         DeactivateSignal.OnNext(Unit.Default);
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
-        WorkingLayer.Get<OverlayHolder>().Visible = false;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
+        PrimaryLayer.Get<OverlayHolder>().Visible = false;
     }
 
     public static void SetWireframeVisibility(IEnumerable<Entity> list, bool visible)

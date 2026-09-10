@@ -17,21 +17,21 @@ internal static class LayerSelectionActions
     public static void SelectOnly(Entity layer)
     {
         var selection = layer.Document.Get<SelectionManager>();
-        int frame = selection.ComputeFrameForWorkingLayerSelection(layer);
-        if (selection.WorkingLayers.Value.Length == 1 && selection.WorkingLayer.CurrentValue == layer
+        int frame = selection.ComputeFrameForPrimaryLayerSelection(layer);
+        if (selection.SelectedLayers.Value.Length == 1 && selection.PrimaryLayer.CurrentValue == layer
             && frame == selection.CurrentFrame.Value)
             return;
 
         new CommandBuilder("Select Layer", layer)
             .SetProperty(selection.CurrentFrame, frame)
-            .SetWorkingLayer(recordCelSelectionPreference: true)
+            .SetLayerSelection(recordCelSelectionPreference: true)
             .CommitToLatest();
     }
 
     public static void Toggle(Entity layer)
     {
         var selection = layer.Document.Get<SelectionManager>();
-        var layers = selection.WorkingLayers.Value;
+        var layers = selection.SelectedLayers.Value;
         if (layers.IsEmpty)
         {
             SelectOnly(layer);
@@ -41,13 +41,13 @@ internal static class LayerSelectionActions
             return;
 
         new CommandBuilder("Select Layers", layer.Document)
-            .SetWorkingLayer(layers: layers.Contains(layer) ? layers.Remove(layer) : layers.Add(layer))
+            .SetLayerSelection(layers: layers.Contains(layer) ? layers.Remove(layer) : layers.Add(layer))
             .CommitToLatest();
     }
 
     public static ImmutableArray<Entity> ContextLayers(Entity target)
     {
-        var selected = target.Document.Get<SelectionManager>().WorkingLayers.Value;
+        var selected = target.Document.Get<SelectionManager>().SelectedLayers.Value;
         return selected.Contains(target) ? selected : [target];
     }
 
@@ -58,7 +58,7 @@ internal static class LayerSelectionActions
     }
 
     public static Observable<T> ObservePrimary<T>(SelectionManager selection,
-        Func<CommonLayerSetting, ReactiveProperty<T>> property, T empty = default) => selection.WorkingLayer
+        Func<CommonLayerSetting, ReactiveProperty<T>> property, T empty = default) => selection.PrimaryLayer
         .Select(layer => layer.IsNull ? Observable.Return(empty) : property(layer.Get<CommonLayerSetting>()).AsObservable())
         .Switch();
 

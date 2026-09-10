@@ -175,7 +175,7 @@ public partial class TrackTree : LayerTreeBase
                 {
                     var renameMembers = celChildrenByName[name];
                     var cmd = PushToMembers(name, e => e.Get<CommonLayerSetting>().Name, v);
-                    if (renameMembers.Contains(sm.WorkingLayer.CurrentValue))
+                    if (renameMembers.Contains(sm.PrimaryLayer.CurrentValue))
                         cmd.SetProperty(folderSetting.PreferredNameForCelSelection, v);
                     cmd.Commit();
                 }).AddTo(bs);
@@ -191,11 +191,11 @@ public partial class TrackTree : LayerTreeBase
             {
                 var target = ResolveTarget();
                 LayerSelectionActions.ShowSelection(block.WorkingButton,
-                    !target.IsNull && sm.WorkingLayer.CurrentValue == target,
-                    !target.IsNull && sm.WorkingLayers.Value.Contains(target));
+                    !target.IsNull && sm.PrimaryLayer.CurrentValue == target,
+                    !target.IsNull && sm.SelectedLayers.Value.Contains(target));
             }
 
-            sm.WorkingLayers.CombineLatest(folderSetting.CurrentExposedCel, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
+            sm.SelectedLayers.CombineLatest(folderSetting.CurrentExposedCel, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
                 .DebounceFrame(1)
                 .Subscribe(_ => SyncPressed()).AddTo(bs);
             SyncPressed();

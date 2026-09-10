@@ -22,9 +22,9 @@ public class PolylineNoSelectionHover : Interaction
     {
         Subs = new();
         var worldBody = Document.Get<WorldBody>();
-        var layerBody = WorkingLayer.Get<BodyHolder>();
+        var layerBody = PrimaryLayer.Get<BodyHolder>();
 
-        // Enable cursor detections on shapes of working layer
+        // Enable cursor detections on shapes of primary layer
         worldBody.EnableHoverDetection = true;
         worldBody.CursorWorldPosition = data.WorldPosition;
         layerBody.SetChildrenBodyCursor(Control.CursorShape.Move);
@@ -55,7 +55,7 @@ public class PolylineNoSelectionHover : Interaction
     public override void Cancel()
     {
         Subs.Dispose();
-        WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+        PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
         Document.Get<WorldBody>().EnableHoverDetection = false;
 
         // overlays
@@ -84,7 +84,7 @@ public class PolylineNoSelectionHover : Interaction
 
         if (AppHotkeys.Global.EditPaste.IsPressedBy(key))
         {
-            var pastedShapes = AppClipboardManager.PasteShapes(WorkingLayer);
+            var pastedShapes = AppClipboardManager.PasteShapes(PrimaryLayer);
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
             selectedShapes.Clear();
             selectedShapes.AddRange(pastedShapes);
@@ -108,13 +108,13 @@ public class PolylineNoSelectionHover : Interaction
 
         if (key.IsPressed() && key.Keycode == Key.Shift)
         {
-            WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 
         if (key.IsReleased() && key.Keycode == Key.Shift)
         {
-            WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Move);
+            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Move);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 

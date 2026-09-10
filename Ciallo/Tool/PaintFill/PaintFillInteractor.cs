@@ -30,7 +30,7 @@ public class PaintFillInteractor : CapturingInteraction
 
         _dashPreview = new StrokeView();
         _dashPreview.Material = AutoloadRendering.DashWireframeMaterial;
-        var layerView = WorkingLayer.Get<ShapeLayerView>();
+        var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(_dashPreview);
     }
 
@@ -51,9 +51,9 @@ public class PaintFillInteractor : CapturingInteraction
             Clear();
             return;
         }
-        new CommandBuilder("Paint Fill", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Fill", PrimaryLayer.World.Create())
             .NewFilledPolygon()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(PrimaryLayer)
             .SetSampledPolyline(
                 [.. geometry.Positions, geometry.Positions[0]],
                 [.. geometry.Radii, geometry.Radii[0]],

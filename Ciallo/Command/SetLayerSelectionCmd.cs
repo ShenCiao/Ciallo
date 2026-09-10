@@ -5,7 +5,7 @@ using Frent;
 namespace Ciallo.Command;
 
 [CommandBuilder]
-public class SetWorkingLayerCmd : CommandBase
+public class SetLayerSelectionCmd : CommandBase
 {
     private readonly bool _recordCelSelectionPreference;
     private Entity _celSelectionPreferenceFolder = Entity.Null;
@@ -14,7 +14,7 @@ public class SetWorkingLayerCmd : CommandBase
     private ImmutableArray<Entity> _oldLayers;
     private ImmutableArray<Entity> _newLayers;
 
-    public SetWorkingLayerCmd(bool recordCelSelectionPreference = false, ImmutableArray<Entity> layers = default)
+    public SetLayerSelectionCmd(bool recordCelSelectionPreference = false, ImmutableArray<Entity> layers = default)
     {
         _recordCelSelectionPreference = recordCelSelectionPreference;
         _newLayers = layers;
@@ -23,7 +23,7 @@ public class SetWorkingLayerCmd : CommandBase
     public override void BeforeFirstDo(Entity newLayerE)
     {
         var sm = Document.Get<SelectionManager>();
-        _oldLayers = sm.WorkingLayers.Value;
+        _oldLayers = sm.SelectedLayers.Value;
         if (_newLayers.IsDefault)
             _newLayers = newLayerE.IsDocument ? [] : [newLayerE];
         if (_newLayers.IsEmpty)
@@ -44,13 +44,13 @@ public class SetWorkingLayerCmd : CommandBase
     {
         SetCelSelectionPreferenceName(_newPreferredName);
 
-        Document.Get<SelectionManager>().WorkingLayers.Value = _newLayers;
+        Document.Get<SelectionManager>().SelectedLayers.Value = _newLayers;
     }
 
     public override void Undo(Entity newLayerE)
     {
         SetCelSelectionPreferenceName(_oldPreferredName);
-        Document.Get<SelectionManager>().WorkingLayers.Value = _oldLayers;
+        Document.Get<SelectionManager>().SelectedLayers.Value = _oldLayers;
     }
 
     private void SetCelSelectionPreferenceName(string name)

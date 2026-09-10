@@ -49,7 +49,7 @@ public class TrimTool : InteractionScope, ILayerDependent
 
     protected override void OnActivated()
     {
-        Arrangement = WorkingLayer.Get<ArrangementManager>();
+        Arrangement = PrimaryLayer.Get<ArrangementManager>();
 
         _arrReadySub = Arrangement.ArrReady.Subscribe(_ =>
         {

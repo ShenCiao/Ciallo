@@ -38,7 +38,7 @@ internal static partial class LayerContextActions
         var roots = OperationRoots(layers);
         var deleted = roots.ToHashSet();
         var document = layers[0].Document;
-        var selected = document.Get<SelectionManager>().WorkingLayers.Value;
+        var selected = document.Get<SelectionManager>().SelectedLayers.Value;
         ImmutableArray<Entity> survivors = [.. selected.Where(e => !CoveredBy(e, deleted))];
         if (survivors.IsEmpty)
         {
@@ -49,7 +49,7 @@ internal static partial class LayerContextActions
             survivors = focus.IsNull ? [] : [focus];
         }
 
-        var cmd = new CommandBuilder("Delete Layers", document).SetWorkingLayer(layers: survivors);
+        var cmd = new CommandBuilder("Delete Layers", document).SetLayerSelection(layers: survivors);
         foreach (var layer in roots.Reverse())
         {
             RemoveParentCelFolderExposures(cmd, layer);
@@ -129,6 +129,6 @@ internal static partial class LayerContextActions
             for (int i = 0; i < roots.Length; i++)
                 cmd.SetTarget(layers[0].Document).MoveLayer(roots[i], folder, i);
         }
-        cmd.SetTarget(folder).SetWorkingLayer().Commit();
+        cmd.SetTarget(folder).SetLayerSelection().Commit();
     }
 }

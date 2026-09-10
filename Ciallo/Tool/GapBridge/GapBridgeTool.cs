@@ -53,7 +53,7 @@ public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependen
 
     protected override void OnActivated()
     {
-        Arrangement = WorkingLayer.Get<ArrangementManager>();
+        Arrangement = PrimaryLayer.Get<ArrangementManager>();
         _preview = new GapBridgePreviewManager(Document.Get<WorldOverlay>(), Arrangement.SourceShapes);
         _preview.Refresh(Arrangement.ArrReady.CurrentValue);
 

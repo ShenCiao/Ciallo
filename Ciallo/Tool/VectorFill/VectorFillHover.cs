@@ -40,7 +40,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
     private void UpdateContours(Vector2 point)
     {
-        var arr = WorkingLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
+        var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         if (arr == null)
         {
             _cachedFace = default;
@@ -64,7 +64,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
             return;
         }
 
-        var parent = WorkingLayer.Get<OverlayHolder>();
+        var parent = PrimaryLayer.Get<OverlayHolder>();
         // Grow
         while (_contours.Count < polygons.Count)
         {
@@ -146,7 +146,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
         container.AddProperty("Bounded area color",
             new NullableColorPickerButton().BindColor(AppPreference.VectorFillLayerBoundedAreaColor)
-        ).VisibleIf(sm.WorkingLayer, e => e.TryHas<VectorFillLayerSetting>());
+        ).VisibleIf(sm.PrimaryLayer, e => e.TryHas<VectorFillLayerSetting>());
 
         var showWireframe = new CheckButton()
         {
@@ -162,15 +162,15 @@ public class VectorFillHover : Interaction, IPropertyProvider
         };
         editReferenceLayers.Pressed += () =>
         {
-            var workingLayer = sm.WorkingLayer.CurrentValue;
-            if (!workingLayer.Has<VectorFillLayerSetting>()) return;
+            var primaryLayer = sm.PrimaryLayer.CurrentValue;
+            if (!primaryLayer.Has<VectorFillLayerSetting>()) return;
 
             var popup = new ReferenceLayerPickerPopup();
             popup.PopupHide += popup.QueueFree;
             container.AddChild(popup);
-            popup.Popup(Document, workingLayer);
+            popup.Popup(Document, primaryLayer);
         };
         container.AddChild(editReferenceLayers
-            .VisibleIf(sm.WorkingLayer, e => e.TryHas<VectorFillLayerSetting>()));
+            .VisibleIf(sm.PrimaryLayer, e => e.TryHas<VectorFillLayerSetting>()));
     }
 }

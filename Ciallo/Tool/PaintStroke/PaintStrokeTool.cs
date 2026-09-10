@@ -93,11 +93,11 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     protected override void OnActivated()
     {
-        Arrangement = WorkingLayer.Get<ArrangementManager>();
+        Arrangement = PrimaryLayer.Get<ArrangementManager>();
 
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
-        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
         AppPreference.ShowVectorFillReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => VectorFillTool.SetWireframeVisibility(referenceLayers, visible),
@@ -127,10 +127,10 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     internal Entity ResolveStrokeTargetLayer()
     {
-        if (!WorkingLayer.Has<VectorFillLayerSetting>())
-            return WorkingLayer;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>())
+            return PrimaryLayer;
 
-        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
         foreach (var referenceLayer in referenceLayers)
             return referenceLayer;
         return Entity.Null;

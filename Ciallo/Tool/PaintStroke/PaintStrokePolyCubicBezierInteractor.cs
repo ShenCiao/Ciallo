@@ -50,7 +50,7 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
         Input.MouseMode = Input.MouseModeEnum.Hidden;
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
         StrokePreview = new StrokeView { Material = BrushE.Get<StrokeBrushMaterial>() };
-        WorkingLayer.Get<ShapeLayerView>().AddChild(StrokePreview);
+        PrimaryLayer.Get<ShapeLayerView>().AddChild(StrokePreview);
         _snapDots = AutoloadRendering.CreateDots();
         Document.Get<WorldOverlay>().AddChild(_snapDots);
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
@@ -298,7 +298,7 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
             _startSnapTarget,
             _anchorSnapTargets.Count > 0 ? _anchorSnapTargets[^1] : null,
             AppPreference.PaintStrokeSnapDistance.Value);
-        new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", PrimaryLayer.World.Create())
             .NewStroke().AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)

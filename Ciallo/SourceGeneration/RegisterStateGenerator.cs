@@ -16,7 +16,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
     private const string LayerDependentFqn = "Ciallo.Tool.ILayerDependent";
     private const string ScopeName = "InteractionScope";
     private const string ConfigureMethodName = "ConfigureStateMachine";
-    private const string LayersTriggerName = "WorkingLayersChanged";
+    private const string LayersTriggerName = "SelectedLayersChanged";
 
     private static readonly DiagnosticDescriptor ButtonToolNotRegistered = new(
         id: "CIALLO003",
@@ -40,7 +40,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
 
     private static readonly DiagnosticDescriptor DuplicateLayersTrigger = new(
         id: "CIALLO005",
-        title: "Working-layer trigger configured twice",
+        title: "Selected-layer trigger configured twice",
         messageFormat:
             "'{0}' implements ILayerDependent, so {1} is generated for it; its {2} also configures "
             + "{1}. Stateless rejects two transitions for one trigger at the first fire, not at "
@@ -151,7 +151,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
     }
 
     // Scans this type's own ConfigureStateMachine for any Permit*/Ignore whose trigger argument
-    // mentions WorkingLayersChanged. Syntactic and deliberately broad: the realistic mistake is
+    // mentions SelectedLayersChanged. Syntactic and deliberately broad: the realistic mistake is
     // pasting the old PermitReentryIf line into a tool that now gets one generated (CIALLO005).
     private static Location? FindLayersTriggerConfiguration(INamedTypeSymbol type)
     {
@@ -498,11 +498,11 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                     }
             """);
 
-        // Working-layer reentry. Without it Stateless keeps the scope active as common ancestor when
+        // Selected-layer reentry. Without it Stateless keeps the scope active as common ancestor when
         // the layer context changes, so only the leaf session re-enters and the scope's layer-bound
         // state stays bound to the previous layer.
         //
-        // The guard takes the layers from the trigger parameter: InteractionManager.WorkingLayers is
+        // The guard takes the layers from the trigger parameter: InteractionManager.SelectedLayers is
         // still the pre-transition snapshot while a guard runs. Guard failure falls through to
         // GlobalInteractiveScope's PermitDynamic, which performs the tool switch.
         // Layer dependency applies equally to manually registered and button-registered scopes.
@@ -517,7 +517,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
                 builder.AppendLine(
                     "            .PermitReentryIf(");
                 builder.AppendLine(
-                    "                InteractionManager.WorkingLayersChanged,");
+                    "                InteractionManager.SelectedLayersChanged,");
                 builder.AppendLine(
                     $"                layers => InteractionManager.HasUsableLayers(layers) && "
                     + $"{tool.Fqn}.CanHandleLayers(layers));");
@@ -772,7 +772,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         public bool IsLayerDependent { get; }
         public bool IsScope { get; }
 
-        // Where this type hand-configures WorkingLayersChanged, when it also gets one generated.
+        // Where this type hand-configures SelectedLayersChanged, when it also gets one generated.
         public Location? LayersTriggerLocation { get; }
         public Location Location { get; }
     }

@@ -89,7 +89,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
             .NewVectorFillLayer();
         AddReferenceLayers(cmd, referenceLayers)
             .AddToLayerTree(Document, 0)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
@@ -120,7 +120,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         }
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetWorkingLayer(true);
+            cmd.SetTarget(focusVectorFillLayer).SetLayerSelection(true);
 
         cmd.Commit();
     }
@@ -167,7 +167,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
                     newCelFolder));
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetWorkingLayer(true);
+            cmd.SetTarget(focusVectorFillLayer).SetLayerSelection(true);
 
         cmd.Commit();
     }
@@ -209,8 +209,8 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     }
 
     /// <summary>
-    /// Picks the source cel whose newly-created vector fill layer should become the working layer.
-    /// Prefers the cel exposed at the current frame, then falls back to the current working layer's cel.
+    /// Picks the source cel whose newly-created vector fill layer should become the primary layer.
+    /// Prefers the cel exposed at the current frame, then falls back to the current primary layer's cel.
     /// </summary>
     private Entity ResolveFocusSourceCel(Entity celFolder)
     {
@@ -223,7 +223,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
                 return exposures.GetValueAtIndex(index);
         }
 
-        return FindCelUnderCelFolder(WorkingLayer, celFolder);
+        return FindCelUnderCelFolder(PrimaryLayer, celFolder);
     }
 
     private static Entity FindCelUnderCelFolder(Entity layer, Entity celFolder)

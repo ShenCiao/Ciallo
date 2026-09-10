@@ -20,7 +20,7 @@ public class BucketFillHover : Interaction, IPropertyProvider
     {
         _context = Tool.Context;
         _context.SourceChanged += Refresh;
-        _preview = new BucketFillContourPreview(WorkingLayer);
+        _preview = new BucketFillContourPreview(PrimaryLayer);
         _subscriptions = new();
         AppPreference.BucketFill.GapAware.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
         AppPreference.BucketFill.GapFactor.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);

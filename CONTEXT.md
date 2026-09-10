@@ -82,16 +82,20 @@ A cel child archetype is a shared editable setting grouped by layer name across 
 
 ### Preferred Cel Child Name
 
-A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the working layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the working layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Blank selects the cel folder itself without changing the preferred name. It is set only when the working layer becomes a direct cel child, and is empty by default.
+A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the primary layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the primary layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Blank selects the cel folder itself without changing the preferred name. It is set only when the primary layer becomes a direct cel child, and is empty by default.
 
 ### Folder layer
 Any layer's parent must be a folder layer. The document entity is a folder layer entity.
 
-### Working Layers
+### Selected Layers
 
-Working layers are an ordered selection. The first layer is the primary drawing target and shows a brush icon; additional selected layers show checkmarks. Clicking a layer name selects only that layer. Its selection button toggles additional membership, while the primary layer's button cannot deselect it. Current drawing tools judge and edit only the primary layer. Navigating between cels resets the selection to the newly resolved primary layer.
+Selected layers are an ordered selection without duplicates, stored in `SelectionManager.SelectedLayers`. Clicking a layer name selects only that layer. Its selection button toggles additional membership, while the primary layer's button cannot deselect it. Navigating between cels resets the selection to the newly resolved primary layer. Saved selection state may be discarded when its schema changes.
 
 Right-clicking a selected layer targets the whole selection. Right-clicking an unselected layer targets only that layer and leaves the selection unchanged. Delete, group, split, and drag operate on these targets as one undoable action. Structural operations treat a selected ancestor as covering its selected descendants and preserve visual stacking order. Visibility and the layer panel's opacity, mark color, blend mode, and clipping controls edit the selected layers together.
+
+### Primary Layer
+
+The primary layer is the first selected layer, exposed as the read-only `PrimaryLayer` property. It shows a brush icon; additional selected layers show checkmarks. Current drawing tools judge and edit only the primary layer. An empty selection has no primary layer (`Entity.Null`).
 
 ### Layer Merge
 
@@ -117,7 +121,7 @@ An exposure span is the interval an exposure covers. It begins at that exposure'
 
 ### Blank Exposure
 
-A Blank exposure is an exposure whose exposed cel is Blank, giving the cel folder an explicit empty span. In `FolderLayerSetting.Exposures`, any value whose entity is a CelFolder represents Blank; authored Blank values are self-references to the owning CelFolder. Blank displays no current layer, contributes a blank onion-skin exposure offset, and preserves the cel folder as the working layer so later cel navigation can recover the preferred cel child.
+A Blank exposure is an exposure whose exposed cel is Blank, giving the cel folder an explicit empty span. In `FolderLayerSetting.Exposures`, any value whose entity is a CelFolder represents Blank; authored Blank values are self-references to the owning CelFolder. Blank displays no current layer, contributes a blank onion-skin exposure offset, and preserves the cel folder as the primary layer so later cel navigation can recover the preferred cel child.
 
 Blank is an authored exposure, not the absence of one: a frame that no exposure's span covers is not Blank. This is why Blank occupies an exposure of its own.
 
@@ -143,11 +147,11 @@ A shape is a selectable drawable object inside a shape-editable layer. The Selec
 
 ### Shape Clipboard
 
-A shape clipboard is temporary copied or cut shape content that can later be pasted into a compatible working layer. It is distinct from layer-level copy and paste.
+A shape clipboard is temporary copied or cut shape content that can later be pasted into a compatible primary layer. It is distinct from layer-level copy and paste.
 
 ### Shape Paste
 
-A shape paste creates new shapes from shape clipboard content in the current working layer. It is distinct from layer-level paste.
+A shape paste creates new shapes from shape clipboard content in the current primary layer. It is distinct from layer-level paste.
 
 ### Stroke Prediction
 

@@ -157,7 +157,7 @@ public static partial class AppDocumentManager
         var loadSelectionCmd = new CommandBuilder("Load Selection");
         var dataSm = dataDocument.Get<SelectionManager>();
         loadSelectionCmd.SetTarget(resultDocument)
-            .SetWorkingLayer(true, [.. dataSm.WorkingLayers.Value.Select(e => entityMap[e])]);
+            .SetLayerSelection(true, [.. dataSm.SelectedLayers.Value.Select(e => entityMap[e])]);
 
         var dataStrokeBrushE = dataSm.WorkingStrokeBrush.Value;
         if (!dataStrokeBrushE.IsNull)

@@ -13,7 +13,7 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 public static partial class InteractionManager
 {
     private static readonly Trigger DocumentOpenedTrigger = new("DocumentOpened");
-    private static readonly Trigger WorkingLayersChangedTrigger = new("WorkingLayersChanged");
+    private static readonly Trigger SelectedLayersChangedTrigger = new("SelectedLayersChanged");
     private static readonly Trigger TimelineRollingChangedTrigger = new("TimelineRollingChanged");
     private static readonly Trigger ToolButtonSwitchTrigger = new("ToolButtonSwitch");
 
@@ -23,7 +23,7 @@ public static partial class InteractionManager
         [AppHotkeys.Global.InteractionCancel, AppHotkeys.Global.InteractionConfirm];
 
     private static Entity _document = Entity.Null;
-    private static ImmutableArray<Entity> _workingLayers = ImmutableArray<Entity>.Empty;
+    private static ImmutableArray<Entity> _selectedLayers = ImmutableArray<Entity>.Empty;
     private static bool _timelineRolling;
     private static CursorButtonData _latestCursor;
     private static CursorButtonData _lastDeliveredCursor;
@@ -35,14 +35,14 @@ public static partial class InteractionManager
         DocumentOpened;
     public static readonly Trigger DocumentClosed = new("DocumentClosed");
     public static readonly StateMachine.TriggerWithParameters<ImmutableArray<Entity>>
-        WorkingLayersChanged;
+        SelectedLayersChanged;
     public static readonly StateMachine.TriggerWithParameters<bool> TimelineRollingChanged;
     public static readonly StateMachine.TriggerWithParameters<ToolButton.Type?> ToolButtonSwitch;
 
     public static event Action StateChanged;
 
     internal static Entity Document => _document;
-    internal static ImmutableArray<Entity> WorkingLayers => _workingLayers;
+    internal static ImmutableArray<Entity> SelectedLayers => _selectedLayers;
     internal static CursorButtonData LatestCursor => _latestCursor;
 
     // This is the machine-level context boundary. Tool predicates only decide whether their own
@@ -79,9 +79,9 @@ public static partial class InteractionManager
         DocumentOpened =
             StateMachine.SetTriggerParameters<Entity, ImmutableArray<Entity>>(
                 DocumentOpenedTrigger);
-        WorkingLayersChanged =
+        SelectedLayersChanged =
             StateMachine.SetTriggerParameters<ImmutableArray<Entity>>(
-                WorkingLayersChangedTrigger);
+                SelectedLayersChangedTrigger);
         TimelineRollingChanged =
             StateMachine.SetTriggerParameters<bool>(
                 TimelineRollingChangedTrigger);
@@ -96,20 +96,20 @@ public static partial class InteractionManager
             if (transition.Trigger == DocumentOpened.Trigger)
             {
                 _document = (Entity)transition.Parameters[0];
-                _workingLayers = (ImmutableArray<Entity>)transition.Parameters[1];
+                _selectedLayers = (ImmutableArray<Entity>)transition.Parameters[1];
                 _timelineRolling = false;
                 _latestCursor = default;
             }
             else if (transition.Trigger == DocumentClosed)
             {
                 _document = Entity.Null;
-                _workingLayers = ImmutableArray<Entity>.Empty;
+                _selectedLayers = ImmutableArray<Entity>.Empty;
                 _timelineRolling = false;
                 _latestCursor = default;
             }
-            else if (transition.Trigger == WorkingLayersChanged.Trigger)
+            else if (transition.Trigger == SelectedLayersChanged.Trigger)
             {
-                _workingLayers = (ImmutableArray<Entity>)transition.Parameters[0];
+                _selectedLayers = (ImmutableArray<Entity>)transition.Parameters[0];
             }
             else if (transition.Trigger == TimelineRollingChanged.Trigger)
             {
@@ -147,9 +147,9 @@ public static partial class InteractionManager
 
     // One application-wide machine. Opening supplies first context; closing returns to NoDocument.
     // Tool modes and settings persist across this boundary (singleton scopes, not per-document).
-    public static void OpenDocument(Entity document, ImmutableArray<Entity> workingLayers)
+    public static void OpenDocument(Entity document, ImmutableArray<Entity> selectedLayers)
     {
-        StateMachine.Fire(DocumentOpened, document, workingLayers);
+        StateMachine.Fire(DocumentOpened, document, selectedLayers);
     }
 
     // Called from AppDocumentManager.Remove while document is still WorkingDocument and World alive.
@@ -160,12 +160,12 @@ public static partial class InteractionManager
         StateMachine.Fire(DocumentClosed);
     }
 
-    // Only operation that requests WorkingLayers change. AutoloadTool forwards SelectionManager
+    // Only operation that requests SelectedLayers change. AutoloadTool forwards SelectionManager
     // stream; panels don't call independently. Empty, document-root and dead snapshots resolve to
     // unavailable at global scope; arity is each tool's own decision via ILayerDependent.
-    public static void ChangeWorkingLayers(ImmutableArray<Entity> nextLayers)
+    public static void SetSelectedLayers(ImmutableArray<Entity> nextLayers)
     {
-        StateMachine.Fire(WorkingLayersChanged, nextLayers);
+        StateMachine.Fire(SelectedLayersChanged, nextLayers);
     }
 
     // AutoloadTool forwards TimelineSetting.IsRollingFrame through DistinctUntilChanged.

@@ -608,9 +608,9 @@ public partial class CelTrack : Control
                         int oldFrame = CurrentFrame.Value;
                         var cmd = new CommandBuilder("Select Cel Exposure", _celFolderEntity)
                             .SetProperty(CurrentFrame, oldFrame, pressedFrame);
-                        var newWorkingLayer = _selectionManager.ComputeWorkingLayerForCelButtonSelection(_celFolderEntity, clickedCel);
-                        if (!newWorkingLayer.IsNull)
-                            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+                        var newPrimaryLayer = _selectionManager.ComputePrimaryLayerForCelButtonSelection(_celFolderEntity, clickedCel);
+                        if (!newPrimaryLayer.IsNull)
+                            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
                         cmd.CommitToLatest();
                     }
                 }

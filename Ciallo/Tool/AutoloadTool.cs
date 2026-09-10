@@ -16,11 +16,11 @@ public partial class AutoloadTool : Node
         {
             if (document.IsNull) return;
 
-            InteractionManager.OpenDocument(document, document.Get<SelectionManager>().WorkingLayers.Value);
+            InteractionManager.OpenDocument(document, document.Get<SelectionManager>().SelectedLayers.Value);
 
-            document.Get<SelectionManager>().WorkingLayers
+            document.Get<SelectionManager>().SelectedLayers
                 .Skip(1)
-                .Subscribe(InteractionManager.ChangeWorkingLayers)
+                .Subscribe(InteractionManager.SetSelectedLayers)
                 .AddTo(document);
 
             document.Get<TimelineSetting>().IsRollingFrame

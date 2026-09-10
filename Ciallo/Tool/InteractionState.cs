@@ -14,8 +14,8 @@ public abstract class InteractionState
 {
     // Manager-owned snapshots. States can trust these are valid (no null/availability checks needed).
     protected static Entity Document => InteractionManager.Document;
-    protected static ImmutableArray<Entity> WorkingLayers => InteractionManager.WorkingLayers;
-    protected static Entity WorkingLayer => WorkingLayers.First();
+    protected static ImmutableArray<Entity> SelectedLayers => InteractionManager.SelectedLayers;
+    protected static Entity PrimaryLayer => SelectedLayers.First();
     protected static CursorButtonData LatestCursor => InteractionManager.LatestCursor;
 
     // Publish semantic events. Queued: defers during active transitions, otherwise synchronous.
@@ -27,7 +27,7 @@ public abstract class InteractionState
 }
 
 // Scopes are process-lifetime singletons, so they hold no per-document state of their own: anything
-// bound to a document or layer is loaded from Document/WorkingLayers in OnActivated, kept in instance
+// bound to a document or layer is loaded from Document/SelectedLayers in OnActivated, kept in instance
 // fields, and released in OnDeactivated.
 public abstract class InteractionScope : InteractionState
 {
@@ -111,7 +111,7 @@ public abstract class CapturingInteraction : Interaction
         transition.Trigger == InteractionManager.DocumentClosed ||
         transition.Trigger == InteractionManager.TimelineRollingChanged.Trigger ||
         transition.Trigger == InteractionManager.ToolButtonSwitch.Trigger ||
-        transition.Trigger == InteractionManager.WorkingLayersChanged.Trigger;
+        transition.Trigger == InteractionManager.SelectedLayersChanged.Trigger;
 }
 
 // Required on every state class: the generator only sees states carrying this.
@@ -133,10 +133,10 @@ public sealed class RequestedByToolButtonAttribute(ToolButton.Type button) : Att
     public ToolButton.Type Button { get; } = button;
 }
 
-// Implement on a tool scope whose context depends on the working layers. This is independent of
+// Implement on a tool scope whose context depends on the selected layers. This is independent of
 // [RequestedByToolButton]: both manually registered and button-registered scopes get layer reentry.
 //
-// The generator emits a guarded reentry on WorkingLayersChanged when this scope still accepts the
+// The generator emits a guarded reentry on SelectedLayersChanged when this scope still accepts the
 // incoming layers. This exits and reactivates the whole scope so its layer-bound state (ArrangementManager,
 // BodyHolder.ProcessMode) is refreshed along with the leaf interaction. If the guard fails, the trigger
 // bubbles to GlobalInteractiveScope, which resolves the selected button to another scope or fallback.
@@ -145,7 +145,7 @@ public sealed class RequestedByToolButtonAttribute(ToolButton.Type button) : Att
 // CanHandleLayers only ever receives a non-empty snapshot of live non-document layers, so skip null,
 // liveness and document checks. Current tools judge and edit the first layer only.
 // Decide from the argument alone: at call time
-// InteractionManager.WorkingLayers still holds the pre-transition snapshot.
+// InteractionManager.SelectedLayers still holds the pre-transition snapshot.
 public interface ILayerDependent
 {
     static abstract bool CanHandleLayers(ImmutableArray<Entity> layers);

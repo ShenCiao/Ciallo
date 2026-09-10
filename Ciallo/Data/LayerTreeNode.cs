@@ -30,7 +30,7 @@ public class LayerTreeNode : EntityTreeNode<LayerTreeNode>
 
     /// <summary>
     /// Assume the given node at path is focused and going to be deleted, return the path to the next node that should have focus.
-    /// e.g. Used at deletion of working layer to determine the new working layer.
+    /// e.g. Used at deletion of primary layer to determine the new primary layer.
     /// </summary>
     /// <param name="path">The given node path.</param>
     /// <returns>

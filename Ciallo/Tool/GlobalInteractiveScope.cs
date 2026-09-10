@@ -53,18 +53,18 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
         sm.Configure(TimelineRolling)
             .Ignore(InteractionManager.ToolButtonSwitch.Trigger)
             // Reentry, not .Ignore: OnTransitioned runs only for real transitions, and .Ignore would
-            // leave InteractionManager.WorkingLayers stale.
-            .PermitReentry(InteractionManager.WorkingLayersChanged.Trigger);
+            // leave InteractionManager.SelectedLayers stale.
+            .PermitReentry(InteractionManager.SelectedLayersChanged.Trigger);
         sm.Configure(this)
             .Permit(InteractionManager.DocumentClosed, NoDocument)
             .PermitDynamic(
                 InteractionManager.ToolButtonSwitch,
-                button => ResolveContext(button, InteractionManager.WorkingLayers))
+                button => ResolveContext(button, InteractionManager.SelectedLayers))
             // The fallback for layer changes: reached when no substate handles the trigger. An
             // ILayerDependent tool's generated reentry wins while that tool still accepts the incoming
             // layers; once its guard fails, Stateless falls through here and the tool switches.
             .PermitDynamic(
-                InteractionManager.WorkingLayersChanged,
+                InteractionManager.SelectedLayersChanged,
                 layers => ResolveContext(ToolButton.ActiveToolButton.Value, layers))
             .PermitDynamic(
                 InteractionManager.TimelineRollingChanged,
@@ -72,7 +72,7 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
                     ? TimelineRolling
                     : ResolveContext(
                         ToolButton.ActiveToolButton.Value,
-                        InteractionManager.WorkingLayers));
+                        InteractionManager.SelectedLayers));
     }
 
     // The one place context becomes a concrete tool. Liveness is settled here so CanHandleLayers only

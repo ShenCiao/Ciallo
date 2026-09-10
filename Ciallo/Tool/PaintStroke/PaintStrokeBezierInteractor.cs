@@ -83,7 +83,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
         StrokePreview = new StrokeView { Material = brushMaterial };
-        var layerView = WorkingLayer.Get<ShapeLayerView>();
+        var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(StrokePreview);
 
         _snapDots = AutoloadRendering.CreateDots();
@@ -296,7 +296,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         for (int i = 0; i < geometry.Positions.Length; i++)
             positions[i] = geometry.Positions[i];
 
-        new CommandBuilder("Paint Stroke (Bezier)", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Stroke (Bezier)", PrimaryLayer.World.Create())
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)

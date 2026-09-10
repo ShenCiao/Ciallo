@@ -96,9 +96,9 @@ public partial class TimelineAction : Container
         var cmd = new CommandBuilder("Navigate Timeline")
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
-        var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(newFrame);
-        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+        var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(newFrame);
+        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
 
         cmd.CommitOpenSequence();
     }
@@ -170,7 +170,7 @@ public partial class TimelineAction : Container
     {
         bool wasPlaying = _isPlaying.Value;
         if (wasPlaying && !playing)
-            SwitchWorkingLayerAfterPlayback();
+            SwitchPrimaryLayerAfterPlayback();
 
         _isPlaying.Value = playing;
         _playbackAccumulator = 0.0;
@@ -179,21 +179,21 @@ public partial class TimelineAction : Container
         SetProcess(playing);
     }
 
-    private void SwitchWorkingLayerAfterPlayback()
+    private void SwitchPrimaryLayerAfterPlayback()
     {
         if (_selectionManager == null) return;
 
         int currentFrame = _selectionManager.CurrentFrame.Value;
-        var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(currentFrame);
-        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-            new CommandBuilder("Playback Select Working Layer", newWorkingLayer).SetWorkingLayer().Do();
+        var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(currentFrame);
+        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+            new CommandBuilder("Playback Select Primary Layer", newPrimaryLayer).SetLayerSelection().Do();
     }
 
     private void OnAddCelFolder()
     {
         var folder = Document.World.Create();
-        var workingLayer = Document.Get<SelectionManager>().WorkingLayer.CurrentValue;
-        var cursor = workingLayer.IsNull ? Document : workingLayer;
+        var primaryLayer = Document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
+        var cursor = primaryLayer.IsNull ? Document : primaryLayer;
         Entity firstNonAnimFolder = Entity.Null;
         Entity animFolderParent = Entity.Null;
 
@@ -218,7 +218,7 @@ public partial class TimelineAction : Container
         new CommandBuilder("New Cel Folder", folder)
             .NewCelFolder()
             .AddToLayerTree(parent)
-            .SetWorkingLayer()
+            .SetLayerSelection()
             .Commit();
     }
 
@@ -259,7 +259,7 @@ public partial class TimelineAction : Container
             .AddToLayerTree(celFolder);
 
         // name -> the new cel's child carrying that name. Drives both VF reference remap and the
-        // working-layer pick. Each surviving archetype name yields exactly one child, so this is 1:1.
+        // primary-layer pick. Each surviving archetype name yields exactly one child, so this is 1:1.
         var newChildByName = new Dictionary<string, Entity>();
         var newVectorFillReps = new List<(Entity newChild, Entity representative)>();
 
@@ -275,7 +275,7 @@ public partial class TimelineAction : Container
                 cmd.SetTarget(shapeLayerE)
                     .NewShapeLayer()
                     .AddToLayerTree(celE)
-                    .SetWorkingLayer();
+                    .SetLayerSelection();
             }
         }
         else
@@ -322,12 +322,12 @@ public partial class TimelineAction : Container
                 }
             }
 
-            // Working layer follows the same rule as a cel-button click: the new cel's child sharing the
+            // Primary layer follows the same rule as a cel-button click: the new cel's child sharing the
             // folder's preferred name. No match (empty preference, or that name was filtered) -> leave the
-            // working layer untouched, same "rather not select than select wrong" stance as cel navigation.
+            // primary layer untouched, same "rather not select than select wrong" stance as cel navigation.
             string preferredName = folderSetting.PreferredNameForCelSelection.Value;
-            if (newChildByName.TryGetValue(preferredName, out var workingLayerE))
-                cmd.SetTarget(workingLayerE).SetWorkingLayer();
+            if (newChildByName.TryGetValue(preferredName, out var primaryLayerE))
+                cmd.SetTarget(primaryLayerE).SetLayerSelection();
         }
 
         cmd.SetTarget(celFolder)

@@ -47,7 +47,7 @@ public class PaintStrokeInteractor : CapturingInteraction
         {
             Material = brushMaterial
         };
-        var layerView = WorkingLayer.Get<ShapeLayerView>();
+        var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(StrokePreview);
 
         _snapDots = AutoloadRendering.CreateDots();
@@ -82,7 +82,7 @@ public class PaintStrokeInteractor : CapturingInteraction
             return;
         }
 
-        new CommandBuilder("Paint Stroke", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Stroke", PrimaryLayer.World.Create())
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)

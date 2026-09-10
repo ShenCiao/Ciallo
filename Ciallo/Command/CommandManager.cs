@@ -79,7 +79,7 @@ public partial class CommandManager
 
     /// <summary>
     /// Appends a segment to the latest undoable action if one exists.
-    /// Use this for commands that doesn't actually change visual contents, like switch working layer or toggle folder's expanded state.
+    /// Use this for commands that doesn't actually change visual contents, like switch primary layer or toggle folder's expanded state.
     /// </summary>
     public void CommitToLatest(string actionName, List<ICommand> commands, bool execute = true)
     {

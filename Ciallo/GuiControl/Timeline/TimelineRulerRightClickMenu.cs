@@ -192,9 +192,9 @@ public partial class TimelineRulerRightClickMenu : PopupMenu
         if (oldFrame == newFrame) return;
 
         cmd.SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
-        var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(newFrame);
-        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+        var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(newFrame);
+        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
     }
 
     private bool CanDeleteFrame()

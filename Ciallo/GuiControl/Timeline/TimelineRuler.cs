@@ -199,7 +199,7 @@ public partial class TimelineRuler : Control
         playbackEnd.Subscribe(_ => QueueRedraw()).AddTo(this);
     }
 
-    /// <summary>Wire the selection manager for working-layer switching on frame change.</summary>
+    /// <summary>Wire the selection manager for primary-layer switching on frame change.</summary>
     public void BindSelectionManager(SelectionManager sm)
     {
         _selectionManager = sm;
@@ -472,9 +472,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-                            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+                        var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
+                        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+                            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -485,9 +485,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-                            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+                        var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
+                        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+                            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -588,9 +588,9 @@ public partial class TimelineRuler : Control
             .SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
         if (_currentFrame.Value != _frameAtDragStart)
         {
-            var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-            if (!newWorkingLayer.IsNull && (newWorkingLayer != _selectionManager.WorkingLayer.CurrentValue || _selectionManager.WorkingLayers.Value.Length > 1))
-                cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+            var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
+            if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+                cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
         }
         cmd.CommitToLatest();
     }
@@ -607,9 +607,9 @@ public partial class TimelineRuler : Control
     private int EndFromX(float localX) =>
         Mathf.Max(XToFrame(localX), _playbackStart.Value + 1);
 
-    // ── Working-layer switch on frame change ─────────────────────────────────
+    // ── Selected-layer switch on frame change ─────────────────────────────────
 
-    /// <summary>Delegates to <see cref="SelectionManager.ResolveWorkingLayerForTimelineFrameSelection"/>.</summary>
-    private Entity ResolveWorkingLayerAfterFrameChange(int frame) =>
-        _selectionManager?.ResolveWorkingLayerForTimelineFrameSelection(frame) ?? Entity.Null;
+    /// <summary>Delegates to <see cref="SelectionManager.ResolvePrimaryLayerForTimelineFrameSelection"/>.</summary>
+    private Entity ResolvePrimaryLayerAfterFrameChange(int frame) =>
+        _selectionManager?.ResolvePrimaryLayerForTimelineFrameSelection(frame) ?? Entity.Null;
 }

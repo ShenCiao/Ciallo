@@ -20,12 +20,12 @@ public partial class LayerPanel : VBoxContainer, IInitable
         LayerSelectionActions.ObservePrimary(selection, s => s.Opacity)
             .Subscribe(v => LayerProperty.Opacity.SetValueNoSignal(v)).AddTo(document);
         LayerProperty.Opacity.SignalAsObservable<double, double>(SpinSlider.SignalName.ValueChanged)
-            .Subscribe(v => LayerSelectionActions.SetProperty("Layer Opacity", selection.WorkingLayers.Value,
+            .Subscribe(v => LayerSelectionActions.SetProperty("Layer Opacity", selection.SelectedLayers.Value,
                 s => s.Opacity, (float)v.Item2, sequence: true)).AddTo(document);
         LayerSelectionActions.ObservePrimary(selection, s => s.MarkColor)
             .Subscribe(LayerProperty.LayerMark.SetColorOrNullNoSignal).AddTo(document);
         LayerProperty.LayerMark.ColorOrNullChanged.Subscribe(v => LayerSelectionActions.SetProperty(
-            "Layer Mark Color", selection.WorkingLayers.Value, s => s.MarkColor, v, sequence: true)).AddTo(document);
+            "Layer Mark Color", selection.SelectedLayers.Value, s => s.MarkColor, v, sequence: true)).AddTo(document);
 
         var modes = Enum.GetValues<LayerBlendMode>();
         LayerProperty.BlendMode.Clear();
@@ -34,7 +34,7 @@ public partial class LayerPanel : VBoxContainer, IInitable
         LayerSelectionActions.ObservePrimary(selection, s => s.BlendMode)
             .Subscribe(v => LayerProperty.BlendMode.Select(Array.IndexOf(modes, v))).AddTo(document);
         LayerProperty.BlendMode.OnItemSelectedAsObservable().Subscribe(index => LayerSelectionActions.SetProperty(
-            "Layer Blend Mode", selection.WorkingLayers.Value, s => s.BlendMode, modes[(int)index])).AddTo(document);
+            "Layer Blend Mode", selection.SelectedLayers.Value, s => s.BlendMode, modes[(int)index])).AddTo(document);
         document.Add(LayerTree);
         document.Add(LayerTree.RootContainer);
         LayerAction.Init(document);

@@ -120,22 +120,22 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     protected override void OnActivated()
     {
-        if (WorkingLayer.Has<VectorFillLayerSetting>())
-            WorkingLayer.Get<OverlayHolder>().Visible = true;
-        WorkingLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
+        if (PrimaryLayer.Has<VectorFillLayerSetting>())
+            PrimaryLayer.Get<OverlayHolder>().Visible = true;
+        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
         // Guard selection
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var deselect = selectedShapes
-            .Where(e => e.Get<LayerTreeNode>().ParentValue != WorkingLayer).Reverse().ToArray();
+            .Where(e => e.Get<LayerTreeNode>().ParentValue != PrimaryLayer).Reverse().ToArray();
         foreach (var e in deselect)
             selectedShapes.Remove(e);
     }
 
     protected override void OnDeactivated()
     {
-        if (WorkingLayer.Has<VectorFillLayerSetting>())
-            WorkingLayer.Get<OverlayHolder>().Visible = false;
-        WorkingLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        if (PrimaryLayer.Has<VectorFillLayerSetting>())
+            PrimaryLayer.Get<OverlayHolder>().Visible = false;
+        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
     }
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
@@ -146,7 +146,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectAllButton = container.CreateButton("Select all").AddToChildOf(selectionButtonGroup);
         selectAllButton.Pressed += () =>
         {
-            var layerE = selectionManager.WorkingLayer.CurrentValue;
+            var layerE = selectionManager.PrimaryLayer.CurrentValue;
             if (layerE.IsDyingOrDead) return;
             selectionManager.SelectedShapes.Clear();
             selectionManager.SelectedShapes.AddRange(layerE.Get<LayerTreeNode>().Children);

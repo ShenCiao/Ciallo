@@ -105,8 +105,8 @@ public abstract partial class LayerTreeBase : ScrollContainer
         var block = GetBlock(e);
         var selection = e.Document.Get<SelectionManager>();
         void SyncSelection() => LayerSelectionActions.ShowSelection(block.WorkingButton,
-            selection.WorkingLayer.CurrentValue == e, selection.WorkingLayers.Value.Contains(e));
-        selection.WorkingLayers.Subscribe(_ => SyncSelection()).AddTo(subs);
+            selection.PrimaryLayer.CurrentValue == e, selection.SelectedLayers.Value.Contains(e));
+        selection.SelectedLayers.Subscribe(_ => SyncSelection()).AddTo(subs);
         block.WorkingButton.Pressed += () =>
         {
             LayerSelectionActions.Toggle(e);
@@ -299,7 +299,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
     private void OnDragStart(ILayerBlock draggedBlock, InputEventMouseMotion motion)
     {
         ScrollAccum = 0f;
-        if (!draggedBlock.LayerEntity.Document.Get<SelectionManager>().WorkingLayers.Value.Contains(draggedBlock.LayerEntity))
+        if (!draggedBlock.LayerEntity.Document.Get<SelectionManager>().SelectedLayers.Value.Contains(draggedBlock.LayerEntity))
             LayerSelectionActions.SelectOnly(draggedBlock.LayerEntity);
         _draggedLayers = LayerContextActions.OperationRoots(LayerSelectionActions.ContextLayers(draggedBlock.LayerEntity));
         DraggedSubtreeHasCelFolder = _draggedLayers.Any(e => GetWrapper(e).HasCelFolderInSubtree());

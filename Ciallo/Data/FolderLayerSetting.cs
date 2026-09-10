@@ -90,13 +90,13 @@ public class FolderLayerSetting
     public readonly ObservableDictionary<string, ObservableHashSet<Entity>> CelChildrenByName = new();
 
     /// <summary>
-    /// When navigating to a cel (clicking a cel button or scrubbing the timeline), the working layer
+    /// When navigating to a cel (clicking a cel button or scrubbing the timeline), the primary layer
     /// follows the direct cel child sharing this name. If the newly exposed cel has no direct child with
     /// this name (including the empty-name default), no layer is selected.
     ///
-    /// Set when the working layer becomes a direct cel child (see <see cref="Command.SetWorkingLayerCmd"/>),
-    /// and migrated when the working layer's cel-child archetype is renamed.
-    /// Other working-layer changes leave it untouched. Empty by default.
+    /// Set when the primary layer becomes a direct cel child (see <see cref="Command.SetLayerSelectionCmd"/>),
+    /// and migrated when the primary layer's cel-child archetype is renamed.
+    /// Other primary-layer changes leave it untouched. Empty by default.
     /// </summary>
     [DataMember, ProjectField]
     public ReactiveProperty<string> PreferredNameForCelSelection = new("");

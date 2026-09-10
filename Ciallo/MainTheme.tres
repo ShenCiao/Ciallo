@@ -148,6 +148,7 @@ thickness = 8
 [resource]
 default_font = ExtResource("1_4as0w")
 default_font_size = 20
+Button/constants/align_to_largest_stylebox = 1
 Button/styles/focus = SubResource("StyleBoxEmpty_8s18r")
 ColorPickerButton/styles/focus = SubResource("StyleBoxEmpty_u23kh")
 ColorPickerButton/styles/normal = SubResource("StyleBoxEmpty_ogfsw")

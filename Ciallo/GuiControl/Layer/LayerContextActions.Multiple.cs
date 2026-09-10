@@ -9,28 +9,8 @@ namespace Ciallo.GuiControl;
 
 internal static partial class LayerContextActions
 {
-    // Bottom-to-top tree order, with selected descendants covered by their selected ancestor.
     public static ImmutableArray<Entity> OperationRoots(ImmutableArray<Entity> layers)
-    {
-        if (layers.IsEmpty) return [];
-        var selected = layers.ToHashSet();
-        return [.. LayerOrder(layers[0].Document).Where(e => selected.Contains(e)
-            && !e.Get<LayerTreeNode>().EnumerateAncestors().Any(selected.Contains))];
-    }
-
-    private static IEnumerable<Entity> LayerOrder(Entity parent)
-    {
-        foreach (var layer in parent.Get<LayerTreeNode>().GetLayerChildren())
-        {
-            yield return layer;
-            if (!layer.Has<FolderLayerSetting>()) continue;
-            foreach (var descendant in LayerOrder(layer))
-                yield return descendant;
-        }
-    }
-
-    private static bool CoveredBy(Entity layer, IReadOnlySet<Entity> roots) => roots.Contains(layer)
-        || layer.Get<LayerTreeNode>().EnumerateAncestors().Any(roots.Contains);
+        => layers.IsEmpty ? [] : layers[0].Document.Get<LayerTreeNode>().GetOperationRoots(layers);
 
     public static void DeleteLayers(ImmutableArray<Entity> layers)
     {
@@ -39,13 +19,10 @@ internal static partial class LayerContextActions
         var deleted = roots.ToHashSet();
         var document = layers[0].Document;
         var selected = document.Get<SelectionManager>().SelectedLayers.Value;
-        ImmutableArray<Entity> survivors = [.. selected.Where(e => !CoveredBy(e, deleted))];
+        ImmutableArray<Entity> survivors = [.. selected.Where(e => !LayerTreeNode.IsCoveredBy(e, deleted))];
         if (survivors.IsEmpty)
         {
-            var order = LayerOrder(document).ToList();
-            int index = order.IndexOf(layers[0]);
-            var focus = order.Skip(index + 1).Concat(order.Take(index).Reverse())
-                .FirstOrDefault(e => !CoveredBy(e, deleted));
+            var focus = document.Get<LayerTreeNode>().GetNextFocusAfterDeletion(layers[0], deleted);
             survivors = focus.IsNull ? [] : [focus];
         }
 

@@ -473,7 +473,7 @@ public partial class TimelineRuler : Control
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
                         var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
                             cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
                     }
                     cmd.CommitOpenSequence();
@@ -486,7 +486,7 @@ public partial class TimelineRuler : Control
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
                         var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
                             cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
                     }
                     cmd.CommitOpenSequence();
@@ -589,7 +589,7 @@ public partial class TimelineRuler : Control
         if (_currentFrame.Value != _frameAtDragStart)
         {
             var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-            if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+            if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
                 cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
         }
         cmd.CommitToLatest();

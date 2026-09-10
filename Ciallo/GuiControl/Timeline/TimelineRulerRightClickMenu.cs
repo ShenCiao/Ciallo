@@ -193,7 +193,7 @@ public partial class TimelineRulerRightClickMenu : PopupMenu
 
         cmd.SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
         var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(newFrame);
-        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
             cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
     }
 

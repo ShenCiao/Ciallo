@@ -157,7 +157,8 @@ public static partial class AppDocumentManager
         var loadSelectionCmd = new CommandBuilder("Load Selection");
         var dataSm = dataDocument.Get<SelectionManager>();
         loadSelectionCmd.SetTarget(resultDocument)
-            .SetLayerSelection(true, [.. dataSm.SelectedLayers.Value.Select(e => entityMap[e])]);
+            .SetLayerSelection(recordCelSelectionPreference: true,
+                layers: [.. dataSm.SelectedLayers.Value.Select(e => entityMap[e])]);
 
         var dataStrokeBrushE = dataSm.WorkingStrokeBrush.Value;
         if (!dataStrokeBrushE.IsNull)

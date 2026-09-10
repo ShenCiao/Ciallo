@@ -120,7 +120,8 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         }
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetLayerSelection(true);
+            cmd.SetTarget(focusVectorFillLayer)
+                .SetLayerSelection(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -167,7 +168,8 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
                     newCelFolder));
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetLayerSelection(true);
+            cmd.SetTarget(focusVectorFillLayer)
+                .SetLayerSelection(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }

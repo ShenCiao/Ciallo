@@ -97,7 +97,7 @@ public partial class TimelineAction : Container
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
         var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(newFrame);
-        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
             cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
 
         cmd.CommitOpenSequence();
@@ -185,7 +185,7 @@ public partial class TimelineAction : Container
 
         int currentFrame = _selectionManager.CurrentFrame.Value;
         var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(currentFrame);
-        if (!newPrimaryLayer.IsNull && (newPrimaryLayer != _selectionManager.PrimaryLayer.CurrentValue || _selectionManager.SelectedLayers.Value.Length > 1))
+        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
             new CommandBuilder("Playback Select Primary Layer", newPrimaryLayer).SetLayerSelection().Do();
     }
 

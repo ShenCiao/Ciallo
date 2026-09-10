@@ -44,12 +44,8 @@ public partial class LayerAction : Control
 
     public void OnNewFolderLayer()
     {
-        var (parentE, index) = GetNewLayerInsertPosition();
-        new CommandBuilder("New Folder Layer", Document.World.Create())
-            .NewFolderLayer()
-            .AddToLayerTree(parentE, index)
-            .SetLayerSelection()
-            .Commit();
+        var primaryLayerE = Document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
+        LayerContextActions.NewFolderLayer(primaryLayerE.IsNull ? Document : primaryLayerE);
     }
 
     public void OnRemoveLayer()

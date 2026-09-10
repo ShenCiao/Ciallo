@@ -101,6 +101,10 @@ public class SelectionManager
         return child.IsNull ? celFolder.Document : child;
     }
 
+    public bool NeedsTimelineSelectionCommit(Entity resolvedLayer) =>
+        !resolvedLayer.IsNull
+        && (resolvedLayer != PrimaryLayer.CurrentValue || SelectedLayers.Value.Length != 1);
+
     /// <summary>
     /// Returns the entity to switch <see cref="PrimaryLayer"/> to after clicking a cel button,
     /// using the clicked cel's direct child matching the folder's preferred cel child name.

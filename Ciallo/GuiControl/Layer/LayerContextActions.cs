@@ -17,7 +17,9 @@ internal static partial class LayerContextActions
         // Higher siblings first: inserting a new fill below a layer cannot shift later targets.
         foreach (var layer in OperationRoots(layers).Reverse())
             SplitStrokeAndFill(cmd, layer);
-        cmd.SetTarget(layers[0].Document).SetLayerSelection(true, layers).Commit();
+        cmd.SetTarget(layers[0].Document)
+            .SetLayerSelection(recordCelSelectionPreference: true, layers: layers)
+            .Commit();
     }
 
     private static void SplitStrokeAndFill(CommandBuilder cmd, Entity targetLayer)

@@ -14,6 +14,44 @@ public class LayerTreeNode : EntityTreeNode<LayerTreeNode>
         return GetFilteredChildren(IsLayerChild);
     }
 
+    public IEnumerable<Entity> EnumerateLayerOrder()
+    {
+        foreach (var layer in GetLayerChildren())
+        {
+            yield return layer;
+            if (layer.Has<FolderLayerSetting>())
+                foreach (var descendant in layer.Get<LayerTreeNode>().EnumerateLayerOrder())
+                    yield return descendant;
+        }
+    }
+
+    public ImmutableArray<Entity> GetOperationRoots(ImmutableArray<Entity> layers)
+    {
+        if (layers.IsEmpty) return [];
+        var selected = layers.ToHashSet();
+        return [.. EnumerateLayerOrder().Where(e => selected.Contains(e)
+            && !e.Get<LayerTreeNode>().EnumerateAncestors().Any(selected.Contains))];
+    }
+
+    public static bool IsCoveredBy(Entity layer, IReadOnlySet<Entity> roots) =>
+        roots.Contains(layer) || layer.Get<LayerTreeNode>().EnumerateAncestors().Any(roots.Contains);
+
+    public Entity GetNextFocusAfterDeletion(Entity target, IReadOnlySet<Entity> deleted)
+    {
+        var node = target.Get<LayerTreeNode>();
+        var parent = node.ParentValue;
+        if (parent.IsNull || parent.IsDocument)
+            return Entity.Null;
+
+        var siblings = parent.Get<LayerTreeNode>().GetLayerChildren();
+        int index = siblings.IndexOf(target);
+        for (int i = index + 1; i < siblings.Count; i++)
+            if (!IsCoveredBy(siblings[i], deleted)) return siblings[i];
+        for (int i = index - 1; i >= 0; i--)
+            if (!IsCoveredBy(siblings[i], deleted)) return siblings[i];
+        return IsCoveredBy(parent, deleted) ? Entity.Null : parent;
+    }
+
     /// <summary>
     /// Returns the direct layer child whose name equals <paramref name="name"/>,
     /// or <see cref="Entity.Null"/> when none matches (including when the name is empty

@@ -212,6 +212,7 @@ Insert Cel:,Insert Cel:,插入赛璐珞:,插入賽璐珞：,セルを挿入:,셀
 Blank,Blank,空白,空白,空セル,빈 셀,Leer,Vide
 Delete Blank,Delete Blank,删除空白,刪除空白,空セルを削除,빈 셀 삭제,Leer löschen,Supprimer le vide
 Delete Cel,Delete Cel,删除赛璐珞,刪除賽璐珞,セルを削除,셀 삭제,Cel löschen,Supprimer le cellulo
+Rename Cel,Rename Cel,重命名赛璐珞,重新命名賽璐珞,セルの名前を変更,셀 이름 변경,Cel umbenennen,Renommer le cellulo
 Insert Frame,Insert Frame,插入帧,插入影格,フレームを挿入,프레임 삽입,Bild einfügen,Insérer une image
 Delete Frame,Delete Frame,删除帧,刪除影格,フレームを削除,프레임 삭제,Bild löschen,Supprimer une image
 Set Playback Start,Set Playback Start,设置播放起点,設定播放起點,再生開始を設定,재생 시작 설정,Wiedergabestart festlegen,Définir le début de lecture

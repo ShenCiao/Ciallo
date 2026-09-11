@@ -1,3 +1,4 @@
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -118,6 +119,7 @@ public partial class CelTrack : Control
         if (what == NotificationThemeChanged)
         {
             InitTheme();
+            UpdateCelNameEditor();
             QueueRedraw();
         }
         else if (what == NotificationMouseExit)
@@ -125,6 +127,10 @@ public partial class CelTrack : Control
             _hoveredFrame = null;
             QueueRedraw();
         }
+        else if (what == NotificationResized)
+            UpdateCelNameEditor();
+        else if (what == NotificationVisibilityChanged && !IsVisibleInTree())
+            FinishCelRename(commit: false);
     }
 
     // ── Setup ─────────────────────────────────────────────────────────────────
@@ -141,6 +147,7 @@ public partial class CelTrack : Control
             {
                 _pixelsPerFrame = t.ppf;
                 _scrollOffset = t.Item2;
+                UpdateCelNameEditor();
                 QueueRedraw();
             }).AddTo(subs);
         playbackStart.Subscribe(v =>
@@ -165,7 +172,16 @@ public partial class CelTrack : Control
         _selectionManager = sm;
         _exposures = exposures;
         _isSelected = sm.WorkingCelFolder.CurrentValue == _celFolderEntity;
-        exposures.ObserveChanged().Subscribe(_ => QueueRedraw()).AddTo(subs);
+        exposures.ObserveChanged().Subscribe(_ =>
+        {
+            UpdateCelNameEditor();
+            QueueRedraw();
+        }).AddTo(subs);
+        // A cel can appear at several exposure keys. Redraw every occurrence after rename or undo.
+        exposures.ObserveChanged().PrependDefault()
+            .Select(_ => Observable.Merge(exposures.Values.Where(cel => !cel.IsCelFolder).Distinct()
+                .Select(cel => cel.Get<CommonLayerSetting>().Name.AsObservable())))
+            .Switch().Subscribe(_ => QueueRedraw()).AddTo(subs);
         sm.WorkingCelFolder.Subscribe(workingCelFolder =>
         {
             bool isSelected = workingCelFolder == _celFolderEntity;
@@ -222,17 +238,11 @@ public partial class CelTrack : Control
             }
 
             // ── Layer name label (draw for any visible frame) ─────────────────
-            if (!isBlankExposure)
+            if (TryGetCelLabel(i, out var label) && (_celNameEditor == null || frame != _renamingFrame))
             {
                 string name = exposureValue.Get<CommonLayerSetting>().Name.Value;
-                float labelX = x + buttonW + LabelPad;
-                float labelEnd = i + 1 < _exposures.Count
-                    ? FrameToX(_exposures.GetKeyAtIndex(i + 1)) - SpanArrowHeadLength - LabelPad
-                    : w;
-                float maxW = labelEnd - labelX;
-                if (maxW > 0f && labelX < w)
-                    DrawString(LabelFont, new Vector2(labelX, midY + LabelFontSize * 0.35f),
-                        name, HorizontalAlignment.Left, maxW, LabelFontSize, LabelColor);
+                DrawString(LabelFont, label.Baseline, name, HorizontalAlignment.Left,
+                    label.MaxWidth, LabelFontSize, LabelColor);
             }
 
             // ── Exposure span (the dragged one is drawn as a preview instead) ─────
@@ -471,6 +481,10 @@ public partial class CelTrack : Control
 
     public override void _Input(InputEvent @event)
     {
+        if (_celNameEditor != null && @event is InputEventMouseButton { Pressed: true } click
+            && !_celNameEditor.GetGlobalRect().HasPoint(click.GlobalPosition))
+            FinishCelRename(commit: true);
+
         if (!_pressedSpan.HasValue || !AppHotkeys.UiCancel.IsPressedBy(@event)) return;
 
         ResetSpanDrag();
@@ -531,13 +545,18 @@ public partial class CelTrack : Control
             _rightClickIndicatorFrame = frame;
             QueueRedraw();
             RightClickMenu.PopupHide += OnMenuClosed;
-            RightClickMenu.Popup(_celFolderEntity, frame);
+            RightClickMenu.Popup(_celFolderEntity, frame, this);
             AcceptEvent();
         }
         else if (@event is InputEventMouseButton lbtn && lbtn.ButtonIndex == MouseButton.Left)
         {
             if (lbtn.Pressed)
             {
+                if (lbtn.DoubleClick && TryBeginCelRename(lbtn.Position))
+                {
+                    AcceptEvent();
+                    return;
+                }
                 if (TryGetSpanArrowHeadAt(lbtn.Position.X, out var span))
                 {
                     _pressedSpan = span;

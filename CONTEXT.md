@@ -72,6 +72,8 @@ A cel is a direct child layer of a cel folder, whether or not any exposure curre
 
 A cel button is the clickable timeline control for one exposure on a CelTrack, drawn at its exposure key. Cel exposures and Blank exposures are visually distinguishable from each other, and both support the same click, drag, replace, delete, and undo workflows.
 
+Double-click an exposed cel name, or choose Rename Cel from its button's context menu, to rename that cel
+
 ### Frame Cell
 
 A frame cell is the timeline display interval for one frame number `n`, from `n` inclusive to `n + 1` exclusive. Its width follows the timeline zoom (`PixelsPerFrame`). Right-clicking a CelTrack fills the clicked frame cell across the full track height with the track accent color while the menu is open. The same accent color marks valid drag destinations, dragged exposure arrows, and selected-track borders.

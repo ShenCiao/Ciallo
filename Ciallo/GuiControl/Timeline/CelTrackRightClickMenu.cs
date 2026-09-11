@@ -20,6 +20,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
     private Entity _celFolderEntity;
     private int _rightClickedFrame;
     private bool _onCel;
+    private CelTrack _track;
 
     // Ordered list of entities shown as cel-list items
     private readonly List<Entity> _celListEntities = new();
@@ -27,6 +28,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
     // ── Menu item IDs ─────────────────────────────────────────────────────────
     private const int IdNewAnimationCel = 0;
     private const int IdDeleteCel = 1;
+    private const int IdRenameCel = 2;
     private const int CelListIdBase = 100;
 
     // ── Init ─────────────────────────────────────────────────────────────────
@@ -42,8 +44,9 @@ public partial class CelTrackRightClickMenu : PopupMenu
     /// Populates and displays the context menu.
     /// Whether the clicked frame has an existing cel is resolved from the exposure map.
     /// </summary>
-    public void Popup(Entity celFolderEntity, int frame)
+    public void Popup(Entity celFolderEntity, int frame, CelTrack track)
     {
+        _track = track;
         _celFolderEntity = celFolderEntity;
         _rightClickedFrame = frame;
         var exposures = celFolderEntity.Get<FolderLayerSetting>().Exposures;
@@ -73,6 +76,13 @@ public partial class CelTrackRightClickMenu : PopupMenu
 
         AddItem("New Animation Cel".Tr(), IdNewAnimationCel);
 
+        if (_onCel)
+        {
+            bool isBlank = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder;
+            if (!isBlank) AddItem("Rename Cel".Tr(), IdRenameCel);
+            AddItem((isBlank ? "Delete Blank" : "Delete Cel").Tr(), IdDeleteCel);
+        }
+
         AddSeparator();
 
         string celListLabel = _onCel ? "Replace Cel:".Tr() : "Insert Cel:".Tr();
@@ -98,15 +108,6 @@ public partial class CelTrackRightClickMenu : PopupMenu
                 AddItem("  " + (string.IsNullOrEmpty(name) ? "(unnamed)".Tr() : name), CelListIdBase + i);
             }
         }
-
-        if (_onCel)
-        {
-            AddSeparator();
-            string deleteLabel = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder
-                ? "Delete Blank"
-                : "Delete Cel";
-            AddItem(deleteLabel.Tr(), IdDeleteCel);
-        }
     }
 
     // ── Event handler ─────────────────────────────────────────────────────────
@@ -122,6 +123,9 @@ public partial class CelTrackRightClickMenu : PopupMenu
             case IdDeleteCel:
                 ActionDeleteCel();
                 break;
+            case IdRenameCel:
+                ActionRenameCel();
+                break;
             default:
                 if (intId >= CelListIdBase)
                 {
@@ -134,6 +138,18 @@ public partial class CelTrackRightClickMenu : PopupMenu
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
+
+    private void ActionRenameCel()
+    {
+        var track = _track;
+        int frame = _rightClickedFrame;
+        Hide();
+        // Let the popup release focus before the inline editor takes it.
+        Callable.From(() =>
+        {
+            if (IsInstanceValid(track) && track.IsInsideTree()) track.BeginCelRename(frame);
+        }).CallDeferred();
+    }
 
     private void ActionNewAnimationCel()
     {

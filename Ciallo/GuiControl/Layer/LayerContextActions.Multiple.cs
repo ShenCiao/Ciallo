@@ -15,6 +15,13 @@ internal static partial class LayerContextActions
     public static void DeleteLayers(ImmutableArray<Entity> layers)
     {
         if (layers.IsEmpty) return;
+        var cmd = new CommandBuilder("Delete Layers", layers[0].Document);
+        DeleteLayers(cmd, layers);
+        cmd.Commit();
+    }
+
+    internal static void DeleteLayers(CommandBuilder cmd, ImmutableArray<Entity> layers)
+    {
         var roots = OperationRoots(layers);
         var deleted = roots.ToHashSet();
         var document = layers[0].Document;
@@ -26,13 +33,12 @@ internal static partial class LayerContextActions
             survivors = focus.IsNull ? [] : [focus];
         }
 
-        var cmd = new CommandBuilder("Delete Layers", document).SetLayerSelection(layers: survivors);
+        cmd.SetTarget(document).SelectLayers(layers: survivors);
         foreach (var layer in roots.Reverse())
         {
             RemoveParentCelFolderExposures(cmd, layer);
             cmd.SetTarget(layer).RemoveFromLayerTree().DeleteLayer();
         }
-        cmd.Commit();
     }
 
     public static void MoveLayers(ImmutableArray<Entity> layers, Entity parent, int insertIndex)
@@ -80,8 +86,14 @@ internal static partial class LayerContextActions
 
     public static void GroupLayers(ImmutableArray<Entity> layers)
     {
-        var roots = OperationRoots(layers);
         var cmd = new CommandBuilder("Group Layers", layers[0].Document);
+        var folder = GroupLayers(cmd, layers);
+        cmd.SetTarget(folder).SelectLayers(recordCelSelectionPreference: true).Commit();
+    }
+
+    internal static Entity GroupLayers(CommandBuilder cmd, ImmutableArray<Entity> layers)
+    {
+        var roots = OperationRoots(layers);
         Entity folder;
         if (roots.Length == 1)
         {
@@ -106,6 +118,6 @@ internal static partial class LayerContextActions
             for (int i = 0; i < roots.Length; i++)
                 cmd.SetTarget(layers[0].Document).MoveLayer(roots[i], folder, i);
         }
-        cmd.SetTarget(folder).SetLayerSelection().Commit();
+        return folder;
     }
 }

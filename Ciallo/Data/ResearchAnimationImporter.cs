@@ -68,7 +68,7 @@ public static class ResearchAnimationImporter
                     }
                 })
             .SetTarget(firstShapeLayer)
-            .SetLayerSelection()
+            .SelectLayers()
             .SetTarget(document)
             .SetProperty(e => e.Get<SelectionManager>().CurrentFrame, firstFrame.Frame)
             .Commit();

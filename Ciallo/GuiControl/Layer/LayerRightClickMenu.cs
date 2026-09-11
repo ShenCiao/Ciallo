@@ -15,6 +15,7 @@ public partial class LayerRightClickMenu : PopupMenu
     private Entity _targetLayer;
     private ImmutableArray<Entity> _targetLayers;
     private bool _showTimelineLayerActions;
+    private ArchetypeContext _archetypes;
 
     private enum MenuItem
     {
@@ -37,6 +38,7 @@ public partial class LayerRightClickMenu : PopupMenu
 
     public void Popup(Entity targetLayer, bool showTimelineLayerActions)
     {
+        _archetypes = null;
         _targetLayer = targetLayer;
         _targetLayers = LayerSelectionActions.ContextLayers(targetLayer);
         _showTimelineLayerActions = showTimelineLayerActions;
@@ -47,9 +49,39 @@ public partial class LayerRightClickMenu : PopupMenu
         base.Popup();
     }
 
+    public void PopupArchetypes(Entity folder, string name)
+    {
+        _archetypes = ArchetypeContextActions.Capture(folder, name);
+        _targetLayers = _archetypes.Layers;
+        RebuildMenu();
+        Position = DisplayServer.MouseGetPosition();
+        base.Popup();
+    }
+
     private void RebuildMenu()
     {
         Clear();
+
+        if (_archetypes != null)
+        {
+            AddSeparator("All Cels".Tr());
+            AddItem("New Shape Layer".Tr(), (int)MenuItem.NewShapeLayer);
+            AddItem("New Folder Layer".Tr(), (int)MenuItem.NewFolderLayer);
+            AddSeparator();
+            AddItem("Delete Layers".Tr(), (int)MenuItem.DeleteLayer);
+            AddItem("Group Layers".Tr(), (int)MenuItem.WrapSelfInFolder);
+            SetItemDisabled(GetItemIndex((int)MenuItem.WrapSelfInFolder), !ArchetypeContextActions.CanGroup(_archetypes));
+            AddItem("Split Stroke and Fill".Tr(), (int)MenuItem.SplitStrokeAndFill);
+            SetItemDisabled(GetItemIndex((int)MenuItem.SplitStrokeAndFill), !ArchetypeContextActions.CanSplit(_archetypes));
+            AddItem("Merge Layers".Tr(), (int)MenuItem.MergeLayers);
+            SetItemDisabled(GetItemIndex((int)MenuItem.MergeLayers), !ArchetypeContextActions.CanMerge(_archetypes));
+            if (ArchetypeContextActions.AreFolders(_archetypes))
+            {
+                AddItem("Wrap Children in Folders".Tr(), (int)MenuItem.WrapChildrenInFolders);
+                AddItem("Ungroup Folder".Tr(), (int)MenuItem.UngroupFolder);
+            }
+            return;
+        }
 
         bool targetIsCelFolder = _targetLayer.TryGet<FolderLayerSetting>() is { IsCelFolder: true };
         AddItem((targetIsCelFolder ? "Add Shape Layer to All Cels" : "New Shape Layer").Tr(), (int)MenuItem.NewShapeLayer);
@@ -81,6 +113,39 @@ public partial class LayerRightClickMenu : PopupMenu
     {
         if (_targetLayers.Any(e => !e.IsAlive || !e.Tagged<ToSerializeTag>()))
             return;
+
+        if (_archetypes != null)
+        {
+            if (!_archetypes.Folder.IsAlive || !_archetypes.Folder.Tagged<ToSerializeTag>()) return;
+            switch ((MenuItem)id)
+            {
+                case MenuItem.NewShapeLayer:
+                    ArchetypeContextActions.NewLayer(_archetypes, folder: false);
+                    break;
+                case MenuItem.NewFolderLayer:
+                    ArchetypeContextActions.NewLayer(_archetypes, folder: true);
+                    break;
+                case MenuItem.DeleteLayer:
+                    ArchetypeContextActions.Delete(_archetypes);
+                    break;
+                case MenuItem.WrapSelfInFolder when ArchetypeContextActions.CanGroup(_archetypes):
+                    ArchetypeContextActions.Group(_archetypes);
+                    break;
+                case MenuItem.SplitStrokeAndFill when ArchetypeContextActions.CanSplit(_archetypes):
+                    ArchetypeContextActions.Split(_archetypes);
+                    break;
+                case MenuItem.MergeLayers when ArchetypeContextActions.CanMerge(_archetypes):
+                    ArchetypeContextActions.Merge(_archetypes);
+                    break;
+                case MenuItem.UngroupFolder when ArchetypeContextActions.AreFolders(_archetypes):
+                    ArchetypeContextActions.Ungroup(_archetypes);
+                    break;
+                case MenuItem.WrapChildrenInFolders when ArchetypeContextActions.AreFolders(_archetypes):
+                    ArchetypeContextActions.WrapChildren(_archetypes);
+                    break;
+            }
+            return;
+        }
 
         switch ((MenuItem)id)
         {

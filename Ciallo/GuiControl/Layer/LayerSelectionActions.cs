@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -18,13 +19,17 @@ internal static class LayerSelectionActions
     {
         var selection = layer.Document.Get<SelectionManager>();
         int frame = selection.ComputeFrameForPrimaryLayerSelection(layer);
+        var parent = layer.Get<LayerTreeNode>().ParentValue;
+        bool sameTemplate = parent.IsNull || !parent.Tagged<CelTag>()
+            || parent.Get<LayerTreeNode>().ParentValue.Get<FolderLayerSetting>()
+                .PreferredNamesForCelSelection.Value.SequenceEqual([layer.Get<CommonLayerSetting>().Name.Value]);
         if (selection.SelectedLayers.Value.Length == 1 && selection.PrimaryLayer.CurrentValue == layer
-            && frame == selection.CurrentFrame.Value)
+            && frame == selection.CurrentFrame.Value && sameTemplate)
             return;
 
         new CommandBuilder("Select Layer", layer)
             .SetProperty(selection.CurrentFrame, frame)
-            .SetLayerSelection(recordCelSelectionPreference: true)
+            .SelectLayers(recordCelSelectionPreference: true)
             .CommitToLatest();
     }
 
@@ -41,7 +46,8 @@ internal static class LayerSelectionActions
             return;
 
         new CommandBuilder("Select Layers", layer.Document)
-            .SetLayerSelection(layers: layers.Contains(layer) ? layers.Remove(layer) : layers.Add(layer))
+            .SelectLayers(recordCelSelectionPreference: true,
+                layers: layers.Contains(layer) ? layers.Remove(layer) : layers.Add(layer))
             .CommitToLatest();
     }
 

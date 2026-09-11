@@ -256,3 +256,6 @@ Close,Close,关闭,關閉,閉じる,닫기,Schließen,Fermer
 Place at bottom,Place at bottom,放在底层,放在底層,最背面に配置,맨 아래에 배치,Ganz unten platzieren,Placer en bas
 Gap aware,Gap aware,识别间隙,識別間隙,隙間を認識,틈 인식,Lücken erkennen,Détecter les espaces
 Gap factor,Gap factor,间隙系数,間隙係數,隙間係数,틈 계수,Lückenfaktor,Facteur d'espace
+All Cels,All Cels,所有赛璐珞,所有賽璐珞,すべてのセル,모든 셀,Alle Cels,Tous les cellulos
+Select matching layers across cels,Select matching layers across cels,跨赛璐珞选择同名图层,跨賽璐珞選取同名圖層,セル間で同名レイヤーを選択,셀 전체에서 같은 이름의 레이어 선택,Gleichnamige Ebenen über alle Cels auswählen,Sélectionner les calques de même nom dans les cellulos
+Archetype unavailable in current cel; selection applies to other cels,Archetype unavailable in current cel; selection applies to other cels,当前赛璐珞没有此原型；选择仍作用于其它赛璐珞,目前賽璐珞沒有此原型；選取仍套用至其他賽璐珞,現在のセルにはありません。他のセルへの選択は有効です,현재 셀에는 없습니다. 다른 셀에는 선택이 적용됩니다,Im aktuellen Cel nicht vorhanden; Auswahl gilt für andere Cels,Absent du cellulo actuel ; la sélection s’applique aux autres cellulos

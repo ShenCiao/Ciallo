@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -96,9 +98,9 @@ public partial class TimelineAction : Container
         var cmd = new CommandBuilder("Navigate Timeline")
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
-        var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(newFrame);
-        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
-            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
+        var newLayers = _selectionManager.ResolveLayersForTimelineFrameSelection(newFrame);
+        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
 
         cmd.CommitOpenSequence();
     }
@@ -170,7 +172,7 @@ public partial class TimelineAction : Container
     {
         bool wasPlaying = _isPlaying.Value;
         if (wasPlaying && !playing)
-            SwitchPrimaryLayerAfterPlayback();
+            SwitchLayerSelectionAfterPlayback();
 
         _isPlaying.Value = playing;
         _playbackAccumulator = 0.0;
@@ -179,14 +181,14 @@ public partial class TimelineAction : Container
         SetProcess(playing);
     }
 
-    private void SwitchPrimaryLayerAfterPlayback()
+    private void SwitchLayerSelectionAfterPlayback()
     {
         if (_selectionManager == null) return;
 
         int currentFrame = _selectionManager.CurrentFrame.Value;
-        var newPrimaryLayer = _selectionManager.ResolvePrimaryLayerForTimelineFrameSelection(currentFrame);
-        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
-            new CommandBuilder("Playback Select Primary Layer", newPrimaryLayer).SetLayerSelection().Do();
+        var newLayers = _selectionManager.ResolveLayersForTimelineFrameSelection(currentFrame);
+        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+            new CommandBuilder("Playback Select Layers", newLayers[0]).SelectLayers(layers: newLayers).Do();
     }
 
     private void OnAddCelFolder()
@@ -218,7 +220,7 @@ public partial class TimelineAction : Container
         new CommandBuilder("New Cel Folder", folder)
             .NewCelFolder()
             .AddToLayerTree(parent)
-            .SetLayerSelection()
+            .SelectLayers()
             .Commit();
     }
 
@@ -275,7 +277,7 @@ public partial class TimelineAction : Container
                 cmd.SetTarget(shapeLayerE)
                     .NewShapeLayer()
                     .AddToLayerTree(celE)
-                    .SetLayerSelection();
+                    .SelectLayers(recordCelSelectionPreference: true);
             }
         }
         else
@@ -322,12 +324,9 @@ public partial class TimelineAction : Container
                 }
             }
 
-            // Primary layer follows the same rule as a cel-button click: the new cel's child sharing the
-            // folder's preferred name. No match (empty preference, or that name was filtered) -> leave the
-            // primary layer untouched, same "rather not select than select wrong" stance as cel navigation.
-            string preferredName = folderSetting.PreferredNameForCelSelection.Value;
-            if (newChildByName.TryGetValue(preferredName, out var primaryLayerE))
-                cmd.SetTarget(primaryLayerE).SetLayerSelection();
+            var selected = folderSetting.PreferredNamesForCelSelection.Value
+                .Where(newChildByName.ContainsKey).Select(n => newChildByName[n]).ToImmutableArray();
+            cmd.SetTarget(document).SelectLayers(layers: selected.IsEmpty ? [celFolder] : selected);
         }
 
         cmd.SetTarget(celFolder)

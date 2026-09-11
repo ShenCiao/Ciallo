@@ -53,20 +53,6 @@ public class LayerTreeNode : EntityTreeNode<LayerTreeNode>
     }
 
     /// <summary>
-    /// Returns the direct layer child whose name equals <paramref name="name"/>,
-    /// or <see cref="Entity.Null"/> when none matches (including when the name is empty
-    /// and no child happens to be named empty). On duplicate names the first match wins.
-    /// </summary>
-    public Entity GetLayerChildByName(string name)
-    {
-        foreach (var childE in GetLayerChildren())
-            if (childE.Get<CommonLayerSetting>().Name.Value == name)
-                return childE;
-
-        return Entity.Null;
-    }
-
-    /// <summary>
     /// Assume the given node at path is focused and going to be deleted, return the path to the next node that should have focus.
     /// e.g. Used at deletion of primary layer to determine the new primary layer.
     /// </summary>

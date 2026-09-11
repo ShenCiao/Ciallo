@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
 using Godot;
@@ -104,7 +102,7 @@ public partial class TrackTree : LayerTreeBase
     /// shown when the folder is expanded (the real cel rows stay hidden via
     /// <see cref="TrackRowWrapper.IsBeingCeled"/>). Reconciles on the debounced add/remove signals
     /// of <see cref="FolderLayerSetting.CelChildrenByName"/>: new key -> create+wire an archetype,
-    /// removed key -> dispose+free its block. Surviving keys are left untouched.
+    /// removed key -> dispose+free its block. Surviving keys rebind to their current members.
     /// </summary>
     private void WireCelChildArchetypes(Entity layerE, TrackRowWrapper wrapper, FolderLayerSetting folderSetting, CompositeDisposable subs)
     {
@@ -118,7 +116,7 @@ public partial class TrackTree : LayerTreeBase
             if (blocks.ContainsKey(name)) return;
 
             var block = LayerBlock.New();
-            // Selection operates on the corresponding layer in the currently exposed cel.
+            // The checkmark selects a name across cels; the brush marks the current drawing layer.
             block.WorkingButton.Visible = true;
             block.DropdownArrow.Visible = false;
             block.FolderIcon.Visible = false;
@@ -164,46 +162,35 @@ public partial class TrackTree : LayerTreeBase
             repSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(bs);
             repSetting.Name.Subscribe(block.LabelLineEdit.SetText).AddTo(bs);
 
-            // Input pushes to every current member as one undoable action.
             block.VisibleButton.OnToggledAsObservable()
-                .Subscribe(v =>
-                {
-                    PushToMembers(name, e => e.Get<CommonLayerSetting>().IsVisible, v).Commit();
-                }).AddTo(bs);
+                .Subscribe(value => ArchetypeContextActions.SetVisible(layerE, name, value)).AddTo(bs);
             block.LabelLineEdit.OnTextSubmittedAsObservable()
-                .Subscribe(v =>
-                {
-                    var renameMembers = celChildrenByName[name];
-                    var cmd = PushToMembers(name, e => e.Get<CommonLayerSetting>().Name, v);
-                    if (renameMembers.Contains(sm.PrimaryLayer.CurrentValue))
-                        cmd.SetProperty(folderSetting.PreferredNameForCelSelection, v);
-                    cmd.Commit();
-                }).AddTo(bs);
-
-            Entity ResolveTarget()
-            {
-                var cel = folderSetting.CurrentExposedCel.CurrentValue;
-                return cel.IsNull || cel.IsCelFolder
-                    ? Entity.Null : cel.Get<LayerTreeNode>().GetLayerChildByName(name);
-            }
+                .Subscribe(value => ArchetypeContextActions.Rename(layerE, name, value)).AddTo(bs);
 
             void SyncPressed()
             {
-                var target = ResolveTarget();
-                LayerSelectionActions.ShowSelection(block.WorkingButton,
-                    !target.IsNull && sm.PrimaryLayer.CurrentValue == target,
-                    !target.IsNull && sm.SelectedLayers.Value.Contains(target));
+                bool active = sm.WorkingCelFolder.CurrentValue == layerE;
+                var names = folderSetting.PreferredNamesForCelSelection.Value;
+                var cel = folderSetting.CurrentExposedCel.CurrentValue;
+                bool available = !CelLayerSelection.Resolve(cel, [name]).IsEmpty;
+                bool primary = active && available && members.Contains(sm.PrimaryLayer.CurrentValue)
+                    && sm.PrimaryLayer.CurrentValue.Get<LayerTreeNode>().ParentValue == cel;
+                LayerSelectionActions.ShowSelection(block.WorkingButton, primary, active && names.Contains(name));
+                block.WorkingButton.Modulate = available ? Colors.White : new Color(1, 1, 1, 0.45f);
+                block.WorkingButton.TooltipText = (available
+                    ? "Select matching layers across cels"
+                    : "Archetype unavailable in current cel; selection applies to other cels").Tr();
             }
 
-            sm.SelectedLayers.CombineLatest(folderSetting.CurrentExposedCel, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
+            sm.SelectedLayers.CombineLatest(folderSetting.CurrentExposedCel,
+                    folderSetting.PreferredNamesForCelSelection, members.ObserveChanged().PrependDefault(), ValueTuple.Create)
                 .DebounceFrame(1)
                 .Subscribe(_ => SyncPressed()).AddTo(bs);
             SyncPressed();
 
             block.WorkingButton.OnToggledAsObservable().Subscribe(_ =>
             {
-                var target = ResolveTarget();
-                if (!target.IsNull) LayerSelectionActions.Toggle(target);
+                ArchetypeContextActions.Toggle(layerE, name);
                 SyncPressed();
             }).AddTo(bs);
             block.LabelLineEdit.SignalAsObservable<InputEvent>(Control.SignalName.GuiInput)
@@ -211,29 +198,14 @@ public partial class TrackTree : LayerTreeBase
                 .Where(_ => !block.LabelLineEdit.IsEditing())
                 .Subscribe(button =>
             {
-                var target = ResolveTarget();
-                if (target.IsNull) return;
                 if (button.ButtonIndex == MouseButton.Left && !button.Pressed)
-                    LayerSelectionActions.SelectOnly(target);
+                    ArchetypeContextActions.SelectOnly(layerE, name);
                 else if (button.ButtonIndex == MouseButton.Right && button.Pressed)
                 {
                     block.LabelLineEdit.AcceptEvent();
-                    ShowLayerMenu(target, block.LabelLineEdit);
+                    ShowArchetypeMenu(layerE, name, block.LabelLineEdit);
                 }
             }).AddTo(bs);
-        }
-
-        // Overwrite the chosen property on every current member of the named group, in one undoable action.
-        CommandBuilder PushToMembers<T>(
-            string name,
-            System.Func<Entity, ReactiveProperty<T>> getProp,
-            T value)
-        {
-            var members = celChildrenByName[name];
-            var cmd = new CommandBuilder("Edit Cel Child Archetype");
-            foreach (var member in members)
-                cmd.SetTarget(member).SetProperty(getProp, getProp(member).Value, value);
-            return cmd;
         }
 
         void RemoveArchetype(string name)
@@ -301,6 +273,10 @@ public partial class TrackTree : LayerTreeBase
             .Subscribe(_ => Reconcile())
             .AddTo(subs);
 
+        subs.Add(Disposable.Create(() =>
+        {
+            foreach (var bindings in blockSubs.Values) bindings.Dispose();
+        }));
         Reconcile();
     }
 }

@@ -18,11 +18,11 @@ internal static partial class LayerContextActions
         foreach (var layer in OperationRoots(layers).Reverse())
             SplitStrokeAndFill(cmd, layer);
         cmd.SetTarget(layers[0].Document)
-            .SetLayerSelection(recordCelSelectionPreference: true, layers: layers)
+            .SelectLayers(recordCelSelectionPreference: true, layers: layers)
             .Commit();
     }
 
-    private static void SplitStrokeAndFill(CommandBuilder cmd, Entity targetLayer)
+    internal static (Entity Stroke, Entity Fill) SplitStrokeAndFill(CommandBuilder cmd, Entity targetLayer)
     {
         var layerNode = targetLayer.Get<LayerTreeNode>();
         var name = targetLayer.Get<CommonLayerSetting>().Name.Value;
@@ -57,6 +57,7 @@ internal static partial class LayerContextActions
 
         cmd.SetTarget(targetLayer)
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " stroke");
+        return (targetLayer, fillLayer);
     }
 
     public static void NewShapeLayer(Entity targetLayer)
@@ -70,7 +71,7 @@ internal static partial class LayerContextActions
             .NewShapeLayer()
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, $"{"Shape layer".Tr()} {_plainShapeLayerId++}")
             .AddToLayerTree(parentE, index)
-            .SetLayerSelection()
+            .SelectLayers()
             .Commit();
     }
 
@@ -81,7 +82,7 @@ internal static partial class LayerContextActions
         new CommandBuilder("New Folder Layer", document.World.Create())
             .NewFolderLayer()
             .AddToLayerTree(parentE, index)
-            .SetLayerSelection()
+            .SelectLayers()
             .Commit();
     }
 
@@ -92,7 +93,7 @@ internal static partial class LayerContextActions
         new CommandBuilder("New Cel Folder", document.World.Create())
             .NewCelFolder()
             .AddToLayerTree(parentE, index)
-            .SetLayerSelection()
+            .SelectLayers()
             .Commit();
     }
 
@@ -101,21 +102,18 @@ internal static partial class LayerContextActions
         var roots = OperationRoots(layers);
         var document = layers[0].Document;
         var cmd = new CommandBuilder("Ungroup Folders", document)
-            .SetLayerSelection(layers: [.. roots.Reverse().SelectMany(e => e.Get<LayerTreeNode>().Children.Reverse())]);
+            .SelectLayers(layers: [.. roots.Reverse().SelectMany(e => e.Get<LayerTreeNode>().Children.Reverse())]);
         foreach (var folder in roots.Reverse())
             UngroupFolder(cmd, folder);
         cmd.Commit();
     }
 
-    private static void UngroupFolder(CommandBuilder cmd, Entity targetFolder)
+    internal static ImmutableArray<Entity> UngroupFolder(CommandBuilder cmd, Entity targetFolder)
     {
-        if (!targetFolder.Has<FolderLayerSetting>()) return;
-
         var folderNode = targetFolder.Get<LayerTreeNode>();
         var parentE = folderNode.ParentValue;
-        if (parentE.IsNull) return;
 
-        var children = folderNode.Children.ToArray();
+        ImmutableArray<Entity> children = [.. folderNode.Children];
         int insertIndex = folderNode.Index;
 
         RemoveParentCelFolderExposures(cmd, targetFolder);
@@ -129,6 +127,7 @@ internal static partial class LayerContextActions
         cmd.SetTarget(targetFolder)
             .RemoveFromLayerTree()
             .DeleteLayer();
+        return children;
     }
 
     public static void RenameCelsByExposure(ImmutableArray<Entity> layers)
@@ -164,7 +163,7 @@ internal static partial class LayerContextActions
         cmd.Commit();
     }
 
-    private static void WrapChildrenInFolders(CommandBuilder cmd, Entity targetFolder)
+    internal static void WrapChildrenInFolders(CommandBuilder cmd, Entity targetFolder)
     {
         var children = targetFolder.Get<LayerTreeNode>().Children.ToArray();
         if (children.Length == 0) return;
@@ -325,7 +324,7 @@ internal static partial class LayerContextActions
         // Land the primary layer on the new layer in the currently-exposed cel, so the user can draw at once.
         // Record the preference so cel navigation follows the just-added shared layer, not the old archetype row.
         if (!primaryLayerE.IsNull)
-            cmd.SetTarget(primaryLayerE).SetLayerSelection(recordCelSelectionPreference: true);
+            cmd.SetTarget(primaryLayerE).SelectLayers(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -347,7 +346,7 @@ internal static partial class LayerContextActions
             .NewShapeLayer()
             .SetProperty(e => e.Get<CommonLayerSetting>().Name, name)
             .AddToLayerTree(cel)
-            .SetLayerSelection(recordCelSelectionPreference: true)
+            .SelectLayers(recordCelSelectionPreference: true)
             .Commit();
     }
 

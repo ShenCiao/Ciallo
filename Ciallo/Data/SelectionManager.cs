@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.Serialization;
 using Frent;
 using ObservableCollections;
@@ -60,97 +61,31 @@ public class SelectionManager
     }
 
     /// <summary>
-    /// Resolves the layer that should be selected for a timeline frame, using the
-    /// working cel folder's selected cel and its preferred cel child name.
-    /// <list type="bullet">
-    /// <item>Returns <see cref="Entity.Null"/> when there is no working cel folder, i.e. the
-    ///   current primary layer is not under any cel folder. The caller should keep the working
-    ///   layer untouched (scrubbing must not disturb plain-layer editing).</item>
-    /// <item>Returns the document entity when a working cel folder exists but the frame resolves
-    ///   to no cel child (frame before the first cel, dead cel, or no direct child matching the
-    ///   preferred name). The caller commits this so the primary layer is cleared.</item>
-    /// <item>Returns the working cel folder itself for a Blank exposure.</item>
-    /// <item>Otherwise returns the matching cel child to switch to.</item>
-    /// </list>
+    /// Resolves the ordered template for the exposed cel. A default array means there is no
+    /// cel-folder context. Blank or wholly missing selections retain the folder as navigation
+    /// context, with no drawable layer selected. Missing names remain in the template.
     /// </summary>
-    public Entity ResolvePrimaryLayerForTimelineFrameSelection(int frame)
+    public ImmutableArray<Entity> ResolveLayersForTimelineFrameSelection(int frame)
     {
         var celFolder = WorkingCelFolder.CurrentValue;
-        // Not in a cel-folder context: keep the current primary layer (no change).
-        if (celFolder.IsNull) return Entity.Null;
-
-        var folderSetting = celFolder.Get<FolderLayerSetting>();
-        var exposures = folderSetting.Exposures;
-        if (exposures == null) return Entity.Null;
-
-        // In a cel-folder context from here on: a miss means "clear", signalled by the document entity.
+        if (celFolder.IsNull) return default;
+        var exposures = celFolder.Get<FolderLayerSetting>().Exposures;
         int floor = exposures.FloorIndex(frame);
-        if (floor < 0)
-            return celFolder.Document;
-
-        var exposedCel = exposures.GetValueAtIndex(floor);
-        if (exposedCel.IsNull || !exposedCel.IsAlive || !exposedCel.Has<LayerTreeNode>())
-            return celFolder.Document;
-        if (exposedCel.IsCelFolder)
-            return celFolder;
-
-        if (!exposedCel.Has<FolderLayerSetting>())
-            return exposedCel;
-
-        var child = exposedCel.Get<LayerTreeNode>().GetLayerChildByName(folderSetting.PreferredNameForCelSelection.Value);
-        return child.IsNull ? celFolder.Document : child;
+        return ResolveLayersForCelSelection(celFolder,
+            floor < 0 ? Entity.Null : exposures.GetValueAtIndex(floor));
     }
 
-    public bool NeedsTimelineSelectionCommit(Entity resolvedLayer) =>
-        !resolvedLayer.IsNull
-        && (resolvedLayer != PrimaryLayer.CurrentValue || SelectedLayers.Value.Length != 1);
-
-    /// <summary>
-    /// Returns the entity to switch <see cref="PrimaryLayer"/> to after clicking a cel button,
-    /// using the clicked cel's direct child matching the folder's preferred cel child name.
-    /// <list type="bullet">
-    /// <item>Returns <see cref="Entity.Null"/> when the arguments are invalid, or the resolved
-    ///   child is already the primary layer (nothing to do).</item>
-    /// <item>Returns the cel folder itself when the clicked button is a Blank exposure.</item>
-    /// <item>Returns the document entity when the clicked cel has no direct child matching the
-    ///   preferred name, so the caller clears the primary layer.</item>
-    /// <item>Otherwise returns the matching cel child.</item>
-    /// </list>
-    /// </summary>
-    public Entity ComputePrimaryLayerForCelButtonSelection(Entity celFolder, Entity clickedCel)
+    public static ImmutableArray<Entity> ResolveLayersForCelSelection(Entity celFolder, Entity cel)
     {
-        if (celFolder.IsNull || !celFolder.IsAlive)
-            return Entity.Null;
-        if (clickedCel.IsNull || !clickedCel.IsAlive || !clickedCel.Has<LayerTreeNode>())
-            return Entity.Null;
-
-        var folderSetting = celFolder.TryGet<FolderLayerSetting>();
-        if (folderSetting?.IsCelFolder != true)
-            return Entity.Null;
-
-        Entity result;
-        if (clickedCel.IsCelFolder)
-        {
-            result = celFolder;
-        }
-        else if (!clickedCel.Tagged<CelTag>())
-        {
-            return Entity.Null;
-        }
-        else if (clickedCel.Has<FolderLayerSetting>())
-        {
-            // No matching child: clear the primary layer, signalled by the document entity.
-            var child = clickedCel.Get<LayerTreeNode>().GetLayerChildByName(folderSetting.PreferredNameForCelSelection.Value);
-            result = child.IsNull ? celFolder.Document : child;
-        }
-        else
-        {
-            result = clickedCel;
-        }
-
-        // Already the primary layer (including already-cleared): nothing to do.
-        return result == PrimaryLayer.CurrentValue && SelectedLayers.Value.Length == 1 ? Entity.Null : result;
+        if (!cel.IsNull && !cel.IsCelFolder && !cel.Has<FolderLayerSetting>())
+            return [cel];
+        var names = celFolder.Get<FolderLayerSetting>().PreferredNamesForCelSelection.Value;
+        var layers = CelLayerSelection.Resolve(cel, names);
+        return layers.IsEmpty ? [celFolder] : layers;
     }
+
+    public bool NeedsTimelineSelectionCommit(ImmutableArray<Entity> layers) =>
+        !layers.IsDefault && !SelectedLayers.Value.SequenceEqual(layers);
 
     /// <summary>
     /// Returns the frame index to switch to after switching primary layer.

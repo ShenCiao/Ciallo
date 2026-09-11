@@ -493,6 +493,7 @@ public class DurabilityTests
         celFolder.Add(new FolderLayerSetting { IsCelFolder = true });
         document.Get<LayerTreeNode>().AddChild(celFolder);
         celFolder.Get<FolderLayerSetting>().Exposures.Add(12, celFolder);
+        celFolder.Get<FolderLayerSetting>().PreferredNamesForCelSelection.Value = ["Ink", "Color", "Shade"];
 
         try
         {
@@ -511,6 +512,8 @@ public class DurabilityTests
             var loadedExposures = loadedCelFolder.Get<FolderLayerSetting>().Exposures;
             AssertThat(loadedExposures.ContainsKey(12)).IsTrue();
             AssertThat(loadedExposures[12]).IsEqual(loadedCelFolder);
+            AssertThat(loadedCelFolder.Get<FolderLayerSetting>().PreferredNamesForCelSelection.Value.ToArray())
+                .ContainsExactly("Ink", "Color", "Shade");
             DisposeWorld(loaded.World);
         }
         finally

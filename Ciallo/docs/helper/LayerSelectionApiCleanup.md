@@ -9,14 +9,14 @@ Do not relitigate the rename. Do not change CONTEXT behavior. Collapse duplicati
 Selection writes only through `ImmutableArray<Entity>`:
 
 ```csharp
-SetLayerSelection(ImmutableArray<Entity> layers, bool recordCelPreference = false)
+SelectLayers(ImmutableArray<Entity> layers, bool recordCelPreference = false)
 ```
 
-- One layer: `SetLayerSelection([layer])`.
-- Empty: `SetLayerSelection([])`.
+- One layer: `SelectLayers([layer])`.
+- Empty: `SelectLayers([])`.
 - `recordCelPreference` is a named argument, never a leading positional `true`.
 
-`SetLayerSelectionCmd` still takes a `CommandBuilder` target plus constructor `layers` plus a leading `bool`. `default(ImmutableArray)` and `[]` mean different things. `Do`/`Undo` ignore `newLayerE`; the target is only `CommandBase.Document` and a fallback payload. Call sites currently mix `SetLayerSelection()`, `SetLayerSelection(true)`, `SetLayerSelection(layers: survivors)`, and `SetLayerSelection(true, layers)` (see `LayerContextActions.SplitStrokeAndFill`). Document entity as “clear selection” is not part of the store; stop using it as a command payload.
+`SelectLayersCmd` still takes a `CommandBuilder` target plus constructor `layers` plus a leading `bool`. `default(ImmutableArray)` and `[]` mean different things. `Do`/`Undo` ignore `newLayerE`; the target is only `CommandBase.Document` and a fallback payload. Call sites currently mix `SelectLayers()`, `SelectLayers(true)`, `SelectLayers(layers: survivors)`, and `SelectLayers(true, layers)` (see `LayerContextActions.SplitStrokeAndFill`). Document entity as “clear selection” is not part of the store; stop using it as a command payload.
 
 ## Resolve vs commit
 

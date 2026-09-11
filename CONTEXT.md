@@ -78,18 +78,33 @@ A cel folder is a folder layer whose children are cels. Cel folders do not nest 
 
 ### Cel Child Archetype
 
-A cel child archetype is a shared editable setting grouped by layer name across the cel children of one cel folder. Cel children are the layers nested inside the cels (the grandchildren of the cel folder), grouped by name. Editing an archetype applies its values one-way to every cel child layer that currently shares that name, overwriting their prior values. Renaming an archetype renames all those layers; if the new name already names another group, the groups merge. An archetype exists for every distinct name, including names used by only one layer.
+A cel child archetype groups every same-named direct child layer across one cel folder's cels. Names starting with `_` or `!` are excluded. An archetype exists even when only one layer has its name. Its display reflects one representative member; visibility edits apply to every member of the targeted archetypes. Renaming applies to the clicked archetype's members and updates its selection-template name. Renaming to an existing name combines the groups and removes duplicate names from the template.
 
-### Preferred Cel Child Name
+The timeline archetype selection button edits an ordered selection template within one cel folder. A checkmark means that name participates across cels; the brush marks the current cel's actual primary layer. A missing name remains checked with a dimmed button and an explanatory tooltip. Clicking a name selects only that archetype. Additional buttons toggle names; the template's first name cannot be deselected with its button. Clicking an archetype in another cel folder switches the editing context, and each folder retains its own template.
 
-A preferred cel child name is a cel folder's runtime memory of which cel child layer, by name, the primary layer should follow when navigating between cels. Navigating to a cel (clicking a cel button or scrubbing the timeline) resolves the primary layer to the same-named cel child under the newly exposed cel. When no cel child under that cel matches the name, no layer is selected. Navigating to Blank selects the cel folder itself without changing the preferred name. It is set only when the primary layer becomes a direct cel child, and is empty by default.
+Right-clicking a selected archetype targets the selected archetype names in its folder. Right-clicking an unselected archetype targets only that name without changing selection when opening the menu. The menu works even on Blank exposures or cels with no matching layers, and labels its scope as All Cels. It expands names to all matching direct children, including duplicate names and unexposed cels, then builds one ordered operation unit per cel. Repeated exposures never repeat an operation on the same cel.
+
+- Delete and Split Stroke and Fill affect every matching member. Split retains the source entities for strokes and follows their new stroke names in the selection template.
+- Merge and Group Layers run independently within each cel. Missing members are omitted; merge skips units with fewer than two layers. Incompatible member types disable the entire operation. Each unit's first available layer supplies the result name and settings for merge; grouping uses that layer's name. The template retains the result names in their original relative order, so a cel missing A may produce B while other cels produce A. Visual stacking follows the source layer order.
+- Ungroup Folder and Wrap Children in Folders affect all targeted folder members. Ungroup selects the promoted children by name, with each folder's topmost child first.
+- New Shape Layer and New Folder Layer create one same-named layer per matching cel, directly above that cel's primary member. Cels without matching members receive no new layer. The new archetype becomes the selection template. The cel folder header's Add Shape Layer to All Cels adds at the top of all folder cels.
+
+Each batch action is one undoable action. Undo/redo restores structure, content, references, the selection template, and the current selection. Layer selection after a batch resolves only within the currently exposed cel; batches do not change exposures or the playhead. The layer panel continues to operate on its concrete selected layers.
+
+### Cel Layer Selection Template
+
+`FolderLayerSetting.PreferredNamesForCelSelection` stores the ordered names to follow when navigating between cels. Explicit selection of direct cel children records the names of selected siblings in primary-first selection order. Archetype selection can include names missing from the current cel. Scrubbing, cel-button navigation, playback completion, and new-cel creation resolve the template without overwriting it with a partial result.
+
+Names resolve in template order. Every same-named direct child is included in layer order, and the first resolved layer becomes the primary layer. If A is missing from `[A, B, C]`, the actual selection becomes `[B, C]`; returning to a complete cel restores `[A, B, C]`. Blank exposures, frames before the first exposure, and cels with no matches select the cel folder as a navigation context without selecting a drawable layer. A non-folder cel selects the cel itself. Navigation outside a cel folder leaves the existing selection untouched.
+
+Templates are saved with each cel folder and restored independently of the current concrete selection. New documents begin with their initial shape layer selected. Older saved selection preferences may be discarded when the selection schema changes.
 
 ### Folder layer
 Any layer's parent must be a folder layer. The document entity is a folder layer entity.
 
 ### Selected Layers
 
-Selected layers are an ordered selection without duplicates, stored in `SelectionManager.SelectedLayers`. Clicking a layer name selects only that layer. Its selection button toggles additional membership, while the primary layer's button cannot deselect it. Navigating between cels resets the selection to the newly resolved primary layer. Saved selection state may be discarded when its schema changes.
+Selected layers are an ordered selection without duplicates, stored in `SelectionManager.SelectedLayers`. Clicking a layer name selects only that layer. Its selection button toggles additional membership, while the primary layer's button cannot deselect it. Navigating between cels resolves the cel folder's ordered selection template. Saved selection state may be discarded when its schema changes.
 
 Right-clicking a selected layer targets the whole selection. Right-clicking an unselected layer targets only that layer and leaves the selection unchanged. Delete, group, split, and drag operate on these targets as one undoable action. Structural operations treat a selected ancestor as covering its selected descendants and preserve visual stacking order. Visibility and the layer panel's opacity, mark color, blend mode, and clipping controls edit the selected layers together.
 

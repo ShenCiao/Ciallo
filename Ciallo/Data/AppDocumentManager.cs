@@ -69,7 +69,7 @@ public static partial class AppDocumentManager
             .SetTarget(celFolder)
             .SetObservableCollection(e => e.Get<FolderLayerSetting>().Exposures, exposures => exposures.Add(0, cel))
             .SetTarget(shapeLayer)
-            .SetLayerSelection(recordCelSelectionPreference: true);
+            .SelectLayers(recordCelSelectionPreference: true);
 
         // Fill brush
         Color[] colors = [Colors.PaleTurquoise, Colors.LightGreen, Colors.LemonChiffon, Colors.LightPink];

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -472,9 +473,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-                        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
-                            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
+                        var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -485,9 +486,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-                        if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
-                            cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
+                        var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -588,9 +589,9 @@ public partial class TimelineRuler : Control
             .SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
         if (_currentFrame.Value != _frameAtDragStart)
         {
-            var newPrimaryLayer = ResolvePrimaryLayerAfterFrameChange(_currentFrame.Value);
-            if (_selectionManager.NeedsTimelineSelectionCommit(newPrimaryLayer))
-                cmd.SetTarget(newPrimaryLayer).SetLayerSelection();
+            var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+            if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
         }
         cmd.CommitToLatest();
     }
@@ -609,7 +610,7 @@ public partial class TimelineRuler : Control
 
     // ── Selected-layer switch on frame change ─────────────────────────────────
 
-    /// <summary>Delegates to <see cref="SelectionManager.ResolvePrimaryLayerForTimelineFrameSelection"/>.</summary>
-    private Entity ResolvePrimaryLayerAfterFrameChange(int frame) =>
-        _selectionManager?.ResolvePrimaryLayerForTimelineFrameSelection(frame) ?? Entity.Null;
+    /// <summary>Delegates to <see cref="SelectionManager.ResolveLayersForTimelineFrameSelection"/>.</summary>
+    private ImmutableArray<Entity> ResolveLayersAfterFrameChange(int frame) =>
+        _selectionManager.ResolveLayersForTimelineFrameSelection(frame);
 }

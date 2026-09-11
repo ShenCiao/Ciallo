@@ -89,7 +89,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
             .NewVectorFillLayer();
         AddReferenceLayers(cmd, referenceLayers)
             .AddToLayerTree(Document, 0)
-            .SetLayerSelection()
+            .SelectLayers()
             .Commit();
     }
 
@@ -121,7 +121,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 
         if (!focusVectorFillLayer.IsNull)
             cmd.SetTarget(focusVectorFillLayer)
-                .SetLayerSelection(recordCelSelectionPreference: true);
+                .SelectLayers(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -169,7 +169,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 
         if (!focusVectorFillLayer.IsNull)
             cmd.SetTarget(focusVectorFillLayer)
-                .SetLayerSelection(recordCelSelectionPreference: true);
+                .SelectLayers(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }

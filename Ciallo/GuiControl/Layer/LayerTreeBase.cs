@@ -405,6 +405,12 @@ public abstract partial class LayerTreeBase : ScrollContainer
         _rightClickMenu.Popup(layer, ShouldShowTimelineLayerActions);
     }
 
+    protected void ShowArchetypeMenu(Entity folder, string name, Control label)
+    {
+        ShowContextTargetHinter(label);
+        _rightClickMenu.PopupArchetypes(folder, name);
+    }
+
     private void ShowContextTargetHinter(Control target)
     {
         _hinter.GlobalPosition = target.GlobalPosition;

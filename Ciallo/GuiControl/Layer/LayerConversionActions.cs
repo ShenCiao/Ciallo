@@ -103,10 +103,16 @@ internal static class LayerConversionActions
 
     public static void Merge(ImmutableArray<Entity> layers)
     {
+        var command = new CommandBuilder("Merge Layers", layers[0].Document);
+        var result = Merge(command, layers);
+        command.SetTarget(result).SelectLayers(recordCelSelectionPreference: true).Commit();
+    }
+
+    internal static Entity Merge(CommandBuilder command, ImmutableArray<Entity> layers)
+    {
         var primary = layers[0];
         var document = primary.Document;
         var result = primary.Has<ShapeLayerSetting>() ? primary : primary.World.Create();
-        var command = new CommandBuilder("Merge Layers", document);
         if (result != primary)
         {
             var node = primary.Get<LayerTreeNode>();
@@ -126,13 +132,14 @@ internal static class LayerConversionActions
                 command.SetTarget(document).MoveLayer(shape, result, index++);
         }
 
-        command.SetTarget(result).SetLayerSelection(recordCelSelectionPreference: true);
+        // Clear references to removed selected layers before deleting them.
+        command.SetTarget(result).SelectLayers();
         foreach (var layer in layers)
         {
             if (layer == result) continue;
             command.SetTarget(layer).RemoveFromLayerTree().DeleteLayer();
         }
-        command.Commit();
+        return result;
     }
 
     private static int AppendVectorFillPolygons(CommandBuilder command, Entity vectorFillLayer, Entity shapeLayer, int index)
@@ -186,7 +193,7 @@ internal static class LayerConversionActions
         Entity shapeLayer)
     {
         command.SetTarget(shapeLayer)
-            .SetLayerSelection()
+            .SelectLayers()
             .SetTarget(sourceLayer)
             .RemoveFromLayerTree()
             .DeleteLayer()

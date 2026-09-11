@@ -82,8 +82,8 @@ public partial class CelTrack : Control
     public Color ExposureSpanColor;
     public Font LabelFont;
     public int LabelFontSize;
-    /// <summary>Hardcoded orange, identical to the Playhead's border color.</summary>
-    public Color PlayheadAccentColor = new(207 / 255f, 167 / 255f, 106 / 255f, 1f);
+    /// <summary>Shared accent for frame-cell hints, drag previews, and selected-track borders.</summary>
+    public Color AccentColor = new(207 / 255f, 167 / 255f, 106 / 255f, 1f);
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
@@ -187,6 +187,16 @@ public partial class CelTrack : Control
         float midY = h * 0.5f;
         float buttonW = CelButtonWidth;
 
+        // Highlight the clicked frame cell [frame, frame + 1) across the full track height.
+        if (_rightClickIndicatorFrame is { } clickedFrame)
+        {
+            float left = Mathf.Max(0f, FrameToX(clickedFrame));
+            float right = Mathf.Min(w, FrameToX(clickedFrame + 1));
+            if (right > left)
+                DrawColoredPolygon([new(left, 0f), new(right, 0f), new(right, h), new(left, h)],
+                    AccentColor);
+        }
+
         for (int i = 0; i < _exposures.Count; i++)
         {
             int frame = _exposures.GetKeyAtIndex(i);
@@ -232,15 +242,6 @@ public partial class CelTrack : Control
                     GetExposureSpanColor(exposureValue));
         }
 
-        // ── Right-click indicator line ────────────────────────────────────────
-        if (_rightClickIndicatorFrame.HasValue)
-        {
-            float ix = FrameToX(_rightClickIndicatorFrame.Value);
-            if (ix >= 0f && ix <= w)
-                DrawLine(new Vector2(ix, 0f), new Vector2(ix, h),
-                    new Color(1f, 1f, 1f, 0.75f), width: 1f);
-        }
-
         // ── Cel button drag preview ───────────────────────────────────────────
         if (_isCelButtonDragging &&
             _celButtonDragTargetFrame.HasValue &&
@@ -248,16 +249,11 @@ public partial class CelTrack : Control
         {
             int targetFrame = _celButtonDragTargetFrame.Value;
             bool isValid = !_exposures.ContainsKey(targetFrame);
-            Color previewColor = isValid
-                ? CelButtonHoverColor with { A = 0.85f }
-                : new Color(0.9f, 0.25f, 0.25f, 0.6f);
             var previewRect = new Rect2(FrameToX(targetFrame), 0f, buttonW, h);
-            DrawCelButton(previewRect, previewColor,
-                _exposures[_celButtonDragSourceFrame.Value].IsCelFolder);
-            DrawRect(previewRect, isValid ? PlayheadAccentColor : Colors.Red, filled: false, width: 1f);
+            DrawRect(previewRect, isValid ? AccentColor : Colors.Red, filled: true);
         }
 
-        // ── Exposure span drag preview: thicker, in the Playhead's accent color ───
+        // ── Exposure span drag preview: thicker, in the track accent color ───
         if (_isSpanDragging &&
             _pressedSpan is { } draggedArrow &&
             _spanDragTargetFrame.HasValue)
@@ -267,14 +263,14 @@ public partial class CelTrack : Control
                 ? FrameToX(_playbackStart)
                 : FrameToX(draggedArrow.SourceFrame) + buttonW;
             float tipX = Mathf.Min(FrameToX(_spanDragTargetFrame.Value), w + SpanArrowHeadLength);
-            DrawSpanArrow(shaftStartX, tipX, midY, PlayheadAccentColor, DraggedSpanArrowThickness);
+            DrawSpanArrow(shaftStartX, tipX, midY, AccentColor, DraggedSpanArrowThickness);
         }
 
         if (_isSelected)
         {
             float width = 2.0f;
-            DrawLine(new Vector2(0f, width), new Vector2(w, width), PlayheadAccentColor, width: width);
-            DrawLine(new Vector2(0f, h - width / 2), new Vector2(w, h - width / 2), PlayheadAccentColor, width: width);
+            DrawLine(new Vector2(0f, width), new Vector2(w, width), AccentColor, width: width);
+            DrawLine(new Vector2(0f, h - width / 2), new Vector2(w, h - width / 2), AccentColor, width: width);
         }
     }
 

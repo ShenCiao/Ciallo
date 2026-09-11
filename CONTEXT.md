@@ -72,6 +72,10 @@ A cel is a direct child layer of a cel folder, whether or not any exposure curre
 
 A cel button is the clickable timeline control for one exposure on a CelTrack, drawn at its exposure key. Cel exposures and Blank exposures are visually distinguishable from each other, and both support the same click, drag, replace, delete, and undo workflows.
 
+### Frame Cell
+
+A frame cell is the timeline display interval for one frame number `n`, from `n` inclusive to `n + 1` exclusive. Its width follows the timeline zoom (`PixelsPerFrame`). Right-clicking a CelTrack fills the clicked frame cell across the full track height with the track accent color while the menu is open. The same accent color marks valid drag destinations, dragged exposure arrows, and selected-track borders.
+
 ### Cel Folder
 
 A cel folder is a folder layer whose children are cels. Cel folders do not nest inside other cel folders.
@@ -133,6 +137,8 @@ The exposed cel is the value half of an exposure: the cel shown throughout that 
 ### Exposure Span
 
 An exposure span is the interval an exposure covers. It begins at that exposure's key and ends where the next exposure's key on the same cel folder begins, or at the playback end when no exposure follows. A span is always at least one frame long, and is never stored: it is implied by the distance to the next key, so adding, moving, or deleting an exposure changes the spans around it.
+
+Drag an exposure arrowhead to adjust its duration.
 
 ### Blank Exposure
 

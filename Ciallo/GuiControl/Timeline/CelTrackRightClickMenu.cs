@@ -27,8 +27,6 @@ public partial class CelTrackRightClickMenu : PopupMenu
     // ── Menu item IDs ─────────────────────────────────────────────────────────
     private const int IdNewAnimationCel = 0;
     private const int IdDeleteCel = 1;
-    private const int IdInsertFrame = 2;
-    private const int IdDeleteFrame = 3;
     private const int CelListIdBase = 100;
 
     // ── Init ─────────────────────────────────────────────────────────────────
@@ -109,10 +107,6 @@ public partial class CelTrackRightClickMenu : PopupMenu
                 : "Delete Cel";
             AddItem(deleteLabel.Tr(), IdDeleteCel);
         }
-
-        AddSeparator();
-        AddItem("Insert Frame".Tr(), IdInsertFrame);
-        AddItem("Delete Frame".Tr(), IdDeleteFrame);
     }
 
     // ── Event handler ─────────────────────────────────────────────────────────
@@ -127,12 +121,6 @@ public partial class CelTrackRightClickMenu : PopupMenu
                 break;
             case IdDeleteCel:
                 ActionDeleteCel();
-                break;
-            case IdInsertFrame:
-                ActionInsertFrame();
-                break;
-            case IdDeleteFrame:
-                ActionDeleteFrame();
                 break;
             default:
                 if (intId >= CelListIdBase)
@@ -201,34 +189,6 @@ public partial class CelTrackRightClickMenu : PopupMenu
         string label = exposures[frame].IsCelFolder ? "Delete Blank" : "Delete Cel";
         new CommandBuilder(label)
             .SetObservableCollection(exposures, exp => exp.Remove(frame))
-            .Commit();
-    }
-
-    private void ActionInsertFrame()
-    {
-        const int frameCount = 1;
-        int frame = _rightClickedFrame;
-        var exposures = _celFolderEntity.Get<FolderLayerSetting>().Exposures;
-        if (!TimelineFrameRetiming.InsertFramesWouldChange(exposures, frame, frameCount))
-            return;
-
-        new CommandBuilder("Insert Frame")
-            .SetObservableCollection(exposures,
-                exp => TimelineFrameRetiming.InsertFrames(exp, frame, frameCount))
-            .Commit();
-    }
-
-    private void ActionDeleteFrame()
-    {
-        const int frameCount = 1;
-        int frame = _rightClickedFrame;
-        var exposures = _celFolderEntity.Get<FolderLayerSetting>().Exposures;
-        if (!TimelineFrameRetiming.DeleteFramesWouldChange(exposures, frame, frameCount))
-            return;
-
-        new CommandBuilder("Delete Frame")
-            .SetObservableCollection(exposures,
-                exp => TimelineFrameRetiming.DeleteFrames(exp, frame, frameCount))
             .Commit();
     }
 }

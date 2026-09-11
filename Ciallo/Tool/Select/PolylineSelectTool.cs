@@ -172,12 +172,19 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         strokeBrushSwitcher.CustomMinimumSize = new(0, 256);
         strokeBrushSwitcher.Document = Document;
         strokeBrushSwitcher.BindBrushes(Document.Get<BrushManager>().StrokeBrushes);
-        strokeBrushSwitcher.VisibleIf(selectionChanged,
-            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<StrokeSetting>()));
+        strokeBrushSwitcher.VisibleIf(
+            selectionChanged.CombineLatest(selectionManager.PrimaryLayer, (_, layer) => layer),
+            layer => selectedShapes.Count > 0
+                ? selectedShapes.All(e => e.Has<StrokeSetting>())
+                : !layer.IsNull && layer.Has<ShapeLayerSetting>());
 
         selectionChanged.Subscribe(_ =>
         {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>())) return;
+            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>()))
+            {
+                strokeBrushSwitcher.Select(Entity.Null);
+                return;
+            }
             var firstE = selectedShapes.First().Get<StrokeSetting>().Brush.Value;
             bool allSame = selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == firstE);
             strokeBrushSwitcher.Select(allSame ? firstE : Entity.Null);
@@ -185,6 +192,18 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {
+            if (selectedShapes.Count == 0)
+            {
+                var strokes = selectionManager.PrimaryLayer.CurrentValue.Get<LayerTreeNode>().Children
+                    .Where(e => e.Has<StrokeSetting>() && e.Get<StrokeSetting>().Brush.Value == brushE)
+                    .ToArray();
+                if (strokes.Length == 0) return;
+
+                selectedShapes.AddRange(strokes);
+                Fire(Trigger.Refresh);
+                return;
+            }
+
             var cmd = new CommandBuilder("Set Selected Stroke Brush");
             foreach (var shapeE in selectedShapes)
                 cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);

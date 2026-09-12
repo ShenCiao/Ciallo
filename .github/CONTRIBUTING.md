@@ -13,71 +13,33 @@ After getting a basic idea on Ciallo's code architecture here, you can check AI 
 
 ### How to build
 
-Ciallo is built on Godot. Building the core part of Ciallo is similar to building a standard Godot C# project:
-
-- Install Git LFS, the .NET 10 SDK, and the latest release of [our custom Godot editor](https://github.com/ShenCiao/godot/releases). You can follow a [video guide](https://www.youtube.com/watch?v=7nExKQn1CAw).
-- The provided editor supports Windows and Linux x86_64, and macOS arm64.
-- Clone with submodules. Use the Ciallo repository URL you have access to:
+Use the .NET 10 SDK and Git with LFS already configured. The custom editor supports
+Windows/Linux x86_64 and macOS arm64. Run these commands in **Git Bash on Windows** or in a terminal on macOS/Linux:
 
 ```sh
-git lfs install
 git clone --recurse-submodules <Ciallo-repository-url> Ciallo
 cd Ciallo
+./engine.sh setup
+dotnet build Ciallo/Ciallo.csproj
 ```
 
-- For an existing checkout, initialize the pinned submodules, restore, and build
-  from the repository root. These commands also apply after cloning:
+Setup installs gdvm and uses it to download the C# editor selected by `global.json`, installs Git
+hooks, and generates an `Open Ciallo` shortcut. Open that shortcut to run the project.
+Hooks prepare the required engine after branch changes and pulls.
 
-```sh
-git lfs install
-git submodule update --init --recursive
-git lfs pull
-dotnet restore Ciallo/Ciallo.csproj --configfile NuGet.Config
-dotnet build Ciallo/Ciallo.csproj --no-restore
-```
-
-- Open `Ciallo/project.godot` with the custom Godot editor, then run the project.
-  - If Godot was opened before the first build, temporary `script ... is not compiling` autoload errors are expected. Autoload errors remaining after a successful build are real errors.
-- Enable the "Embedded game size stretches..." option in the game run window.
+Enable the "Embedded game size stretches..." option in the game run window.
 
 ![](/.github/EnableStretch.png)
 
-Facepunch.Steamworks builds automatically through `ProjectReference`. It requires
-an initialized submodule; it does not require a Facepunch NuGet feed or a native
-Steamworks SDK build.
+For local engine builds and cache management, see [Engine setup](../docs/engine-setup.md).
 
-### Keeping submodules synchronized
+### How to export locally
 
-Enable recursion once per checkout so supported operations such as `pull`,
-`switch`, and `checkout` also synchronize initialized submodules:
+Download and install matching export templates when needed, then use the presets in `Ciallo/export_presets.cfg`:
 
 ```sh
-git config submodule.recurse true
+./engine.sh sync --templates
 ```
-
-After pulling or switching branches, this explicit command initializes newly added
-submodules and checks out the exact dependency commits recorded by Ciallo:
-
-```sh
-git submodule update --init --recursive
-```
-
-The dependency changes only when Ciallo records a different submodule commit.
-Do not use `git submodule update --remote` for normal builds. If `.gitmodules`
-changes a repository URL, run `git submodule sync --recursive` before updating.
-
-### Facepunch.Steamworks dependency
-
-`thirdparty/Facepunch.Steamworks` is a submodule of the
-[official Facepunch repository](https://github.com/Facepunch/Facepunch.Steamworks).
-
-### No need to build the Godot editor
-
-You do not need to build the Godot editor from source. Use the provided custom editor release instead. (And wish you would never be tortured by C++.)
-
-### How to export
-
-Local development only needs the editor. To export packages, also install the export templates from the latest custom Godot release, then use the presets in `Ciallo/export_presets.cfg`.
 
 Official Windows, Linux, and macOS packages are built by CI. Signing and notarization are only configured there, so local exports are development builds.
 

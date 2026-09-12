@@ -1,4 +1,9 @@
 # Material marker temp files
+/.ciallo/
+/Ciallo/global.json
+/Open Ciallo.lnk
+/Open Ciallo.command
+/Open Ciallo.desktop
 *.mmcr
 
 **/copilot*

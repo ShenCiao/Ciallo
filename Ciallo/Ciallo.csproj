@@ -1,4 +1,4 @@
-<Project Sdk="Godot.NET.Sdk/4.6.2-ciallo.gfbd17920c">
+<Project Sdk="Godot.NET.Sdk">
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LangVersion>default</LangVersion>
@@ -78,9 +78,4 @@
     </PropertyGroup>
 
     <Import Project="$(GodotProjectDir).godot/mono/local_sdk.props" Condition="Exists('$(GodotProjectDir).godot/mono/local_sdk.props')" />
-
-    <Target Name="InstallGitHooks" BeforeTargets="PrepareForBuild" Condition="Exists('$(MSBuildProjectDirectory)/../.git') And Exists('$(MSBuildProjectDirectory)/.githooks/pre-commit')">
-        <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="chmod +x &quot;$(MSBuildProjectDirectory)/.githooks/pre-commit&quot;" />
-        <Exec Command="git -C &quot;$(MSBuildProjectDirectory)&quot; config --local core.hooksPath &quot;$(MSBuildProjectName)/.githooks&quot;" />
-    </Target>
 </Project>

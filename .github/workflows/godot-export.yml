@@ -56,9 +56,6 @@ env:
   PROJECT_PATH: Ciallo
   CSPROJ: Ciallo/Ciallo.csproj
   EXPORT_NAME: Ciallo
-  GODOT_FEED: https://shenciao.github.io/godot/index.json
-  GODOT_SDK_FLAT: https://shenciao.github.io/godot/flatcontainer/godot.net.sdk/index.json
-  GODOT_RELEASE_REPO: ShenCiao/godot
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -83,10 +80,20 @@ jobs:
           lfs: true
           submodules: true
 
+      - name: Resolve required engine version
+        id: engine
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(./engine.sh version)
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$ ]]
+          echo "sdk_version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Validate metadata
         id: meta
         env:
           GH_TOKEN: ${{ github.token }}
+          SDK_VERSION: ${{ steps.engine.outputs.sdk_version }}
           CHECKOUT_REF: ${{ inputs.checkout_ref }}
           RELEASE_REF: ${{ inputs.release_ref }}
         shell: pwsh
@@ -112,40 +119,14 @@ jobs:
             throw "project.godot config/version must be plain semver X.Y.Z. Actual: $projectVersion"
           }
 
-          [xml]$csproj = Get-Content -LiteralPath $env:CSPROJ
-          $sdk = $csproj.Project.Sdk
-          if ($sdk -notmatch "^Godot\.NET\.Sdk/(?<version>\d+\.\d+\.\d+-ciallo\.g(?<sha>[0-9a-f]+))$") {
-            throw "C# project must use published custom Godot SDK: Godot.NET.Sdk/<semver>-ciallo.g<sha>. Actual: $sdk"
-          }
-
-          $sdkVersion = $Matches.version
-          $engineStatus = "ciallo.g$($Matches.sha)"
-
-          $sdkIndex = Invoke-RestMethod -Uri $env:GODOT_SDK_FLAT
-          if ($sdkIndex.versions -notcontains $sdkVersion) {
-            throw "SDK '$sdkVersion' is not published on public feed '$env:GODOT_SDK_FLAT'."
-          }
-
+          $sdkVersion = $env:SDK_VERSION
+          $engineStatus = $sdkVersion.Substring($sdkVersion.IndexOf('-') + 1)
+          $engineReleaseTag = "v$sdkVersion"
           $headers = @{
             Accept = "application/vnd.github+json"
             "X-GitHub-Api-Version" = "2022-11-28"
             Authorization = "Bearer $env:GH_TOKEN"
           }
-          $templateAssets = @(
-            "godot-export-templates-windows-x86_64-$engineStatus.zip"
-            "godot-export-templates-linux-x86_64-$engineStatus.zip"
-            "godot-export-templates-macos-arm64-$engineStatus.zip"
-          )
-          $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$env:GODOT_RELEASE_REPO/releases?per_page=100" -Headers $headers
-          $engineRelease = $releases | Where-Object {
-            $assetNames = @($_.assets.name)
-            @($templateAssets | Where-Object { $_ -notin $assetNames }).Count -eq 0
-          } | Select-Object -First 1
-          if (-not $engineRelease) {
-            throw "Could not find a $env:GODOT_RELEASE_REPO release containing all export templates for '$engineStatus'."
-          }
-          $engineReleaseTag = $engineRelease.tag_name
-
           $headSha = (git rev-parse HEAD).Trim()
 
           $tagKind = "branch"
@@ -264,9 +245,6 @@ jobs:
         include:
           - name: Windows
             runner: windows-latest
-            editor_asset: godot-windows-x86_64
-            editor_glob: godot*.exe
-            template_asset: godot-export-templates-windows-x86_64
             preset: Windows Desktop
             output_dir: build/windows
             output_file: Ciallo.exe
@@ -274,9 +252,6 @@ jobs:
             package: packages/Ciallo-Windows.zip
           - name: Linux
             runner: ubuntu-24.04
-            editor_asset: godot-linuxbsd-x86_64
-            editor_glob: godot*
-            template_asset: godot-export-templates-linux-x86_64
             preset: Linux
             output_dir: build/linux
             output_file: Ciallo
@@ -284,9 +259,6 @@ jobs:
             package: packages/Ciallo-Linux.zip
           - name: macOS
             runner: macos-26
-            editor_asset: godot-macos-arm64
-            editor_glob: godot*
-            template_asset: godot-export-templates-macos-arm64
             preset: macOS
             output_dir: build/macos
             output_file: Ciallo.app
@@ -309,13 +281,7 @@ jobs:
         id: godot
         uses: ./.github/actions/setup-custom-godot
         with:
-          engine_release_tag: ${{ needs.meta.outputs.engine_release_tag }}
-          engine_status: ${{ needs.meta.outputs.engine_status }}
-          editor_asset: ${{ matrix.editor_asset }}
-          editor_glob: ${{ matrix.editor_glob }}
-          template_asset: ${{ matrix.template_asset }}
-          release_repo: ${{ env.GODOT_RELEASE_REPO }}
-          github_token: ${{ github.token }}
+          templates: 'true'
 
       - name: Import signing certificate
         # Imports the Developer ID cert into a temporary keychain for Godot codesign=3.

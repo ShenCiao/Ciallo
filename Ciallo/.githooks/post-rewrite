@@ -1,0 +1,6 @@
+#!/bin/sh
+# Git supplies the rewritten commit map on stdin; only rebase needs a separate refresh.
+cat >/dev/null
+[ "${1:-}" = rebase ] || exit 0
+root=$(git rev-parse --show-toplevel) || exit $?
+[ ! -f "$root/global.json" ] || sh "$root/engine.sh" sync

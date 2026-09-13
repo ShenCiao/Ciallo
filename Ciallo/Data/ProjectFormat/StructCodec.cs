@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Ciallo.Geometry;
 using Godot;
 
@@ -9,13 +11,11 @@ namespace Ciallo.Data;
 /// Maps a creative value type (Color, Vector2, Transform2D, BezierPoint) to a DuckDB STRUCT.
 ///
 /// A codec is the single source of truth for one structured type's project-format contract:
-/// its DuckDB column type, how to build a STRUCT literal in an INSERT, how to decompose a
-/// CLR value into flat FLOAT leaves (for both single-struct params and list_zip arrays), and
-/// how to recompose a value from the Dictionary DuckDB returns on read.
+/// its DuckDB column type, how to decompose a CLR value into flat FLOAT leaves, and how to
+/// recompose a value from the Dictionary DuckDB returns on read.
 ///
-/// All leaves are FLOAT. Leaf order is fixed and shared by <see cref="Literal"/>,
-/// <see cref="Decompose"/> so that leaf i in the literal always corresponds to leaf i produced
-/// by Decompose.
+/// All leaves are FLOAT. Their order follows a depth-first traversal of the DuckDB STRUCT type,
+/// which is the same order consumed by <see cref="DuckDbBatchAppender"/>.
 /// </summary>
 internal abstract class StructCodec
 {
@@ -25,17 +25,47 @@ internal abstract class StructCodec
     /// <summary>Full DuckDB type, e.g. <c>STRUCT(r FLOAT, g FLOAT, b FLOAT, a FLOAT)</c>.</summary>
     public abstract string DuckDbType { get; }
 
-    /// <summary>
-    /// Build a STRUCT literal where <paramref name="leaf"/>(i) yields the SQL expression for leaf i
-    /// (a parameter like <c>$p3</c> for a single struct, or <c>e[4]</c> inside a list_transform).
-    /// </summary>
-    public abstract string Literal(Func<int, string> leaf);
-
-    /// <summary>Flatten a CLR value into <paramref name="leaves"/> (length == <see cref="LeafCount"/>).</summary>
+    /// <summary>Flatten a single CLR value into <paramref name="leaves"/> (length == <see cref="LeafCount"/>).
+    /// Boxes one value; used for the single-element <c>Struct</c> shape, which is not a bulk hot path.</summary>
     public abstract void Decompose(object value, float[] leaves);
 
-    /// <summary>Rebuild a CLR value from the Dictionary DuckDB returns for a STRUCT.</summary>
+    /// <summary>Rebuild a single CLR value from the Dictionary DuckDB returns for a STRUCT.</summary>
     public abstract object Compose(IReadOnlyDictionary<string, object> dict);
+
+    /// <summary>
+    /// Flatten every element of a StructArray field value into per-leaf FLOAT columns, without
+    /// boxing each element. <paramref name="arrayValue"/> is the raw field value (e.g.
+    /// ImmutableArray&lt;Vector2&gt;); <paramref name="leafColumns"/> has length == LeafCount.
+    /// </summary>
+    public abstract void DecomposeInto(object arrayValue, List<float>[] leafColumns);
+
+    /// <summary>Element count of a StructArray field value without boxing or materializing.</summary>
+    public abstract int GetArrayLength(object arrayValue);
+
+    /// <summary>
+    /// Flatten every element of a StructArray field value straight into the destination STRUCT[]
+    /// child leaf vectors. <paramref name="leafData"/>[leaf] is the FLOAT data pointer of the
+    /// list-child struct's leaf vector; values are written at <paramref name="offset"/>..offset+Count.
+    /// This is the bulk hot path: no intermediate buffers, no per-element boxing.
+    /// </summary>
+    public abstract void DecomposeArrayInto(object arrayValue, ReadOnlySpan<nint> leafData, ulong offset);
+
+    /// <summary>
+    /// Rebuild a StructArray field value from the rows DuckDB returns for a STRUCT[] column,
+    /// producing the field's declared container. Each row's leaf floats are read without boxing
+    /// the composed element into object[].
+    /// </summary>
+    public abstract object ComposeArray(System.Collections.IEnumerable dbRows, ContainerKind containerKind);
+
+    /// <summary>
+    /// Rebuild a StructArray field value directly from the STRUCT[] child leaf vectors, producing
+    /// the field's declared container. <paramref name="leafData"/>[leaf] is the FLOAT data pointer
+    /// of the list-child struct's leaf vector; <paramref name="count"/> elements are read starting
+    /// at <paramref name="offset"/>. No Dictionary per element, no boxed floats — the read-side
+    /// counterpart to <see cref="DecomposeArrayInto"/>.
+    /// </summary>
+    public abstract object ComposeArrayFromLeaves(
+        ReadOnlySpan<nint> leafData, ulong offset, int count, ContainerKind containerKind);
 
     protected static float F(object o) => Convert.ToSingle(o);
 
@@ -46,103 +76,240 @@ internal abstract class StructCodec
     }
 }
 
-internal sealed class ColorCodec : StructCodec
+/// <summary>
+/// Strongly-typed codec base. <see cref="Decompose(in T, System.Span{float})"/> and
+/// <see cref="Compose(System.ReadOnlySpan{float})"/> touch no boxes; the non-generic object overloads
+/// forward to them so single-element Struct fields keep working.
+/// </summary>
+internal abstract class StructCodec<T> : StructCodec
 {
-    public override Type TargetType => typeof(Color);
+    public sealed override Type TargetType => typeof(T);
+
+    /// <summary>Flatten one strongly-typed value into <paramref name="leaves"/> — no boxing.</summary>
+    public abstract void Decompose(in T value, Span<float> leaves);
+
+    /// <summary>Rebuild one strongly-typed value from its leaf floats — no boxing.</summary>
+    public abstract T Compose(ReadOnlySpan<float> leaves);
+
+    public sealed override void Decompose(object value, float[] leaves) => Decompose((T)value, leaves);
+
+    public sealed override object Compose(IReadOnlyDictionary<string, object> dict)
+    {
+        Span<float> leaves = stackalloc float[LeafCount];
+        ReadLeaves(dict, leaves);
+        return Compose(leaves);
+    }
+
+    /// <summary>Read the STRUCT's named leaves from the Dictionary DuckDB returns, in leaf order.</summary>
+    protected abstract void ReadLeaves(IReadOnlyDictionary<string, object> dict, Span<float> leaves);
+
+    public sealed override void DecomposeInto(object arrayValue, List<float>[] leafColumns)
+    {
+        Span<float> leaves = stackalloc float[LeafCount];
+        foreach (var element in AsReadOnlyList(arrayValue))
+        {
+            Decompose(element, leaves);
+            for (int i = 0; i < leafColumns.Length; i++)
+                leafColumns[i].Add(leaves[i]);
+        }
+    }
+
+    public sealed override int GetArrayLength(object arrayValue) => AsSpan(arrayValue).Length;
+
+    public sealed override unsafe void DecomposeArrayInto(
+        object arrayValue, ReadOnlySpan<nint> leafData, ulong offset)
+    {
+        var elements = AsSpan(arrayValue);
+        int leafCount = LeafCount;
+        Span<float> leaves = stackalloc float[leafCount];
+        for (int i = 0; i < elements.Length; i++)
+        {
+            Decompose(elements[i], leaves);
+            ulong row = offset + (ulong)i;
+            for (int leaf = 0; leaf < leafCount; leaf++)
+                ((float*)leafData[leaf])[row] = leaves[leaf];
+        }
+    }
+
+    public sealed override object ComposeArray(System.Collections.IEnumerable dbRows, ContainerKind containerKind)
+    {
+        var builder = ImmutableArray.CreateBuilder<T>();
+        Span<float> leaves = stackalloc float[LeafCount];
+        foreach (var row in dbRows)
+        {
+            ReadLeaves(FieldDescriptor.AsStructDict(row), leaves);
+            builder.Add(Compose(leaves));
+        }
+        return ContainerFactory.BuildTyped(containerKind, builder);
+    }
+
+    public sealed override unsafe object ComposeArrayFromLeaves(
+        ReadOnlySpan<nint> leafData, ulong offset, int count, ContainerKind containerKind)
+    {
+        var builder = ImmutableArray.CreateBuilder<T>(count);
+        int leafCount = LeafCount;
+        Span<float> leaves = stackalloc float[leafCount];
+        for (int i = 0; i < count; i++)
+        {
+            ulong row = offset + (ulong)i;
+            for (int leaf = 0; leaf < leafCount; leaf++)
+                leaves[leaf] = ((float*)leafData[leaf])[row];
+            builder.Add(Compose(leaves));
+        }
+        return ContainerFactory.BuildTyped(containerKind, builder);
+    }
+
+    private static IReadOnlyList<T> AsReadOnlyList(object arrayValue)
+    {
+        return arrayValue switch
+        {
+            ImmutableArray<T> immutable => immutable.IsDefault ? [] : immutable,
+            IReadOnlyList<T> list => list,
+            _ => throw new InvalidOperationException(
+                $"StructArray value {arrayValue?.GetType()} is not a supported container of {typeof(T)}."),
+        };
+    }
+
+    /// <summary>
+    /// Zero-copy span over the StructArray field value. ImmutableArray&lt;T&gt; and T[] (the
+    /// containers the project format produces) expose their backing store directly; any other
+    /// IReadOnlyList&lt;T&gt; is copied once into a temporary array.
+    /// </summary>
+    private static ReadOnlySpan<T> AsSpan(object arrayValue)
+    {
+        switch (arrayValue)
+        {
+            case ImmutableArray<T> immutable:
+                return immutable.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(immutable);
+            case T[] array:
+                return array;
+            case List<T> list:
+                return CollectionsMarshal.AsSpan(list);
+            case IReadOnlyList<T> readOnly:
+                var copy = new T[readOnly.Count];
+                for (int i = 0; i < copy.Length; i++)
+                    copy[i] = readOnly[i];
+                return copy;
+            default:
+                throw new InvalidOperationException(
+                    $"StructArray value {arrayValue?.GetType()} is not a supported container of {typeof(T)}.");
+        }
+    }
+}
+
+internal sealed class ColorCodec : StructCodec<Color>
+{
     public override int LeafCount => 4;
     public override string DuckDbType => "STRUCT(r FLOAT, g FLOAT, b FLOAT, a FLOAT)";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'r': {leaf(0)}, 'g': {leaf(1)}, 'b': {leaf(2)}, 'a': {leaf(3)}}}";
-
-    public override void Decompose(object value, float[] leaves)
+    public override void Decompose(in Color value, Span<float> leaves)
     {
-        var c = (Color)value;
-        leaves[0] = c.R;
-        leaves[1] = c.G;
-        leaves[2] = c.B;
-        leaves[3] = c.A;
+        leaves[0] = value.R;
+        leaves[1] = value.G;
+        leaves[2] = value.B;
+        leaves[3] = value.A;
     }
 
-    public override object Compose(IReadOnlyDictionary<string, object> dict) =>
-        new Color(F(dict["r"]), F(dict["g"]), F(dict["b"]), F(dict["a"]));
+    public override Color Compose(ReadOnlySpan<float> leaves) =>
+        new(leaves[0], leaves[1], leaves[2], leaves[3]);
+
+    protected override void ReadLeaves(IReadOnlyDictionary<string, object> dict, Span<float> leaves)
+    {
+        leaves[0] = F(dict["r"]);
+        leaves[1] = F(dict["g"]);
+        leaves[2] = F(dict["b"]);
+        leaves[3] = F(dict["a"]);
+    }
 }
 
-internal sealed class Vector2Codec : StructCodec
+internal sealed class Vector2Codec : StructCodec<Vector2>
 {
-    public override Type TargetType => typeof(Vector2);
     public override int LeafCount => 2;
     public override string DuckDbType => "STRUCT(x FLOAT, y FLOAT)";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'x': {leaf(0)}, 'y': {leaf(1)}}}";
-
-    public override void Decompose(object value, float[] leaves)
+    public override void Decompose(in Vector2 value, Span<float> leaves)
     {
-        var v = (Vector2)value;
-        leaves[0] = v.X;
-        leaves[1] = v.Y;
+        leaves[0] = value.X;
+        leaves[1] = value.Y;
     }
 
-    public override object Compose(IReadOnlyDictionary<string, object> dict) =>
-        new Vector2(F(dict["x"]), F(dict["y"]));
+    public override Vector2 Compose(ReadOnlySpan<float> leaves) =>
+        new(leaves[0], leaves[1]);
+
+    protected override void ReadLeaves(IReadOnlyDictionary<string, object> dict, Span<float> leaves)
+    {
+        leaves[0] = F(dict["x"]);
+        leaves[1] = F(dict["y"]);
+    }
 }
 
-internal sealed class Transform2DCodec : StructCodec
+internal sealed class Transform2DCodec : StructCodec<Transform2D>
 {
-    public override Type TargetType => typeof(Transform2D);
     public override int LeafCount => 6;
 
     public override string DuckDbType =>
         "STRUCT(x STRUCT(x FLOAT, y FLOAT), y STRUCT(x FLOAT, y FLOAT), origin STRUCT(x FLOAT, y FLOAT))";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'x': {{'x': {leaf(0)}, 'y': {leaf(1)}}}, " +
-        $"'y': {{'x': {leaf(2)}, 'y': {leaf(3)}}}, " +
-        $"'origin': {{'x': {leaf(4)}, 'y': {leaf(5)}}}}}";
-
-    public override void Decompose(object value, float[] leaves)
+    public override void Decompose(in Transform2D value, Span<float> leaves)
     {
-        var t = (Transform2D)value;
-        leaves[0] = t.X.X;
-        leaves[1] = t.X.Y;
-        leaves[2] = t.Y.X;
-        leaves[3] = t.Y.Y;
-        leaves[4] = t.Origin.X;
-        leaves[5] = t.Origin.Y;
+        leaves[0] = value.X.X;
+        leaves[1] = value.X.Y;
+        leaves[2] = value.Y.X;
+        leaves[3] = value.Y.Y;
+        leaves[4] = value.Origin.X;
+        leaves[5] = value.Origin.Y;
     }
 
-    public override object Compose(IReadOnlyDictionary<string, object> dict) =>
-        new Transform2D(ReadVector2(dict["x"]), ReadVector2(dict["y"]), ReadVector2(dict["origin"]));
+    public override Transform2D Compose(ReadOnlySpan<float> leaves) =>
+        new(new Vector2(leaves[0], leaves[1]), new Vector2(leaves[2], leaves[3]), new Vector2(leaves[4], leaves[5]));
+
+    protected override void ReadLeaves(IReadOnlyDictionary<string, object> dict, Span<float> leaves)
+    {
+        var x = ReadVector2(dict["x"]);
+        var y = ReadVector2(dict["y"]);
+        var origin = ReadVector2(dict["origin"]);
+        leaves[0] = x.X;
+        leaves[1] = x.Y;
+        leaves[2] = y.X;
+        leaves[3] = y.Y;
+        leaves[4] = origin.X;
+        leaves[5] = origin.Y;
+    }
 }
 
-internal sealed class BezierPointCodec : StructCodec
+internal sealed class BezierPointCodec : StructCodec<BezierPoint>
 {
-    public override Type TargetType => typeof(BezierPoint);
     public override int LeafCount => 6;
 
     // "in" and "out" are DuckDB reserved words, so they must be quoted in the type definition.
     public override string DuckDbType =>
         "STRUCT(p STRUCT(x FLOAT, y FLOAT), \"in\" STRUCT(x FLOAT, y FLOAT), \"out\" STRUCT(x FLOAT, y FLOAT))";
 
-    public override string Literal(Func<int, string> leaf) =>
-        $"{{'p': {{'x': {leaf(0)}, 'y': {leaf(1)}}}, " +
-        $"'in': {{'x': {leaf(2)}, 'y': {leaf(3)}}}, " +
-        $"'out': {{'x': {leaf(4)}, 'y': {leaf(5)}}}}}";
-
-    public override void Decompose(object value, float[] leaves)
+    public override void Decompose(in BezierPoint value, Span<float> leaves)
     {
-        var b = (BezierPoint)value;
-        leaves[0] = b.P.X;
-        leaves[1] = b.P.Y;
-        leaves[2] = b.In.X;
-        leaves[3] = b.In.Y;
-        leaves[4] = b.Out.X;
-        leaves[5] = b.Out.Y;
+        leaves[0] = value.P.X;
+        leaves[1] = value.P.Y;
+        leaves[2] = value.In.X;
+        leaves[3] = value.In.Y;
+        leaves[4] = value.Out.X;
+        leaves[5] = value.Out.Y;
     }
 
-    public override object Compose(IReadOnlyDictionary<string, object> dict) =>
-        new BezierPoint(ReadVector2(dict["p"]), ReadVector2(dict["in"]), ReadVector2(dict["out"]));
+    public override BezierPoint Compose(ReadOnlySpan<float> leaves) =>
+        new(new Vector2(leaves[0], leaves[1]), new Vector2(leaves[2], leaves[3]), new Vector2(leaves[4], leaves[5]));
+
+    protected override void ReadLeaves(IReadOnlyDictionary<string, object> dict, Span<float> leaves)
+    {
+        var p = ReadVector2(dict["p"]);
+        var i = ReadVector2(dict["in"]);
+        var o = ReadVector2(dict["out"]);
+        leaves[0] = p.X;
+        leaves[1] = p.Y;
+        leaves[2] = i.X;
+        leaves[3] = i.Y;
+        leaves[4] = o.X;
+        leaves[5] = o.Y;
+    }
 }
 
 internal static class StructCodecRegistry

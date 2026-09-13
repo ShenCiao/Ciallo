@@ -1,0 +1,30 @@
+name: Ciallo Build
+
+"on":
+  pull_request:
+    branches:
+      - dev
+      - main
+  push:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ciallo-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/godot-export.yml
+    permissions:
+      contents: read
+    with:
+      checkout_ref: ${{ github.ref }}
+      sign_macos: false
+    secrets: inherit

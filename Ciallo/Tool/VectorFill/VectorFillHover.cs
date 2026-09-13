@@ -11,7 +11,8 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class VectorFillHover : InteractiveSessionBase
+[RegisterState]
+public class VectorFillHover : Interaction, IPropertyProvider
 {
     private readonly List<StrokeView> _contours = [];
     // ponytail: cache leans on PointQueryFace returning a stable Rid per face (native arrangement_2d). Same face -> equal Rid -> skip redraw.
@@ -39,7 +40,7 @@ public class VectorFillHover : InteractiveSessionBase
 
     private void UpdateContours(Vector2 point)
     {
-        var arr = WorkingLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
+        var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         if (arr == null)
         {
             _cachedFace = default;
@@ -63,7 +64,7 @@ public class VectorFillHover : InteractiveSessionBase
             return;
         }
 
-        var parent = WorkingLayer.Get<OverlayHolder>();
+        var parent = PrimaryLayer.Get<OverlayHolder>();
         // Grow
         while (_contours.Count < polygons.Count)
         {
@@ -93,8 +94,10 @@ public class VectorFillHover : InteractiveSessionBase
             sv.Multimesh.InstanceCount = 0;
     }
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        AppPreference.BucketFill.DrawModeProperty(container);
+
         container.AddChild(new Label
         {
             Text = "Fill brush".Tr(),
@@ -143,7 +146,7 @@ public class VectorFillHover : InteractiveSessionBase
 
         container.AddProperty("Bounded area color",
             new NullableColorPickerButton().BindColor(AppPreference.VectorFillLayerBoundedAreaColor)
-        ).VisibleIf(sm.WorkingLayer, e => e.TryHas<VectorFillLayerSetting>());
+        ).VisibleIf(sm.PrimaryLayer, e => e.TryHas<VectorFillLayerSetting>());
 
         var showWireframe = new CheckButton()
         {
@@ -159,15 +162,15 @@ public class VectorFillHover : InteractiveSessionBase
         };
         editReferenceLayers.Pressed += () =>
         {
-            var workingLayer = sm.WorkingLayer.CurrentValue;
-            if (!workingLayer.Has<VectorFillLayerSetting>()) return;
+            var primaryLayer = sm.PrimaryLayer.CurrentValue;
+            if (!primaryLayer.Has<VectorFillLayerSetting>()) return;
 
             var popup = new ReferenceLayerPickerPopup();
             popup.PopupHide += popup.QueueFree;
             container.AddChild(popup);
-            popup.Popup(Document, workingLayer);
+            popup.Popup(Document, primaryLayer);
         };
         container.AddChild(editReferenceLayers
-            .VisibleIf(sm.WorkingLayer, e => e.TryHas<VectorFillLayerSetting>()));
+            .VisibleIf(sm.PrimaryLayer, e => e.TryHas<VectorFillLayerSetting>()));
     }
 }

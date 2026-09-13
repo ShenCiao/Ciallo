@@ -10,9 +10,11 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class PaintStrokeHover : InteractiveSessionBase
+[RegisterState]
+public class PaintStrokeHover : Interaction, IPropertyProvider
 {
-    public new PaintStrokeTool Tool => (PaintStrokeTool)base.Tool;
+    [StateAccess]
+    public PaintStrokeTool Tool { get; set; }
 
     private MultiMeshInstance2D _snapDots;
 
@@ -37,8 +39,19 @@ public class PaintStrokeHover : InteractiveSessionBase
 
     public override bool OnKey(InputEventKey key, CursorButtonData data) => false;
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        // ---- Mode selector
+        var modeButton = new OptionButton
+        {
+            CustomMinimumSize = new(0, 32),
+        };
+        modeButton.AddItem("Freehand");
+        modeButton.AddItem("Bezier");
+        modeButton.AddItem("Poly Cubic Bézier");
+        modeButton.BindSelectionIndex(AppPreference.PaintStrokeMode);
+        container.AddProperty("Mode", modeButton);
+
         // ---- App brush library
         var brushSelector = new OptionButton()
         {

@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bfwvwd77tb7tq"]
+
+[ext_resource type="Theme" uid="uid://cmwretuqbofqt" path="res://MainTheme.tres" id="1_xn7l8"]
+[ext_resource type="Script" uid="uid://bexkxr3qvv0qo" path="res://GuiControl/Tool/ToolButtonPanel.cs" id="2_y1frj"]
+
+[node name="ToolButtonPanel" type="HFlowContainer" unique_id=590369079]
+custom_minimum_size = Vector2(30, 0)
+offset_right = 40.0
+offset_bottom = 400.0
+theme = ExtResource("1_xn7l8")
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 24
+script = ExtResource("2_y1frj")

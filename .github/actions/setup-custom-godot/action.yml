@@ -1,107 +1,25 @@
 name: Setup custom Godot
-description: Download, install export templates, and locate the custom Godot editor.
+description: Prepare the editor and bundled NuGet packages selected by global.json, with optional export templates.
 
 inputs:
-  engine_release_tag:
-    description: Release tag in the custom Godot repository.
-    required: true
-  engine_status:
-    description: Engine status suffix, for example ciallo.gabcdef.
-    required: true
-  editor_asset:
-    description: Editor asset name prefix for the current platform.
-    required: true
-  editor_glob:
-    description: File glob used to locate the editor binary.
-    required: true
-  release_repo:
-    description: GitHub repository that publishes custom Godot releases.
-    required: true
-  github_token:
-    description: Token used by gh release download.
-    required: true
+  templates:
+    description: Download and install matching export templates for this platform.
+    default: 'false'
 
 outputs:
   editor_path:
     description: Located Godot editor executable path.
-    value: ${{ steps.editor.outputs.path }}
+    value: ${{ steps.engine.outputs.editor_path }}
 
 runs:
   using: composite
   steps:
-    - name: Download editor and templates
+    - name: Prepare engine bundle
+      id: engine
+      shell: bash
       env:
-        ENGINE_RELEASE_TAG: ${{ inputs.engine_release_tag }}
-        ENGINE_STATUS: ${{ inputs.engine_status }}
-        EDITOR_ASSET: ${{ inputs.editor_asset }}
-        RELEASE_REPO: ${{ inputs.release_repo }}
-        GH_TOKEN: ${{ inputs.github_token }}
-      shell: pwsh
+        INSTALL_TEMPLATES: ${{ inputs.templates }}
       run: |
-        $ErrorActionPreference = "Stop"
-        New-Item -ItemType Directory -Force -Path .godot-ci | Out-Null
-
-        $editorArchive = "$env:EDITOR_ASSET-$env:ENGINE_STATUS.zip"
-        $templateArchive = "godot-export-templates-$env:ENGINE_STATUS.tpz"
-
-        gh release download $env:ENGINE_RELEASE_TAG --repo $env:RELEASE_REPO --pattern $editorArchive --dir .godot-ci
-        gh release download $env:ENGINE_RELEASE_TAG --repo $env:RELEASE_REPO --pattern $templateArchive --dir .godot-ci
-
-        Expand-Archive -LiteralPath ".godot-ci/$editorArchive" -DestinationPath .godot-ci/editor -Force
-        New-Item -ItemType Directory -Force -Path .godot-ci/templates_src | Out-Null
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        [System.IO.Compression.ZipFile]::ExtractToDirectory(
-          (Resolve-Path ".godot-ci/$templateArchive").Path,
-          (Resolve-Path ".godot-ci/templates_src").Path
-        )
-
-    - name: Install export templates
-      shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
-        $versionFile = Get-ChildItem -LiteralPath .godot-ci/templates_src -Recurse -Filter version.txt | Select-Object -First 1
-        if (-not $versionFile) {
-          throw "Export template version.txt was not found."
-        }
-
-        $templateVersion = (Get-Content -LiteralPath $versionFile.FullName -Raw).Trim()
-        $templateDir = Split-Path -Parent $versionFile.FullName
-
-        if ($IsWindows) {
-          $dest = Join-Path $env:APPDATA "Godot/export_templates/$templateVersion"
-        } elseif ($IsMacOS) {
-          $dest = Join-Path $HOME "Library/Application Support/Godot/export_templates/$templateVersion"
-        } else {
-          $dest = Join-Path $HOME ".local/share/godot/export_templates/$templateVersion"
-        }
-
-        New-Item -ItemType Directory -Force -Path $dest | Out-Null
-        Copy-Item -Path (Join-Path $templateDir "*") -Destination $dest -Recurse -Force
-        "Installed export templates to $dest"
-
-    - name: Locate editor
-      id: editor
-      env:
-        EDITOR_GLOB: ${{ inputs.editor_glob }}
-      shell: pwsh
-      run: |
-        $ErrorActionPreference = "Stop"
-        $candidate = Get-ChildItem -LiteralPath .godot-ci/editor -Recurse -File -Filter $env:EDITOR_GLOB |
-          Where-Object {
-            $_.Name -notmatch '\.(pdb|lib|exp)$' -and
-            $_.FullName -notmatch '\.app[\\/]' -and
-            $_.Name -notmatch 'console'
-          } |
-          Sort-Object FullName |
-          Select-Object -First 1
-
-        if (-not $candidate) {
-          throw "Could not locate Godot editor binary in .godot-ci/editor."
-        }
-
-        if (-not $IsWindows) {
-          chmod +x $candidate.FullName
-        }
-
-        "path=$($candidate.FullName)" >> $env:GITHUB_OUTPUT
-        "Editor: $($candidate.FullName)"
+        args=(sync --ci)
+        if [ "$INSTALL_TEMPLATES" = true ]; then args+=(--templates); fi
+        ./engine.sh "${args[@]}"

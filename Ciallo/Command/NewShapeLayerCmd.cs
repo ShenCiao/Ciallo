@@ -34,9 +34,9 @@ public class NewShapeLayerCmd : CommandBase
             : CopyE.Get<CommonLayerSetting>().Clone();
         targetE.Add(commonSetting);
 
-        var shapeLayerSetting = CopyE.IsNull
-            ? new ShapeLayerSetting()
-            : CopyE.Get<ShapeLayerSetting>().Clone();
+        var shapeLayerSetting = !CopyE.IsNull && CopyE.Has<ShapeLayerSetting>()
+            ? CopyE.Get<ShapeLayerSetting>().Clone()
+            : new ShapeLayerSetting();
         targetE.Add(shapeLayerSetting);
         var polylineLookup = new ChildShapePolylineLookup();
         targetE.Add(polylineLookup);

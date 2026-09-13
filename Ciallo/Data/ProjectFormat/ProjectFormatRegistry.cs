@@ -7,6 +7,8 @@ namespace Ciallo.Data;
 
 internal sealed class ProjectFormatRegistry
 {
+    public static ProjectFormatRegistry Shared { get; } = Create();
+
     public IReadOnlyList<ComponentDescriptor> Components { get; }
 
     private ProjectFormatRegistry(IReadOnlyList<ComponentDescriptor> components)

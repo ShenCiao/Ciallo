@@ -101,6 +101,7 @@ public static class AppMarkerTextureLibrary
 
     private static void TryLoadUserMarkers()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         using var baseDir = DirAccess.Open("user://");
         if (baseDir == null || !baseDir.DirExists("Marker"))
             return;
@@ -134,6 +135,7 @@ public static class AppMarkerTextureLibrary
 
     public static void Save()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         using var baseDir = DirAccess.Open("user://");
         if (baseDir == null) return;
         if (!baseDir.DirExists("Marker"))

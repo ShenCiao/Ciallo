@@ -9,9 +9,11 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintStrokeInteractor : InteractiveSessionBase
+[RegisterState]
+public class PaintStrokeInteractor : CapturingInteraction
 {
-    public new PaintStrokeTool Tool => (PaintStrokeTool)base.Tool;
+    [StateAccess]
+    public PaintStrokeTool Tool { get; set; }
     public Entity BrushE;
     public StrokeView StrokePreview;
     public readonly PolylineInteractiveGenerator Generator = new()
@@ -23,12 +25,7 @@ public class PaintStrokeInteractor : InteractiveSessionBase
     private readonly List<Vector2> _snapHintPoints = new(2);
     private MultiMeshInstance2D _snapDots;
 
-    public static readonly ToolBase.Trigger PaintEnd = new("PaintEnd");
-
-    public PaintStrokeInteractor()
-    {
-        MovingMinInterval = TimeSpan.Zero;
-    }
+    public override TimeSpan MovingMinInterval => TimeSpan.Zero;
 
     public override void Start(CursorButtonData data)
     {
@@ -50,7 +47,7 @@ public class PaintStrokeInteractor : InteractiveSessionBase
         {
             Material = brushMaterial
         };
-        var layerView = WorkingLayer.Get<ShapeLayerView>();
+        var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(StrokePreview);
 
         _snapDots = AutoloadRendering.CreateDots();
@@ -78,10 +75,16 @@ public class PaintStrokeInteractor : InteractiveSessionBase
     {
         Generator.End(data);
         var geometry = BuildCommitGeometry(data);
+        var targetLayer = Tool.ResolveStrokeTargetLayer();
+        if (targetLayer.IsNull || targetLayer.IsDyingOrDead)
+        {
+            Clear();
+            return;
+        }
 
-        new CommandBuilder("Paint Stroke", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Stroke", PrimaryLayer.World.Create())
             .NewStroke()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)
             .Commit();
@@ -89,27 +92,6 @@ public class PaintStrokeInteractor : InteractiveSessionBase
     }
 
     public override void Cancel() => Clear();
-    public override bool OnKey(InputEventKey key, CursorButtonData data)
-    {
-        if (AppHotkeys.ConfirmInteraction.IsPressedBy(key))
-        {
-            OnEndPaintButton();
-        }
-        return true;
-    }
-
-    public override void OnMouseButton(InputEventMouseButton button, CursorButtonData data)
-    {
-        if (button.ButtonIndex == MouseButton.Left && button.IsReleased())
-        {
-            OnEndPaintButton();
-        }
-    }
-
-    public void OnEndPaintButton()
-    {
-        Tool.Machine.Fire(PaintEnd);
-    }
 
     public void Clear()
     {

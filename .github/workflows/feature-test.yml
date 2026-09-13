@@ -1,0 +1,40 @@
+name: Ciallo Feature Test
+
+# Exports the commit selected in the workflow dispatch ref picker. Feature tests
+# keep short-lived Actions artifacts only and do not create tags or releases.
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ciallo-feature-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  source:
+    name: Resolve feature commit
+    runs-on: ubuntu-24.04
+    outputs:
+      head_sha: ${{ steps.source.outputs.head_sha }}
+    steps:
+      - name: Checkout selected ref
+        uses: actions/checkout@v5
+
+      - name: Record source commit
+        id: source
+        shell: bash
+        run: echo "head_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  export:
+    name: Export feature test
+    needs: source
+    uses: ./.github/workflows/godot-export.yml
+    permissions:
+      contents: read
+    with:
+      checkout_ref: ${{ needs.source.outputs.head_sha }}
+      sign_macos: false
+    secrets: inherit

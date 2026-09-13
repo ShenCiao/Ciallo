@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -199,7 +200,7 @@ public partial class TimelineRuler : Control
         playbackEnd.Subscribe(_ => QueueRedraw()).AddTo(this);
     }
 
-    /// <summary>Wire the selection manager for working-layer switching on frame change.</summary>
+    /// <summary>Wire the selection manager for primary-layer switching on frame change.</summary>
     public void BindSelectionManager(SelectionManager sm)
     {
         _selectionManager = sm;
@@ -340,7 +341,8 @@ public partial class TimelineRuler : Control
                 if (x < -pxPerSecond || x > w + pxPerSecond) continue;
 
                 int secondFrame = (int)(s * _fps);
-                bool inRange = hasPlaybackRange && secondFrame >= playbackStart && secondFrame < playbackEnd;
+                bool inRange = hasPlaybackRange &&
+                    TimelineFrameGeometry.IsInPlaybackRange(secondFrame, playbackStart, playbackEnd);
                 Color secTickColor = inRange ? TickColor : OutOfPlaybackTickColor;
                 Color secLabelColor = inRange ? LabelColor : OutOfPlaybackLabelColor;
 
@@ -373,7 +375,8 @@ public partial class TimelineRuler : Control
             bool isMajor = frame == 0 || frame % majorStep == 0;
             float tickH = isMajor ? MajorTickHeight : MinorTickHeight;
 
-            bool inRange = hasPlaybackRange && frame >= playbackStart && frame < playbackEnd;
+            bool inRange = hasPlaybackRange &&
+                TimelineFrameGeometry.IsInPlaybackRange(frame, playbackStart, playbackEnd);
             Color frameTickColor = inRange ? TickColor : OutOfPlaybackTickColor;
             Color frameLabelColor = inRange ? LabelColor : OutOfPlaybackLabelColor;
 
@@ -470,9 +473,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
-                            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+                        var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -483,9 +486,9 @@ public partial class TimelineRuler : Control
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
                         cmd.SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
-                        var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-                        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
-                            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+                        var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+                        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
                     cmd.CommitOpenSequence();
                 }
@@ -547,7 +550,7 @@ public partial class TimelineRuler : Control
         if (_currentFrame != null && _playbackStart != null && _playbackEnd != null)
         {
             int frame = XToFrame(atPosition.X);
-            if (frame >= _playbackStart.Value && frame < _playbackEnd.Value)
+            if (TimelineFrameGeometry.IsInPlaybackRange(frame, _playbackStart.Value, _playbackEnd.Value))
                 return (int)CursorShape.PointingHand;
         }
         return (int)CursorShape.Arrow;
@@ -586,9 +589,9 @@ public partial class TimelineRuler : Control
             .SetProperty(_currentFrame, _frameAtDragStart, _currentFrame.Value);
         if (_currentFrame.Value != _frameAtDragStart)
         {
-            var newWorkingLayer = ResolveWorkingLayerAfterFrameChange(_currentFrame.Value);
-            if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
-                cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+            var newLayers = ResolveLayersAfterFrameChange(_currentFrame.Value);
+            if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+                cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
         }
         cmd.CommitToLatest();
     }
@@ -605,9 +608,9 @@ public partial class TimelineRuler : Control
     private int EndFromX(float localX) =>
         Mathf.Max(XToFrame(localX), _playbackStart.Value + 1);
 
-    // ── Working-layer switch on frame change ─────────────────────────────────
+    // ── Selected-layer switch on frame change ─────────────────────────────────
 
-    /// <summary>Delegates to <see cref="SelectionManager.ResolveWorkingLayerForTimelineFrameSelection"/>.</summary>
-    private Entity ResolveWorkingLayerAfterFrameChange(int frame) =>
-        _selectionManager?.ResolveWorkingLayerForTimelineFrameSelection(frame) ?? Entity.Null;
+    /// <summary>Delegates to <see cref="SelectionManager.ResolveLayersForTimelineFrameSelection"/>.</summary>
+    private ImmutableArray<Entity> ResolveLayersAfterFrameChange(int frame) =>
+        _selectionManager.ResolveLayersForTimelineFrameSelection(frame);
 }

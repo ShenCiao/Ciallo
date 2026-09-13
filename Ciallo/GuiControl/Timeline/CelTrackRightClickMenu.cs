@@ -20,6 +20,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
     private Entity _celFolderEntity;
     private int _rightClickedFrame;
     private bool _onCel;
+    private CelTrack _track;
 
     // Ordered list of entities shown as cel-list items
     private readonly List<Entity> _celListEntities = new();
@@ -27,8 +28,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
     // ── Menu item IDs ─────────────────────────────────────────────────────────
     private const int IdNewAnimationCel = 0;
     private const int IdDeleteCel = 1;
-    private const int IdInsertFrame = 2;
-    private const int IdDeleteFrame = 3;
+    private const int IdRenameCel = 2;
     private const int CelListIdBase = 100;
 
     // ── Init ─────────────────────────────────────────────────────────────────
@@ -44,8 +44,9 @@ public partial class CelTrackRightClickMenu : PopupMenu
     /// Populates and displays the context menu.
     /// Whether the clicked frame has an existing cel is resolved from the exposure map.
     /// </summary>
-    public void Popup(Entity celFolderEntity, int frame)
+    public void Popup(Entity celFolderEntity, int frame, CelTrack track)
     {
+        _track = track;
         _celFolderEntity = celFolderEntity;
         _rightClickedFrame = frame;
         var exposures = celFolderEntity.Get<FolderLayerSetting>().Exposures;
@@ -64,6 +65,7 @@ public partial class CelTrackRightClickMenu : PopupMenu
         Clear();
         _celListEntities.Clear();
 
+        _celListEntities.Add(_celFolderEntity);
         var children = _celFolderEntity.Get<LayerTreeNode>().Children;
         foreach (var celEntity in children)
         {
@@ -73,6 +75,13 @@ public partial class CelTrackRightClickMenu : PopupMenu
         }
 
         AddItem("New Animation Cel".Tr(), IdNewAnimationCel);
+
+        if (_onCel)
+        {
+            bool isBlank = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder;
+            if (!isBlank) AddItem("Rename Cel".Tr(), IdRenameCel);
+            AddItem((isBlank ? "Delete Blank" : "Delete Cel").Tr(), IdDeleteCel);
+        }
 
         AddSeparator();
 
@@ -89,20 +98,16 @@ public partial class CelTrackRightClickMenu : PopupMenu
         {
             for (int i = 0; i < _celListEntities.Count; i++)
             {
+                if (_celListEntities[i].IsCelFolder)
+                {
+                    AddItem("  " + "Blank".Tr(), CelListIdBase + i);
+                    continue;
+                }
+
                 string name = _celListEntities[i].Get<CommonLayerSetting>().Name.Value;
                 AddItem("  " + (string.IsNullOrEmpty(name) ? "(unnamed)".Tr() : name), CelListIdBase + i);
             }
         }
-
-        if (_onCel)
-        {
-            AddSeparator();
-            AddItem("Delete Cel".Tr(), IdDeleteCel);
-        }
-
-        AddSeparator();
-        AddItem("Insert Frame".Tr(), IdInsertFrame);
-        AddItem("Delete Frame".Tr(), IdDeleteFrame);
     }
 
     // ── Event handler ─────────────────────────────────────────────────────────
@@ -118,11 +123,8 @@ public partial class CelTrackRightClickMenu : PopupMenu
             case IdDeleteCel:
                 ActionDeleteCel();
                 break;
-            case IdInsertFrame:
-                ActionInsertFrame();
-                break;
-            case IdDeleteFrame:
-                ActionDeleteFrame();
+            case IdRenameCel:
+                ActionRenameCel();
                 break;
             default:
                 if (intId >= CelListIdBase)
@@ -137,13 +139,31 @@ public partial class CelTrackRightClickMenu : PopupMenu
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
+    private void ActionRenameCel()
+    {
+        var track = _track;
+        int frame = _rightClickedFrame;
+        Hide();
+        // Let the popup release focus before the inline editor takes it.
+        Callable.From(() =>
+        {
+            if (IsInstanceValid(track) && track.IsInsideTree()) track.BeginCelRename(frame);
+        }).CallDeferred();
+    }
+
     private void ActionNewAnimationCel()
     {
         var exposures = _celFolderEntity.Get<FolderLayerSetting>().Exposures;
         int targetFrame;
         string name;
 
-        if (_onCel)
+        if (_onCel && exposures[_rightClickedFrame].IsCelFolder)
+        {
+            targetFrame = _rightClickedFrame;
+            var usedNames = TimelineAction.GetUsedCelNames(_celFolderEntity);
+            name = TimelineAction.GetNewAnimationCelName(exposures, targetFrame, usedNames);
+        }
+        else if (_onCel)
         {
             (targetFrame, name) = TimelineAction.GetNewAnimationCelFrameName(
                 _celFolderEntity, _rightClickedFrame);
@@ -182,36 +202,9 @@ public partial class CelTrackRightClickMenu : PopupMenu
         int frame = _rightClickedFrame;
         if (!exposures.ContainsKey(frame)) return;
 
-        new CommandBuilder("Delete Cel")
+        string label = exposures[frame].IsCelFolder ? "Delete Blank" : "Delete Cel";
+        new CommandBuilder(label)
             .SetObservableCollection(exposures, exp => exp.Remove(frame))
-            .Commit();
-    }
-
-    private void ActionInsertFrame()
-    {
-        const int frameCount = 1;
-        int frame = _rightClickedFrame;
-        var exposures = _celFolderEntity.Get<FolderLayerSetting>().Exposures;
-        if (!TimelineFrameRetiming.InsertFramesWouldChange(exposures, frame, frameCount))
-            return;
-
-        new CommandBuilder("Insert Frame")
-            .SetObservableCollection(exposures,
-                exp => TimelineFrameRetiming.InsertFrames(exp, frame, frameCount))
-            .Commit();
-    }
-
-    private void ActionDeleteFrame()
-    {
-        const int frameCount = 1;
-        int frame = _rightClickedFrame;
-        var exposures = _celFolderEntity.Get<FolderLayerSetting>().Exposures;
-        if (!TimelineFrameRetiming.DeleteFramesWouldChange(exposures, frame, frameCount))
-            return;
-
-        new CommandBuilder("Delete Frame")
-            .SetObservableCollection(exposures,
-                exp => TimelineFrameRetiming.DeleteFrames(exp, frame, frameCount))
             .Commit();
     }
 }

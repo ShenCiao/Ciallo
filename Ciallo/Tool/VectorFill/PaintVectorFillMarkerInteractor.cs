@@ -7,7 +7,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
+[RegisterState]
+public class PaintVectorFillMarkerInteractor : CapturingInteraction
 {
     private VectorFillMarkerView _markerPreview;
     private Polygon2D _fillPreview;
@@ -23,12 +24,12 @@ public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
 
         // To preview marker
         _markerPreview = new();
-        WorkingLayer.Get<OverlayHolder>().AddChild(_markerPreview);
+        PrimaryLayer.Get<OverlayHolder>().AddChild(_markerPreview);
         _markerPreview.SetGeometry([data.WorldPosition], [MarkerRadius]);
-        var arr = WorkingLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
+        var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         _fillPreview = new() { Antialiased = true };
         VectorFillMarkerView.ApplyBrush(_fillPreview, _markerPreview, _fillBrush);
-        WorkingLayer.Get<ShapeLayerView>().AddChild(_fillPreview);
+        PrimaryLayer.Get<ShapeLayerView>().AddChild(_fillPreview);
         if (arr != null)
         {
             _fillPreview.SetPolygonWithQueryResult(arr, data.WorldPosition);
@@ -38,7 +39,7 @@ public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
     public override void Moving(CursorMotionData data)
     {
         _markerPreview?.SetGeometry([data.WorldPosition], [MarkerRadius]);
-        var arr = WorkingLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
+        var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         if (arr == null) return;
         _fillPreview?.SetPolygonWithQueryResult(arr, data.WorldPosition);
     }
@@ -47,9 +48,9 @@ public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
     {
         ClearPreview();
         // Allow to place marker even if the arrangement is not ready or fill on unbounded area or brush is null.
-        new CommandBuilder("Paint Vector Fill Marker", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Vector Fill Marker", PrimaryLayer.World.Create())
             .NewVectorFillMarker()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(PrimaryLayer)
             .SetSampledPolyline([data.WorldPosition], [MarkerRadius], [1.0f], [Vector2.Zero])
             .SetProperty(e => e.Get<VectorFillMarkerSetting>().BrushE, _fillBrush)
             .Commit();
@@ -73,6 +74,4 @@ public class PaintVectorFillMarkerInteractor : InteractiveSessionBase
         Input.MouseMode = Input.MouseModeEnum.Visible;
         _fillBrush = Entity.Null;
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 }

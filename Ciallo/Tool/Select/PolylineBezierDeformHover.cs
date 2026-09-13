@@ -9,6 +9,7 @@ using R3;
 
 namespace Ciallo.Tool;
 
+[RegisterState]
 public class PolylineBezierDeformHover : PolylineNoSelectionHover
 {
     public BezierPoint[] Curve;
@@ -30,7 +31,7 @@ public class PolylineBezierDeformHover : PolylineNoSelectionHover
         }
     }
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase src)
+    public override void BeforeSourceExit(Interaction src)
     {
         if (src is PolylineBezierDeformInteractor interactor)
             Curve = interactor.Curve;

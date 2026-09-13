@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
@@ -18,8 +19,6 @@ namespace Ciallo.GuiControl;
 /// </summary>
 public abstract partial class LayerTreeBase : ScrollContainer
 {
-    protected readonly ButtonGroup WorkingLayerButtonGroup = new();
-
     protected bool IsDragging;
     protected float ScrollSpeed;
     protected float ScrollAccum;
@@ -29,6 +28,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
     /// </summary>
     protected bool DraggedSubtreeHasCelFolder;
     private bool _dragCancelled;
+    private ImmutableArray<Entity> _draggedLayers = [];
 
     protected const float ScrollZone = 50f;
     protected const float MaxScrollSpeed = 280f;
@@ -50,20 +50,6 @@ public abstract partial class LayerTreeBase : ScrollContainer
         _hinter.MouseFilter = MouseFilterEnum.Ignore;
         _rightClickMenu.PopupHide += HideContextTargetHinter;
 
-        WorkingLayerButtonGroup.Pressed += button =>
-        {
-            var block = (ILayerBlock)button.GetOwner();
-            var document = block.LayerEntity.Document;
-            var selectionManager = document.Get<SelectionManager>();
-            int oldFrame = selectionManager.CurrentFrame.Value;
-            int newFrame = selectionManager.ComputeFrameForWorkingLayerSelection(block.LayerEntity);
-
-            var cmd = new CommandBuilder("Set Working Layer", block.LayerEntity);
-            if (newFrame != oldFrame)
-                cmd.SetProperty(selectionManager.CurrentFrame, oldFrame, newFrame);
-            cmd.SetWorkingLayer(recordCelSelectionPreference: true)
-                .CommitToLatest();
-        };
     }
 
     public override void _Process(double delta)
@@ -81,7 +67,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
     public override void _Input(InputEvent @event)
     {
         if (!IsDragging) return;
-        if (!AppHotkeys.CancelInteraction.IsPressedBy(@event)) return;
+        if (!AppHotkeys.Global.InteractionCancel.IsPressedBy(@event)) return;
 
         IsDragging = false;
         _dragCancelled = true;
@@ -111,17 +97,24 @@ public abstract partial class LayerTreeBase : ScrollContainer
     protected void InitBlock(Entity e)
     {
         var commonSetting = e.Get<CommonLayerSetting>();
-        var cmdM = e.Document.Get<CommandManager>();
 
         var subs = new CompositeDisposable();
         subs.AddTo(e);
 
         var wrapper = GetWrapper(e);
         var block = GetBlock(e);
-        block.WorkingButton.ButtonGroup = WorkingLayerButtonGroup;
-        block.VisibleButton
-            .BindBool(commonSetting.IsVisible, subs)
-            .RegisterUndo(cmdM, true);
+        var selection = e.Document.Get<SelectionManager>();
+        void SyncSelection() => LayerSelectionActions.ShowSelection(block.WorkingButton,
+            selection.PrimaryLayer.CurrentValue == e, selection.SelectedLayers.Value.Contains(e));
+        selection.SelectedLayers.Subscribe(_ => SyncSelection()).AddTo(subs);
+        block.WorkingButton.Pressed += () =>
+        {
+            LayerSelectionActions.Toggle(e);
+            SyncSelection();
+        };
+        commonSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(subs);
+        block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetProperty(
+            "Layer Visibility", LayerSelectionActions.ContextLayers(e), s => s.IsVisible, value)).AddTo(subs);
         StyleBoxFlat markColorStyleBox = null;
         commonSetting.MarkColor.Subscribe(markColor =>
         {
@@ -141,17 +134,13 @@ public abstract partial class LayerTreeBase : ScrollContainer
             block.WorkingButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
             block.WorkingButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
         }).AddTo(subs);
-        var lineEdit = block.LabelLineEdit
-            .BindString(commonSetting.Name, subs)
-            .RegisterUndo(cmdM);
+        var lineEdit = block.LabelLineEdit.BindString(commonSetting.Name, subs);
 
         if (ShouldShowDropdownArrow(e))
         {
             block.DropdownArrow.Visible = true;
             var property = e.Get<FolderLayerSetting>().IsExpanded;
-            block.DropdownArrow
-                .BindBool(property, subs)
-                .RegisterUndo(cmdM, true);
+            block.DropdownArrow.BindBool(property, subs);
             wrapper.ObserveIsExpanded(property, subs);
         }
         else
@@ -174,17 +163,15 @@ public abstract partial class LayerTreeBase : ScrollContainer
         rightMouse.Subscribe(button =>
         {
             lineEdit.AcceptEvent();
-            ShowContextTargetHinter(lineEdit);
-            _rightClickMenu.Popup(block.LayerEntity, ShouldShowTimelineLayerActions);
+            ShowLayerMenu(block.LayerEntity, lineEdit);
         }).AddTo(e);
 
-        // Single click without dragging or double click
-        var singleClickObs = leftMouse
-            .Where(button => button.IsPressed() || button.IsReleased())
-            .Chunk(TimeSpan.FromMilliseconds(200))
-            .Where(xs => xs.Length == 2 && xs.First().IsPressed() && xs.Last().IsReleased())
-            .Select(xs => xs.First());
-        singleClickObs.Subscribe(_ => block.WorkingButton.SetPressed(true)).AddTo(e);
+        bool draggedSincePress = false;
+        leftMouse.Where(button => button.IsPressed()).Subscribe(_ =>
+        {
+            draggedSincePress = false;
+            _dragCancelled = false;
+        }).AddTo(subs);
 
         // Drag
         var mouseState = leftMouse.ToReadOnlyReactiveProperty();
@@ -196,6 +183,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
             .Where(_ => !IsDragging && !_dragCancelled);
         dragStart.Subscribe(motion =>
         {
+            draggedSincePress = true;
             IsDragging = true;
             OnDragStart(block, motion);
         }).AddTo(e);
@@ -210,8 +198,12 @@ public abstract partial class LayerTreeBase : ScrollContainer
             .Where(button => button.IsReleased());
         dragEnd.Subscribe(button =>
         {
-            _dragCancelled = false;
-            if (!IsDragging) return;
+            if (!IsDragging)
+            {
+                if (!draggedSincePress && !_dragCancelled)
+                    LayerSelectionActions.SelectOnly(e);
+                return;
+            }
             IsDragging = false;
             OnDragEnd(block, button);
         }).AddTo(e);
@@ -226,9 +218,8 @@ public abstract partial class LayerTreeBase : ScrollContainer
         Entity ParentEntity = default,
         int InsertIndex = -1);
 
-    private DropTarget ClassifyDrop(ILayerBlock draggedBlock)
+    private DropTarget ClassifyDrop(ILayerBlock draggedBlock, Vector2 mousePos)
     {
-        var mousePos = GetViewport().GetMousePosition();
         var hoverBlock = HitTestBlock(mousePos);
 
         if (hoverBlock == null)
@@ -244,16 +235,15 @@ public abstract partial class LayerTreeBase : ScrollContainer
         if (ReferenceEquals(hoverBlock, draggedBlock))
             return default;
 
-        var draggedEntity = draggedBlock.LayerEntity;
         var hoverEntity = hoverBlock.LayerEntity;
         var hoverTreeNode = hoverEntity.Get<LayerTreeNode>();
-        var localPos = hoverBlock.Node.GetLocalMousePosition();
+        var localPos = mousePos - hoverBlock.Node.GlobalPosition;
         var size = hoverBlock.Node.Size;
 
         var cursor = hoverEntity;
         while (!cursor.IsNull)
         {
-            if (cursor == draggedEntity) return new(DropKind.None, default, -1);
+            if (_draggedLayers.Contains(cursor)) return default;
             cursor = cursor.Get<LayerTreeNode>().ParentValue;
         }
 
@@ -309,8 +299,11 @@ public abstract partial class LayerTreeBase : ScrollContainer
     private void OnDragStart(ILayerBlock draggedBlock, InputEventMouseMotion motion)
     {
         ScrollAccum = 0f;
-        DraggedSubtreeHasCelFolder = draggedBlock.Wrapper.HasCelFolderInSubtree();
-        _label.Text = draggedBlock.LayerEntity.Get<CommonLayerSetting>().Name.Value;
+        if (!draggedBlock.LayerEntity.Document.Get<SelectionManager>().SelectedLayers.Value.Contains(draggedBlock.LayerEntity))
+            LayerSelectionActions.SelectOnly(draggedBlock.LayerEntity);
+        _draggedLayers = LayerContextActions.OperationRoots(LayerSelectionActions.ContextLayers(draggedBlock.LayerEntity));
+        DraggedSubtreeHasCelFolder = _draggedLayers.Any(e => GetWrapper(e).HasCelFolderInSubtree());
+        _label.Text = string.Join(", ", _draggedLayers.Select(e => e.Get<CommonLayerSetting>().Name.Value));
         _label.GlobalPosition = motion.GlobalPosition + new Vector2(16f, -8f);
         _label.Visible = true;
     }
@@ -330,7 +323,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
         else
             ScrollSpeed = 0f;
 
-        var dropTarget = ClassifyDrop(draggedBlock);
+        var dropTarget = ClassifyDrop(draggedBlock, motion.GlobalPosition);
 
         if (dropTarget.Kind == DropKind.None)
         {
@@ -399,69 +392,23 @@ public abstract partial class LayerTreeBase : ScrollContainer
         ScrollSpeed = 0f;
         ScrollAccum = 0f;
 
-        var dropTarget = ClassifyDrop(draggedBlock);
+        var dropTarget = ClassifyDrop(draggedBlock, button.GlobalPosition);
 
         if (dropTarget.Kind == DropKind.None) return;
 
-        var document = AppDocumentManager.WorkingDocument.CurrentValue;
-        var draggedEntity = draggedBlock.LayerEntity;
-
-        int insertIndex = dropTarget.InsertIndex;
-        var draggedTreeNode = draggedEntity.Get<LayerTreeNode>();
-        var oldParentE = draggedTreeNode.ParentValue;
-        var newParentE = dropTarget.ParentEntity;
-        if (oldParentE == newParentE && draggedTreeNode.Index < insertIndex)
-            insertIndex--;
-
-        var cmd = new CommandBuilder("Move Layer", document);
-
-        int[] exposureFrames = [];
-        if (oldParentE != newParentE && draggedEntity.Tagged<CelTag>())
-        {
-            exposureFrames = oldParentE.Get<FolderLayerSetting>().Exposures
-                .Where(pair => pair.Value == draggedEntity)
-                .Select(pair => pair.Key)
-                .ToArray();
-
-            if (exposureFrames.Length > 0)
-                cmd.SetTarget(oldParentE)
-                    .SetObservableCollection(
-                        e => e.Get<FolderLayerSetting>().Exposures,
-                        exposures =>
-                        {
-                            foreach (int frame in exposureFrames)
-                                exposures.Remove(frame);
-                        });
-        }
-
-        cmd.SetTarget(document)
-            .MoveLayer(draggedEntity, newParentE, insertIndex);
-
-        if (exposureFrames.Length > 0 && newParentE.TryGet<FolderLayerSetting>()?.IsCelFolder == true)
-        {
-            cmd.SetTarget(newParentE)
-                .SetObservableCollection(
-                    e => e.Get<FolderLayerSetting>().Exposures,
-                    exposures =>
-                    {
-                        foreach (int frame in exposureFrames)
-                        {
-                            if (!exposures.ContainsKey(frame))
-                                exposures.Add(frame, draggedEntity);
-                        }
-                    });
-        }
-
-        cmd.Commit();
+        LayerContextActions.MoveLayers(_draggedLayers, dropTarget.ParentEntity, dropTarget.InsertIndex);
     }
 
-    public void SetWorkingLayerNoSignal(Entity layerE)
+    protected void ShowLayerMenu(Entity layer, Control label)
     {
-        WorkingLayerButtonGroup.GetPressedButton()?.SetPressedNoSignal(false);
-        if (layerE.IsNull || layerE.IsDocument) return;
-        var block = GetBlock(layerE);
-        // Warning note: button group will not be updated by SetPressedNoSignal.
-        block.WorkingButton.SetPressedNoSignal(true);
+        ShowContextTargetHinter(label);
+        _rightClickMenu.Popup(layer, ShouldShowTimelineLayerActions);
+    }
+
+    protected void ShowArchetypeMenu(Entity folder, string name, Control label)
+    {
+        ShowContextTargetHinter(label);
+        _rightClickMenu.PopupArchetypes(folder, name);
     }
 
     private void ShowContextTargetHinter(Control target)

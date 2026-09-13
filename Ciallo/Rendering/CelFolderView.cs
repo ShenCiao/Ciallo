@@ -45,7 +45,7 @@ public partial class CelFolderView : FolderLayerView
             .Subscribe(tuple =>
             {
                 var (currentCel, shouldShow, onionSkinCels, materials) = tuple;
-                DisplayingLayerView = currentCel.IsNull ? null : GetLayerView(currentCel);
+                DisplayingLayerView = currentCel.IsNull || currentCel.IsCelFolder ? null : GetLayerView(currentCel);
                 HideDisplayingOnionSkinViews();
 
                 if (!shouldShow)
@@ -53,6 +53,8 @@ public partial class CelFolderView : FolderLayerView
 
                 foreach (var (offset, cel) in onionSkinCels)
                 {
+                    if (cel.IsCelFolder)
+                        continue;
                     if (!materials.TryGetValue(offset, out var material))
                         continue;
 

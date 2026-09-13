@@ -55,9 +55,12 @@ internal sealed class FieldDescriptor
     public bool IsNullable { get; }
     public string DuckDbColumnType { get; }
 
-    // Cached ReactiveProperty<T>.Value accessor; null for non-reactive fields. Resolving this
-    // per-row via FieldType.GetProperty("Value") showed up under save/load of large documents.
-    private readonly PropertyInfo _reactiveValueProperty;
+    // Field access goes through delegates compiled once at startup instead of per-row reflection,
+    // which showed up under save/load of large documents.
+    private readonly Func<object, object> _getProjectValue;
+    private readonly Func<object, object> _getFieldStorage;
+    private readonly Action<object, object> _setProjectValue;
+    private readonly Action<object, object> _setFieldStorage;
 
     private FieldDescriptor(
         ComponentDescriptor component,
@@ -88,7 +91,10 @@ internal sealed class FieldDescriptor
         IsReactive = isReactive;
         IsNullable = isNullable;
         DuckDbColumnType = BuildColumnType();
-        _reactiveValueProperty = isReactive ? fieldType.GetProperty("Value") : null;
+        _getProjectValue = FieldAccessorFactory.BuildGetProjectValue(field, isReactive);
+        _getFieldStorage = FieldAccessorFactory.BuildGetFieldStorage(field);
+        _setProjectValue = FieldAccessorFactory.BuildSetProjectValue(field, isReactive);
+        _setFieldStorage = FieldAccessorFactory.BuildSetFieldStorage(field);
     }
 
     public static FieldDescriptor TryCreate(ComponentDescriptor component, FieldInfo field)
@@ -122,36 +128,13 @@ internal sealed class FieldDescriptor
 
     #region Value access (reactive unwrap)
 
-    public object GetProjectValue(object component)
-    {
-        var value = Field.GetValue(component);
-        if (!IsReactive || value == null)
-            return value;
-        return _reactiveValueProperty!.GetValue(value);
-    }
+    public object GetProjectValue(object component) => _getProjectValue(component);
 
-    public object GetFieldStorageObject(object component)
-    {
-        return Field.GetValue(component);
-    }
+    public object GetFieldStorageObject(object component) => _getFieldStorage(component);
 
-    public void SetProjectValue(object component, object value)
-    {
-        if (IsReactive)
-        {
-            var property = Field.GetValue(component);
-            if (property == null)
-            {
-                property = Activator.CreateInstance(FieldType, value);
-                Field.SetValue(component, property);
-                return;
-            }
-            _reactiveValueProperty!.SetValue(property, value);
-            return;
-        }
+    public void SetProjectValue(object component, object value) => _setProjectValue(component, value);
 
-        Field.SetValue(component, value);
-    }
+    public void SetFieldStorageObject(object component, object value) => _setFieldStorage(component, value);
 
     #endregion
 
@@ -203,6 +186,8 @@ internal sealed class FieldDescriptor
         var def = valueType.GetGenericTypeDefinition();
         var args = valueType.GetGenericArguments();
 
+        if (def == typeof(ImmutableArray<>) && args[0] == typeof(Entity))
+            return (FieldShape.EntityArray, typeof(Entity), ContainerKind.ImmutableArray, null);
         if (def == typeof(List<>) && args[0] == typeof(Entity))
             return (FieldShape.EntityArray, typeof(Entity), ContainerKind.List, null);
         if (def == typeof(ObservableList<>) && args[0] == typeof(Entity))
@@ -265,6 +250,7 @@ internal sealed class FieldDescriptor
     {
         if (type.IsEnum)
             return "INTEGER";
+        if (type == typeof(Guid)) return "UUID";
         if (type == typeof(string)) return "VARCHAR";
         if (type == typeof(bool)) return "BOOLEAN";
         if (type == typeof(byte)) return "UTINYINT";
@@ -283,6 +269,23 @@ internal sealed class FieldDescriptor
     #endregion
 
     #region Helpers
+
+    /// <summary>
+    /// Normalize one STRUCT row DuckDB returns (usually a Dictionary) to a leaf-name lookup.
+    /// Used by StructCodec to read leaves without boxing the composed element.
+    /// </summary>
+    public static IReadOnlyDictionary<string, object> AsStructDict(object structValue)
+    {
+        if (structValue is IReadOnlyDictionary<string, object> readOnly)
+            return readOnly;
+        if (structValue is IDictionary<string, object> dict)
+            return new Dictionary<string, object>(dict);
+
+        var result = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (DictionaryEntry entry in (IDictionary)structValue)
+            result[Convert.ToString(entry.Key)!] = entry.Value;
+        return result;
+    }
 
     /// <summary>Enumerate an array/list value as boxed elements, treating a default ImmutableArray as empty.</summary>
     public static IEnumerable<object> EnumerateArray(object value)
@@ -308,6 +311,7 @@ internal sealed class FieldDescriptor
     private static bool IsScalar(Type type)
     {
         return type == typeof(string)
+               || type == typeof(Guid)
                || type == typeof(bool)
                || type.IsEnum
                || type == typeof(byte)

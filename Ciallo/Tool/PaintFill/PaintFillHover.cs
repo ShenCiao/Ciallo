@@ -8,7 +8,8 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class PaintFillHover : InteractiveSessionBase
+[RegisterState]
+public class PaintFillHover : Interaction, IPropertyProvider
 {
     public override void Start(CursorButtonData data)
     {
@@ -23,7 +24,7 @@ public class PaintFillHover : InteractiveSessionBase
     }
     public override bool OnKey(InputEventKey key, CursorButtonData data) => false;
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         container.AddChild(new Label
         {

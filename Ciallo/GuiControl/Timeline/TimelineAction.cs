@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Frent;
@@ -42,8 +44,8 @@ public partial class TimelineAction : Container
         _timelineSetting = document.Get<TimelineSetting>();
         var subs = new CompositeDisposable();
         NewAnimationCel.VisibleIf(_selectionManager.WorkingCelFolder, e => !e.IsNull, subs);
-        BindCheckButton.BindBool(LoopPlay, _timelineSetting.LoopPlaybackEnabled, subs);
-        BindCheckButton.BindBool(OnionSkin, _timelineSetting.OnionSkinEnabled, subs);
+        LoopPlay.BindBool(_timelineSetting.LoopPlaybackEnabled, subs);
+        OnionSkin.BindBool(_timelineSetting.OnionSkinEnabled, subs);
         FrameRate.BindNumber(_timelineSetting.FrameRate);
         subs.AddTo(document);
     }
@@ -96,9 +98,9 @@ public partial class TimelineAction : Container
         var cmd = new CommandBuilder("Navigate Timeline")
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
-        var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(newFrame);
-        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
-            cmd.SetTarget(newWorkingLayer).SetWorkingLayer();
+        var newLayers = _selectionManager.ResolveLayersForTimelineFrameSelection(newFrame);
+        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+            cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
 
         cmd.CommitOpenSequence();
     }
@@ -170,7 +172,7 @@ public partial class TimelineAction : Container
     {
         bool wasPlaying = _isPlaying.Value;
         if (wasPlaying && !playing)
-            SwitchWorkingLayerAfterPlayback();
+            SwitchLayerSelectionAfterPlayback();
 
         _isPlaying.Value = playing;
         _playbackAccumulator = 0.0;
@@ -179,21 +181,21 @@ public partial class TimelineAction : Container
         SetProcess(playing);
     }
 
-    private void SwitchWorkingLayerAfterPlayback()
+    private void SwitchLayerSelectionAfterPlayback()
     {
         if (_selectionManager == null) return;
 
         int currentFrame = _selectionManager.CurrentFrame.Value;
-        var newWorkingLayer = _selectionManager.ResolveWorkingLayerForTimelineFrameSelection(currentFrame);
-        if (!newWorkingLayer.IsNull && newWorkingLayer != _selectionManager.WorkingLayer.Value)
-            new CommandBuilder("Playback Select Working Layer", newWorkingLayer).SetWorkingLayer().Do();
+        var newLayers = _selectionManager.ResolveLayersForTimelineFrameSelection(currentFrame);
+        if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
+            new CommandBuilder("Playback Select Layers", newLayers[0]).SelectLayers(layers: newLayers).Do();
     }
 
     private void OnAddCelFolder()
     {
         var folder = Document.World.Create();
-        var workingLayer = Document.Get<SelectionManager>().WorkingLayer.Value;
-        var cursor = workingLayer.IsNull ? Document : workingLayer;
+        var primaryLayer = Document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
+        var cursor = primaryLayer.IsNull ? Document : primaryLayer;
         Entity firstNonAnimFolder = Entity.Null;
         Entity animFolderParent = Entity.Null;
 
@@ -218,7 +220,7 @@ public partial class TimelineAction : Container
         new CommandBuilder("New Cel Folder", folder)
             .NewCelFolder()
             .AddToLayerTree(parent)
-            .SetWorkingLayer()
+            .SelectLayers()
             .Commit();
     }
 
@@ -250,6 +252,7 @@ public partial class TimelineAction : Container
         var document = celFolder.Document;
         var folderSetting = celFolder.Get<FolderLayerSetting>();
         var exposures = folderSetting.Exposures;
+        bool replaceBlankExposure = exposures.ContainsKey(frame) && exposures[frame].IsCelFolder;
         var celE = celFolder.World.Create();
 
         var cmd = new CommandBuilder("New Animation Cel", celE)
@@ -258,7 +261,7 @@ public partial class TimelineAction : Container
             .AddToLayerTree(celFolder);
 
         // name -> the new cel's child carrying that name. Drives both VF reference remap and the
-        // working-layer pick. Each surviving archetype name yields exactly one child, so this is 1:1.
+        // primary-layer pick. Each surviving archetype name yields exactly one child, so this is 1:1.
         var newChildByName = new Dictionary<string, Entity>();
         var newVectorFillReps = new List<(Entity newChild, Entity representative)>();
 
@@ -274,7 +277,7 @@ public partial class TimelineAction : Container
                 cmd.SetTarget(shapeLayerE)
                     .NewShapeLayer()
                     .AddToLayerTree(celE)
-                    .SetWorkingLayer();
+                    .SelectLayers(recordCelSelectionPreference: true);
             }
         }
         else
@@ -321,16 +324,17 @@ public partial class TimelineAction : Container
                 }
             }
 
-            // Working layer follows the same rule as a cel-button click: the new cel's child sharing the
-            // folder's preferred name. No match (empty preference, or that name was filtered) -> leave the
-            // working layer untouched, same "rather not select than select wrong" stance as cel navigation.
-            string preferredName = folderSetting.PreferredNameForCelSelection.Value;
-            if (newChildByName.TryGetValue(preferredName, out var workingLayerE))
-                cmd.SetTarget(workingLayerE).SetWorkingLayer();
+            var selected = folderSetting.PreferredNamesForCelSelection.Value
+                .Where(newChildByName.ContainsKey).Select(n => newChildByName[n]).ToImmutableArray();
+            cmd.SetTarget(document).SelectLayers(layers: selected.IsEmpty ? [celFolder] : selected);
         }
 
         cmd.SetTarget(celFolder)
-            .SetObservableCollection(exposures, exp => exp.Add(frame, celE))
+            .SetObservableCollection(exposures, exp =>
+            {
+                if (replaceBlankExposure) exp.Remove(frame);
+                exp.Add(frame, celE);
+            })
             .SetTarget(document)
             .SetProperty(e => e.Get<SelectionManager>().CurrentFrame, frame)
             .Commit();
@@ -502,7 +506,7 @@ public partial class TimelineAction : Container
         if (index < 0) return false;
 
         var cel = exposures.GetValueAtIndex(index);
-        if (cel.IsNull || !cel.IsAlive || !cel.Has<CommonLayerSetting>())
+        if (cel.IsNull || !cel.IsAlive || cel.IsCelFolder || !cel.Has<CommonLayerSetting>())
             return false;
 
         return TryParseCelLabel(cel.Get<CommonLayerSetting>().Name.Value, out number, out char suffix);

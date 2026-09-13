@@ -19,6 +19,7 @@ public partial class CommandManager
     private HistoryAction _closedOpenSequenceAction;
     private long _currentVersion;
     private long _savedVersion;
+    private long _persistenceEpoch;
     private readonly ReactiveProperty<bool> _documentModified = new(false);
 
     public ReadOnlyReactiveProperty<bool> DocumentModified => _documentModified;
@@ -26,6 +27,7 @@ public partial class CommandManager
 
     public bool HasUndo => _undoStack.Count > 0;
     public bool HasRedo => _redoStack.Count > 0;
+    public long PersistenceEpoch => _persistenceEpoch;
 
     /// <summary>
     /// Creates a new undoable action.
@@ -42,6 +44,7 @@ public partial class CommandManager
         ClearRedoStack();
         AddSeparateAction(actionName, segment);
         TrimUndoStack();
+        _persistenceEpoch++;
     }
 
     /// <summary>
@@ -71,11 +74,12 @@ public partial class CommandManager
         }
 
         TrimUndoStack();
+        _persistenceEpoch++;
     }
 
     /// <summary>
     /// Appends a segment to the latest undoable action if one exists.
-    /// Use this for commands that doesn't actually change visual contents, like switch working layer or toggle folder's expanded state.
+    /// Use this for commands that doesn't actually change visual contents, like switch primary layer or toggle folder's expanded state.
     /// </summary>
     public void CommitToLatest(string actionName, List<ICommand> commands, bool execute = true)
     {
@@ -94,6 +98,7 @@ public partial class CommandManager
             AddSeparateAction(actionName, segment);
         }
         TrimUndoStack();
+        _persistenceEpoch++;
     }
 
     /// <summary>
@@ -120,6 +125,7 @@ public partial class CommandManager
         }
 
         TrimUndoStack();
+        _persistenceEpoch++;
     }
 
     public void Commit(string actionName, ICommand command, bool execute = true) => Commit(actionName, [command], execute);
@@ -161,6 +167,7 @@ public partial class CommandManager
         _currentVersion = action.BeforeVersion;
         UpdateDocumentModified();
         HistoryNavigated.OnNext(true);
+        _persistenceEpoch++;
     }
 
     public void Redo()
@@ -176,11 +183,18 @@ public partial class CommandManager
         _currentVersion = action.AfterVersion;
         UpdateDocumentModified();
         HistoryNavigated.OnNext(false);
+        _persistenceEpoch++;
     }
 
     public void OnSave()
     {
         _savedVersion = _currentVersion;
+        UpdateDocumentModified();
+    }
+
+    public void MarkUnsaved()
+    {
+        _savedVersion = -1;
         UpdateDocumentModified();
     }
 

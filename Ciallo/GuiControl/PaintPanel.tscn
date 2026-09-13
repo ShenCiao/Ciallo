@@ -106,7 +106,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Mirror horizontally"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 toggle_mode = true
 icon = ExtResource("8_0jsmf")
 expand_icon = true
@@ -116,7 +116,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = "Mirror vertically"
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 toggle_mode = true
 icon = ExtResource("9_ms4ye")
 expand_icon = true
@@ -134,7 +134,7 @@ script = ExtResource("3_7pmtm")
 handle_input_locally = false
 use_hdr_2d = true
 canvas_cull_mask = 4293918723
-size = Vector2i(1920, 1036)
+size = Vector2i(1920, 1035)
 render_target_update_mode = 4
 
 [node name="Background" type="Polygon2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=340478953]
@@ -142,7 +142,7 @@ unique_name_in_owner = true
 visibility_layer = 2
 material = ExtResource("4_pm3jj")
 
-[node name="WorldView" type="CanvasGroup" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=445565768]
+[node name="WorldView" type="Layer2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=445565768]
 unique_name_in_owner = true
 script = ExtResource("5_pm3jj")
 

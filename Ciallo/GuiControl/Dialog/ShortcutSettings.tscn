@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://c5pfawr846j6c"]
+
+[ext_resource type="Script" uid="uid://cxuyd8fbff440" path="res://GuiControl/Dialog/ShortcutSettings.cs" id="1_8wjcb"]
+[ext_resource type="PackedScene" uid="uid://bq7ibhm0txl5p" path="res://addons/keychain/ShortcutEdit.tscn" id="2_1am13"]
+[ext_resource type="PackedScene" uid="uid://doc1n1l1rw2bq" path="res://GuiControl/Dialog/ShortcutProfileIO.tscn" id="3_1am13"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_1am13"]
+
+[node name="ShortcutSettings" type="AcceptDialog" unique_id=1180501835]
+oversampling_override = 1.0
+title = "Shortcuts"
+initial_position = 2
+size = Vector2i(1000, 700)
+visible = true
+min_size = Vector2i(720, 520)
+ok_button_text = "Close"
+script = ExtResource("1_8wjcb")
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=112840096]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -49.0
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ShortcutEdit" parent="Margin" unique_id=899545836 instance=ExtResource("2_1am13")]
+layout_mode = 2
+size_flags_horizontal = 3
+profile_io_enabled = true
+
+[node name="ProfileOptionButton" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="1" unique_id=824603650]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="Blank1" type="Control" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="2" unique_id=83923571]
+custom_minimum_size = Vector2(36, 0)
+layout_mode = 2
+
+[node name="NewProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="3" unique_id=1220509889]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="ResetProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="4" unique_id=1987606653]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="RenameProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="5" unique_id=492086360]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="DeleteProfile" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="6" unique_id=997640289]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="Blank2" type="Control" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="7" unique_id=2126795139]
+custom_minimum_size = Vector2(36, 0)
+layout_mode = 2
+
+[node name="ProfileIO" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="8" unique_id=1354174020 instance=ExtResource("3_1am13")]
+layout_mode = 2
+
+[node name="OpenProfileFolder" parent="Margin/ShortcutEdit/VBoxContainer/HBoxContainer" parent_id_path=PackedInt32Array(899545836, 570511677) index="9" unique_id=1836797572]
+size_flags_horizontal = 1
+mouse_default_cursor_shape = 0
+
+[node name="MMTopLeft" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="0" unique_id=495320334]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMTop" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="1" unique_id=1899365055]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMTopRight" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="2" unique_id=399587526]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMLeft" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="3" unique_id=326030122]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMCenter" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="4" unique_id=848294576]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMRight" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="5" unique_id=501098037]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMBottomLeft" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="6" unique_id=551827364]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMBottom" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="7" unique_id=2052999564]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="MMBottomRight" parent="Margin/ShortcutEdit/VBoxContainer/MouseMovementOptions/AngleOptions" parent_id_path=PackedInt32Array(899545836, 140406963) index="8" unique_id=1424600999]
+button_group = SubResource("ButtonGroup_1am13")
+
+[node name="ResetConfirmation" parent="Margin/ShortcutEdit" index="8" unique_id=77929510]
+oversampling_override = 1.0
+size = Vector2i(563, 100)
+
+[editable path="Margin/ShortcutEdit"]

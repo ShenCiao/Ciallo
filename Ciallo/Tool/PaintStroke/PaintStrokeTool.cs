@@ -1,6 +1,5 @@
 using System;
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Ciallo.Rendering;
@@ -8,60 +7,74 @@ using Ciallo.Widget;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.Paint)]
-public class PaintStrokeTool : ToolBase
-{
-    public readonly ReactiveProperty<Entity> BrushE = new(Entity.Null);
+using StateMachine = StateMachine<InteractionState, Trigger>;
 
-    public readonly PaintStrokeHover Hover = new();
-    public readonly PaintStrokeInteractor Left = new();
-    public readonly PaintStrokeOnVectorFill LeftOnFill = new();
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.PaintStroke)]
+public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDependent
+{
+    [Substate]
+    internal PaintStrokeHover Hover;
+
+    [Substate]
+    internal PaintStrokeInteractor freehand;
+
+    [Substate]
+    internal PaintStrokeBezierInteractor quadBezier;
+
+    [Substate]
+    internal PaintStrokePolyCubicBezierInteractor polyCubicBezier;
+
     private readonly PaintStrokeSnap _snap = new();
     public ArrangementManager Arrangement { get; private set; }
 
-    protected override void ConfigureStateMachine()
+    public readonly Subject<Unit> DeactivateSignal = new();
+
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .PermitDynamicIf(Press(MouseButton.Left), () =>
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
-                if (WorkingLayer.Has<ShapeLayerSetting>())
-                    return Left;
-                if (WorkingLayer.Has<VectorFillLayerSetting>())
-                    return LeftOnFill;
-                throw new InvalidOperationException("Unreachable code: layer type is guaranteed by CanHandleLayer");
+                // Route to bezier or freehand based on mode
+                if (AppPreference.PaintStrokeMode.Value == 1)
+                    return quadBezier;
+
+                if (AppPreference.PaintStrokeMode.Value == 2)
+                    return polyCubicBezier;
+
+                return freehand;
             }, () =>
             {
                 var brushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
                 return !brushE.IsDyingOrDead || AppStrokeBrushLibrary.HasSelection;
-            });
+            })
+            .PermitReentry(Trigger.Refresh);
 
-        Configure(Left)
-            .Permit(Press(AppHotkeys.CancelInteraction), Hover)
-            .Permit(PaintStrokeInteractor.PaintEnd, Hover);
+        sm.Configure(freehand)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .PermitStandardExits(Hover);
 
-        Configure(LeftOnFill)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(PaintStrokeInteractor.PaintEnd, Hover);
+        sm.Configure(quadBezier)
+            .Permit(PaintStrokeBezierInteractor.QuadBezierEnd, Hover)
+            .Permit(InteractionManager.CancelRequested, Hover)
+            .Permit(InteractionManager.InputCaptureLost, Hover);
+
+        sm.Configure(polyCubicBezier)
+            .PermitStandardExits(Hover);
+
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
+
+    public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        bool isShapeLayer = e.Has<ShapeLayerSetting>();
-        bool isVectorFillLayer = e.Has<VectorFillLayerSetting>();
-        return isShapeLayer || isVectorFillLayer;
-    }
-
-    public readonly Subject<Unit> DeactivateSignal = new();
-
-    public override void DrawProperty(PropertyContainer container)
-    {
-        base.DrawProperty(container);
-
         container.AddProperty("Snapping", new CheckBox
         {
             ToggleMode = true,
@@ -78,20 +91,20 @@ public class PaintStrokeTool : ToolBase
             }.BindNumber(AppPreference.PaintStrokeSnapDistance));
     }
 
-    public override void OnActivated()
+    protected override void OnActivated()
     {
-        Arrangement = WorkingLayer.Get<ArrangementManager>();
+        Arrangement = PrimaryLayer.Get<ArrangementManager>();
 
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
-        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
         AppPreference.ShowVectorFillReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => VectorFillTool.SetWireframeVisibility(referenceLayers, visible),
                 _ => VectorFillTool.SetWireframeVisibility(referenceLayers, false));
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         Arrangement = null;
         DeactivateSignal.OnNext(Unit.Default);
@@ -110,5 +123,16 @@ public class PaintStrokeTool : ToolBase
             arr,
             worldPosition,
             AppPreference.PaintStrokeSnapDistance.Value);
+    }
+
+    internal Entity ResolveStrokeTargetLayer()
+    {
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>())
+            return PrimaryLayer;
+
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+        foreach (var referenceLayer in referenceLayers)
+            return referenceLayer;
+        return Entity.Null;
     }
 }

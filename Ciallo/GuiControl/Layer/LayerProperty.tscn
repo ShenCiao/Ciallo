@@ -6,7 +6,7 @@
 
 [node name="LayerProperty" type="GridContainer" unique_id=1623447946]
 offset_right = 246.0
-offset_bottom = 58.0
+offset_bottom = 88.0
 theme_override_constants/h_separation = 16
 columns = 2
 script = ExtResource("1_3smt2")
@@ -35,3 +35,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("3_mefix")
 metadata/_custom_type_script = "uid://bbm27mfx7lcse"
+
+[node name="BlendModeLabel" type="Label" parent="." unique_id=1924380761]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Blend mode"
+
+[node name="BlendMode" type="OptionButton" parent="." unique_id=947785630]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3

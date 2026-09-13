@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://blhimtydy7lcc"]
+
+[ext_resource type="Theme" uid="uid://cmwretuqbofqt" path="res://MainTheme.tres" id="1_wc121"]
+[ext_resource type="ButtonGroup" uid="uid://drtmraai1sm8n" path="res://GuiControl/Tool/EditModeSwitcherButtonGroup.tres" id="2_gm8as"]
+[ext_resource type="Script" uid="uid://cnsa5sgjtvksd" path="res://GuiControl/Tool/EditModeSwitcher.cs" id="2_u8bem"]
+[ext_resource type="Texture2D" uid="uid://bo63m2cbcxckq" path="res://Icon/transform-box.svg" id="3_tbtaq"]
+[ext_resource type="Texture2D" uid="uid://8bmp8mbehv18" path="res://Icon/vector-curve.svg" id="5_frfv6"]
+
+[node name="EditModeSwitcher" type="HFlowContainer" unique_id=439818538]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1700.0
+offset_bottom = -937.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_wc121")
+script = ExtResource("2_u8bem")
+Group = ExtResource("2_gm8as")
+
+[node name="RectTransform" type="Button" parent="." unique_id=1190281927]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+tooltip_text = "Transform polyline"
+theme_type_variation = &"IconToggleButton"
+toggle_mode = true
+button_group = ExtResource("2_gm8as")
+icon = ExtResource("3_tbtaq")
+expand_icon = true
+
+[node name="BezierDeform" type="Button" parent="." unique_id=1671105191]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+tooltip_text = "[Bezier Deform Tooltip]"
+theme_type_variation = &"IconToggleButton"
+toggle_mode = true
+button_group = ExtResource("2_gm8as")
+icon = ExtResource("5_frfv6")
+expand_icon = true

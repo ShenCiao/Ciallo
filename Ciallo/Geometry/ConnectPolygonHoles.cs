@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Ciallo.Geometry;
@@ -8,22 +9,18 @@ public static class ConnectPolygonHoles
 {
     /// <summary>
     /// Merges holes into the outer polygon by inserting bridge edges.
-    /// The result is a single simple polygon (with duplicated bridge vertices) that
-    /// can be triangulated without special hole handling.
-    /// Should behave identically to CGAL/connect_holes.h.
+    /// The result is a weakly simple ring with duplicated bridge vertices, suitable for polygon repair.
     /// </summary>
     /// <param name="polygonWithHoles">First array is outer polygon (CCW), other arrays are holes (CW)</param>
     /// <returns>Single merged polygon ring</returns>
     public static List<Vector2> ConnectHoles(this IReadOnlyList<IReadOnlyList<Vector2>> polygonWithHoles)
     {
-        // CC Sonnet 4.6 gen
-        // Start with a mutable copy of the outer polygon.
         var merged = new List<Vector2>(polygonWithHoles[0]);
 
-        for (int h = 1; h < polygonWithHoles.Count; h++)
+        // Rightward bridges must not cross holes that have not been connected yet.
+        foreach (var hole in polygonWithHoles.Skip(1).Where(hole => hole.Count > 0)
+                     .OrderByDescending(hole => hole.Max(point => point.X)))
         {
-            var hole = polygonWithHoles[h];
-            if (hole.Count == 0) continue;
             merged = ConnectOneHole(merged, hole);
         }
 
@@ -40,7 +37,7 @@ public static class ConnectPolygonHoles
         for (int i = 1; i < hole.Count; i++)
         {
             if (hole[i].X > hole[holeMaxIdx].X ||
-                (MathF.Abs(hole[i].X - hole[holeMaxIdx].X) < 1e-6f && hole[i].Y < hole[holeMaxIdx].Y))
+                (hole[i].X == hole[holeMaxIdx].X && hole[i].Y < hole[holeMaxIdx].Y))
                 holeMaxIdx = i;
         }
         Vector2 holeVtx = hole[holeMaxIdx];
@@ -48,8 +45,8 @@ public static class ConnectPolygonHoles
         // Step 2: cast a ray from holeVtx in the +X direction and find the closest
         //         intersection with any edge of the outer ring.
         int outerEdgeIdx = -1; // start index of the best outer edge
-        float bestT = float.MaxValue; // parameter along the outer edge
-        float bestX = float.MaxValue; // x of the intersection
+        double bestT = double.MaxValue; // parameter along the outer edge
+        double bestX = double.MaxValue; // x of the intersection
 
         int outerCount = outer.Count;
         for (int i = 0; i < outerCount; i++)
@@ -64,12 +61,12 @@ public static class ConnectPolygonHoles
             if (holeVtx.Y < minY || holeVtx.Y >= maxY) continue;
 
             // Compute x of the intersection of the edge with the horizontal ray y = holeVtx.Y
-            float dy = b.Y - a.Y;
-            float t = (holeVtx.Y - a.Y) / dy;
-            float xIntersect = a.X + t * (b.X - a.X);
+            double dy = (double)b.Y - a.Y;
+            double t = ((double)holeVtx.Y - a.Y) / dy;
+            double xIntersect = a.X + t * ((double)b.X - a.X);
 
             // Only intersections to the right of (or exactly at) holeVtx
-            if (xIntersect < holeVtx.X - 1e-6f) continue;
+            if (xIntersect < holeVtx.X) continue;
 
             if (xIntersect < bestX)
             {
@@ -82,25 +79,19 @@ public static class ConnectPolygonHoles
         // Step 3: determine the insertion point on the outer ring.
         // If the intersection is exactly a vertex of the outer ring, use that vertex.
         // Otherwise, split the edge by inserting the intersection point, then use it.
-        int insertIdx; // index in `outer` of the point we will bridge to
-
-        int nextOuter = (outerEdgeIdx + 1) % outerCount;
-        // Is the intersection exactly the end-vertex of the edge?
-        if (MathF.Abs(bestT - 1f) < 1e-6f)
+        int insertIdx = outer.IndexOf(holeVtx);
+        if (insertIdx < 0)
         {
-            insertIdx = nextOuter;
-        }
-        // Is the intersection exactly the start-vertex?
-        else if (MathF.Abs(bestT) < 1e-6f)
-        {
-            insertIdx = outerEdgeIdx;
-        }
-        else
-        {
-            // Insert the intersection point into the outer ring.
-            Vector2 intersectPt = new Vector2(bestX, holeVtx.Y);
-            outer.Insert(nextOuter, intersectPt);
-            insertIdx = nextOuter;
+            if (outerEdgeIdx < 0)
+                throw new InvalidOperationException("Hole has no bridge to its containing contour.");
+            int nextOuter = (outerEdgeIdx + 1) % outerCount;
+            if (bestT == 1) insertIdx = nextOuter;
+            else if (bestT == 0) insertIdx = outerEdgeIdx;
+            else
+            {
+                outer.Insert(nextOuter, new Vector2((float)bestX, holeVtx.Y));
+                insertIdx = nextOuter;
+            }
         }
 
         // Step 4: build the merged ring.

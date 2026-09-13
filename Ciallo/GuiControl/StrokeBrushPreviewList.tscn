@@ -7,7 +7,6 @@
 [ext_resource type="Script" uid="uid://b2pgo2j4ka41x" path="res://Widget/DynamicGridItemList.cs" id="5_k4hjg"]
 
 [node name="StrokeBrushPreviewList" type="MarginContainer" unique_id=431973182]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -27,7 +26,7 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("4_r82g4")
 expand_icon = true
 
@@ -35,7 +34,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("3_1q6u5")
 expand_icon = true
 
@@ -43,7 +42,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
-theme_type_variation = &"ToolButton"
+theme_type_variation = &"IconToggleButton"
 icon = ExtResource("5_7nalv")
 expand_icon = true
 

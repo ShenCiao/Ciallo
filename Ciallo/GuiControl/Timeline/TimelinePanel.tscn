@@ -10,7 +10,7 @@
 [ext_resource type="Script" uid="uid://dobrheel0y42t" path="res://GuiControl/Timeline/PlaybackBar.cs" id="6_pbbar"]
 [ext_resource type="Script" uid="uid://be8hf2vpukxor" path="res://GuiControl/Timeline/CelTrackRightClickMenu.cs" id="7_ctrcm"]
 [ext_resource type="PackedScene" uid="uid://dix0v3s32ffhp" path="res://GuiControl/Timeline/TrackTree.tscn" id="7_trtree"]
-[ext_resource type="Script" path="res://GuiControl/Timeline/TimelineRulerRightClickMenu.cs" id="8_trrcm"]
+[ext_resource type="Script" uid="uid://dk7stsad2ey2u" path="res://GuiControl/Timeline/TimelineRulerRightClickMenu.cs" id="8_trrcm"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_oeyx3"]
 

@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://doc1n1l1rw2bq"]
+
+[node name="ProfileIO" type="HBoxContainer" unique_id=1354174020]
+size_flags_horizontal = 8
+
+[node name="ImportProfile" type="Button" parent="." unique_id=1315796295]
+layout_mode = 2
+text = "Import..."
+
+[node name="ExportProfile" type="Button" parent="." unique_id=654588696]
+layout_mode = 2
+text = "Export..."
+
+[node name="ImportProfileDialog" type="FileDialog" parent="." unique_id=201624950]
+title = "Open a File"
+file_mode = 0
+display_mode = 1
+access = 2
+filters = PackedStringArray("*.tres;Shortcut Profiles")
+use_native_dialog = true
+
+[node name="ExportProfileDialog" type="FileDialog" parent="." unique_id=1756823827]
+display_mode = 1
+access = 2
+filters = PackedStringArray("*.tres;Shortcut Profiles")
+use_native_dialog = true
+
+[node name="ProfileOperationError" type="AcceptDialog" parent="." unique_id=846072457]

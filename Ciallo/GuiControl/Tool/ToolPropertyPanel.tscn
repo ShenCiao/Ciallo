@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cbe5uqtdiejke"]
+
+[ext_resource type="Script" uid="uid://dwqgl55qqqtv7" path="res://GuiControl/Tool/ToolPropertyPanel.cs" id="1_5ce2c"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5ce2c"]
+
+[node name="ToolPropertyPanel" type="PanelContainer" unique_id=1892343996]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_5ce2c")
+script = ExtResource("1_5ce2c")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=2077719880]
+layout_mode = 2
+vertical_scroll_mode = 4
+
+[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer" unique_id=1466816606]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 20
+
+[node name="PropertiesHolder" type="VBoxContainer" parent="ScrollContainer/MarginContainer" unique_id=1994574085]
+unique_name_in_owner = true
+layout_mode = 2

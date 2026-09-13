@@ -77,23 +77,11 @@ jobs:
         with:
           ref: ${{ inputs.checkout_ref }}
           fetch-depth: 0
-          lfs: true
-          submodules: true
-
-      - name: Resolve required engine version
-        id: engine
-        shell: bash
-        run: |
-          set -euo pipefail
-          version=$(./engine.sh version)
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$ ]]
-          echo "sdk_version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Validate metadata
         id: meta
         env:
           GH_TOKEN: ${{ github.token }}
-          SDK_VERSION: ${{ steps.engine.outputs.sdk_version }}
           CHECKOUT_REF: ${{ inputs.checkout_ref }}
           RELEASE_REF: ${{ inputs.release_ref }}
         shell: pwsh
@@ -119,7 +107,10 @@ jobs:
             throw "project.godot config/version must be plain semver X.Y.Z. Actual: $projectVersion"
           }
 
-          $sdkVersion = $env:SDK_VERSION
+          $sdkVersion = (Get-Content -LiteralPath global.json -Raw | ConvertFrom-Json).'msbuild-sdks'.'Godot.NET.Sdk'
+          if ($sdkVersion -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$') {
+            throw "global.json Godot.NET.Sdk must identify a Ciallo engine release. Actual: $sdkVersion"
+          }
           $engineStatus = $sdkVersion.Substring($sdkVersion.IndexOf('-') + 1)
           $engineReleaseTag = "v$sdkVersion"
           $headers = @{
@@ -130,9 +121,6 @@ jobs:
           $headSha = (git rev-parse HEAD).Trim()
 
           $tagKind = "branch"
-          $hotfixBaseVersion = ""
-          $isRelease = "false"
-          $isPrerelease = "false"
           $releaseTitle = "$projectName $projectVersion"
           $retention = "2"
 
@@ -168,9 +156,6 @@ jobs:
                 throw "Hotfix tag '$refName' is only allowed for the latest stable release. Latest stable: '$($latestStable.tag_name)'."
               }
               $tagKind = "hotfix"
-              $hotfixBaseVersion = $hotfixVersion
-              $isRelease = "true"
-              $isPrerelease = "true"
               $releaseTitle = "$projectName $refName"
               $retention = "30"
             } elseif ($refName -match "^v(?<version>\d+\.\d+\.\d+)$") {
@@ -182,8 +167,6 @@ jobs:
                 throw "Release tag '$refName' must point to a commit contained in origin/main."
               }
               $tagKind = "release"
-              $isRelease = "true"
-              $isPrerelease = "false"
               $releaseTitle = "$projectName $refName"
               $retention = "30"
             } else {

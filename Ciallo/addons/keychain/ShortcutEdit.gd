@@ -512,7 +512,7 @@ func _on_ProfileOptionButton_item_selected(index: int) -> void:
 
 	_reconstruct_tree()
 	Keychain.config_file.set_value("shortcuts", "shortcuts_profile", index)
-	Keychain.config_file.save(Keychain.config_path)
+	Keychain.save_config()
 
 
 func _on_NewProfile_pressed() -> void:
@@ -563,7 +563,7 @@ func _on_import_profile_file_selected(path: String) -> void:
 	profile.customizable = true
 	profile.resource_path = Keychain.PROFILES_PATH.path_join(unique_name.validate_filename() + ".tres")
 	profile.fill_bindings(false)
-	if not profile.save():
+	if not Keychain.save_profile(profile):
 		_show_profile_operation_error("Import Failed", "The shortcut profile could not be saved.")
 		return
 
@@ -611,7 +611,7 @@ func _on_ProfileSettings_confirmed() -> void:
 	var profile := ShortcutProfile.new()
 	profile.name = profile_name.text
 	profile.resource_path = Keychain.PROFILES_PATH.path_join(file_name)
-	var saved := profile.save()
+	var saved := Keychain.save_profile(profile)
 	if not saved:
 		return
 
@@ -630,6 +630,8 @@ func _on_ProfileSettings_confirmed() -> void:
 
 
 func _delete_profile_file(file_name: String) -> void:
+	if not Keychain.persistence_enabled:
+		return
 	var dir := DirAccess.open(file_name.get_base_dir())
 	var err := DirAccess.get_open_error()
 	if err != OK:
@@ -650,8 +652,7 @@ func _on_DeleteConfirmation_confirmed() -> void:
 
 
 func _on_reset_confirmation_confirmed() -> void:
-	Keychain.selected_profile.copy_bindings_from(Keychain.DEFAULT_PROFILE)
-	Keychain.change_profile(Keychain.profile_index)
+	Keychain.reset_selected_profile()
 	_reconstruct_tree()
 
 

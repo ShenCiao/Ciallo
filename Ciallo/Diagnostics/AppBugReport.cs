@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public static class AppBugReport
     private static readonly Queue<string> Breadcrumbs = [];
     private static bool _exceptionHandlersInstalled;
 
-    public static string LogFilePath => ProjectSettings.GlobalizePath(GodotLogPath);
+    public static string LogFilePath { get; } = ProjectSettings.GlobalizePath(GodotLogPath);
     public static string LogDirectoryPath => Path.GetDirectoryName(LogFilePath) ?? OS.GetUserDataDir();
 
     public static void InstallExceptionHandlers()
@@ -128,6 +129,7 @@ public static class AppBugReport
         return
             $$"""
             Ciallo: {{ProjectSettings.GetSetting("application/config/version", "unknown")}}
+            Build: {{typeof(AppCommandLineOptions).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown"}}
             Godot: {{Engine.GetVersionInfo()["string"]}}
             .NET: {{RuntimeInformation.FrameworkDescription}}
             OS: {{Environment.OSVersion}}
@@ -138,11 +140,14 @@ public static class AppBugReport
             GPU: {{RenderingServer.GetVideoAdapterName()}}
             GPU vendor: {{RenderingServer.GetVideoAdapterVendor()}}
             GPU API: {{RenderingServer.GetVideoAdapterApiVersion()}}
-            Driver: {{driverInfo[0]}} {{driverInfo[1]}}
+            Driver: {{string.Join(" ", driverInfo)}}
+            Rendering method: {{RenderingServer.GetCurrentRenderingMethod()}}
             Rendering driver: {{RenderingServer.GetCurrentRenderingDriverName()}}
             Display server: {{DisplayServer.GetName()}}
             Tablet driver: {{DisplayServer.TabletGetCurrentDriver()}}
             User data: {{OS.GetUserDataDir()}}
+            Factory startup: {{AppCommandLineOptions.FactoryStartup}}
+            Startup document: {{AppCommandLineOptions.DocumentPath ?? "<none>"}}
             Log file: {{LogFilePath}}
             """;
     }

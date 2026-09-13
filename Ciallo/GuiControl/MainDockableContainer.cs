@@ -73,7 +73,7 @@ public partial class MainDockableContainer : DockableContainer
 
     private void LoadUserLayout()
     {
-        if (!FileAccess.FileExists(UserLayoutPath))
+        if (AppCommandLineOptions.FactoryStartup || !FileAccess.FileExists(UserLayoutPath))
         {
             SetLayout(_defaultLayout.Clone());
             return;
@@ -100,6 +100,7 @@ public partial class MainDockableContainer : DockableContainer
 
     private void SaveLayout()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         var error = ResourceSaver.Save(Layout, UserLayoutPath);
         if (error != Error.Ok)
             GD.PushError($"Cannot save dock layout '{UserLayoutPath}': {error}.");

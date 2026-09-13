@@ -30,7 +30,7 @@ public partial class AutoloadData : Node
 
         // Preference and load brush library data
         bool preferenceFileExists = AppPreference.TryLoad();
-        if (!preferenceFileExists)
+        if (!preferenceFileExists && !AppCommandLineOptions.FactoryStartup)
         {
             var idx = Preference.SupportedLanguages.IndexOf(OS.GetLocale(), LanguageComparer.Instance);
             if (idx != -1)

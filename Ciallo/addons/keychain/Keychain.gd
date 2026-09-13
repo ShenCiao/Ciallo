@@ -32,6 +32,8 @@ var changeable_types: PackedByteArray = [true, true, true, true]
 var config_path := "user://config.ini"
 ## Used to store the settings to the filesystem.
 var config_file: ConfigFile
+## Disable before _ready() for editable in-memory defaults without profile/config IO.
+var persistence_enabled := true
 
 
 class InputAction:
@@ -159,6 +161,14 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	if not persistence_enabled:
+		config_file = ConfigFile.new()
+		var profile := ShortcutProfile.new()
+		profile.name = "Custom"
+		profile.persistence_enabled = false
+		profiles.append(profile)
+		change_profile(0)
+		return
 	if !config_file:
 		config_file = ConfigFile.new()
 		if !config_path.is_empty():
@@ -183,7 +193,7 @@ func _ready() -> void:
 		var profile := ShortcutProfile.new()
 		profile.name = "Custom"
 		profile.resource_path = PROFILES_PATH.path_join("custom.tres")
-		var saved := profile.save()
+		var saved := save_profile(profile)
 		if saved:
 			profiles.append(profile)
 
@@ -221,6 +231,21 @@ func change_mouse_movement_action_settings(action: MouseMovementInputAction) -> 
 	selected_profile.mouse_movement_options[action_name] = action.serialize()
 	selected_profile.save()
 	action_changed.emit(action_name)
+
+
+func save_profile(profile: ShortcutProfile) -> bool:
+	profile.persistence_enabled = persistence_enabled
+	return profile.save()
+
+
+func save_config() -> void:
+	if persistence_enabled:
+		config_file.save(config_path)
+
+
+func reset_selected_profile() -> void:
+	selected_profile.copy_bindings_from(DEFAULT_PROFILE)
+	change_profile(profile_index)
 
 
 func action_add_event(action: StringName, event: InputEvent) -> void:

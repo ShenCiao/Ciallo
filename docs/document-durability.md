@@ -20,7 +20,7 @@ The persistence world must contain only committed interaction state. In-progress
 
 ## Local files
 
-The durability root is `user://DocumentDurability/v1`.
+The durability root is `user://DocumentDurability/v1`. The [`--user-data-dir` startup option](command-line.md) overrides Godot's `user://` root, including its recovery outbox and Steam OAuth credentials.
 
 | Path | Purpose |
 | --- | --- |

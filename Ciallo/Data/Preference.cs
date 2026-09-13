@@ -90,6 +90,7 @@ public class Preference
 
     public bool TryLoad()
     {
+        if (AppCommandLineOptions.FactoryStartup) return false;
         if (!FileAccess.FileExists(Path))
             return false;
         try
@@ -108,6 +109,7 @@ public class Preference
 
     public void Save()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         var content = JsonConvert.SerializeObject(this, JsonOptions);
         using var file = FileAccess.Open(Path, FileAccess.ModeFlags.Write);
         file.StoreString(content);

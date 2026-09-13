@@ -5,6 +5,7 @@ extends Resource
 @export var customizable := true
 @export var bindings: Dictionary[StringName, Array] = {}
 @export var mouse_movement_options: Dictionary[StringName, Dictionary] = {}
+var persistence_enabled := true
 
 
 func _init() -> void:
@@ -38,6 +39,8 @@ func change_action(action_name: String) -> void:
 
 
 func save() -> bool:
+	if not persistence_enabled:
+		return true
 	if !customizable:
 		return false
 	var err := ResourceSaver.save(self, resource_path)

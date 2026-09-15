@@ -1,4 +1,7 @@
-<Project Sdk="Godot.NET.Sdk">
+<Project>
+    <Import Project="../.ciallo/local-engine.props" Condition="Exists('../.ciallo/local-engine.props')" />
+    <Import Project="Sdk.props" Sdk="Godot.NET.Sdk" Condition="'$(GodotLocalSdkDir)' == ''" />
+    <Import Project="$(GodotLocalSdkDir)/Sdk.props" Condition="'$(GodotLocalSdkDir)' != ''" />
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LangVersion>default</LangVersion>
@@ -77,5 +80,7 @@
         <DefineConstants>OS_MAC</DefineConstants>
     </PropertyGroup>
 
-    <Import Project="$(GodotProjectDir).godot/mono/local_sdk.props" Condition="Exists('$(GodotProjectDir).godot/mono/local_sdk.props')" />
+    <Import Project="$(GodotLocalSdkDir)/../Godot.LocalDevelopment.props" Condition="'$(GodotLocalSdkDir)' != ''" />
+    <Import Project="Sdk.targets" Sdk="Godot.NET.Sdk" Condition="'$(GodotLocalSdkDir)' == ''" />
+    <Import Project="$(GodotLocalSdkDir)/Sdk.targets" Condition="'$(GodotLocalSdkDir)' != ''" />
 </Project>

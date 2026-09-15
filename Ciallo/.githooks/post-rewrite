@@ -3,4 +3,4 @@
 cat >/dev/null
 [ "${1:-}" = rebase ] || exit 0
 root=$(git rev-parse --show-toplevel) || exit $?
-[ ! -f "$root/global.json" ] || sh "$root/engine.sh" sync
+[ ! -f "$root/Ciallo/global.json" ] || sh "$root/engine.sh" sync

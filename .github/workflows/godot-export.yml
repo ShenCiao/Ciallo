@@ -107,9 +107,9 @@ jobs:
             throw "project.godot config/version must be plain semver X.Y.Z. Actual: $projectVersion"
           }
 
-          $sdkVersion = (Get-Content -LiteralPath global.json -Raw | ConvertFrom-Json).'msbuild-sdks'.'Godot.NET.Sdk'
+          $sdkVersion = (Get-Content -LiteralPath "$env:PROJECT_PATH/global.json" -Raw | ConvertFrom-Json).'msbuild-sdks'.'Godot.NET.Sdk'
           if ($sdkVersion -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$') {
-            throw "global.json Godot.NET.Sdk must identify a Ciallo engine release. Actual: $sdkVersion"
+            throw "Ciallo/global.json Godot.NET.Sdk must identify a Ciallo engine release. Actual: $sdkVersion"
           }
           $engineStatus = $sdkVersion.Substring($sdkVersion.IndexOf('-') + 1)
           $engineReleaseTag = "v$sdkVersion"

@@ -23,7 +23,7 @@ cd Ciallo
 dotnet build Ciallo/Ciallo.csproj
 ```
 
-Setup installs gdvm and uses it to download the C# editor selected by `global.json`, installs Git
+Setup installs gdvm and uses it to download the C# editor selected by `Ciallo/global.json`, installs Git
 hooks, and generates an `Open Ciallo` shortcut. Open that shortcut to run the project.
 Hooks prepare the required engine after branch changes and pulls.
 

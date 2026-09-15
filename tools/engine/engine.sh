@@ -8,14 +8,14 @@ project="$root/Ciallo"
 state="$root/.ciallo"
 command_name=${1:-help}
 [ "$#" -eq 0 ] || shift
-templates=false; shortcut=true; ci=false; argument=
+templates=false; shortcut=true; ci=false; arguments=()
 for arg in "$@"; do
     case "$arg" in
         --templates) templates=true ;;
         --no-shortcut) shortcut=false ;;
         --ci) ci=true; shortcut=false ;;
         --*) printf 'Unknown option: %s\n' "$arg" >&2; exit 1 ;;
-        *) [ -z "$argument" ] || exit 1; argument=$arg ;;
+        *) arguments+=("$arg") ;;
     esac
 done
 fail() { printf 'Ciallo engine: %s\n' "$*" >&2; exit 1; }
@@ -31,10 +31,10 @@ source "$script_dir/csharp.sh"
 source "$script_dir/shortcuts.sh"
 source "$script_dir/templates.sh"
 required_version() {
-    jq -er '."msbuild-sdks"."Godot.NET.Sdk" | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-ciallo\\.g[0-9a-f]{9,40}$"))' "$root/global.json"
+    jq -er '."msbuild-sdks"."Godot.NET.Sdk" | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-ciallo\\.g[0-9a-f]{9,40}$"))' "$project/global.json"
 }
 
-# Generated gdvm configuration carries the authoritative global.json version.
+# gdvm installs the release selected by Ciallo/global.json.
 prepare_registry() {
     local repository registry
     repository=$(jq -er '.repository | select(test("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))' "$script_dir/distribution.json")
@@ -46,7 +46,7 @@ prepare_registry() {
 }
 select_editor() {
     local_mode=false
-    if ! $ci && [ -n "$(setting engine.editor)" ]; then
+    if ! $ci && [ "$(setting engine.local)" = true ]; then
         local_mode=true; editor=$(setting engine.editor)
     else
         prepare_registry
@@ -60,8 +60,7 @@ select_editor() {
     sharp="$(dirname "$editor")/GodotSharp"
     if [ ! -d "$sharp" ]; then sharp="$(dirname "$editor")/../Resources/GodotSharp"; fi
     sdk=$(tr -d '\r\n' < "$sharp/sdk.version")
-    [[ "$sdk" =~ ^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$ ]] || fail 'Invalid bundle SDK version.'
-    $local_mode || [ "$sdk" = "$required" ] || fail 'Downloaded bundle does not match global.json.'
+    $local_mode || [ "$sdk" = "$required" ] || fail 'Downloaded bundle does not match Ciallo/global.json.'
 }
 sync_engine() {
     command -v dotnet >/dev/null || fail 'Install the .NET 10 SDK.'
@@ -83,14 +82,22 @@ case "$command_name" in
         sync_engine ;;
     sync) sync_engine ;;
     local)
-        [ -n "$argument" ] || fail 'Usage: ./engine.sh local <editor>'
-        [ "$os" != windows ] || argument=$(cygpath -u "$argument")
-        [ -f "$argument" ] || fail "Editor not found: $argument"
-        argument="$(CDPATH= cd "$(dirname "$argument")" && pwd -P)/$(basename "$argument")"
-        git config --file "$state/config" engine.editor "$argument"
-        sync_engine ;;
-    published)
-        git config --file "$state/config" --unset engine.editor 2>/dev/null || true
+        $ci && fail 'Use sync --ci for CI builds.'
+        case "${arguments[0]:-}" in
+            on)
+                [ "${#arguments[@]}" -le 2 ] || fail 'Usage: ./engine.sh local on [editor]'
+                editor_path=${arguments[1]:-$(setting engine.editor)}
+                [ -n "$editor_path" ] || fail 'Select an editor with ./engine.sh local on <editor>.'
+                [ "$os" != windows ] || editor_path=$(cygpath -u "$editor_path")
+                [ -f "$editor_path" ] || fail "Editor not found: $editor_path"
+                editor_path="$(CDPATH= cd "$(dirname "$editor_path")" && pwd -P)/$(basename "$editor_path")"
+                git config --file "$state/config" engine.editor "$editor_path"
+                git config --file "$state/config" engine.local true ;;
+            off)
+                [ "${#arguments[@]}" -eq 1 ] || fail 'Usage: ./engine.sh local off'
+                git config --file "$state/config" engine.local false ;;
+            *) fail 'Usage: ./engine.sh local on [editor] | local off' ;;
+        esac
         sync_engine ;;
     open)
         shortcut=false
@@ -99,10 +106,14 @@ case "$command_name" in
         else cd "$state/gdvm"; gdvm run "$selection" -y -- --editor --path "$(native_path "$project")"; fi ;;
     status|check)
         required=$(required_version)
-        jq -e --arg required "$required" '.required == $required' "$state/ready.json" >/dev/null || fail 'Run ./engine.sh sync.'
+        local_mode=false
+        if ! $ci && [ "$(setting engine.local)" = true ]; then local_mode=true; fi
+        jq -e --arg required "$required" --argjson local "$local_mode" \
+            '.required == $required and .local == $local' "$state/ready.json" >/dev/null || fail 'Run ./engine.sh sync.'
         [ -f "$(jq -r '.editor' "$state/ready.json")" ] || fail 'Prepared editor is missing; run ./engine.sh sync.'
         jq . "$state/ready.json" ;;
     clean) gdvm prune ;;
     version) required_version ;;
-    *) printf 'Usage: ./engine.sh setup|sync|local <editor>|published|open|status|clean [--templates] [--no-shortcut]\n' ;;
+    help) printf 'Usage: ./engine.sh setup|sync|local on [editor]|local off|open|status|clean [--templates] [--no-shortcut]\n' ;;
+    *) fail "Unknown command: $command_name" ;;
 esac

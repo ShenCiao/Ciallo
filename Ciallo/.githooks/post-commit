@@ -1,6 +1,6 @@
 #!/bin/sh
 root=$(git rev-parse --show-toplevel) || exit $?
 # Prepare changed engine requirements after committing; ordinary Ciallo edits need no refresh.
-changed=$(git diff-tree --root --no-commit-id --name-only -r -m HEAD -- global.json engine.sh tools/engine Ciallo/Ciallo.csproj) || exit $?
+changed=$(git diff-tree --root --no-commit-id --name-only -r -m HEAD -- Ciallo/global.json engine.sh tools/engine Ciallo/Ciallo.csproj) || exit $?
 [ -n "$changed" ] || exit 0
-[ ! -f "$root/global.json" ] || sh "$root/engine.sh" sync
+[ ! -f "$root/Ciallo/global.json" ] || sh "$root/engine.sh" sync

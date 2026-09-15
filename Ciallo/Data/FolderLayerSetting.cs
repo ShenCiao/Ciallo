@@ -32,15 +32,17 @@ public class FolderLayerSetting
         {
             IsExpanded = { Value = IsExpanded.Value },
             Exposures = Exposures is null ? null : [.. Exposures],
-            PreferredNameForCelSelection = { Value = PreferredNameForCelSelection.Value },
+            PreferredNamesForCelSelection = { Value = PreferredNamesForCelSelection.Value },
         };
 
     #region Cel Folder
 
     /// <summary>
-    /// Cel exposure table. 
-    /// Keys represent the starting frame of a drawing; 
-    /// Values represent the layer to be displayed until the next key is encountered.
+    /// Cel exposure table. One entry is one exposure: the key is its exposure key (starting frame),
+    /// the value is the cel it exposes until the next key. A span (duration) is never stored — it is
+    /// implied by the distance to the next key.
+    /// A CelFolder value represents an explicit Blank exposure; authored Blank values use this
+    /// setting's owning CelFolder entity.
     /// </summary>
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Required)]
     public ObservableSortedList<int, Entity> Exposures = null;
@@ -82,22 +84,15 @@ public class FolderLayerSetting
     }
 
     // Name indexed children set. Used for batch modification of cel children layers.
-    // ponytail: ObservableHashSet (not HashSet) so a future "show archetype only when >=2 members"
-    // filter can subscribe to inner add/remove. Inner signals are unused today - only the outer
-    // dictionary's add/remove drives the archetype GUI.
     public readonly ObservableDictionary<string, ObservableHashSet<Entity>> CelChildrenByName = new();
 
     /// <summary>
-    /// When navigating to a cel (clicking a cel button or scrubbing the timeline), the working layer
-    /// follows the direct cel child sharing this name. If the newly exposed cel has no direct child with
-    /// this name (including the empty-name default), no layer is selected.
-    ///
-    /// Set when the working layer becomes a direct cel child (see <see cref="Command.SetWorkingLayerCmd"/>),
-    /// and migrated when the working layer's cel-child archetype is renamed.
-    /// Other working-layer changes leave it untouched. Empty by default.
+    /// Ordered cel-child selection template. Navigation selects matching direct children in this
+    /// order, temporarily promoting the first available name without removing missing names.
+    /// Explicit selection edits and archetype operations update the template as part of undo history.
     /// </summary>
     [DataMember, ProjectField]
-    public ReactiveProperty<string> PreferredNameForCelSelection = new("");
+    public ReactiveProperty<ImmutableArray<string>> PreferredNamesForCelSelection = new([]);
 
     #endregion
 }

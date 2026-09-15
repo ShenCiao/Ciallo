@@ -8,6 +8,11 @@ namespace Ciallo.Data;
 [DataContract, ToSerialize]
 public class FilledPolygonSetting : IEquatable<FilledPolygonSetting>
 {
+    // TODO: Add a Holes field here for fill-only inner contours; keep the outer contour in SampledPolyline.
+    // Polygon-to-stroke/polyline conversion intentionally uses only the outer contour.
+    // Hole support must include serialization, cloning/equality, geometry edits/transforms, rendering, and hit testing.
+    // Until then, holes remain connected into the single SampledPolyline ring by duplicated bridge edges.
+
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Nullable)]
     public ReactiveProperty<Entity> BrushE = new(default);
 

@@ -46,6 +46,7 @@ public static partial class AppStrokeBrushLibrary
 
     public static void Save()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         // Ensure folder exists
         using var baseDir = DirAccess.Open("user://");
         if (!baseDir.DirExists("Brush"))
@@ -87,6 +88,7 @@ public static partial class AppStrokeBrushLibrary
 
     public static bool TryLoad()
     {
+        if (AppCommandLineOptions.FactoryStartup) return false;
         // Check folder
         using var baseDir = DirAccess.Open("user://");
         if (!baseDir.DirExists("Brush")) return false;

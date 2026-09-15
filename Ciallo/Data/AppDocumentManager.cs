@@ -44,8 +44,6 @@ public static partial class AppDocumentManager
         document.Get<SelectionManager>().InitWorkingCelFolder(root);
         document.Add(new CommandManager());
         document.Add(new BrushManager());
-        document.Add(new ToolManager());
-        document.Get<ToolManager>().ObserveTimelineRolling(document.Get<TimelineSetting>().IsRollingFrame);
 
         WorldToDocument.Add(world, document);
 
@@ -71,7 +69,7 @@ public static partial class AppDocumentManager
             .SetTarget(celFolder)
             .SetObservableCollection(e => e.Get<FolderLayerSetting>().Exposures, exposures => exposures.Add(0, cel))
             .SetTarget(shapeLayer)
-            .SetWorkingLayer(true);
+            .SelectLayers(recordCelSelectionPreference: true);
 
         // Fill brush
         Color[] colors = [Colors.PaleTurquoise, Colors.LightGreen, Colors.LemonChiffon, Colors.LightPink];
@@ -100,14 +98,15 @@ public static partial class AppDocumentManager
         }
 
         cmd.Do();
-        document.Get<ToolManager>().ActivatePaintTool();
+        InteractionManager.RequestTool(ToolButton.Type.PaintStroke);
     }
 
     public static void Remove(Entity document)
     {
         DisplayServer.WindowSetTitle("Ciallo");
 
-        document.Get<ToolManager>().DeactivateWorkingTool();
+        AppDocumentDurability.OnDocumentClosing(document);
+        InteractionManager.CloseDocument();
         WorkingDocument.Value = Entity.Null;
 
         // Dispose world

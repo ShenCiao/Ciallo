@@ -8,7 +8,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PaintFillInteractor : InteractiveSessionBase
+[RegisterState]
+public class PaintFillInteractor : CapturingInteraction
 {
     private readonly PolylineInteractiveGenerator _generator = new()
     {
@@ -18,7 +19,7 @@ public class PaintFillInteractor : InteractiveSessionBase
     private StrokeView _dashPreview;
     private Entity _fillBrush;
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase session)
+    public override void BeforeSourceExit(Interaction session)
     {
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
     }
@@ -29,7 +30,7 @@ public class PaintFillInteractor : InteractiveSessionBase
 
         _dashPreview = new StrokeView();
         _dashPreview.Material = AutoloadRendering.DashWireframeMaterial;
-        var layerView = WorkingLayer.Get<ShapeLayerView>();
+        var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(_dashPreview);
     }
 
@@ -50,9 +51,9 @@ public class PaintFillInteractor : InteractiveSessionBase
             Clear();
             return;
         }
-        new CommandBuilder("Paint Fill", WorkingLayer.World.Create())
+        new CommandBuilder("Paint Fill", PrimaryLayer.World.Create())
             .NewFilledPolygon()
-            .AddToLayerTree(WorkingLayer)
+            .AddToLayerTree(PrimaryLayer)
             .SetSampledPolyline(
                 [.. geometry.Positions, geometry.Positions[0]],
                 [.. geometry.Radii, geometry.Radii[0]],
@@ -67,8 +68,6 @@ public class PaintFillInteractor : InteractiveSessionBase
     {
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     public void Clear()
     {

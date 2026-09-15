@@ -12,8 +12,6 @@ public partial class MenuWindow : PopupMenu
         LayerPanel = 102,
         TimelinePanel = 103,
         ResetLayout = 200,
-        BrushLibrary = 300,
-        ConfigureGlobalPenPressure = 301,
     }
 
     private MainDockableContainer _dockableContainer;
@@ -28,9 +26,6 @@ public partial class MenuWindow : PopupMenu
         AddCheckItem(Tr("Timeline"), (int)Command.TimelinePanel);
         AddSeparator();
         AddItem(Tr("Reset Layout"), (int)Command.ResetLayout);
-        AddSeparator();
-        AddItem(Tr("Brush library"), (int)Command.BrushLibrary);
-        AddItem(Tr("Configure global pen pressure"), (int)Command.ConfigureGlobalPenPressure);
 
         AboutToPopup += SynchronizePanelChecks;
         IdPressed += id => OnIdPressed((Command)id);
@@ -46,8 +41,6 @@ public partial class MenuWindow : PopupMenu
         SetCommandText(Command.LayerPanel, "Layers");
         SetCommandText(Command.TimelinePanel, "Timeline");
         SetCommandText(Command.ResetLayout, "Reset Layout");
-        SetCommandText(Command.BrushLibrary, "Brush library");
-        SetCommandText(Command.ConfigureGlobalPenPressure, "Configure global pen pressure");
     }
 
     private void OnIdPressed(Command command)
@@ -69,12 +62,6 @@ public partial class MenuWindow : PopupMenu
             case Command.ResetLayout:
                 _dockableContainer.ResetLayout();
                 SynchronizePanelChecks();
-                break;
-            case Command.BrushLibrary:
-                AppDialogHost.BrushLibrary.Popup();
-                break;
-            case Command.ConfigureGlobalPenPressure:
-                AppDialogHost.ConfigureGlobalPenPressure.Popup();
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(command), command, "Unhandled Window menu command");

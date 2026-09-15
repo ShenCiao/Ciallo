@@ -1,0 +1,3 @@
+[submodule "facepunch"]
+	path = thirdparty/Facepunch.Steamworks
+	url = https://github.com/Facepunch/Facepunch.Steamworks.git

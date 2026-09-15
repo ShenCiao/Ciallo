@@ -123,7 +123,8 @@ public partial class BackgroundGrid : Control
             if (x < -_pixelsPerFrame || x > w + _pixelsPerFrame) continue;
 
             bool isMajor = frame == 0 || frame % (step * MajorColumnInterval) == 0;
-            bool inRange = hasPlaybackRange && frame >= playbackStart && frame < playbackEnd;
+            bool inRange = hasPlaybackRange &&
+                TimelineFrameGeometry.IsInPlaybackRange(frame, playbackStart, playbackEnd);
             Color lineColor = inRange
                 ? isMajor ? MajorColumnLineColor : ColumnLineColor
                 : OutOfPlaybackColumnLineColor;

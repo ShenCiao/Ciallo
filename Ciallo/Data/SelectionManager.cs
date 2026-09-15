@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.Serialization;
 using Frent;
 using ObservableCollections;
@@ -12,15 +14,12 @@ public class SelectionManager
     /// <summary>Current playhead position.</summary>
     [DataMember, ProjectField] public ReactiveProperty<int> CurrentFrame = new(1);
 
+    // Ordered selection. The first layer is the drawing target; the others join layer operations.
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Required)]
-    public ObservableList<Entity> SelectedLayers = [];
+    public ReactiveProperty<ImmutableArray<Entity>> SelectedLayers = new([]);
 
-    // Note: although current frame sync working layer on user side, the two properties are not directly synced on Data side.
-    // The logics are implemented here but called by corresponding GUI control side.
-    // Which make sure everything works OK even though CurrentFrame and WorkingLayer are not in sync.
-    [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Nullable)]
-    public ReactiveProperty<Entity> WorkingLayer = new(Entity.Null);
-    public ReadOnlyReactiveProperty<Entity> WorkingCelFolder; // Null if the working layer is not under any cel folder.
+    public ReadOnlyReactiveProperty<Entity> PrimaryLayer { get; }
+    public ReadOnlyReactiveProperty<Entity> WorkingCelFolder; // Null if the primary layer is not under any cel folder.
 
     [DataMember, ProjectField(StorageKind.Entity, EntityNullability.Nullable)]
     public ReactiveProperty<Entity> WorkingStrokeBrush = new(Entity.Null);
@@ -30,10 +29,16 @@ public class SelectionManager
 
     public ObservableList<Entity> SelectedShapes = [];
 
+    public SelectionManager()
+    {
+        PrimaryLayer = SelectedLayers.Select(layers => layers.IsEmpty ? Entity.Null : layers[0])
+            .ToReadOnlyReactiveProperty();
+    }
+
     public void InitWorkingCelFolder(LayerTreeNode root)
     {
         var layerTreeChanged = root.ObserveMutation().DebounceFrame(1).ObserveOn(GodotFrameProvider.BeforeProcess);
-        WorkingCelFolder = layerTreeChanged.CombineLatest(WorkingLayer, (_, layerE) => layerE)
+        WorkingCelFolder = layerTreeChanged.CombineLatest(PrimaryLayer, (_, layerE) => layerE)
             .Select(layerE =>
             {
                 if (layerE.IsNull || layerE.IsDocument)
@@ -56,86 +61,36 @@ public class SelectionManager
     }
 
     /// <summary>
-    /// Resolves the layer that should be selected for a timeline frame, using the
-    /// working cel folder's selected cel and its preferred cel child name.
-    /// <list type="bullet">
-    /// <item>Returns <see cref="Entity.Null"/> when there is no working cel folder, i.e. the
-    ///   current working layer is not under any cel folder. The caller should keep the working
-    ///   layer untouched (scrubbing must not disturb plain-layer editing).</item>
-    /// <item>Returns the document entity when a working cel folder exists but the frame resolves
-    ///   to no cel child (frame before the first cel, dead cel, or no direct child matching the
-    ///   preferred name). The caller commits this so the working layer is cleared.</item>
-    /// <item>Otherwise returns the matching cel child to switch to.</item>
-    /// </list>
+    /// Resolves the ordered template for the exposed cel. A default array means there is no
+    /// cel-folder context. Blank or wholly missing selections retain the folder as navigation
+    /// context, with no drawable layer selected. Missing names remain in the template.
     /// </summary>
-    public Entity ResolveWorkingLayerForTimelineFrameSelection(int frame)
+    public ImmutableArray<Entity> ResolveLayersForTimelineFrameSelection(int frame)
     {
         var celFolder = WorkingCelFolder.CurrentValue;
-        // Not in a cel-folder context: keep the current working layer (no change).
-        if (celFolder.IsNull) return Entity.Null;
-
-        var folderSetting = celFolder.Get<FolderLayerSetting>();
-        var exposures = folderSetting.Exposures;
-        if (exposures == null) return Entity.Null;
-
-        // In a cel-folder context from here on: a miss means "clear", signalled by the document entity.
+        if (celFolder.IsNull) return default;
+        var exposures = celFolder.Get<FolderLayerSetting>().Exposures;
         int floor = exposures.FloorIndex(frame);
-        if (floor < 0)
-            return celFolder.Document;
-
-        var exposedCel = exposures.GetValueAtIndex(floor);
-        if (exposedCel.IsNull || !exposedCel.IsAlive || !exposedCel.Has<LayerTreeNode>())
-            return celFolder.Document;
-
-        if (!exposedCel.Has<FolderLayerSetting>())
-            return exposedCel;
-
-        var child = exposedCel.Get<LayerTreeNode>().GetLayerChildByName(folderSetting.PreferredNameForCelSelection.Value);
-        return child.IsNull ? celFolder.Document : child;
+        return ResolveLayersForCelSelection(celFolder,
+            floor < 0 ? Entity.Null : exposures.GetValueAtIndex(floor));
     }
 
-    /// <summary>
-    /// Returns the entity to switch <see cref="WorkingLayer"/> to after clicking a cel button,
-    /// using the clicked cel's direct child matching the folder's preferred cel child name.
-    /// <list type="bullet">
-    /// <item>Returns <see cref="Entity.Null"/> when the arguments are invalid, or the resolved
-    ///   child is already the working layer (nothing to do).</item>
-    /// <item>Returns the document entity when the clicked cel has no direct child matching the
-    ///   preferred name, so the caller clears the working layer.</item>
-    /// <item>Otherwise returns the matching cel child.</item>
-    /// </list>
-    /// </summary>
-    public Entity ComputeWorkingLayerForCelButtonSelection(Entity celFolder, Entity clickedCel)
+    public static ImmutableArray<Entity> ResolveLayersForCelSelection(Entity celFolder, Entity cel)
     {
-        if (celFolder.IsNull || !celFolder.IsAlive)
-            return Entity.Null;
-        if (clickedCel.IsNull || !clickedCel.IsAlive || !clickedCel.Has<LayerTreeNode>())
-            return Entity.Null;
-
-        var folderSetting = celFolder.TryGet<FolderLayerSetting>();
-        if (folderSetting?.IsCelFolder != true || !clickedCel.Tagged<CelTag>())
-            return Entity.Null;
-
-        Entity result;
-        if (clickedCel.Has<FolderLayerSetting>())
-        {
-            // No matching child: clear the working layer, signalled by the document entity.
-            var child = clickedCel.Get<LayerTreeNode>().GetLayerChildByName(folderSetting.PreferredNameForCelSelection.Value);
-            result = child.IsNull ? celFolder.Document : child;
-        }
-        else
-        {
-            result = clickedCel;
-        }
-
-        // Already the working layer (including already-cleared): nothing to do.
-        return result == WorkingLayer.Value ? Entity.Null : result;
+        if (!cel.IsNull && !cel.IsCelFolder && !cel.Has<FolderLayerSetting>())
+            return [cel];
+        var names = celFolder.Get<FolderLayerSetting>().PreferredNamesForCelSelection.Value;
+        var layers = CelLayerSelection.Resolve(cel, names);
+        return layers.IsEmpty ? [celFolder] : layers;
     }
 
+    public bool NeedsTimelineSelectionCommit(ImmutableArray<Entity> layers) =>
+        !layers.IsDefault && !SelectedLayers.Value.SequenceEqual(layers);
+
     /// <summary>
-    /// Returns the frame index to switch to after switching working layer.
+    /// Returns the frame index to switch to after switching primary layer.
     /// <list type="bullet">
-    /// <item>If <paramref name="selectedWorkingLayer"/> is null, the document, outside any cel folder,
+    /// <item>If <paramref name="selectedPrimaryLayer"/> is null, the document, outside any cel folder,
     ///   or is itself a cel folder root, returns the current frame (no switch).</item>
     /// <item>Otherwise finds the direct cel under the nearest cel folder ancestor and searches all
     ///   exposure ranges that show that cel.</item>
@@ -144,18 +99,18 @@ public class SelectionManager
     /// <item>If the layer is never exposed, returns the current frame.</item>
     /// </list>
     /// </summary>
-    public int ComputeFrameForWorkingLayerSelection(Entity selectedWorkingLayer)
+    public int ComputeFrameForPrimaryLayerSelection(Entity selectedPrimaryLayer)
     {
         int currentFrame = CurrentFrame.Value;
-        if (selectedWorkingLayer.IsNull || selectedWorkingLayer.IsDocument || !selectedWorkingLayer.IsAlive)
+        if (selectedPrimaryLayer.IsNull || selectedPrimaryLayer.IsDocument || !selectedPrimaryLayer.IsAlive)
             return currentFrame;
 
-        if (selectedWorkingLayer.TryGet<FolderLayerSetting>()?.IsCelFolder == true)
+        if (selectedPrimaryLayer.TryGet<FolderLayerSetting>()?.IsCelFolder == true)
             return currentFrame;
 
         Entity celFolder = Entity.Null;
         Entity targetCel = Entity.Null;
-        var cursor = selectedWorkingLayer;
+        var cursor = selectedPrimaryLayer;
 
         while (!cursor.IsNull && !cursor.IsDocument)
         {

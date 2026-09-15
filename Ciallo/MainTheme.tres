@@ -13,6 +13,58 @@ color = Color(0.101961, 0.101961, 0.101961, 0.6)
 thickness = 8
 vertical = true
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hyskk"]
+bg_color = Color(0, 0, 0, 0.5019608)
+expand_margin_left = 5.0
+expand_margin_top = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n7spb"]
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(0.8, 0.8, 0.8, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_m2b53"]
+bg_color = Color(0, 0, 0, 0.5019608)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(0, 0, 0, 0.5019608)
+expand_margin_left = 5.0
+expand_margin_top = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ogfsw"]
+bg_color = Color(0, 0, 0, 0.5019608)
+expand_margin_left = 5.0
+expand_margin_top = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qad1"]
+content_margin_left = 3.0
+content_margin_top = 3.0
+content_margin_right = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0, 0, 0, 0.5019608)
+expand_margin_left = 5.0
+expand_margin_top = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4tcxt"]
+bg_color = Color(1, 1, 1, 0)
+border_color = Color(0.8, 0.8, 0.8, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_65gi7"]
+bg_color = Color(0, 0, 0, 0.5019608)
+expand_margin_left = 5.0
+expand_margin_top = 5.0
+expand_margin_right = 5.0
+expand_margin_bottom = 5.0
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_rfn4m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yhag5"]
@@ -89,35 +141,6 @@ expand_margin_bottom = 2.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yhag5"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ogfsw"]
-bg_color = Color(0, 0, 0, 0.5019608)
-expand_margin_left = 5.0
-expand_margin_top = 5.0
-expand_margin_right = 5.0
-expand_margin_bottom = 5.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u23kh"]
-content_margin_left = 3.0
-content_margin_top = 3.0
-content_margin_right = 3.0
-content_margin_bottom = 3.0
-bg_color = Color(0, 0, 0, 0.5019608)
-expand_margin_left = 5.0
-expand_margin_top = 5.0
-expand_margin_right = 5.0
-expand_margin_bottom = 5.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t6ki5"]
-bg_color = Color(1, 1, 1, 0)
-border_color = Color(0.8, 0.8, 0.8, 0)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qad1"]
-bg_color = Color(0, 0, 0, 0.5019608)
-expand_margin_left = 5.0
-expand_margin_top = 5.0
-expand_margin_right = 5.0
-expand_margin_bottom = 5.0
-
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_4as0w"]
 color = Color(0.101961, 0.101961, 0.101961, 0.6)
 thickness = 8
@@ -130,6 +153,15 @@ ColorPickerButton/styles/focus = SubResource("StyleBoxEmpty_u23kh")
 ColorPickerButton/styles/normal = SubResource("StyleBoxEmpty_ogfsw")
 HSplitContainer/constants/separation = 6
 HSplitContainer/styles/split_bar_background = SubResource("StyleBoxLine_yhag5")
+IconClickButton/base_type = &"Button"
+IconClickButton/styles/hover = SubResource("StyleBoxFlat_hyskk")
+IconClickButton/styles/normal = SubResource("StyleBoxFlat_n7spb")
+IconClickButton/styles/pressed = SubResource("StyleBoxFlat_m2b53")
+IconToggleButton/base_type = &"Button"
+IconToggleButton/styles/hover = SubResource("StyleBoxFlat_ogfsw")
+IconToggleButton/styles/hover_pressed = SubResource("StyleBoxFlat_6qad1")
+IconToggleButton/styles/normal = SubResource("StyleBoxFlat_4tcxt")
+IconToggleButton/styles/pressed = SubResource("StyleBoxFlat_65gi7")
 ItemList/colors/guide_color = Color(0, 0, 0, 0)
 ItemList/styles/focus = SubResource("StyleBoxEmpty_rfn4m")
 LayerBlockButton/base_type = &"CheckBox"
@@ -160,10 +192,5 @@ TabContainer/styles/panel = SubResource("StyleBoxEmpty_6qad1")
 TabContainer/styles/tab_hovered = SubResource("StyleBoxFlat_nwvi7")
 TabContainer/styles/tab_selected = SubResource("StyleBoxFlat_8twj1")
 TabContainer/styles/tab_unselected = SubResource("StyleBoxEmpty_yhag5")
-ToolButton/base_type = &"Button"
-ToolButton/styles/hover = SubResource("StyleBoxFlat_ogfsw")
-ToolButton/styles/hover_pressed = SubResource("StyleBoxFlat_u23kh")
-ToolButton/styles/normal = SubResource("StyleBoxFlat_t6ki5")
-ToolButton/styles/pressed = SubResource("StyleBoxFlat_6qad1")
 VSplitContainer/constants/separation = 6
 VSplitContainer/styles/split_bar_background = SubResource("StyleBoxLine_4as0w")

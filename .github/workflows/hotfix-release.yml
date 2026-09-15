@@ -8,9 +8,7 @@ name: Ciallo Hotfix Release
       - closed
 
 permissions:
-  actions: write
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: ciallo-hotfix-release-main
@@ -20,25 +18,26 @@ env:
   PROJECT_PATH: Ciallo
 
 jobs:
-  create-hotfix:
-    name: Create hotfix tag and dev backport PR
+  prepare:
+    name: Resolve hotfix release
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'hotfix/')
     runs-on: ubuntu-24.04
+    outputs:
+      base_version: ${{ steps.hotfix.outputs.base_version }}
+      hotfix_tag: ${{ steps.hotfix.outputs.hotfix_tag }}
+      merge_sha: ${{ steps.hotfix.outputs.merge_sha }}
     steps:
       - name: Checkout merged main
         uses: actions/checkout@v5
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ github.token }}
 
-      - name: Create hotfix tag
+      - name: Resolve hotfix metadata
         id: hotfix
         env:
           GH_TOKEN: ${{ github.token }}
           MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
           REPO: ${{ github.repository }}
         shell: bash
         run: |
@@ -56,9 +55,6 @@ jobs:
             echo "Hotfix merge commit $MERGE_SHA is not contained in origin/main."
             exit 1
           fi
-
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
           parent_count="$(git show -s --format=%P "$MERGE_SHA" | wc -w | tr -d ' ')"
           if [ "$parent_count" != "1" ]; then
@@ -82,78 +78,150 @@ jobs:
           existing_tag="$(git tag --points-at "$MERGE_SHA" --list "${base_tag}-hotfix.*" | sort -V | tail -n 1)"
           if [ -n "$existing_tag" ]; then
             hotfix_tag="$existing_tag"
-            echo "Reusing existing hotfix tag $hotfix_tag for $MERGE_SHA"
           else
-            next_number="$(
+            last_number="$(
               git tag --list "${base_tag}-hotfix.*" |
                 sed -E "s/^${base_tag}-hotfix\.([0-9]+)$/\1/" |
                 sort -n |
                 tail -n 1
             )"
-            if [ -z "$next_number" ]; then
+            if [ -z "$last_number" ]; then
               next_number=1
             else
-              next_number=$((next_number + 1))
+              next_number=$((last_number + 1))
             fi
-
             hotfix_tag="${base_tag}-hotfix.${next_number}"
-            git tag -a "$hotfix_tag" "$MERGE_SHA" -m "Ciallo ${hotfix_tag#v}"
-            git push origin "$hotfix_tag"
           fi
 
-          gh workflow run github-release.yml --repo "$REPO" --ref "$hotfix_tag"
+          {
+            echo "base_version=$project_version"
+            echo "hotfix_tag=$hotfix_tag"
+            echo "merge_sha=$MERGE_SHA"
+          } >> "$GITHUB_OUTPUT"
 
-          backport_branch="backport/${hotfix_tag}-to-dev"
-          echo "hotfix_tag=$hotfix_tag" >> "$GITHUB_OUTPUT"
-          echo "backport_branch=$backport_branch" >> "$GITHUB_OUTPUT"
-          echo "merge_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
-          echo "Created $hotfix_tag from PR #$PR_NUMBER: $PR_TITLE"
+  export:
+    name: Export verified hotfix
+    needs: prepare
+    uses: ./.github/workflows/godot-export.yml
+    permissions:
+      contents: read
+    with:
+      checkout_ref: ${{ needs.prepare.outputs.merge_sha }}
+      release_ref: ${{ needs.prepare.outputs.hotfix_tag }}
+      sign_macos: true
+    secrets: inherit
 
-      - name: Prepare dev backport changes
+  tag:
+    name: Create immutable hotfix tag
+    needs: [prepare, export]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout verified commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.merge_sha }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Create tag
         env:
-          HOTFIX_TAG: ${{ steps.hotfix.outputs.hotfix_tag }}
-          MERGE_SHA: ${{ steps.hotfix.outputs.merge_sha }}
+          HEAD_SHA: ${{ needs.prepare.outputs.merge_sha }}
+          HOTFIX_TAG: ${{ needs.prepare.outputs.hotfix_tag }}
         shell: bash
         run: |
           set -euo pipefail
 
-          git fetch origin dev
+          git fetch origin --tags
+          if git rev-parse -q --verify "refs/tags/$HOTFIX_TAG" >/dev/null; then
+            tagged_sha="$(git rev-list -n 1 "$HOTFIX_TAG")"
+            if [ "$tagged_sha" != "$HEAD_SHA" ]; then
+              echo "Immutable tag $HOTFIX_TAG already points to $tagged_sha, not $HEAD_SHA."
+              exit 1
+            fi
+            echo "Reusing $HOTFIX_TAG at $HEAD_SHA."
+            exit 0
+          fi
+
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          git tag -a "$HOTFIX_TAG" "$HEAD_SHA" -m "Ciallo ${HOTFIX_TAG#v}"
+          git push origin "refs/tags/$HOTFIX_TAG"
+
+  publish:
+    name: Publish verified hotfix
+    needs: [prepare, export, tag]
+    uses: ./.github/workflows/publish-release.yml
+    permissions:
+      actions: read
+      contents: write
+    with:
+      tag_name: ${{ needs.prepare.outputs.hotfix_tag }}
+      release_title: ${{ needs.export.outputs.release_title }}
+      project_version: ${{ needs.export.outputs.project_version }}
+      head_sha: ${{ needs.export.outputs.head_sha }}
+      build_kind: hotfix
+      prerelease: true
+      hotfix_base_version: ${{ needs.prepare.outputs.base_version }}
+      sdk_version: ${{ needs.export.outputs.sdk_version }}
+      engine_status: ${{ needs.export.outputs.engine_status }}
+      engine_release_tag: ${{ needs.export.outputs.engine_release_tag }}
+    secrets: inherit
+
+  backport:
+    name: Create dev backport PR
+    needs: prepare
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v5
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Prepare dev backport changes
+        env:
+          MERGE_SHA: ${{ needs.prepare.outputs.merge_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git fetch origin +refs/heads/dev:refs/remotes/origin/dev
           git checkout -B dev origin/dev
 
           if git merge-base --is-ancestor "$MERGE_SHA" HEAD; then
-            echo "dev already contains $HOTFIX_TAG; no backport PR needed."
+            echo "dev already contains hotfix commit $MERGE_SHA; no backport PR needed."
             exit 0
           fi
 
           if ! git cherry-pick --no-commit "$MERGE_SHA"; then
             if git diff --quiet && git diff --cached --quiet; then
               git cherry-pick --abort
-              echo "dev already has the same changes as $HOTFIX_TAG; no backport PR needed."
+              echo "dev already has the same hotfix changes; no backport PR needed."
               exit 0
             fi
-            echo "Could not cherry-pick $HOTFIX_TAG into dev automatically."
+            echo "Could not cherry-pick hotfix commit $MERGE_SHA into dev automatically."
             echo "Resolve manually by backporting $MERGE_SHA to dev."
             exit 1
-          fi
-
-          if git diff --quiet && git diff --cached --quiet; then
-            echo "dev already contains $HOTFIX_TAG; no backport PR needed."
-            exit 0
           fi
 
       - name: Create dev backport PR
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ github.token }}
-          commit-message: Backport ${{ steps.hotfix.outputs.hotfix_tag }} to dev
+          commit-message: Backport hotfix #${{ github.event.pull_request.number }} to dev
           committer: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
-          branch: ${{ steps.hotfix.outputs.backport_branch }}
+          branch: backport/hotfix-${{ github.event.pull_request.number }}-to-dev
           base: dev
           delete-branch: true
-          title: Backport ${{ steps.hotfix.outputs.hotfix_tag }} to dev
+          title: Backport hotfix #${{ github.event.pull_request.number }} to dev
           body: |
-            Backports hotfix ${{ steps.hotfix.outputs.hotfix_tag }} from #${{ github.event.pull_request.number }} to dev.
+            Backports the hotfix merged by #${{ github.event.pull_request.number }} to dev.
 
-            This PR is created automatically after the hotfix is merged into main.
-            It intentionally does not change project.godot version unless the hotfix itself changed it.
+            Source commit: `${{ needs.prepare.outputs.merge_sha }}`

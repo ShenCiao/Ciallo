@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Ciallo.Geometry;
@@ -23,13 +24,13 @@ public partial class WorldEventDispatcher : Container
 
     private Stopwatch _timer;
 
+    public Entity Document;
+
+
     // ------------ Touch gesture state -------------
     private readonly Dictionary<int, Vector2> _activeTouches = new();
     private bool _isTouchDragging;
     private int _maxTouchCount;
-
-    public Entity Document;
-    private ToolManager ToolManager => Document.Get<ToolManager>();
 
     public override void _Ready()
     {
@@ -65,10 +66,25 @@ public partial class WorldEventDispatcher : Container
     {
         // Godot treats stylus pen input as mouse input.
         var cursor = GetMouseCursorState(mouseEvent);
+        var handled = false;
 
-        HandleCanvasNavigation(mouseEvent, (PaintPanel)Owner, cursor);
-        DispatchMouseEvent(mouseEvent, cursor);
+        if (mouseEvent is InputEventMouseButton mouseButton && !_isPanning)
+        {
+            handled = DispatchMouseButton(mouseButton, new()
+            {
+                ScreenPosition = cursor.ScreenPosition,
+                WorldPosition = cursor.WorldPosition,
+                Tilt = _prevTilt,
+            });
+        }
+        if (!handled)
+            handled = HandleCanvasNavigation(mouseEvent, (PaintPanel)Owner, cursor);
+
+        DispatchMouseMotion(mouseEvent, cursor);
         UpdateMouseCursorState(cursor);
+
+        if (handled)
+            GetViewport().SetInputAsHandled();
     }
 
     private MouseCursorState GetMouseCursorState(InputEventMouse mouseEvent)
@@ -88,8 +104,10 @@ public partial class WorldEventDispatcher : Container
         return new MouseCursorState(screenPos, screenDelta, worldPos, worldDelta, cameraWorldDeltaBeforeTransformCamera);
     }
 
-    private void HandleCanvasNavigation(InputEventMouse mouseEvent, PaintPanel panel, MouseCursorState cursor)
+    private bool HandleCanvasNavigation(InputEventMouse mouseEvent, PaintPanel panel, MouseCursorState cursor)
     {
+        var handled = _isPanning;
+
         if (mouseEvent is InputEventMouseMotion && _isPanning)
             panel.CameraOffset.Value -= cursor.WorldDeltaBeforeTransformCamera;
 
@@ -97,10 +115,12 @@ public partial class WorldEventDispatcher : Container
         if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.Middle, Pressed: true })
         {
             _isPanning = true;
+            handled = true;
         }
         if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.Middle, Pressed: false })
         {
             _isPanning = false;
+            handled = true;
         }
 
         // Double click to reset camera.
@@ -111,41 +131,38 @@ public partial class WorldEventDispatcher : Container
             panel.CameraRotation.Value = 0.0f;
             panel.MirrorHorizontal.Value = false;
             panel.MirrorVertical.Value = false;
+            handled = true;
         }
 
         // Scroll mouse wheel to zoom camera.
         if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.WheelUp, AltPressed: false })
         {
             panel.CameraZoom.Value *= 1.0f + AppPreference.MouseWheelZoomFactor.Value;
+            handled = true;
         }
         else if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, AltPressed: false })
         {
             panel.CameraZoom.Value *= 1.0f - AppPreference.MouseWheelZoomFactor.Value;
+            handled = true;
         }
 
         // Alt + scroll mouse wheel to rotate camera.
         if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.WheelUp, AltPressed: true })
         {
             panel.CameraRotation.Value += AppPreference.MouseWheelRotateFactor.Value;
+            handled = true;
         }
         else if (mouseEvent is InputEventMouseButton { ButtonIndex: MouseButton.WheelDown, AltPressed: true })
         {
             panel.CameraRotation.Value -= AppPreference.MouseWheelRotateFactor.Value;
+            handled = true;
         }
+
+        return handled;
     }
 
-    private void DispatchMouseEvent(InputEventMouse mouseEvent, MouseCursorState cursor)
+    private void DispatchMouseMotion(InputEventMouse mouseEvent, MouseCursorState cursor)
     {
-        if (mouseEvent is InputEventMouseButton mouseButton && !_isPanning)
-        {
-            DispatchMouseButton(mouseButton, new()
-            {
-                ScreenPosition = cursor.ScreenPosition,
-                WorldPosition = cursor.WorldPosition,
-                Tilt = _prevTilt,
-            });
-        }
-
         if (!cursor.WorldDelta.IsZeroApprox()) // dispatch motion
         {
             if (mouseEvent is InputEventMouseMotion motion)
@@ -319,17 +336,17 @@ public partial class WorldEventDispatcher : Container
 
     private void DispatchKey(InputEventKey key)
     {
-        if (ToolManager.WorkingTool.CurrentValue?.OnKey(key) == true)
+        if (InteractionManager.DispatchKey(key))
             GetViewport().SetInputAsHandled();
     }
 
-    private void DispatchMouseButton(InputEventMouseButton mouse, CursorButtonData data)
+    private bool DispatchMouseButton(InputEventMouseButton mouse, CursorButtonData data)
     {
-        ToolManager.WorkingTool.CurrentValue?.OnMouseButton(mouse, data);
+        return InteractionManager.DispatchMouseButton(mouse, data);
     }
 
     public void DispatchMotion(CursorMotionData data)
     {
-        ToolManager.WorkingTool.CurrentValue?.OnMoving(data);
+        InteractionManager.DispatchMotion(data);
     }
 }

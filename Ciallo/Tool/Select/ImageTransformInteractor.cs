@@ -4,7 +4,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class ImageTransformInteractor : InteractiveSessionBase
+[RegisterState]
+public class ImageTransformInteractor : CapturingInteraction
 {
     private int _transformType = -1; // 0: Rotate, 1: Move, 2~5: Corner Resize
 
@@ -13,7 +14,7 @@ public class ImageTransformInteractor : InteractiveSessionBase
     private Transform2D _startTransform;
     private Vector2[] _startCorners = [];
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase session)
+    public override void BeforeSourceExit(Interaction session)
     {
         if (session is not ImageLayerSelectHover hover) return;
         if (hover.RotationBody.IsHovered)
@@ -36,7 +37,7 @@ public class ImageTransformInteractor : InteractiveSessionBase
 
     public override void Start(CursorButtonData data)
     {
-        _setting = WorkingLayer.Get<ImageLayerSetting>();
+        _setting = PrimaryLayer.Get<ImageLayerSetting>();
         _startPos = data.WorldPosition;
         _startTransform = _setting.ImageTransform.Value;
         _startCorners = _setting.GetCorners();
@@ -162,7 +163,7 @@ public class ImageTransformInteractor : InteractiveSessionBase
 
     public override void End(CursorButtonData data)
     {
-        new CommandBuilder("Transform Image Layer", WorkingLayer)
+        new CommandBuilder("Transform Image Layer", PrimaryLayer)
             .SetProperty(_startTransform, e => e.Get<ImageLayerSetting>().ImageTransform)
             .Commit();
         Clear();
@@ -177,10 +178,5 @@ public class ImageTransformInteractor : InteractiveSessionBase
     public void Clear()
     {
         _transformType = -1;
-    }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data)
-    {
-        return true;
     }
 }

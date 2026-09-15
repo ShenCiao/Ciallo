@@ -1,7 +1,7 @@
 namespace Ciallo.Rendering;
 
 /// <summary>
-/// Use a custom Godot build allowing nested CanvasGroups.
+/// Uses the custom Layer2D backend for lazy composite rendering.
 /// </summary>
 public partial class FolderLayerView : GroupLayerView
 {

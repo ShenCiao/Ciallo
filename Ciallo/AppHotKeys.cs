@@ -6,10 +6,10 @@ namespace Ciallo;
 /// Static access to the actions defined in godot editor.
 /// </summary>
 /// <remarks>Using GodotSharp.SourceGenerators library</remarks>
-[InputMap(nameof(AppHotkey))]
+[InputMap(nameof(Hotkey))]
 public static partial class AppHotkeys;
 
-public record AppHotkey(StringName Name)
+public record Hotkey(StringName Name)
 {
     public readonly Shortcut Shortcut = new()
     {
@@ -24,15 +24,15 @@ public record AppHotkey(StringName Name)
     };
 
     public bool IsPressed => Input.IsActionPressed(Name);
-    public bool IsJustPressed => Input.IsActionJustPressed(Name);
-    public bool IsJustReleased => Input.IsActionJustReleased(Name);
+    public bool IsJustPressed => Input.IsActionJustPressed(Name, true);
+    public bool IsJustReleased => Input.IsActionJustReleased(Name, true);
     public float Strength => Input.GetActionStrength(Name);
 
-    public bool IsPressedBy(InputEvent inputEvent) => inputEvent.IsActionPressed(Name);
-    public bool IsReleasedBy(InputEvent inputEvent) => inputEvent.IsActionReleased(Name);
+    public bool IsPressedBy(InputEvent inputEvent) => Input.IsActionJustPressedByEvent(Name, inputEvent, true);
+    public bool IsReleasedBy(InputEvent inputEvent) => Input.IsActionJustReleasedByEvent(Name, inputEvent, true);
 
     public void Press() => Input.ActionPress(Name);
     public void Release() => Input.ActionRelease(Name);
 
-    public static implicit operator StringName(AppHotkey input) => input.Name;
+    public static implicit operator StringName(Hotkey input) => input.Name;
 }

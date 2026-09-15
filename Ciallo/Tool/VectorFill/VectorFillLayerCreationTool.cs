@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
@@ -8,11 +9,14 @@ using Frent;
 using Godot;
 using ObservableCollections;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.VectorFill)]
-public class VectorFillLayerCreationTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
     {
@@ -24,25 +28,23 @@ public class VectorFillLayerCreationTool : ToolBase
     }
 
     public readonly ReactiveProperty<CreationStrategy> Strategy = new(CreationStrategy.WithinAllCels);
-    public readonly VectorFillLayerCreationHover Hover = new();
+    [Substate]
+    internal VectorFillLayerCreationHover Hover;
 
-    protected override void ConfigureStateMachine()
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        ConfigureInitial(Hover)
-            .InternalTransition(Press(MouseButton.Left), OnCreate);
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .InternalTransition(Trigger.Press(MouseButton.Left), OnCreate)
+            .PermitReentry(Trigger.Refresh);
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return e.Has<ShapeLayerSetting>();
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers[0].Has<ShapeLayerSetting>();
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
-        base.DrawProperty(container);
-
         container.AddChild(new Label
         {
             Text = "[Vector Fill On Shape Layer Hint]".Tr(),
@@ -87,7 +89,7 @@ public class VectorFillLayerCreationTool : ToolBase
             .NewVectorFillLayer();
         AddReferenceLayers(cmd, referenceLayers)
             .AddToLayerTree(Document, 0)
-            .SetWorkingLayer()
+            .SelectLayers()
             .Commit();
     }
 
@@ -118,7 +120,8 @@ public class VectorFillLayerCreationTool : ToolBase
         }
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetWorkingLayer(true);
+            cmd.SetTarget(focusVectorFillLayer)
+                .SelectLayers(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -161,10 +164,12 @@ public class VectorFillLayerCreationTool : ToolBase
                 exposures => AddCorrespondingExposures(
                     exposures,
                     sourceExposures,
-                    fillLayersBySourceCel));
+                    fillLayersBySourceCel,
+                    newCelFolder));
 
         if (!focusVectorFillLayer.IsNull)
-            cmd.SetTarget(focusVectorFillLayer).SetWorkingLayer(true);
+            cmd.SetTarget(focusVectorFillLayer)
+                .SelectLayers(recordCelSelectionPreference: true);
 
         cmd.Commit();
     }
@@ -198,7 +203,7 @@ public class VectorFillLayerCreationTool : ToolBase
         var plans = new List<CelVectorFillPlan>();
         foreach (var sourceCel in sourceExposures.Values)
         {
-            if (seen.Add(sourceCel))
+            if (!sourceCel.IsCelFolder && seen.Add(sourceCel))
                 plans.Add(new(sourceCel, GetReferenceShapeLayersForCel(sourceCel)));
         }
 
@@ -206,8 +211,8 @@ public class VectorFillLayerCreationTool : ToolBase
     }
 
     /// <summary>
-    /// Picks the source cel whose newly-created vector fill layer should become the working layer.
-    /// Prefers the cel exposed at the current frame, then falls back to the current working layer's cel.
+    /// Picks the source cel whose newly-created vector fill layer should become the primary layer.
+    /// Prefers the cel exposed at the current frame, then falls back to the current primary layer's cel.
     /// </summary>
     private Entity ResolveFocusSourceCel(Entity celFolder)
     {
@@ -220,7 +225,7 @@ public class VectorFillLayerCreationTool : ToolBase
                 return exposures.GetValueAtIndex(index);
         }
 
-        return FindCelUnderCelFolder(WorkingLayer, celFolder);
+        return FindCelUnderCelFolder(PrimaryLayer, celFolder);
     }
 
     private static Entity FindCelUnderCelFolder(Entity layer, Entity celFolder)
@@ -240,11 +245,14 @@ public class VectorFillLayerCreationTool : ToolBase
     private static void AddCorrespondingExposures(
         ObservableSortedList<int, Entity> targetExposures,
         SortedList<int, Entity> sourceExposures,
-        IReadOnlyDictionary<Entity, Entity> fillLayersBySourceCel)
+        IReadOnlyDictionary<Entity, Entity> fillLayersBySourceCel,
+        Entity targetCelFolder)
     {
         foreach (var (frame, sourceCel) in sourceExposures)
         {
-            if (fillLayersBySourceCel.TryGetValue(sourceCel, out var fillLayer))
+            if (sourceCel.IsCelFolder)
+                targetExposures.Add(frame, targetCelFolder);
+            else if (fillLayersBySourceCel.TryGetValue(sourceCel, out var fillLayer))
                 targetExposures.Add(frame, fillLayer);
         }
     }
@@ -341,8 +349,12 @@ public class VectorFillLayerCreationTool : ToolBase
     private readonly record struct CelVectorFillPlan(Entity SourceCel, List<Entity> ReferenceLayers);
 }
 
-public class VectorFillLayerCreationHover : InteractiveSessionBase
+[RegisterState]
+public class VectorFillLayerCreationHover : Interaction, IPropertyProvider
 {
+    public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
+        AppPreference.BucketFill.DrawModeProperty(container);
+
     public override void Start(CursorButtonData data)
     {
         Document.Get<WorldBody>().DefaultCursorShape = Control.CursorShape.PointingHand;

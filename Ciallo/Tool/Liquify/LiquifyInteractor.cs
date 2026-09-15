@@ -10,8 +10,12 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class LiquifyInteractor : InteractiveSessionBase
+[RegisterState]
+public class LiquifyInteractor : CapturingInteraction
 {
+    [StateAccess]
+    public LiquifyTool Tool { get; set; }
+
     private Entity[] _processingEs;
     private Vector2[][] _origPolylines;
     private Vector2[][] _currPolylines;
@@ -22,7 +26,7 @@ public class LiquifyInteractor : InteractiveSessionBase
 
     public override void Start(CursorButtonData data)
     {
-        _processingEs = LiquifyTargetScope.Resolve(Document, WorkingLayer);
+        _processingEs = LiquifyTargetScope.Resolve(Document, PrimaryLayer);
         _origPolylines = new Vector2[_processingEs.Length][];
         _currPolylines = new Vector2[_processingEs.Length][];
         _origRadii = new float[_processingEs.Length][];
@@ -84,11 +88,9 @@ public class LiquifyInteractor : InteractiveSessionBase
         Clear();
     }
 
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
-
     private void ApplyDab(Vector2 brushCenter, Vector2 brushDelta, float pressure)
     {
-        var liquifyTool = (LiquifyTool)Tool;
+        var liquifyTool = Tool;
         var mode = liquifyTool.Mode.Value;
         var dab = new LiquifyDab(
             brushCenter,

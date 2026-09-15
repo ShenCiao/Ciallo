@@ -15,6 +15,7 @@ public static class EntityExtension
         public bool IsDyingOrDead => !self.IsAlive || !self.Tagged<ToSerializeTag>();
 
         public bool IsDocument => self.World.Document() == self; // If entity is the singleton document entity.
+        public bool IsCelFolder => self.TryGet<FolderLayerSetting>()?.IsCelFolder == true;
         public Entity Document => self.World.Document();
         public long PackedValue => Unsafe.As<Entity, long>(ref Unsafe.AsRef(in self));
 

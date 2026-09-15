@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using DuckDB.NET.Data;
 using Frent;
 using Godot;
@@ -22,12 +24,26 @@ public static class DuckDbProjectSerializer
 
     // DuckDB storage block size for new project files (bytes, power of two, 16KB..256KB).
     private const int BlockSize = 65536;
-    // DuckDB.NET 1.4.1 appender cannot write STRUCT columns yet, so batch with VALUES instead.
-    private const int InsertBatchSize = 512;
+    private const string StorageVersion = "v1.5.0";
+    // DuckDB.NET.Data cannot write composite appender columns yet; DuckDbBatchAppender supplies
+    // the same row-oriented boundary over the public DuckDB C bindings.
 
     #region Public API
 
     public static void Save(Entity document, string filePath)
+    {
+        // Detaching first (entity refs -> positional ids, mutable arrays copied) means both save
+        // paths share one writer. The extra capture copy is acceptable for a user-initiated save,
+        // and reference-resolution errors now surface here rather than mid-write.
+        Save(PersistenceSnapshotCapture.Capture(document, 0), filePath);
+    }
+
+    public static void Save(PersistenceSnapshot snapshot, string filePath)
+    {
+        SaveStaged(filePath, stagingPath => WriteDatabase(snapshot, stagingPath));
+    }
+
+    private static void SaveStaged(string filePath, Action<string> writeStagingFile)
     {
         var targetPath = Path.GetFullPath(filePath);
         var targetDirectory = Path.GetDirectoryName(targetPath)
@@ -42,8 +58,7 @@ public static class DuckDbProjectSerializer
 
         try
         {
-            var registry = ProjectFormatRegistry.Create();
-            WriteDatabase(document, stagingPath, registry);
+            writeStagingFile(stagingPath);
             CommitSave(stagingPath, targetPath);
         }
         finally
@@ -61,9 +76,12 @@ public static class DuckDbProjectSerializer
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"File {filePath} not found.");
 
-        var registry = ProjectFormatRegistry.Create();
+        var registry = ProjectFormatRegistry.Shared;
         var document = ReadDatabase(filePath, registry);
-        document.Get<DocumentSetting>().FilePath.Value = filePath;
+        var settings = document.Get<DocumentSetting>();
+        if (settings.DocumentId.Value == Guid.Empty)
+            throw new InvalidDataException("Project database has an invalid document identity.");
+        settings.FilePath.Value = filePath;
         return document;
     }
 
@@ -103,7 +121,7 @@ public static class DuckDbProjectSerializer
 
     #region Write
 
-    private static void WriteDatabase(Entity document, string dbPath, ProjectFormatRegistry registry)
+    private static void WriteDatabase(PersistenceSnapshot snapshot, string dbPath)
     {
         if (File.Exists(dbPath))
             File.Delete(dbPath);
@@ -116,47 +134,34 @@ public static class DuckDbProjectSerializer
         // blocks regardless). The block size lives in the file header, so files stay self-describing
         // and each save rewrites the file at the current block size.
         var attachPath = dbPath.Replace("'", "''");
-        using (var connection = new DuckDBConnection("Data Source=:memory:"))
-        {
-            connection.Open();
-            Execute(connection, $"ATTACH '{attachPath}' AS project (BLOCK_SIZE {BlockSize});");
-            Execute(connection, "USE project;");
+        using var connection = new DuckDBConnection("Data Source=:memory:");
+        connection.Open();
+        Execute(connection,
+            $"ATTACH '{attachPath}' AS project " +
+            $"(BLOCK_SIZE {BlockSize}, STORAGE_VERSION '{StorageVersion}', RECOVERY_MODE 'no_wal_writes');");
+        Execute(connection, "USE project;");
 
-            CreateInfrastructureTables(connection);
-            foreach (var component in registry.Components)
-                CreateComponentTable(connection, component);
+        // One transaction for the whole write, DDL included: each CREATE TABLE would otherwise
+        // auto-commit (and hit the WAL) on its own, so a document with dozens of component tables
+        // pays dozens of extra commits before the first row is written. The appender reads table
+        // metadata through the same client context, so tables created earlier in the transaction
+        // are visible to it.
+        Execute(connection, "BEGIN TRANSACTION;");
+        CreateInfrastructureTables(connection);
+        foreach (var component in snapshot.Registry.Components)
+            CreateComponentTable(connection, component);
 
-            var entities = BuildEntityList(document);
-            var entityToId = new Dictionary<Entity, int>();
-            for (int i = 0; i < entities.Count; i++)
-                entityToId[entities[i]] = i;
+        WriteMetadata(connection, snapshot.ApplicationVersion);
+        InsertEntities(connection, snapshot.EntityCount);
+        foreach (var component in snapshot.Components)
+            InsertComponentRows(connection, component);
+        Execute(connection, "COMMIT;");
 
-            Execute(connection, "BEGIN TRANSACTION;");
-            WriteMetadata(connection);
-            InsertEntities(connection, entities.Count);
-            foreach (var component in registry.Components)
-                InsertComponentRows(connection, component, entities, entityToId);
-            Execute(connection, "COMMIT;");
-
-            // Collapse the WAL into the main file so the single .ciallo file is self-contained
-            // and can be atomically moved with no sidecar.
-            Execute(connection, "CHECKPOINT project;");
-            Execute(connection, "USE memory;");
-            Execute(connection, "DETACH project;");
-        }
-    }
-
-    private static List<Entity> BuildEntityList(Entity document)
-    {
-        var result = new List<Entity> { document };
-        var query = document.World.CreateQuery().Tagged<ToSerializeTag>().Build();
-        foreach (var entity in query.EnumerateWithEntities())
-        {
-            if (entity == document)
-                continue;
-            result.Add(entity);
-        }
-        return result;
+        // Collapse the WAL into the main file so the single .ciallo file is self-contained
+        // and can be atomically moved with no sidecar.
+        Execute(connection, "CHECKPOINT project;");
+        Execute(connection, "USE memory;");
+        Execute(connection, "DETACH project;");
     }
 
     private static void CreateInfrastructureTables(DuckDBConnection connection)
@@ -174,13 +179,13 @@ public static class DuckDbProjectSerializer
                             """);
     }
 
-    private static void WriteMetadata(DuckDBConnection connection)
+    private static void WriteMetadata(DuckDBConnection connection, string applicationVersion)
     {
-        InsertMetadata(connection, "format", "ciallo-project-duckdb");
-        InsertMetadata(connection, "format_version", FormatVersion.ToString());
-        InsertMetadata(connection, "created_by", "Ciallo");
-        InsertMetadata(connection, "ciallo_version",
-            ProjectSettings.GetSetting("application/config/version", "unknown").AsString());
+        using var appender = connection.CreateBatchAppender("metadata");
+        AppendMetadata(appender, "format", "ciallo-project-duckdb");
+        AppendMetadata(appender, "format_version", FormatVersion.ToString());
+        AppendMetadata(appender, "created_by", "Ciallo");
+        AppendMetadata(appender, "ciallo_version", applicationVersion);
     }
 
     private static void CreateComponentTable(DuckDBConnection connection, ComponentDescriptor component)
@@ -192,13 +197,11 @@ public static class DuckDbProjectSerializer
         Execute(connection, $"create table {Quote(component.TableName)} ({string.Join(", ", columns)});");
     }
 
-    private static void InsertMetadata(DuckDBConnection connection, string key, string value)
+    private static void AppendMetadata(DuckDbBatchAppender appender, string key, string value)
     {
-        using var command = connection.CreateCommand();
-        command.CommandText = """insert into "metadata" ("key", "value") values ($key, $value);""";
-        command.Parameters.Add(new DuckDBParameter("key", key));
-        command.Parameters.Add(new DuckDBParameter("value", value));
-        command.ExecuteNonQuery();
+        var row = appender.CreateRow();
+        row.AppendValue(key).AppendValue(value);
+        row.EndRow();
     }
 
     private static void InsertEntities(DuckDBConnection connection, int count)
@@ -215,107 +218,67 @@ public static class DuckDbProjectSerializer
 
     private static void InsertComponentRows(
         DuckDBConnection connection,
-        ComponentDescriptor descriptor,
-        IReadOnlyList<Entity> entities,
-        Dictionary<Entity, int> entityToId)
+        PersistenceComponentSnapshot component)
     {
-        var batch = new List<InsertBuilder>(InsertBatchSize);
-        for (int id = 0; id < entities.Count; id++)
+        using var appender = connection.CreateBatchAppender(component.Descriptor.TableName);
+        foreach (var row in component.Rows)
         {
-            var entity = entities[id];
-            if (!entity.Has(descriptor.ComponentType))
-                continue;
-
-            var component = entity.Get(descriptor.ComponentType);
-            batch.Add(BuildComponentRow(descriptor, id, component, entityToId, "r" + batch.Count));
-            if (batch.Count == InsertBatchSize)
-            {
-                ExecuteComponentBatch(connection, descriptor, batch);
-                batch.Clear();
-            }
+            var target = appender.CreateRow();
+            target.AppendValue(row.EntityId);
+            for (int i = 0; i < component.Descriptor.Fields.Count; i++)
+                AppendCapturedField(target, component.Descriptor.Fields[i], row.Values[i]);
+            target.EndRow();
         }
-
-        ExecuteComponentBatch(connection, descriptor, batch);
     }
 
-    private static InsertBuilder BuildComponentRow(
-        ComponentDescriptor descriptor,
-        int ownerId,
-        object component,
-        Dictionary<Entity, int> entityToId,
-        string parameterPrefix)
-    {
-        var builder = new InsertBuilder(parameterPrefix);
-        builder.AddColumn("entity_id", builder.NextParam(ownerId));
-
-        foreach (var field in descriptor.Fields)
-        {
-            var value = field.GetProjectValue(component);
-            SerializeField(builder, field, value, entityToId);
-        }
-
-        return builder;
-    }
-
-    private static void ExecuteComponentBatch(
-        DuckDBConnection connection,
-        ComponentDescriptor descriptor,
-        List<InsertBuilder> batch)
-    {
-        if (batch.Count == 0)
-            return;
-
-        using var command = connection.CreateCommand();
-        var rows = batch.Select(builder => $"({builder.ValueSql()})");
-        command.CommandText =
-            $"insert into {Quote(descriptor.TableName)} ({batch[0].ColumnSql()}) values {string.Join(", ", rows)};";
-        foreach (var builder in batch)
-            builder.Apply(command);
-        command.ExecuteNonQuery();
-    }
-
-    private static void SerializeField(
-        InsertBuilder builder,
+    private static void AppendCapturedField(
+        DuckDbBatchAppenderRow row,
         FieldDescriptor field,
-        object value,
-        Dictionary<Entity, int> entityToId)
+        object value)
     {
         switch (field.Shape)
         {
             case FieldShape.Scalar:
-                builder.AddColumn(field.Name,
-                    builder.NextParam(ScalarConvert.ToDb(field.NonNullableValueType, value)));
+                row.AppendValue(ScalarConvert.ToDb(field.NonNullableValueType, value));
                 break;
 
             case FieldShape.Struct:
-                builder.AddColumn(field.Name, BuildStructExpr(builder, field, value));
+                if (value == null)
+                {
+                    row.AppendStruct(null);
+                    break;
+                }
+                var leaves = new float[field.Codec.LeafCount];
+                field.Codec.Decompose(value, leaves);
+                row.AppendStruct(leaves);
                 break;
 
             case FieldShape.StructArray:
-                builder.AddColumn(field.Name, BuildStructArrayExpr(builder, field, value));
+                // Decompose straight into the STRUCT[] child leaf vectors: no per-row
+                // List<float>[] buffers and no per-element boxing. This is the stroke-geometry
+                // hot path (SampledPolyline Positions/Tilts).
+                row.AppendStructList(field.Codec, value);
                 break;
 
             case FieldShape.PrimitiveArray:
-                var list = ScalarConvert.ToDbList(field.ElementType, FieldDescriptor.EnumerateArray(value));
-                builder.AddColumn(field.Name,
-                    $"{builder.NextParam(list)}::{FieldDescriptor.DuckScalarType(field.ElementType)}[]");
+                AppendPrimitiveArray(row, field, value);
                 break;
 
             case FieldShape.EntityRef:
-                builder.AddColumn(field.Name, builder.NextParam(EntityRefToDb(field, value, entityToId)));
+                row.AppendValue(value);
                 break;
 
             case FieldShape.EntityArray:
-                var ids = EntityCollectionToIds(field, value, entityToId);
-                builder.AddColumn(field.Name, $"{builder.NextParam(ids)}::INTEGER[]");
+                row.AppendValue((IList)value);
                 break;
 
             case FieldShape.EntityMap:
-                builder.AddColumn(field.Name, BuildEntityMapExpr(builder, field, value, entityToId));
+                var map = (PersistenceEntityMap)value;
+                row.AppendMap(map?.Keys, map?.Values);
                 break;
 
             case FieldShape.Blob:
-                builder.AddColumn(field.Name, builder.NextParam(BlobToDb(field, value)));
+                row.AppendValue((byte[])value);
                 break;
 
             default:
@@ -323,110 +286,38 @@ public static class DuckDbProjectSerializer
         }
     }
 
-    private static string BuildStructExpr(InsertBuilder builder, FieldDescriptor field, object value)
+    // Bulk-copy a primitive scalar array (FLOAT[]/INTEGER[]/...) straight into the list child
+    // vector with no boxing. SampledPolyline Radii/Pressures ride this path; falls back to the
+    // boxed IList overload for element types without a fast span path.
+    private static void AppendPrimitiveArray(DuckDbBatchAppenderRow row, FieldDescriptor field, object value)
     {
-        if (value == null)
-            return "NULL";
-
-        var leaves = new float[field.Codec.LeafCount];
-        field.Codec.Decompose(value, leaves);
-        var paramNames = new string[leaves.Length];
-        for (int i = 0; i < leaves.Length; i++)
-            paramNames[i] = builder.NextParam(leaves[i]);
-        return field.Codec.Literal(i => paramNames[i]);
-    }
-
-    private static string BuildStructArrayExpr(InsertBuilder builder, FieldDescriptor field, object value)
-    {
-        var codec = field.Codec;
-        int leafCount = codec.LeafCount;
-
-        var leafLists = new List<float>[leafCount];
-        for (int i = 0; i < leafCount; i++)
-            leafLists[i] = new List<float>();
-
-        var leaves = new float[leafCount];
-        foreach (var element in FieldDescriptor.EnumerateArray(value))
+        switch (value)
         {
-            codec.Decompose(element, leaves);
-            for (int i = 0; i < leafCount; i++)
-                leafLists[i].Add(leaves[i]);
+            case null:
+                row.AppendPrimitiveList(ReadOnlySpan<float>.Empty);
+                break;
+            case ImmutableArray<float> f:
+                row.AppendPrimitiveList(f.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(f).AsSpan());
+                break;
+            case float[] f:
+                row.AppendPrimitiveList<float>(f);
+                break;
+            case ImmutableArray<int> i:
+                row.AppendPrimitiveList(i.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(i).AsSpan());
+                break;
+            case int[] i:
+                row.AppendPrimitiveList<int>(i);
+                break;
+            case double[] d:
+                row.AppendPrimitiveList<double>(d);
+                break;
+            case ImmutableArray<double> d:
+                row.AppendPrimitiveList(d.IsDefault ? default : ImmutableCollectionsMarshal.AsArray(d).AsSpan());
+                break;
+            default:
+                row.AppendValue(FieldDescriptor.EnumerateArray(value).ToList());
+                break;
         }
-
-        // Bind one FLOAT[] per leaf, zip them positionally, then build each STRUCT from e[1..N].
-        var zipArgs = leafLists.Select(ll => $"{builder.NextParam(ll)}::FLOAT[]");
-        var zip = $"list_zip({string.Join(", ", zipArgs)})";
-        var literal = codec.Literal(i => $"e[{i + 1}]");
-        return $"list_transform({zip}, e -> {literal})";
-    }
-
-    private static string BuildEntityMapExpr(
-        InsertBuilder builder,
-        FieldDescriptor field,
-        object value,
-        Dictionary<Entity, int> entityToId)
-    {
-        if (value == null)
-            return "NULL";
-
-        var keys = new List<int>();
-        var vals = new List<int>();
-        foreach (var kv in (IEnumerable<KeyValuePair<int, Entity>>)value)
-        {
-            keys.Add(kv.Key);
-            vals.Add(ResolveRequiredId(field, kv.Value, entityToId));
-        }
-
-        return $"map({builder.NextParam(keys)}::INTEGER[], {builder.NextParam(vals)}::INTEGER[])";
-    }
-
-    private static object EntityRefToDb(FieldDescriptor field, object value, Dictionary<Entity, int> entityToId)
-    {
-        if (value == null)
-            return null;
-
-        var entity = (Entity)value;
-        if (entity.IsNull)
-        {
-            if (field.EntityNullability == EntityNullability.Required)
-                throw new InvalidOperationException(
-                    $"Field {field.Component.Name}.{field.Name} is required but is Entity.Null.");
-            return null;
-        }
-
-        if (!entityToId.TryGetValue(entity, out var id))
-            throw new InvalidOperationException(
-                $"Field {field.Component.Name}.{field.Name} references an entity that is not persisted.");
-        return id;
-    }
-
-    private static List<int> EntityCollectionToIds(
-        FieldDescriptor field, object value, Dictionary<Entity, int> entityToId)
-    {
-        var ids = new List<int>();
-        if (value == null)
-            return ids;
-        foreach (var entity in (IEnumerable<Entity>)value)
-            ids.Add(ResolveRequiredId(field, entity, entityToId));
-        return ids;
-    }
-
-    private static int ResolveRequiredId(FieldDescriptor field, Entity entity, Dictionary<Entity, int> entityToId)
-    {
-        if (entity.IsNull)
-            throw new InvalidOperationException(
-                $"Collection field {field.Component.Name}.{field.Name} contains Entity.Null.");
-        if (!entityToId.TryGetValue(entity, out var id))
-            throw new InvalidOperationException(
-                $"Collection field {field.Component.Name}.{field.Name} references an entity that is not persisted.");
-        return id;
-    }
-
-    private static object BlobToDb(FieldDescriptor field, object value)
-    {
-        if (value == null)
-            return null;
-        return MessagePackSerializer.Serialize(field.ValueType, value);
     }
 
     #endregion
@@ -435,7 +326,16 @@ public static class DuckDbProjectSerializer
 
     private static Entity ReadDatabase(string dbPath, ProjectFormatRegistry registry)
     {
-        using var connection = new DuckDBConnection($"Data Source={dbPath};ACCESS_MODE=READ_ONLY");
+        var connectionString = new DuckDBConnectionStringBuilder { DataSource = dbPath };
+        // For security
+        connectionString["ACCESS_MODE"] = "READ_ONLY";
+        connectionString["enable_external_access"] = false;
+        connectionString["autoinstall_known_extensions"] = false;
+        connectionString["autoload_known_extensions"] = false;
+        connectionString["allow_community_extensions"] = false;
+        connectionString["lock_configuration"] = true;
+
+        using var connection = new DuckDBConnection(connectionString.ConnectionString);
         connection.Open();
 
         var ids = ReadEntityIds(connection);
@@ -481,6 +381,15 @@ public static class DuckDbProjectSerializer
         if (!TableExists(connection, component.TableName))
             return;
 
+        // Pure numeric-array tables (stroke geometry) can read straight from data-chunk vectors,
+        // with no per-element Dictionary or boxed float. This is a static, query-free filter: only
+        // such tables pay for the column-name lookup and native type check below. Everything else
+        // (the majority of components) goes straight to the managed reader, which reads actual
+        // column names from the DbDataReader itself.
+        if (NativeComponentReader.IsEligible(component.Fields)
+            && TryReadNative(connection, component, idToEntity))
+            return;
+
         using var command = connection.CreateCommand();
         command.CommandText = $"select * from {Quote(component.TableName)};";
         using var reader = command.ExecuteReader();
@@ -515,6 +424,27 @@ public static class DuckDbProjectSerializer
         }
     }
 
+    // Try the native chunk reader for an eligible table. Reads column names (the only query this
+    // adds, and only for native candidates) to require the full current schema: if the file gained
+    // or lost a field since save, or the on-disk types don't match the codecs, returns false so the
+    // caller falls back to the managed reader, which tolerates those differences.
+    private static bool TryReadNative(
+        DuckDBConnection connection,
+        ComponentDescriptor component,
+        Dictionary<int, Entity> idToEntity)
+    {
+        var columnNames = ReadColumnNames(connection, component.TableName);
+        if (!columnNames.Contains("entity_id"))
+            throw new InvalidOperationException($"{component.TableName} has no entity_id column.");
+
+        // The native reader materializes every field; if any column is missing, defer to the
+        // managed reader's per-field tolerance instead.
+        if (!component.Fields.All(f => columnNames.Contains(f.Name)))
+            return false;
+
+        return NativeComponentReader.TryRead(connection, component, component.Fields, idToEntity);
+    }
+
     private static void DeserializeField(
         FieldDescriptor field,
         object instance,
@@ -542,10 +472,8 @@ public static class DuckDbProjectSerializer
 
             case FieldShape.StructArray:
                 {
-                    var elements = dbValue == null
-                        ? new List<object>()
-                        : ((IEnumerable)dbValue).Cast<object>().Select(d => field.Codec.Compose(AsDict(d))).ToList();
-                    field.SetProjectValue(instance, ContainerFactory.Build(field.ContainerKind, field.ElementType, elements));
+                    var rows = dbValue as IEnumerable ?? Array.Empty<object>();
+                    field.SetProjectValue(instance, field.Codec.ComposeArray(rows, field.ContainerKind));
                     break;
                 }
 
@@ -599,6 +527,12 @@ public static class DuckDbProjectSerializer
 
     private static void PopulateEntityArray(FieldDescriptor field, object instance, List<Entity> entities)
     {
+        if (field.IsReactive)
+        {
+            field.SetProjectValue(instance,
+                ContainerFactory.Build(field.ContainerKind, typeof(Entity), entities.Cast<object>().ToList()));
+            return;
+        }
         var existing = field.GetFieldStorageObject(instance);
         if (existing != null)
         {
@@ -607,7 +541,7 @@ public static class DuckDbProjectSerializer
         }
 
         var collection = ContainerFactory.Build(field.ContainerKind, typeof(Entity), entities.Cast<object>().ToList());
-        field.Field.SetValue(instance, collection);
+        field.SetFieldStorageObject(instance, collection);
     }
 
     private static void PopulateEntityMap(
@@ -627,7 +561,7 @@ public static class DuckDbProjectSerializer
             addMethod.Invoke(mapInstance, [key, entity]);
         }
 
-        field.Field.SetValue(instance, mapInstance);
+        field.SetFieldStorageObject(instance, mapInstance);
     }
 
     private static Entity ResolveEntity(Dictionary<int, Entity> idToEntity, object dbValue, FieldDescriptor field)
@@ -674,6 +608,19 @@ public static class DuckDbProjectSerializer
         return command.ExecuteScalar() != null;
     }
 
+    private static HashSet<string> ReadColumnNames(DuckDBConnection connection, string tableName)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        using var command = connection.CreateCommand();
+        command.CommandText =
+            "select column_name from information_schema.columns where table_name = $name;";
+        command.Parameters.Add(new DuckDBParameter("name", tableName));
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+            names.Add(reader.GetString(0));
+        return names;
+    }
+
     private static void Execute(DuckDBConnection connection, string sql)
     {
         using var command = connection.CreateCommand();
@@ -701,45 +648,4 @@ public static class DuckDbProjectSerializer
     }
 
     #endregion
-}
-
-/// <summary>
-/// Accumulates one component row's columns, value expressions, and parameters. Value expressions
-/// may be plain parameter refs ($p0) or composite SQL (struct_pack / list_transform) referencing
-/// several parameters.
-/// </summary>
-internal sealed class InsertBuilder
-{
-    private readonly List<string> _columns = new();
-    private readonly List<string> _valueExprs = new();
-    private readonly List<DuckDBParameter> _parameters = new();
-    private readonly string _parameterPrefix;
-    private int _seq;
-
-    public InsertBuilder(string parameterPrefix = "p")
-    {
-        _parameterPrefix = parameterPrefix;
-    }
-
-    public void AddColumn(string column, string valueExpr)
-    {
-        _columns.Add("\"" + column.Replace("\"", "\"\"") + "\"");
-        _valueExprs.Add(valueExpr);
-    }
-
-    public string NextParam(object value)
-    {
-        var name = _parameterPrefix + "_" + _seq++;
-        _parameters.Add(new DuckDBParameter(name, value ?? (object)DBNull.Value));
-        return "$" + name;
-    }
-
-    public string ColumnSql() => string.Join(", ", _columns);
-    public string ValueSql() => string.Join(", ", _valueExprs);
-
-    public void Apply(DuckDBCommand command)
-    {
-        foreach (var parameter in _parameters)
-            command.Parameters.Add(parameter);
-    }
 }

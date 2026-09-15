@@ -13,7 +13,7 @@ using Environment = System.Environment;
 
 namespace Ciallo.Geometry;
 
-// Owns an Arrangement and synchronizes it with a fixed set of shape-layer polyline lookups.
+// Builds topology from strokes in the observed shape layers; filled polygons are not boundaries.
 public class ArrangementManager : IDisposable
 {
     // The currently queryable Arrangement, or null if not ready (e.g. mid-rebuild on a worker thread).
@@ -90,8 +90,8 @@ public class ArrangementManager : IDisposable
 
             lookup.Polylines.ObserveDictionaryRemove().Subscribe(et =>
             {
-                _sourceShapes.Remove(et.Key);
-                RemoveShape(et.Key);
+                if (_sourceShapes.Remove(et.Key))
+                    RemoveShape(et.Key);
             }).AddTo(subs);
 
             lookup.Polylines.ObserveDictionaryReplace().Subscribe(et =>
@@ -152,10 +152,10 @@ public class ArrangementManager : IDisposable
 
     private void SyncShape(Entity shapeE, IndexedPolyline polyline)
     {
-        if (!CanCreateArrangementCurve(polyline.Positions))
+        if (!shapeE.Has<StrokeSetting>() || !CanCreateArrangementCurve(polyline.Positions))
         {
-            _sourceShapes.Remove(shapeE);
-            RemoveShape(shapeE);
+            if (_sourceShapes.Remove(shapeE))
+                RemoveShape(shapeE);
             return;
         }
 

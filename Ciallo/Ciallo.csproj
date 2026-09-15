@@ -1,8 +1,14 @@
-<Project Sdk="Godot.NET.Sdk/4.6.2-ciallo.g2b0cebf83">
+<Project Sdk="Godot.NET.Sdk">
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LangVersion>default</LangVersion>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <IsTestProject>true</IsTestProject>
+        <TestFramework>GdUnit4</TestFramework>
+        <VSTestTestAdapterPath>none</VSTestTestAdapterPath>
+        <RunSettingsFilePath>$(MSBuildProjectDirectory)/.runsettings</RunSettingsFilePath>
+        <RunSettingsFilePath Condition="'$(GODOT_BIN)' == '' And Exists('$(MSBuildProjectDirectory)/.runsettings.local')">$(MSBuildProjectDirectory)/.runsettings.local</RunSettingsFilePath>
         <!--Disable warning of invalid/incompatible GodotSharp version-->
         <NoWarn>NU1605</NoWarn>
         <TargetFramework>net10.0</TargetFramework>
@@ -13,11 +19,12 @@
         <PackageReference Include="Humanizer" Version="3.0.10" />
         <PackageReference Include="MessagePack" Version="3.1.7" />
         <PackageReference Include="MessagePackGodot" Version="1.0.2" />
-        <PackageReference Include="DuckDB.NET.Data.Full" Version="1.4.1" />
+        <PackageReference Include="DuckDB.NET.Data.Full" Version="1.5.3" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.6.0" />
-        <PackageReference Include="gdUnit4.api" Version="5.1.0-rc4" />
-        <PackageReference Include="gdUnit4.test.adapter" Version="3.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.8" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+        <PackageReference Include="gdUnit4.api" Version="5.1.0-rc5" />
+        <PackageReference Include="gdUnit4.test.adapter" Version="3.1.1" />
         <PackageReference Include="gdUnit4.analyzers" Version="1.0.0">
             <PrivateAssets>none</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -34,6 +41,7 @@
         <AdditionalFiles Include="**\*.tscn">
             <DependentUpon Condition="Exists('%(RootDir)%(Directory)%(Filename).cs')">%(Filename).cs</DependentUpon>
         </AdditionalFiles>
+        <AdditionalFiles Include="project.godot" />
     </ItemGroup>
 
     <ItemGroup>
@@ -51,6 +59,9 @@
     <ItemGroup>
         <ProjectReference Include="SourceGeneration\SourceGeneration.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <ProjectReference Include="InkStrokeModeler\InkStrokeModeler.csproj" />
+        <!-- The .NET SDK removes RuntimeIdentifier when building referenced libraries. -->
+        <ProjectReference Include="..\thirdparty\Facepunch.Steamworks.csproj"
+                          AdditionalProperties="FacepunchRuntimeIdentifier=$(RuntimeIdentifier)" />
     </ItemGroup>
 
     <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Windows'))">
@@ -66,8 +77,5 @@
         <DefineConstants>OS_MAC</DefineConstants>
     </PropertyGroup>
 
-    <Target Name="InstallGitHooks" BeforeTargets="PrepareForBuild" Condition="Exists('$(MSBuildProjectDirectory)/../.git') And Exists('$(MSBuildProjectDirectory)/.githooks/pre-commit')">
-        <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="chmod +x &quot;$(MSBuildProjectDirectory)/.githooks/pre-commit&quot;" />
-        <Exec Command="git -C &quot;$(MSBuildProjectDirectory)&quot; config --local core.hooksPath &quot;$(MSBuildProjectName)/.githooks&quot;" />
-    </Target>
+    <Import Project="$(GodotProjectDir).godot/mono/local_sdk.props" Condition="Exists('$(GodotProjectDir).godot/mono/local_sdk.props')" />
 </Project>

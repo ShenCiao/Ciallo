@@ -1,4 +1,7 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Bucket Fill,Bucket Fill,油漆桶填色,油漆桶填色,バケツ塗りつぶし,페인트통 채우기,Fülleimer,Remplissage au pot
+Marker,Marker,标记,標記,マーカー,마커,Markierung,Marqueur
+Polygon,Polygon,多边形,多邊形,ポリゴン,다각형,Polygon,Polygone
 About Ciallo,About Ciallo,关于Ciallo,關於Ciallo,Cialloについて,Ciallo 정보,Über Ciallo,À propos de Ciallo
 Background color,Background color,背景颜色,背景顏色,背景色,배경 색상,Hintergrundfarbe,Couleur d'arrière-plan
 Ciallo,Ciallo,Ciallo,Ciallo,Ciallo,Ciallo,Ciallo,Ciallo
@@ -131,6 +134,9 @@ WithinCelFolder,Within cel folder,在赛璐珞文件夹内,在賽璐珞資料夾
 NewCelFolder,New cel folder,新建赛璐珞文件夹,新增賽璐珞資料夾,新しいセルフォルダー,새 셀 폴더,Neuer Cel-Ordner,Nouveau dossier de cellulos
 Vector fill layer,Vector fill layer,矢量填充图层,向量填充圖層,ベクターフィルレイヤー,벡터 채우기 레이어,Vektor-Füllebene,Calque de remplissage vectoriel
 Blend mode,Blend mode,混合模式,混合模式,ブレンドモード,블렌드 모드,Mischmodus,Mode de fusion
+Clipping mask,Clipping mask,剪贴蒙版,剪裁遮色片,クリッピングマスク,클리핑 마스크,Schnittmaske,Masque d'écrêtage
+Add,Add,添加,增加,加算,더하기,Addieren,Ajouter
+Multiply,Multiply,正片叠底,色彩增值,乗算,곱하기,Multiplizieren,Produit
 Bounded area color,Bounded area color,封闭区域颜色,封閉區域顏色,閉じた領域の色,닫힌 영역 색상,Farbe des geschlossenen Bereichs,Couleur de la zone fermée
 Mode,Mode,模式,模式,モード,모드,Modus,Mode
 Strength,Strength,强度,強度,強さ,강도,Stärke,Intensité
@@ -187,6 +193,10 @@ Import marker,Import marker,导入标记,匯入標記,マーカーをインポ�
 Remove marker,Remove marker,移除标记,移除標記,マーカーを削除,마커 제거,Marker entfernen,Supprimer le marqueur
 Add Shape Layer to All Cels,Add Shape Layer to All Cels,添加形状图层到所有赛璐珞,將形狀圖層新增到所有賽璐珞,すべてのセルにシェイプレイヤーを追加,모든 셀에 쉐이프 레이어 추가,Formebene zu allen Cels hinzufügen,Ajouter un calque de forme à tous les cellulos
 New Shape Layer,New Shape Layer,新建形状图层,新增形狀圖層,新しいシェイプレイヤー,새 쉐이프 레이어,Neue Formebene,Nouveau calque de forme
+Split Stroke and Fill,Split Stroke and Fill,分割线条和填色,分割線條和填色,線と塗りを分離,선과 채우기 분리,Konturen und Füllungen trennen,Séparer les traits et le remplissage
+Merge Layers,Merge Layers,合并图层,合併圖層,レイヤーを結合,레이어 병합,Ebenen zusammenführen,Fusionner les calques
+Group Layers,Group Layers,将图层放入文件夹,將圖層放入資料夾,レイヤーをフォルダーにまとめる,레이어를 폴더로 묶기,Ebenen in Ordner gruppieren,Regrouper les calques dans un dossier
+Delete Layers,Delete Layers,删除图层,刪除圖層,レイヤーを削除,레이어 삭제,Ebenen löschen,Supprimer les calques
 New Folder Layer,New Folder Layer,新建文件夹图层,新增資料夾圖層,新しいフォルダーレイヤー,새 폴더 레이어,Neue Ordnerebene,Nouveau calque dossier
 New Cel Folder Layer,New Cel Folder Layer,新建赛璐珞文件夹图层,新增賽璐珞資料夾圖層,新しいセルフォルダーレイヤー,새 셀 폴더 레이어,Neue Cel-Ordnerebene,Nouveau calque dossier de cellulos
 Delete Layer,Delete Layer,删除图层,刪除圖層,レイヤーを削除,레이어 삭제,Ebene löschen,Supprimer le calque
@@ -199,7 +209,10 @@ Replace Cel:,Replace Cel:,替换赛璐珞:,取代賽璐珞：,セルを置き換
 Insert Cel:,Insert Cel:,插入赛璐珞:,插入賽璐珞：,セルを挿入:,셀 삽입:,Cel einfügen:,Insérer le cellulo :
 (no cels),(no cels),（无赛璐珞）,（無賽璐珞）,（セルなし）,(셀 없음),(keine Cels),(aucun cellulo)
 (unnamed),(unnamed),（未命名）,（未命名）,（無名）,(이름 없음),(unbenannt),(sans nom)
+Blank,Blank,空白,空白,空セル,빈 셀,Leer,Vide
+Delete Blank,Delete Blank,删除空白,刪除空白,空セルを削除,빈 셀 삭제,Leer löschen,Supprimer le vide
 Delete Cel,Delete Cel,删除赛璐珞,刪除賽璐珞,セルを削除,셀 삭제,Cel löschen,Supprimer le cellulo
+Rename Cel,Rename Cel,重命名赛璐珞,重新命名賽璐珞,セルの名前を変更,셀 이름 변경,Cel umbenennen,Renommer le cellulo
 Insert Frame,Insert Frame,插入帧,插入影格,フレームを挿入,프레임 삽입,Bild einfügen,Insérer une image
 Delete Frame,Delete Frame,删除帧,刪除影格,フレームを削除,프레임 삭제,Bild löschen,Supprimer une image
 Set Playback Start,Set Playback Start,设置播放起点,設定播放起點,再生開始を設定,재생 시작 설정,Wiedergabestart festlegen,Définir le début de lecture
@@ -222,8 +235,7 @@ Layers,Layers,图层,圖層,レイヤー,레이어,Ebenen,Calques
 Timeline,Timeline,时间轴,時間軸,タイムライン,타임라인,Zeitleiste,Chronologie
 Reset Layout,Reset Layout,重置布局,重設版面配置,レイアウトをリセット,레이아웃 재설정,Layout zurücksetzen,Réinitialiser la disposition
 Canvas,Canvas,画布,畫布,キャンバス,캔버스,Leinwand,Toile
-Configure Global Pen Pressure,Configure Global Pen Pressure,配置全局笔压,設定全域筆壓,グローバル筆圧を設定,전역 펜 압력 설정,Globalen Stiftdruck konfigurieren,Configurer la pression globale du stylet
-Configure global pen pressure,Configure global pen pressure,配置全局笔压,設定全域筆壓,グローバル筆圧を設定,전역 펜 압력 설정,Globalen Stiftdruck konfigurieren,Configurer la pression globale du stylet
+Global Pen Pressure,Global Pen Pressure,全局笔压,全域筆壓,グローバル筆圧,전역 펜 압력,Globalen Stiftdruck,Pression globale du stylet
 Select your pen tablet,Select your pen tablet,选择您的数位板,選擇您的繪圖板,使用するペンタブレットを選択,사용할 펜 태블릿을 선택하세요,Wählen Sie Ihr Grafiktablett,Sélectionnez votre tablette graphique
 Straighten,Straighten,线性化,線性化,線形化,선형화,Linearisieren,Linéariser
 Data measured by,Data measured by,测量数据来源,測量資料來源,測定データ提供,측정 데이터 제공,Messdaten von,Données mesurées par
@@ -238,3 +250,13 @@ Max radius,Max radius,最大半径,最大半徑,最大半径,최대 반지름,Ma
 Clear,Clear,清除,清除,クリア,지우기,Leeren,Effacer
 raw,raw,原始,原始,元,원본,roh,brute
 mapped,mapped,映射后,映射後,マッピング後,매핑됨,zugeordnet,remappée
+Brush Library,Brush Library,笔刷库,筆刷庫,ブラシライブラリ,브러시 라이브러리,Pinselbibliothek,Bibliothèque de pinceaux
+Pen Pressure,Pen Pressure,笔压,筆壓,筆圧,펜 압력,Stiftdruck,Pression du stylet
+Shortcuts,Shortcuts,快捷键,快速鍵,ショートカット,단축키,Tastenkürzel,Raccourcis
+Close,Close,关闭,關閉,閉じる,닫기,Schließen,Fermer
+Place at bottom,Place at bottom,放在底层,放在底層,最背面に配置,맨 아래에 배치,Ganz unten platzieren,Placer en bas
+Gap aware,Gap aware,识别间隙,識別間隙,隙間を認識,틈 인식,Lücken erkennen,Détecter les espaces
+Gap factor,Gap factor,间隙系数,間隙係數,隙間係数,틈 계수,Lückenfaktor,Facteur d'espace
+All Cels,All Cels,所有赛璐珞,所有賽璐珞,すべてのセル,모든 셀,Alle Cels,Tous les cellulos
+Select matching layers across cels,Select matching layers across cels,跨赛璐珞选择同名图层,跨賽璐珞選取同名圖層,セル間で同名レイヤーを選択,셀 전체에서 같은 이름의 레이어 선택,Gleichnamige Ebenen über alle Cels auswählen,Sélectionner les calques de même nom dans les cellulos
+Archetype unavailable in current cel; selection applies to other cels,Archetype unavailable in current cel; selection applies to other cels,当前赛璐珞没有此原型；选择仍作用于其它赛璐珞,目前賽璐珞沒有此原型；選取仍套用至其他賽璐珞,現在のセルにはありません。他のセルへの選択は有効です,현재 셀에는 없습니다. 다른 셀에는 선택이 적용됩니다,Im aktuellen Cel nicht vorhanden; Auswahl gilt für andere Cels,Absent du cellulo actuel ; la sélection s’applique aux autres cellulos

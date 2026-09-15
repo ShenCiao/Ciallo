@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InkStrokeModeler", "InkStro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InkStrokeModeler.Tests", "InkStrokeModeler.Tests\InkStrokeModeler.Tests.csproj", "{44208423-6082-4F9A-9BD9-3BB5630AFB4A}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "thirdparty", "thirdparty", "{356D9C46-07F5-7F13-4EEF-5DD22B885BE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Facepunch.Steamworks", "..\thirdparty\Facepunch.Steamworks.csproj", "{5BD38547-F012-4511-9575-3FC1587E021B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,5 +43,17 @@ Global
 		{44208423-6082-4F9A-9BD9-3BB5630AFB4A}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
 		{44208423-6082-4F9A-9BD9-3BB5630AFB4A}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
 		{44208423-6082-4F9A-9BD9-3BB5630AFB4A}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.ExportDebug|Any CPU.ActiveCfg = ExportDebug|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.ExportDebug|Any CPU.Build.0 = ExportDebug|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.ExportRelease|Any CPU.ActiveCfg = ExportRelease|Any CPU
+		{5BD38547-F012-4511-9575-3FC1587E021B}.ExportRelease|Any CPU.Build.0 = ExportRelease|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5BD38547-F012-4511-9575-3FC1587E021B} = {356D9C46-07F5-7F13-4EEF-5DD22B885BE8}
 	EndGlobalSection
 EndGlobal

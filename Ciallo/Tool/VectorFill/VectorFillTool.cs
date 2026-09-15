@@ -1,55 +1,59 @@
 using System.Collections.Generic;
-using System.Linq;
-using Ciallo.Command;
+using System.Collections.Immutable;
 using Ciallo.Data;
 using Ciallo.Rendering;
 using Frent;
 using Godot;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.VectorFill)]
-public class VectorFillTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+public class VectorFillTool : InteractionScope, ILayerDependent
 {
-    public readonly VectorFillHover Hover = new();
-    public readonly PaintVectorFillMarkerInteractor Left = new();
+    [Substate]
+    internal VectorFillHover Hover;
 
-    protected override void ConfigureStateMachine()
-    {
-        ConfigureInitial(Hover)
-            .Permit(Press(MouseButton.Left), Left);
-        Configure(Left)
-            .Permit(Release(MouseButton.Left), Hover)
-            .Permit(Press(AppHotkeys.CancelInteraction), Hover)
-            .Permit(Press(AppHotkeys.ConfirmInteraction), Hover);
-    }
-
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        return e.Has<VectorFillLayerSetting>();
-    }
+    [Substate]
+    internal PaintVectorFillMarkerInteractor Left;
 
     public readonly Subject<Unit> DeactivateSignal = new();
-    public override void OnActivated()
-    {
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
-        WorkingLayer.Get<OverlayHolder>().Visible = true;
 
-        var referenceLayers = WorkingLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
+    public override void ConfigureStateMachine(StateMachine sm)
+    {
+        sm.Configure(this)
+            .InitialTransition(Hover);
+        sm.Configure(Hover)
+            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitReentry(Trigger.Refresh);
+        sm.Configure(Left)
+            .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .PermitStandardExits(Hover);
+    }
+
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        layers[0].Has<VectorFillLayerSetting>();
+
+    protected override void OnActivated()
+    {
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
+        PrimaryLayer.Get<OverlayHolder>().Visible = true;
+
+        var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
         AppPreference.ShowVectorFillReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => SetWireframeVisibility(referenceLayers, visible),
                 _ => SetWireframeVisibility(referenceLayers, false));
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
         DeactivateSignal.OnNext(Unit.Default);
-        if (!WorkingLayer.Has<VectorFillLayerSetting>()) return;
-        WorkingLayer.Get<OverlayHolder>().Visible = false;
+        if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
+        PrimaryLayer.Get<OverlayHolder>().Visible = false;
     }
 
     public static void SetWireframeVisibility(IEnumerable<Entity> list, bool visible)

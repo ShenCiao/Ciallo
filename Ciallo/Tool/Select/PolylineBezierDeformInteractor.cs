@@ -9,7 +9,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class PolylineBezierDeformInteractor : InteractiveSessionBase
+[RegisterState]
+public class PolylineBezierDeformInteractor : CapturingInteraction
 {
     public BezierPoint[] Curve;
 
@@ -39,7 +40,7 @@ public class PolylineBezierDeformInteractor : InteractiveSessionBase
     private StrokeView[] _wireframeHandles;
     private MultiMeshInstance2D _wireframeControlPoints;
 
-    public override void BeforeTransitionSrcEnd(InteractiveSessionBase src)
+    public override void BeforeSourceExit(Interaction src)
     {
         if (src is not PolylineBezierDeformHover hover)
             throw new Exception("Unexpected source state for PolylineBezierDeformInteractor.");
@@ -230,8 +231,6 @@ public class PolylineBezierDeformInteractor : InteractiveSessionBase
         }
         Clear();
     }
-
-    public override bool OnKey(InputEventKey key, CursorButtonData data) => true;
 
     private void Clear()
     {

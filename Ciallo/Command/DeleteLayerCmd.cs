@@ -10,6 +10,7 @@ namespace Ciallo.Command;
 public class DeleteLayerCmd : CommandBase
 {
     private CommandBuilder _deleteChildrenCmd;
+    private CommandBuilder _removeReferencesCmd;
     private readonly List<Entity> _deletedEntities = [];
 
     public override void OnDeletedAsUndo()
@@ -38,6 +39,16 @@ public class DeleteLayerCmd : CommandBase
             }
         }
         _deletedEntities.Add(targetE);
+
+        _removeReferencesCmd = new CommandBuilder("Remove Layer References", targetE);
+        if (targetE.Has<ShapeLayerSetting>())
+        {
+            var query = targetE.World.CreateQuery().With<VectorFillLayerSetting>().Tagged<ToSerializeTag>().Build();
+            foreach (var fill in query.EnumerateWithEntities())
+                if (fill.Get<VectorFillLayerSetting>().ReferenceLayers.Contains(targetE))
+                    _removeReferencesCmd.SetTarget(fill).SetObservableCollection(
+                        e => e.Get<VectorFillLayerSetting>().ReferenceLayers, references => references.Remove(targetE));
+        }
     }
 
     // Post-order: children before the node itself, matching OnDeletedAsUndo deletion order.
@@ -56,15 +67,7 @@ public class DeleteLayerCmd : CommandBase
         // Delete children
         _deleteChildrenCmd?.Do();
 
-        // Remove shape layer from vector fill layer settings
-        if (targetE.Has<ShapeLayerSetting>())
-        {
-            var query = targetE.World.CreateQuery().With<VectorFillLayerSetting>().Tagged<ToSerializeTag>().Build();
-            foreach (var vectorFillLayerE in query.EnumerateWithEntities())
-            {
-                vectorFillLayerE.Get<VectorFillLayerSetting>().ReferenceLayers.Remove(targetE);
-            }
-        }
+        _removeReferencesCmd.Do();
 
         targetE.Detach<ToSerializeTag>();
     }
@@ -77,5 +80,6 @@ public class DeleteLayerCmd : CommandBase
 
         targetE.TryGet<ArrangementManager>()?.SyncModification();
         targetE.TryGet<ChildShapePolylineLookup>()?.Subscribe();
+        _removeReferencesCmd.Undo();
     }
 }

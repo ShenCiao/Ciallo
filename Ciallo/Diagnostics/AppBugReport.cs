@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public static class AppBugReport
     private static readonly Queue<string> Breadcrumbs = [];
     private static bool _exceptionHandlersInstalled;
 
-    public static string LogFilePath => ProjectSettings.GlobalizePath(GodotLogPath);
+    public static string LogFilePath { get; } = ProjectSettings.GlobalizePath(GodotLogPath);
     public static string LogDirectoryPath => Path.GetDirectoryName(LogFilePath) ?? OS.GetUserDataDir();
 
     public static void InstallExceptionHandlers()
@@ -65,12 +66,11 @@ public static class AppBugReport
 
     public static void Redo(string actionName) => Note($"Redo: {actionName}");
 
-    public static void ToolSwitch(ToolButton? button, ITool oldTool, ITool targetTool, Entity layerE)
+    public static void ToolSwitch(ToolButton.Type? button, InteractionState state, Entity layerE)
     {
-        string oldName = oldTool?.GetType().Name ?? "<none>";
-        string targetName = targetTool?.GetType().Name ?? "<none>";
+        string stateName = state?.GetType().Name ?? "<none>";
         string buttonName = button?.ToString() ?? "<none>";
-        Note($"Tool switch: {buttonName}; {oldName} -> {targetName}; layer={DescribeLayer(layerE)}");
+        Note($"Tool switch: {buttonName}; {stateName}; layer={DescribeLayer(layerE)}");
     }
 
     public static void CopyMarkdownToClipboard()
@@ -129,6 +129,7 @@ public static class AppBugReport
         return
             $$"""
             Ciallo: {{ProjectSettings.GetSetting("application/config/version", "unknown")}}
+            Build: {{typeof(AppCommandLineOptions).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown"}}
             Godot: {{Engine.GetVersionInfo()["string"]}}
             .NET: {{RuntimeInformation.FrameworkDescription}}
             OS: {{Environment.OSVersion}}
@@ -139,11 +140,14 @@ public static class AppBugReport
             GPU: {{RenderingServer.GetVideoAdapterName()}}
             GPU vendor: {{RenderingServer.GetVideoAdapterVendor()}}
             GPU API: {{RenderingServer.GetVideoAdapterApiVersion()}}
-            Driver: {{driverInfo[0]}} {{driverInfo[1]}}
+            Driver: {{string.Join(" ", driverInfo)}}
+            Rendering method: {{RenderingServer.GetCurrentRenderingMethod()}}
             Rendering driver: {{RenderingServer.GetCurrentRenderingDriverName()}}
             Display server: {{DisplayServer.GetName()}}
             Tablet driver: {{DisplayServer.TabletGetCurrentDriver()}}
             User data: {{OS.GetUserDataDir()}}
+            Factory startup: {{AppCommandLineOptions.FactoryStartup}}
+            Startup document: {{AppCommandLineOptions.DocumentPath ?? "<none>"}}
             Log file: {{LogFilePath}}
             """;
     }
@@ -198,9 +202,8 @@ public static class AppBugReport
 
         var settings = document.Get<DocumentSetting>();
         var selection = document.Get<SelectionManager>();
-        var toolManager = document.Get<ToolManager>();
-        string toolButton = toolManager.PressedToolButton.Value?.ToString() ?? "<none>";
-        string workingTool = toolManager.WorkingTool.Value?.GetType().Name ?? "<none>";
+        string toolButton = ToolButton.ActiveToolButton.Value?.ToString() ?? "<none>";
+        string workingTool = InteractionManager.StateMachine.State.GetType().Name;
         int layerCount = document.Get<LayerTreeNode>().CountSubtreeNodes(LayerTreeChildIsAlive) - 1;
 
         return
@@ -209,8 +212,8 @@ public static class AppBugReport
             Document path: {{RedactPath(settings.FilePath.Value)}}
             Modified: {{AppDocumentManager.WorkingDocumentModified}}
             Current frame: {{selection.CurrentFrame.Value}}
-            Working layer: {{DescribeLayer(selection.WorkingLayer.Value)}}
-            Selected layers: {{selection.SelectedLayers.Count}}
+            Primary layer: {{DescribeLayer(selection.PrimaryLayer.CurrentValue)}}
+            Selected layers: {{selection.SelectedLayers.Value.Length}}
             Selected shapes: {{selection.SelectedShapes.Count}}
             Tool button: {{toolButton}}
             Working tool: {{workingTool}}

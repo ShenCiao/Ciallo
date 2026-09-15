@@ -58,6 +58,8 @@ public class NewImageLayerCmd : CommandBase
             color.A = v;
             sprite.SelfModulate = color;
         }).AddTo(targetE);
+        commonSetting.BlendMode.Subscribe(v => sprite.SetLayerBlendMode(ToGodotBlendMode(v))).AddTo(targetE);
+        commonSetting.ClippingMask.Subscribe(sprite.SetClippingMask).AddTo(targetE);
         setting.ImageTransform.Subscribe(sprite.SetTransform).AddTo(targetE);
 
         // Overlay
@@ -119,4 +121,12 @@ public class NewImageLayerCmd : CommandBase
     {
         targetE.Detach<ToSerializeTag>();
     }
+
+    private static Sprite2D.LayerBlendModeEnum ToGodotBlendMode(LayerBlendMode mode) => mode switch
+    {
+        LayerBlendMode.Normal => Sprite2D.LayerBlendModeEnum.Normal,
+        LayerBlendMode.Add => Sprite2D.LayerBlendModeEnum.Add,
+        LayerBlendMode.Multiply => Sprite2D.LayerBlendModeEnum.Multiply,
+        _ => throw new System.ArgumentOutOfRangeException(nameof(mode), mode, null),
+    };
 }

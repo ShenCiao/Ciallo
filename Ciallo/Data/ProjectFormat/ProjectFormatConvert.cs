@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Frent;
@@ -99,6 +98,35 @@ internal static class ContainerFactory
 
     private static ImmutableArray<T> AsImmutableArray<T>(T[] values) =>
         ImmutableCollectionsMarshal.AsImmutableArray(values);
+
+    /// <summary>
+    /// Build the field's declared container from strongly-typed, already-composed elements — the
+    /// boxing-free counterpart to <see cref="Build"/> for StructArray read. The builder's backing
+    /// array is handed to ImmutableArray without a copy.
+    /// </summary>
+    public static object BuildTyped<T>(ContainerKind kind, ImmutableArray<T>.Builder builder)
+    {
+        switch (kind)
+        {
+            case ContainerKind.ImmutableArray:
+                return builder.Count == builder.Capacity ? builder.MoveToImmutable() : builder.ToImmutable();
+            case ContainerKind.Array:
+                return builder.ToArray();
+            case ContainerKind.List:
+                return new List<T>(builder);
+            case ContainerKind.ObservableList:
+                return new ObservableList<T>(builder);
+            case ContainerKind.HashSet:
+                return new HashSet<T>(builder);
+            case ContainerKind.ObservableHashSet:
+                var set = new ObservableHashSet<T>();
+                foreach (var item in builder)
+                    set.Add(item);
+                return set;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(kind), kind, null);
+        }
+    }
 }
 
 /// <summary>Scalar value conversion between CLR field types and the boxed values DuckDB exchanges.</summary>
@@ -121,6 +149,8 @@ internal static class ScalarConvert
             return null;
         if (nonNullableType.IsEnum)
             return Enum.ToObject(nonNullableType, Convert.ToInt64(db));
+        if (nonNullableType == typeof(Guid))
+            return (Guid)db;
         if (nonNullableType == typeof(string)) return Convert.ToString(db);
         if (nonNullableType == typeof(bool)) return Convert.ToBoolean(db);
         if (nonNullableType == typeof(byte)) return Convert.ToByte(db);
@@ -136,20 +166,4 @@ internal static class ScalarConvert
         return Convert.ChangeType(db, nonNullableType);
     }
 
-    /// <summary>
-    /// Build the strongly-typed list DuckDB.NET expects when binding a scalar array parameter
-    /// (e.g. <c>FLOAT[]</c> wants List&lt;float&gt;, <c>INTEGER[]</c> wants List&lt;int&gt;).
-    /// Enums and small integers are stored as INTEGER, so they bind as List&lt;int&gt;.
-    /// </summary>
-    public static IList ToDbList(Type elementType, IEnumerable<object> elements)
-    {
-        if (elementType == typeof(float))
-            return elements.Select(Convert.ToSingle).ToList();
-        if (elementType == typeof(double))
-            return elements.Select(Convert.ToDouble).ToList();
-        if (elementType == typeof(long) || elementType == typeof(ulong))
-            return elements.Select(Convert.ToInt64).ToList();
-        // int / short / byte / enum -> INTEGER
-        return elements.Select(Convert.ToInt32).ToList();
-    }
 }

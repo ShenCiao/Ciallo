@@ -42,9 +42,18 @@ public class Preference
     [DataMember]
     public ObservableList<string> RecentFiles = [];
     [DataMember]
-    public ReactiveProperty<ToolButton?> PressedToolButton = new(null);
+    public ReactiveProperty<ToolButton.Type?> PressedToolButton = new(ToolButton.Type.PaintStroke);
     [DataMember]
     public ReactiveProperty<int> CommandHistoryLimit = new(50);
+
+    [DataMember]
+    public ReactiveProperty<TimeSpan> RecoverySnapshotInterval = new(TimeSpan.FromMinutes(5));
+    [DataMember]
+    public ReactiveProperty<int> RecoverySnapshotLimitPerDocument = new(24);
+    [DataMember]
+    public ReactiveProperty<int> RecoverySnapshotAccountFileLimit = new(256);
+    [DataMember]
+    public ReactiveProperty<long> RecoverySnapshotAccountByteLimit = new(2L * 1024 * 1024 * 1024);
 
     [DataMember]
     public Color StrokeWireframeColor = Colors.Orange;
@@ -60,11 +69,17 @@ public class Preference
     public ReactiveProperty<bool> PaintStrokeSnapEnabled = new(false);
     [DataMember]
     public ReactiveProperty<float> PaintStrokeSnapDistance = new(24f);
+    [DataMember]
+    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
 
     #region Save Load Json
 
     public static readonly string Path = "user://Preference.json";
 
+    // Nested preference objects use [DataContract] and [DataMember], just like this root.
+    // Their initialized fields supply defaults when loading older JSON that omits them.
+    // PopulateObject reuses nested instances; ReactivePropertyConverter updates Value in place,
+    // preserving existing bindings/subscriptions while storing only the inner value in JSON.
     public static readonly JsonSerializerSettings JsonOptions = new()
     {
         Converters =
@@ -75,6 +90,7 @@ public class Preference
 
     public bool TryLoad()
     {
+        if (AppCommandLineOptions.FactoryStartup) return false;
         if (!FileAccess.FileExists(Path))
             return false;
         try
@@ -93,6 +109,7 @@ public class Preference
 
     public void Save()
     {
+        if (AppCommandLineOptions.FactoryStartup) return;
         var content = JsonConvert.SerializeObject(this, JsonOptions);
         using var file = FileAccess.Open(Path, FileAccess.ModeFlags.Write);
         file.StoreString(content);
@@ -101,6 +118,9 @@ public class Preference
     #endregion
 
     #region Tool
+
+    [DataMember]
+    public BucketFillOptions BucketFill = new();
 
     [DataMember]
     public ReactiveProperty<float> VectorFillMarkerRadius = new(15.0f);

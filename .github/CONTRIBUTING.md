@@ -13,32 +13,33 @@ After getting a basic idea on Ciallo's code architecture here, you can check AI 
 
 ### How to build
 
-Ciallo is built on Godot. Building the core part of Ciallo is similar to building a standard Godot C# project:
-
-- Install Git LFS, the .NET 10 SDK, and the latest release of [our custom Godot editor](https://github.com/ShenCiao/godot/releases). You can follow a [video guide](https://www.youtube.com/watch?v=7nExKQn1CAw).
-- The provided editor supports Windows and Linux x86_64, and macOS arm64.
-- Restore and build from the repository root:
+Use the .NET 10 SDK and Git with LFS already configured. The custom editor supports
+Windows/Linux x86_64 and macOS arm64. Run these commands in **Git Bash on Windows** or in a terminal on macOS/Linux:
 
 ```sh
-git lfs install
-git lfs pull
-dotnet restore Ciallo/Ciallo.csproj --configfile NuGet.Config
-dotnet build Ciallo/Ciallo.csproj --no-restore
+git clone --recurse-submodules <Ciallo-repository-url> Ciallo
+cd Ciallo
+./engine.sh setup
+dotnet build Ciallo/Ciallo.csproj
 ```
 
-- Open `Ciallo/project.godot` with the custom Godot editor, then run the project.
-  - If Godot was opened before the first build, temporary `script ... is not compiling` autoload errors are expected. Autoload errors remaining after a successful build are real errors.
-- Enable the "Embedded game size stretches..." option in the game run window.
+Setup installs gdvm and uses it to download the C# editor selected by `global.json`, installs Git
+hooks, and generates an `Open Ciallo` shortcut. Open that shortcut to run the project.
+Hooks prepare the required engine after branch changes and pulls.
+
+Enable the "Embedded game size stretches..." option in the game run window.
 
 ![](/.github/EnableStretch.png)
 
-### No need to build the Godot editor
+For local engine builds and cache management, see [Engine setup](../docs/engine-setup.md).
 
-You do not need to build the Godot editor from source. Use the provided custom editor release instead. (And wish you would never be tortured by C++.)
+### How to export locally
 
-### How to export
+Download and install matching export templates when needed, then use the presets in `Ciallo/export_presets.cfg`:
 
-Local development only needs the editor. To export packages, also install the export templates from the latest custom Godot release, then use the presets in `Ciallo/export_presets.cfg`.
+```sh
+./engine.sh sync --templates
+```
 
 Official Windows, Linux, and macOS packages are built by CI. Signing and notarization are only configured there, so local exports are development builds.
 
@@ -127,35 +128,29 @@ Use a feature test build when a branch needs downloadable builds for testers bef
 merging to `dev`. It produces short-lived GitHub Actions artifacts only — no GitHub
 Release, no Steam upload.
 
-Run the **Ciallo Publish Feature Test** workflow from the Actions page and pick the
-branch to publish in the "Run workflow" ref dropdown. It publishes that branch's HEAD,
-derives a slug from the branch name, and tags `ft/<slug>.<N>` with `<N>` auto-incremented
-(for example branch `alice/brush-preview` -> `ft/alice-brush-preview.1`).
+Run the **Ciallo Feature Test** workflow from the Actions page and pick the branch in
+the "Run workflow" ref dropdown. The workflow locks that branch's current commit SHA,
+exports all three platforms, and retains the Actions artifacts for two days.
 
-### Release candidates
+### Development builds
 
-Run the **Ciallo Publish RC** workflow from the Actions page. Anyone with write access
-can run it. It publishes the current tip of `origin/dev`, auto-increments the RC counter
-from existing tags, and tags `v<config/version>-rc.<N>`.
-
-RC builds create GitHub Prereleases with Windows, Linux, and macOS artifacts, and are
-uploaded to Steam and set live on the **development** branch automatically for testers.
+Run the **Ciallo Development Build** workflow from the Actions page. It locks the current
+tip of `origin/dev`, exports all three platforms, and sets the build live on Steam's
+**development** branch. Development builds do not create tags or GitHub Releases.
 
 ### Final releases (managed by owner)
 
-Run the **Ciallo Publish Release** workflow from the Actions page. The run pauses for
-a required reviewer (project owner) in the `production` environment before anything is
-tagged — anyone can start it, but only an approver can complete it. After approval it
-publishes the tip of `origin/main` and tags `v<config/version>`.
+Run the **Ciallo Publish Release** workflow from the Actions page. It locks the current
+tip of `origin/main`, exports and verifies all three platforms, then pauses for a required
+reviewer in the `production` environment. Approval creates the immutable
+`v<config/version>` tag on the verified commit and publishes the artifacts already built
+in that run.
 
 Final builds create normal GitHub Releases and are uploaded to Steam's **default** branch,
 but are NOT set live automatically — a project owner must promote the build by hand in
-Steamworks App Admin > Builds. Re-running the workflow for a version whose tag already
-exists overwrites it (the tag is force-moved, the GitHub Release and Steam build are
-replaced), so a failed publish can simply be re-run; bumping `config/version` remains the
-norm for an actual new release.
-After the final release is verified, old RC prereleases can be deleted manually when they
-are no longer useful.
+Steamworks App Admin > Builds. A failed publish may reuse a tag only when it still points
+to the same verified commit. If the source changes, increase `config/version`; release
+tags are never moved.
 
 ### Hotfix releases
 
@@ -184,10 +179,10 @@ Open a PR from `hotfix/fix-export-crash` to `main`.
 Hotfix PRs must be squash merged.
 After the PR is merged, the Ciallo Hotfix Release workflow automatically:
 
-- creates the next `vX.Y.Z-hotfix.N` tag on the merged `main` commit;
-- dispatches the Ciallo Release pipeline for that tag;
+- exports and verifies the merged `main` commit;
+- creates the next immutable `vX.Y.Z-hotfix.N` tag after the export succeeds;
 - publishes the tag as a GitHub Prerelease with exported Windows, Linux, and macOS artifacts;
-- creates a backport PR from `backport/vX.Y.Z-hotfix.N-to-dev` into `dev`.
+- creates a backport PR from `backport/hotfix-<PR>-to-dev` into `dev`.
 
 If the automatic cherry-pick to `dev` conflicts, the workflow fails and the fix must be backported manually.
-Do not manually bump `project.godot` for hotfixes; bump it only for RCs, final releases, and the next accumulated stable patch release.
+Do not manually bump `project.godot` for hotfixes; bump it for the next stable release.

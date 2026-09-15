@@ -12,40 +12,54 @@ using Frent;
 using Godot;
 using ObservableCollections;
 using R3;
+using Stateless;
 
 namespace Ciallo.Tool;
 
-[RegisterTool(ToolButton.Select)]
-public class PolylineSelectTool : ToolBase
+using StateMachine = StateMachine<InteractionState, Trigger>;
+
+[RegisterState]
+[RequestedByToolButton(ToolButton.Type.Select)]
+public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum EditMode { RectTransform, BezierDeform, }
 
     public ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
     public readonly ReactiveProperty<float> SimplificationRatio = new(0.25f);
 
-    public readonly PolylineNoSelectionHover HoverWithoutSelection = new();
-    public readonly PolylineTransformHover TransformHover = new();
-    public readonly PolylineBezierDeformHover BezierDeformHover = new();
+    [Substate]
+    internal PolylineNoSelectionHover HoverWithoutSelection;
 
-    public readonly PolylineRectSelectInteractor Select = new();
-    public readonly PolylineTransformInteractor RectTransform = new();
-    public readonly PolylineBezierDeformInteractor BezierDeform = new();
+    [Substate]
+    internal PolylineTransformHover TransformHover;
+
+    [Substate]
+    internal PolylineBezierDeformHover BezierDeformHover;
+
+    [Substate]
+    internal PolylineRectSelectInteractor Select;
+
+    [Substate]
+    internal PolylineTransformInteractor RectTransform;
+
+    [Substate]
+    internal PolylineBezierDeformInteractor BezierDeform;
 
     public Trigger EditModeChanged = new("EditModeChanged");
 
     public PolylineSelectTool()
     {
-        Mode.Skip(1).Subscribe(_ => Machine.Fire(EditModeChanged));
+        Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
     }
 
-    protected override void ConfigureStateMachine()
+    public override void ConfigureStateMachine(StateMachine sm)
     {
-        Machine.Configure(ToolActive.Instance)
+        sm.Configure(this)
             .InitialTransitionDynamic(TransToHover)
             .PermitReentry(Trigger.Refresh);
 
-        Configure(HoverWithoutSelection)
-            .PermitDynamic(Press(MouseButton.Left), () =>
+        sm.Configure(HoverWithoutSelection)
+            .PermitDynamic(Trigger.Press(MouseButton.Left), () =>
             {
                 if (HoverWithoutSelection.CanTranslate && !Input.IsKeyPressed(Key.Shift))
                     return RectTransform;
@@ -53,8 +67,8 @@ public class PolylineSelectTool : ToolBase
             })
             .Ignore(EditModeChanged);
 
-        Configure(TransformHover)
-            .PermitDynamic(Press(MouseButton.Left), () =>
+        sm.Configure(TransformHover)
+            .PermitDynamic(Trigger.Press(MouseButton.Left), () =>
             {
                 if (TransformHover.CanTransform && !Input.IsKeyPressed(Key.Shift))
                     return RectTransform;
@@ -62,8 +76,8 @@ public class PolylineSelectTool : ToolBase
             })
             .PermitDynamic(EditModeChanged, TransToHover);
 
-        Configure(BezierDeformHover)
-            .PermitDynamic(Press(MouseButton.Left), () =>
+        sm.Configure(BezierDeformHover)
+            .PermitDynamic(Trigger.Press(MouseButton.Left), () =>
             {
                 if (BezierDeformHover.CanDeform && !Input.IsKeyPressed(Key.Shift))
                     return BezierDeform;
@@ -71,27 +85,29 @@ public class PolylineSelectTool : ToolBase
             })
             .PermitDynamic(EditModeChanged, TransToHover);
 
-        Configure(BezierDeform)
-            .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+        sm.Configure(BezierDeform)
+            .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
+            .PermitStandardExitsDynamic(TransToHover);
 
-        Configure(RectTransform)
-            .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+        sm.Configure(RectTransform)
+            .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
+            .PermitStandardExitsDynamic(TransToHover);
 
-        Configure(Select)
-            .PermitDynamic(Release(MouseButton.Left), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.CancelInteraction), TransToHover)
-            .PermitDynamic(Press(AppHotkeys.ConfirmInteraction), TransToHover);
+        sm.Configure(Select)
+            .PermitDynamic(Trigger.Release(MouseButton.Left), TransToHover)
+            .PermitStandardExitsDynamic(TransToHover);
 
-        InteractiveSessionBase TransToHover()
+        InteractionState TransToHover()
         {
             var shapes = Document.Get<SelectionManager>().SelectedShapes;
             if (shapes.Count <= 0)
                 return HoverWithoutSelection;
-            if (Mode.Value == EditMode.RectTransform)
+
+            // A single-point selection has no meaningful Bezier deformation.
+            // Route it through the existing transform workflow so it remains movable
+            // without creating degenerate curve or transform-box controls.
+            bool canBezierDeform = shapes.Sum(e => e.Get<SampledPolyline>().Count) > 1;
+            if (Mode.Value == EditMode.RectTransform || !canBezierDeform)
                 return TransformHover;
             if (Mode.Value == EditMode.BezierDeform)
                 return BezierDeformHover;
@@ -99,36 +115,30 @@ public class PolylineSelectTool : ToolBase
         }
     }
 
-    public override bool CanHandleLayer(params Entity[] layerEs)
-    {
-        if (layerEs.Length != 1) return false;
-        var e = layerEs.Single();
-        bool isShapeLayer = e.Has<ShapeLayerSetting>();
-        bool isVectorFillLayer = e.Has<VectorFillLayerSetting>();
-        return isShapeLayer || isVectorFillLayer;
-    }
+    public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
+        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
 
-    public override void OnActivated()
+    protected override void OnActivated()
     {
-        if (WorkingLayer.Has<VectorFillLayerSetting>())
-            WorkingLayer.Get<OverlayHolder>().Visible = true;
-        WorkingLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
+        if (PrimaryLayer.Has<VectorFillLayerSetting>())
+            PrimaryLayer.Get<OverlayHolder>().Visible = true;
+        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
         // Guard selection
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var deselect = selectedShapes
-            .Where(e => e.Get<LayerTreeNode>().ParentValue != WorkingLayer).Reverse().ToArray();
+            .Where(e => e.Get<LayerTreeNode>().ParentValue != PrimaryLayer).Reverse().ToArray();
         foreach (var e in deselect)
             selectedShapes.Remove(e);
     }
 
-    public override void OnDeactivated()
+    protected override void OnDeactivated()
     {
-        if (WorkingLayer.Has<VectorFillLayerSetting>())
-            WorkingLayer.Get<OverlayHolder>().Visible = false;
-        WorkingLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        if (PrimaryLayer.Has<VectorFillLayerSetting>())
+            PrimaryLayer.Get<OverlayHolder>().Visible = false;
+        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
     }
 
-    public override void DrawProperty(PropertyContainer container)
+    public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
         // --- Select/Deselect all buttons
         var selectionManager = Document.Get<SelectionManager>();
@@ -136,17 +146,17 @@ public class PolylineSelectTool : ToolBase
         var selectAllButton = container.CreateButton("Select all").AddToChildOf(selectionButtonGroup);
         selectAllButton.Pressed += () =>
         {
-            var layerE = selectionManager.WorkingLayer.Value;
+            var layerE = selectionManager.PrimaryLayer.CurrentValue;
             if (layerE.IsDyingOrDead) return;
             selectionManager.SelectedShapes.Clear();
             selectionManager.SelectedShapes.AddRange(layerE.Get<LayerTreeNode>().Children);
-            Machine.Fire(Trigger.Refresh);
+            Fire(Trigger.Refresh);
         };
         var deselectAllButton = container.CreateButton("Deselect").AddToChildOf(selectionButtonGroup);
         deselectAllButton.Pressed += () =>
         {
             selectionManager.SelectedShapes.Clear();
-            Machine.Fire(Trigger.Refresh);
+            Fire(Trigger.Refresh);
         };
 
         // --- Edit mode
@@ -162,12 +172,19 @@ public class PolylineSelectTool : ToolBase
         strokeBrushSwitcher.CustomMinimumSize = new(0, 256);
         strokeBrushSwitcher.Document = Document;
         strokeBrushSwitcher.BindBrushes(Document.Get<BrushManager>().StrokeBrushes);
-        strokeBrushSwitcher.VisibleIf(selectionChanged,
-            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<StrokeSetting>()));
+        strokeBrushSwitcher.VisibleIf(
+            selectionChanged.CombineLatest(selectionManager.PrimaryLayer, (_, layer) => layer),
+            layer => selectedShapes.Count > 0
+                ? selectedShapes.All(e => e.Has<StrokeSetting>())
+                : !layer.IsNull && layer.Has<ShapeLayerSetting>());
 
         selectionChanged.Subscribe(_ =>
         {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>())) return;
+            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>()))
+            {
+                strokeBrushSwitcher.Select(Entity.Null);
+                return;
+            }
             var firstE = selectedShapes.First().Get<StrokeSetting>().Brush.Value;
             bool allSame = selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == firstE);
             strokeBrushSwitcher.Select(allSame ? firstE : Entity.Null);
@@ -175,6 +192,18 @@ public class PolylineSelectTool : ToolBase
 
         strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {
+            if (selectedShapes.Count == 0)
+            {
+                var strokes = selectionManager.PrimaryLayer.CurrentValue.Get<LayerTreeNode>().Children
+                    .Where(e => e.Has<StrokeSetting>() && e.Get<StrokeSetting>().Brush.Value == brushE)
+                    .ToArray();
+                if (strokes.Length == 0) return;
+
+                selectedShapes.AddRange(strokes);
+                Fire(Trigger.Refresh);
+                return;
+            }
+
             var cmd = new CommandBuilder("Set Selected Stroke Brush");
             foreach (var shapeE in selectedShapes)
                 cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);
@@ -374,8 +403,6 @@ public class PolylineSelectTool : ToolBase
             builder.Commit();
         };
 
-        // Session properties
-        base.DrawProperty(container);
     }
 
     private static ReactiveProperty<Entity> GetVectorFillBrushE(Entity e)

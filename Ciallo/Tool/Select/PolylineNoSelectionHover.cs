@@ -9,7 +9,8 @@ using R3;
 
 namespace Ciallo.Tool;
 
-public class PolylineNoSelectionHover : InteractiveSessionBase
+[RegisterState]
+public class PolylineNoSelectionHover : Interaction
 {
     public Entity CurrHoveredShape;
 
@@ -21,9 +22,9 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
     {
         Subs = new();
         var worldBody = Document.Get<WorldBody>();
-        var layerBody = WorkingLayer.Get<BodyHolder>();
+        var layerBody = PrimaryLayer.Get<BodyHolder>();
 
-        // Enable cursor detections on shapes of working layer
+        // Enable cursor detections on shapes of primary layer
         worldBody.EnableHoverDetection = true;
         worldBody.CursorWorldPosition = data.WorldPosition;
         layerBody.SetChildrenBodyCursor(Control.CursorShape.Move);
@@ -54,7 +55,7 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
     public override void Cancel()
     {
         Subs.Dispose();
-        WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+        PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
         Document.Get<WorldBody>().EnableHoverDetection = false;
 
         // overlays
@@ -66,54 +67,54 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
 
     public override bool OnKey(InputEventKey key, CursorButtonData data)
     {
-        if (AppHotkeys.Copy.IsPressedBy(key))
+        if (AppHotkeys.Global.EditCopy.IsPressedBy(key))
         {
             AppClipboardManager.CopyShapes(Document.Get<SelectionManager>().SelectedShapes);
             return true;
         }
 
-        if (AppHotkeys.Cut.IsPressedBy(key))
+        if (AppHotkeys.Global.EditCut.IsPressedBy(key))
         {
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes.ToArray();
             AppClipboardManager.CopyShapes(selectedShapes);
             DeleteShapes(selectedShapes);
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
-        if (AppHotkeys.Paste.IsPressedBy(key))
+        if (AppHotkeys.Global.EditPaste.IsPressedBy(key))
         {
-            var pastedShapes = AppClipboardManager.PasteShapes(WorkingLayer);
+            var pastedShapes = AppClipboardManager.PasteShapes(PrimaryLayer);
             var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
             selectedShapes.Clear();
             selectedShapes.AddRange(pastedShapes);
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
-        if (AppHotkeys.CancelInteraction.IsPressedBy(key))
+        if (AppHotkeys.Global.InteractionCancel.IsPressedBy(key))
         {
             Document.Get<SelectionManager>().SelectedShapes.Clear();
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
-        if (AppHotkeys.Delete.IsPressedBy(key))
+        if (AppHotkeys.Global.EditDelete.IsPressedBy(key))
         {
             DeleteShapes(Document.Get<SelectionManager>().SelectedShapes.ToArray());
-            Tool.Machine.Fire(ToolBase.Trigger.Refresh);
+            Fire(Trigger.Refresh);
             return true;
         }
 
         if (key.IsPressed() && key.Keycode == Key.Shift)
         {
-            WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 
         if (key.IsReleased() && key.Keycode == Key.Shift)
         {
-            WorkingLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Move);
+            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Move);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 
@@ -130,5 +131,4 @@ public class PolylineNoSelectionHover : InteractiveSessionBase
         cmd.Commit();
     }
 
-    public override void DrawProperty(PropertyContainer container) { }
 }

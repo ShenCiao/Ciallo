@@ -5,7 +5,8 @@ using Godot;
 
 namespace Ciallo.Tool;
 
-public class ImageLayerSelectHover : InteractiveSessionBase
+[RegisterState]
+public class ImageLayerSelectHover : Interaction
 {
     public Body RotationBody;
     public Body TranslationBody;
@@ -13,12 +14,12 @@ public class ImageLayerSelectHover : InteractiveSessionBase
 
     public override void Start(CursorButtonData data)
     {
-        var setting = WorkingLayer.Get<ImageLayerSetting>();
+        var setting = PrimaryLayer.Get<ImageLayerSetting>();
         var worldBody = Document.Get<WorldBody>();
 
         worldBody.EnableHoverDetection = true;
         worldBody.CursorWorldPosition = data.WorldPosition;
-        WorkingLayer.Get<TransformOverlayBox>().Visible = true;
+        PrimaryLayer.Get<TransformOverlayBox>().Visible = true;
 
         // Create bodies
         Body[] bodies = worldBody.CreateAddTransformAreas(setting.ImageSize, setting.ImageTransform.Value);
@@ -43,7 +44,7 @@ public class ImageLayerSelectHover : InteractiveSessionBase
         TranslationBody = null;
         CornerBodies = [];
 
-        WorkingLayer.Get<TransformOverlayBox>().Visible = false;
+        PrimaryLayer.Get<TransformOverlayBox>().Visible = false;
         Document.Get<WorldBody>().EnableHoverDetection = false;
     }
 

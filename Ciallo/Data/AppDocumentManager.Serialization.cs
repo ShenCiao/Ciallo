@@ -156,8 +156,8 @@ public static partial class AppDocumentManager
         // Load selection
         var loadSelectionCmd = new CommandBuilder("Load Selection");
         var dataSm = dataDocument.Get<SelectionManager>();
-        loadSelectionCmd.SetTarget(entityMap[dataSm.WorkingLayer.CurrentValue])
-            .SetWorkingLayer(true);
+        loadSelectionCmd.SetTarget(resultDocument)
+            .SelectLayers(layers: [.. dataSm.SelectedLayers.Value.Select(e => entityMap[e])]);
 
         var dataStrokeBrushE = dataSm.WorkingStrokeBrush.Value;
         if (!dataStrokeBrushE.IsNull)
@@ -197,17 +197,24 @@ public static partial class AppDocumentManager
     {
         if (WorkingDocument.CurrentValue.IsNull) return false;
         var settings = WorkingDocument.CurrentValue.Get<DocumentSetting>();
+        var previousDocumentId = settings.DocumentId.Value;
+        var previousName = settings.Name.Value;
+        var previousFilePath = settings.FilePath.Value;
         try
         {
             EnsureSaveDirectory(filePath);
-            Save(WorkingDocument.Value, filePath);
-            settings.FilePath.Value = filePath;
+            settings.DocumentId.Value = Guid.NewGuid();
             settings.Name.Value = filePath.GetFile().GetBaseName();
+            settings.FilePath.Value = filePath;
+            Save(WorkingDocument.Value, filePath);
             WorkingDocument.CurrentValue.Get<CommandManager>().OnSave();
             return true;
         }
         catch (Exception exception)
         {
+            settings.DocumentId.Value = previousDocumentId;
+            settings.Name.Value = previousName;
+            settings.FilePath.Value = previousFilePath;
             WarnSaveFailed(exception);
             return false;
         }

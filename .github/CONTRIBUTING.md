@@ -115,6 +115,17 @@ The mechanism is combined with the component system:
 - An entity without `ToSerializeTag` but with `[ToSerialize]` components won't be persisted, including the entity itself and its components, unless it is the document entity.
 
 
+## Continuous integration
+
+The **Ciallo Build** workflow runs when a pull request targeting `dev` or `main` is
+opened, reopened, or updated with new commits. It builds GitHub's PR merge ref,
+exports Windows, Linux, and macOS packages, and retains the Actions artifacts for
+two days. The macOS package is unsigned.
+
+New commits to the same PR cancel its older queued or running builds. Branch pushes,
+including PR merges, do not start this workflow. To build a branch without a PR,
+run **Ciallo Build** manually from the Actions page and select the branch.
+
 ## Release
 
 Ciallo uses `dev` for daily integration and `main` for formal releases.

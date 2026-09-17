@@ -42,9 +42,8 @@ internal static class UserDataDirectoryOverride
         if (!string.Equals(actual, target, comparison))
             throw new ArgumentException($"Godot resolved --user-data-dir to '{actual}' instead of '{target}'.");
 
-        var error = DirAccess.MakeDirRecursiveAbsolute("user://");
-        if (error != Error.Ok)
-            throw new IOException($"Cannot create user data directory '{actual}': {error}.");
+        // Create missing parents outside user:// before opening Godot's user directory.
+        Directory.CreateDirectory(actual);
         using var directory = DirAccess.Open("user://");
         if (directory == null)
             throw new IOException($"Cannot access user data directory '{actual}': {DirAccess.GetOpenError()}.");

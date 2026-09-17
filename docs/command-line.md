@@ -17,7 +17,7 @@ Godot 4.6 also preserves bare `.ciallo` filenames before the separator, so `Cial
 | Argument | Behavior |
 | --- | --- |
 | `FILE` or `--open FILE` | Open one existing document once the main scene is ready. A failed load prints an error and shows the normal open-document error dialog. |
-| `--user-data-dir DIR` | Override Godot's `user://` root for subsequent access. Create the directory if needed. Defaults to Godot's normal user directory. |
+| `--user-data-dir DIR` | Override Godot's `user://` root for subsequent access. Create the directory and any missing parent directories if needed. Defaults to Godot's normal user directory. |
 | `--factory-startup` | Use built-in default configuration for this run. Existing user configuration is neither loaded nor automatically overwritten. Does not change `user://`. |
 | `--debug-info` | Print application/build, engine, OS, CPU/GPU, renderer and effective data/configuration paths at startup, then continue running normally. The same system information appears in copied bug reports. |
 

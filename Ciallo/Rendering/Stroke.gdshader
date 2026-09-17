@@ -37,6 +37,10 @@ uniform vec4 MaterialColor : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 instance uniform vec4 OverridingColor = vec4(0.0, 0.0, 0.0, -1.0);
 // Canvas mode is used for drawing wireframe
 uniform int RadiusMode : hint_enum("World", "Canvas") = 0;
+// Viewport pixels, measured from the radius interpolated by the vertex shader.
+// Widths between the two thresholds fade in.
+uniform float MinimumScreenDiameter : hint_range(0.0, 4.0, 0.05) = 0.1;
+uniform float FullOpacityScreenDiameter : hint_range(0.0, 8.0, 0.05) = 1.0;
 // Dash
 uniform float DashLength = -1.0; // radius-normalized length
 uniform float GapLength = -1.0;
@@ -145,7 +149,8 @@ float n2x(float n) {
 }
 
 float sampleCurve(sampler2D curve, float t){
-	return texture(curve, vec2(t, 0)).r;
+	// Evaluate the curve at the fragment's brush coordinate.
+	return textureLod(curve, vec2(t, 0), 0.0).r;
 }
 
 // ---------------------rotation noise--------------------
@@ -156,25 +161,36 @@ float noise1D(float x) {
     return hash1(floor(x)) * RotationNoiseAmplitude;
 }
 
-vec2 solveTheQuadraticEq(vec2 pLocal){
+bool solveTheQuadraticEq(vec2 pLocal, out vec2 result){
 	float a, b, c, delta;
     a = 1.0 - cosTheta * cosTheta;
     b = 2.0 * (r0 * cosTheta - pLocal.x);
     c = pLocal.x * pLocal.x + pLocal.y * pLocal.y - r0 * r0;
     delta = b * b - 4.0*a*c;
-    if(delta <= 0.0) discard;
+    if(delta <= 0.0) return false;
 
-	float tempMathBlock = b + sign(b) * sqrt(delta);
+	float tempMathBlock = b + (b < 0.0 ? -1.0 : 1.0) * sqrt(delta);
     float x1 = -2.0 * c / tempMathBlock;
     float x2 = -tempMathBlock / (2.0*a);
-    vec2 result = vec2(min(x1, x2), max(x1, x2));
-	return result;
+    result = vec2(min(x1, x2), max(x1, x2));
+	return result.y > 0.0 && result.x < segmentLength;
 }
 
-void fragment() {
-	vec2 pLocal = vec2(dot(p-p0, tangent), dot(p-p0, normal));
-	float d0 = distance(p, p0);
-    float d1 = distance(p, p1);
+vec4 emptySample() {
+#if defined(BLEND_MUL) || defined(BLEND_ERASE)
+	return vec4(1.0); // Multiplication by one leaves the destination unchanged.
+#else
+	return vec4(0.0);
+#endif
+}
+
+// Return the contribution before framebuffer blending: premultiplied color for
+// Normal/Add, or a destination multiplier for Multiply/Erase.
+vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
+		vec2 localDx, vec2 localDy, vec2 radiusGradient, float visibility) {
+	vec2 pLocal = vec2(dot(samplePosition-p0, tangent), dot(samplePosition-p0, normal));
+	float d0 = distance(samplePosition, p0);
+    float d1 = distance(samplePosition, p1);
 	float cosPhi0 = pLocal.x / d0;
     float cosPhi1 = (pLocal.x - segmentLength) / d1;
 	vec2 p_r = pLocal - vec2(abs(pLocal.y)/tanTheta, 0);
@@ -184,38 +200,29 @@ void fragment() {
 	t = clamp(t, 0.0, 1.0);
 	float flowRatio = hasFlag(ActiveBrushFlags, BrushFlags.Pressure2FlowCurve) ? sampleCurve(Pressure2FlowCurve, t) : 1.0;
 
+	if(hasFlag(ActiveBrushFlags, BrushFlags.Dash)){
+		float unitLength = DashLength + (GapLength > 0.0 ? GapLength : DashLength);
+		float pixelN = x2n(pLocal.x) + n0;
+		if(mod(pixelN - TIME * DashForwardSpeed, unitLength) > DashLength) return emptySample();
+	}
+
 	/*----------------------------------------------------------*/
 	if(StrokeType == Vanilla){
-		if(cosPhi0 < cosTheta && d0 > r0) discard;
-    	if(cosPhi1 > cosTheta && d1 > r1) discard;
+		if(cosPhi0 < cosTheta) {
+			if(d0 > r0) return emptySample();
+		} else if(cosPhi1 > cosTheta) {
+			if(d1 > r1) return emptySample();
+		}
 
 		vec4 brush = OverridingColor.a >= 0.0 ? OverridingColor : MaterialColor;
 		float targetFlow = brush.a * flowRatio;
-		float coverage = targetFlow;
+		// Fade before the joint correction so two overlapping caps still reach
+		// the faded target opacity. Keep the brush's branch selection unchanged.
+		float coverage = targetFlow * visibility;
 		if(targetFlow < 0.999){ // Can avoid little white dot
 			if(d0 < r0 && d1 < r1){
-        		discard;
+				return emptySample();
     		}
-		}
-		else{
-			//// Anti antialiasing
-			//// No configuration of screen space AA is satifying enough to draw the strokes
-			//// Have to AA manually
-			//// AA end point makes visible gaps with transparency.
-			float aaEdge = 3.0 / scale;
-			float aaStart = 1.0 - aaEdge/r_p;
-			aaStart = clamp(aaStart, 0.0, 1.0);
-
-			float lambda;
-			if (cosPhi0 < cosTheta) lambda = d0/r0;
-			else if (cosPhi1 > cosTheta) lambda = d1/r1;
-			else lambda = abs(pLocal.y) / r_p * sinTheta;
-			lambda = clamp(lambda, 0.0, 1.0);
-
-			if(lambda > aaStart){
-				float t = (lambda - aaStart)/(1.0 - aaStart);
-				coverage = coverage * smoothstep(1.0, 0.5, t);
-			}
 		}
 
 		if(d0 < r0 || d1 < r1){
@@ -224,21 +231,21 @@ void fragment() {
 		coverage = clamp(coverage, 0.0, 1.0);
 #if defined(BLEND_ADD)
 		float addAmount = max(coverage, 0.0);
-		float addAlpha = sqrt(addAmount);
-		COLOR = vec4(brush.rgb * addAlpha, addAlpha);
+		return vec4(brush.rgb * addAmount, addAmount);
 #elif defined(BLEND_MUL)
-		COLOR = vec4(mix(vec3(1.0), brush.rgb, coverage), 1.0);
+		return vec4(mix(vec3(1.0), brush.rgb, coverage), 1.0);
 #elif defined(BLEND_ERASE)
 		float keep = 1.0 - coverage;
-		COLOR = vec4(vec3(keep), keep);
+		return vec4(vec3(keep), keep);
 #else
-		COLOR = vec4(brush.rgb, coverage);
+		return vec4(brush.rgb * coverage, coverage);
 #endif
 	}
 	/*----------------------------------------------------------*/
   	if(StrokeType == Stamp){
  		// The quadratic equation
-	    vec2 result = solveTheQuadraticEq(pLocal);
+	    vec2 result;
+		if(!solveTheQuadraticEq(pLocal, result)) return emptySample();
 		float x1 = result.x;
 		float x2 = result.y;
 
@@ -261,19 +268,21 @@ void fragment() {
 			float currN = currStampIdx * StampInterval;
  			float currStampLocalX = n2x(currN - n0);
  			vec2 pToCurrStamp = pLocal - vec2(currStampLocalX, 0.0);
-			// Transform
-			pToCurrStamp *= CoordinateTransform;
 			// Rotation noise
 			float rotationNoise = hasFlag(ActiveStampFlags, StampFlags.RotationNoise) ? noise1D(currStampIdx) : 0.0;
 			float cosRot = cos(rotationNoise);
 			float sinRot = sin(rotationNoise);
-			pToCurrStamp *= mat2(vec2(cosRot, sinRot), vec2(-sinRot, cosRot));
+			mat2 stampTransform = CoordinateTransform * mat2(vec2(cosRot, sinRot), vec2(-sinRot, cosRot));
+			pToCurrStamp *= stampTransform;
 
- 			vec2 uv = (pToCurrStamp/r + 1.0)/2.0;
-			float textureMask = hasFlag(ActiveStampFlags, StampFlags.MaskTexture) ? texture(MultiplyTexture, uv).r : 1.0;
- 			float nr = length(pToCurrStamp/r); // normalized r
+			vec2 uv = (pToCurrStamp/sampleRadius + 1.0)/2.0;
+			// Explicit gradients keep mip selection defined across the varying stamp loop.
+			vec2 uvDx = 0.5 * (localDx * stampTransform - pToCurrStamp * radiusGradient.x / sampleRadius) / sampleRadius;
+			vec2 uvDy = 0.5 * (localDy * stampTransform - pToCurrStamp * radiusGradient.y / sampleRadius) / sampleRadius;
+			float textureMask = hasFlag(ActiveStampFlags, StampFlags.MaskTexture) ? textureGrad(MultiplyTexture, uv, uvDx, uvDy).r : 1.0;
+			float nr = length(pToCurrStamp/sampleRadius); // normalized r
 			float dotMask = hasFlag(ActiveStampFlags, StampFlags.MaskDisk) ? sampleCurve(DiskOpacityCurve, nr) : 1.0;
-			float stampSample = hasFlag(ActiveStampFlags, StampFlags.StampTexture) ? texture(StampTexture, uv).r : 1.0;
+			float stampSample = hasFlag(ActiveStampFlags, StampFlags.StampTexture) ? textureGrad(StampTexture, uv, uvDx, uvDy).r : 1.0;
 			bool isOutDisk = uv.x > 1.0 || uv.y > 1.0 || nr > 1.0;
 			float sampledA = isOutDisk ? 0.0 : clamp(textureMask * dotMask * flow * stampSample, 0.0, 1.0);
 
@@ -288,24 +297,25 @@ void fragment() {
 			currStampIdx += 1.0;
  		}
 #if defined(BLEND_MUL)
-		COLOR = currMul;
+		return mix(vec4(1.0), currMul, visibility);
 #elif defined(BLEND_ADD)
-		float addAmount = max(currA, 0.0);
-		float addAlpha = sqrt(addAmount);
-		COLOR = vec4(MaterialColor.rgb * addAlpha, addAlpha);
+		float addAmount = max(currA, 0.0) * visibility;
+		return vec4(MaterialColor.rgb * addAmount, addAmount);
 #elif defined(BLEND_ERASE)
-		float keep = 1.0 - clamp(currA, 0.0, 1.0);
-		COLOR = vec4(vec3(keep), keep);
+		float keep = 1.0 - clamp(currA, 0.0, 1.0) * visibility;
+		return vec4(vec3(keep), keep);
 #else
-		COLOR = vec4(MaterialColor.rgb, clamp(currA, 0.0, 1.0));
+		float alpha = clamp(currA, 0.0, 1.0) * visibility;
+		return vec4(MaterialColor.rgb * alpha, alpha);
 #endif
  	}
 	/*----------------------------------------------------------*/
 	if(StrokeType == Airbrush){
-		if(cosPhi0 < cosTheta && d0 > r0) discard;
-    	if(cosPhi1 > cosTheta && d1 > r1) discard;
+		if(cosPhi0 < cosTheta && d0 > r0) return emptySample();
+		if(cosPhi1 > cosTheta && d1 > r1) return emptySample();
 		float flow = MaterialColor.a * flowRatio;
-		vec2 result = solveTheQuadraticEq(pLocal);
+		vec2 result;
+		if(!solveTheQuadraticEq(pLocal, result)) return emptySample();
 		float x1 = result.x;
 		float x2 = result.y;
 		float startN = x1 < 0.0 ? 0.0 : x2n(x1);
@@ -316,27 +326,51 @@ void fragment() {
 		float curveFall = sampleCurve(FalloffCurve, lambda);
 		float tau = deltaN * AlphaDensity * flow * curveFall;
 #if defined(BLEND_ADD)
-		float addAmount = max(tau, 0.0);
-		float addAlpha = sqrt(addAmount);
-		COLOR = vec4(MaterialColor.rgb * addAlpha, addAlpha);
+		float addAmount = max(tau, 0.0) * visibility;
+		return vec4(MaterialColor.rgb * addAmount, addAmount);
 #elif defined(BLEND_MUL)
-		COLOR = vec4(exp(-tau * (vec3(1.0) - MaterialColor.rgb)), 1.0);
+		return vec4(mix(vec3(1.0), exp(-tau * (vec3(1.0) - MaterialColor.rgb)), visibility), 1.0);
 #elif defined(BLEND_ERASE)
-		float keep = exp(-tau);
-		COLOR = vec4(vec3(keep), keep);
+		float keep = 1.0 - (1.0 - exp(-tau)) * visibility;
+		return vec4(vec3(keep), keep);
 #else
 		float keep = exp(-tau);
-		float A = 1.0 - keep;
-		COLOR = vec4(MaterialColor.rgb, A);
+		float A = (1.0 - keep) * visibility;
+		return vec4(MaterialColor.rgb * A, A);
 #endif
 	}
+	return emptySample();
+}
 
-	// Dash
-	if(hasFlag(ActiveBrushFlags, BrushFlags.Dash)){
-		float unitLength = DashLength + (GapLength > 0.0 ? GapLength : DashLength);
-		float pixelN = x2n(pLocal.x) + n0;
-		if(mod(pixelN - TIME * DashForwardSpeed, unitLength) > DashLength) discard;
-	}
+void fragment() {
+	// Evaluate derivatives before the cutoff or any brush branches.
+	vec2 positionDx = dFdx(p);
+	vec2 positionDy = dFdy(p);
+	vec2 radiusGradient = vec2(dFdx(r), dFdy(r));
+	vec2 localDx = vec2(dot(positionDx, tangent), dot(positionDx, normal));
+	vec2 localDy = vec2(dot(positionDy, tangent), dot(positionDy, normal));
+	float unitsPerPixel = length(vec2(localDx.y, localDy.y));
+	float screenDiameter = 2.0 * r / unitsPerPixel;
+	if(screenDiameter <= MinimumScreenDiameter) discard;
+	// Equal thresholds select a hard cutoff without undefined smoothstep edges.
+	float visibility = FullOpacityScreenDiameter > MinimumScreenDiameter
+		? smoothstep(MinimumScreenDiameter, FullOpacityScreenDiameter, screenDiameter)
+		: 1.0;
+
+	// Keep pixel-center derivatives above; use a covered location to evaluate the
+	// brush so MSAA edge fragments do not sample outside the carrier geometry.
+	vec2 brushPosition = interpolateAtCentroid(p);
+	float brushRadius = interpolateAtCentroid(r);
+	vec4 contribution = evaluateBrush(brushPosition, brushRadius, localDx, localDy, radiusGradient, visibility);
+
+#if defined(BLEND_MUL) || defined(BLEND_ERASE)
+	COLOR = contribution;
+#elif defined(BLEND_ADD)
+	float addAlpha = sqrt(max(contribution.a, 0.0));
+	COLOR = addAlpha > 0.0 ? vec4(contribution.rgb / addAlpha, addAlpha) : vec4(0.0);
+#else
+	COLOR = contribution.a > 0.0 ? vec4(contribution.rgb / contribution.a, contribution.a) : vec4(0.0);
+#endif
 
 	// Be mindful with premultiply alpha
 	// See: https://github.com/godotengine/godot/issues/99715

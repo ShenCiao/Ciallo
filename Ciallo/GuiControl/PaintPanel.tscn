@@ -132,6 +132,7 @@ script = ExtResource("3_7pmtm")
 
 [node name="PaintViewport" type="SubViewport" parent="VBoxContainer/WorldEventDispatcher" unique_id=1906940218]
 handle_input_locally = false
+msaa_2d = 2
 use_hdr_2d = true
 canvas_cull_mask = 4293918723
 size = Vector2i(1920, 1035)

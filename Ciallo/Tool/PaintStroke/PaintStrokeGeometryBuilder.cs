@@ -68,7 +68,8 @@ public sealed class PaintStrokeGeometryBuilder
         {
             float pressure = input.Pressures[i] * Factor(_distances[i]);
             var point = new Sample(input.Positions[i], pressure, radiusSampler(pressure), input.Tilts[i]);
-            if (i == 0 || !active || _distances[i] == _distances[i - 1])
+            if (i == 0 || !active || _distances[i] == _distances[i - 1] ||
+                (_distances[i - 1] >= startLength && _distances[i] <= endStart))
             {
                 Append(point);
                 continue;
@@ -92,12 +93,11 @@ public sealed class PaintStrokeGeometryBuilder
 
             void AppendInterval(double begin, double end)
             {
-                var first = Evaluate(begin);
                 var last = Evaluate(end);
                 if (begin >= startLength && end <= endStart)
                     Append(last);
                 else
-                    Subdivide(begin, first, end, last, 0, true);
+                    Subdivide(begin, Evaluate(begin), end, last, 0, true);
             }
 
             Sample Evaluate(double distance)

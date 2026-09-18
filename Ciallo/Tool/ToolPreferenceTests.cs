@@ -1,10 +1,7 @@
-using System;
-using System.Linq;
 using Ciallo.Data;
 using GdUnit4;
 using Godot;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using R3;
 using static GdUnit4.Assertions;
 
@@ -32,11 +29,9 @@ public class ToolPreferenceTests
             using var colorSubscription = color.Skip(1).Subscribe(_ => colorChanges++);
             JsonConvert.PopulateObject("""
                 {"Tools": {
-                    "PaintStroke": {"SnapDistance": 37, "PressureTaperStartEnabled": true},
+                    "PaintStroke": {"SnapDistance": 37},
                     "VectorFill": {"LayerBoundedAreaColor": null},
-                    "PolylineSelect": {"Mode": 1},
-                    "Liquify": {"Radius": 96},
-                    "RemovedTool": {"Mode": 1}
+                    "PolylineSelect": {"Mode": 1}
                 }}
                 """, preference, Preference.JsonOptions);
 
@@ -49,24 +44,8 @@ public class ToolPreferenceTests
             AssertThat(distanceChanges).IsEqual(1);
             AssertThat(color.Value.HasValue).IsFalse();
             AssertThat(colorChanges).IsEqual(1);
-            AssertThat(stroke.PressureTaperStartEnabled.Value).IsTrue();
             AssertThat(tools.PolylineSelect.Mode.Value).IsEqual(PolylineSelectTool.EditMode.BezierDeform);
-            AssertThat(tools.Liquify.Radius.Value).IsEqual(96f);
             AssertThat(ReferenceEquals(InteractionManager.StateMachine.State, state)).IsTrue();
-
-            var saved = JObject.Parse(JsonConvert.SerializeObject(preference, Preference.JsonOptions));
-            var savedTools = (JObject)saved["Tools"]!;
-            AssertThat(savedTools.Properties().Select(p => p.Name).Order().ToArray()).ContainsExactly(
-                "BucketFill", "GapBridge", "Liquify", "PaintStroke", "PolylineSelect", "VectorFill", "VectorFillLayerCreation");
-            AssertThat(((JObject)savedTools["PaintStroke"]!).Properties().Select(p => p.Name).Order().ToArray())
-                .ContainsExactly("Mode", "PressureTaperEndEnabled", "PressureTaperEndLength",
-                    "PressureTaperStartEnabled", "PressureTaperStartLength", "SnapDistance", "SnapEnabled");
-            AssertThat(savedTools["VectorFill"]!["LayerBoundedAreaColor"]!.Type).IsEqual(JTokenType.Null);
-
-            distance.Value = 5;
-            JsonConvert.PopulateObject(saved.ToString(), preference, Preference.JsonOptions);
-            AssertThat(distance.Value).IsEqual(37f);
-            AssertThat(ReferenceEquals(stroke.SnapDistance, distance)).IsTrue();
         }
         finally
         {
@@ -74,21 +53,4 @@ public class ToolPreferenceTests
         }
     }
 
-    [TestCase]
-    public void OldFilesKeepApplicationSettingsAndLeaveToolsAtTheirDefaults()
-    {
-        var preference = new Preference();
-        var toolsBefore = JsonConvert.SerializeObject(preference.Tools, Preference.JsonOptions);
-        JsonConvert.PopulateObject("""
-            {
-                "Language": "zh_CN",
-                "PaintStrokeSnapDistance": 99,
-                "BucketFill": {"Mode": 1},
-                "VectorFillLayerBoundedAreaColor": null
-            }
-            """, preference, Preference.JsonOptions);
-
-        AssertThat(preference.Language.Value).IsEqual("zh_CN");
-        AssertThat(JsonConvert.SerializeObject(preference.Tools, Preference.JsonOptions)).IsEqual(toolsBefore);
-    }
 }

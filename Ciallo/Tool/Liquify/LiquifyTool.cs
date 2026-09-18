@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using Ciallo.Data;
 using Ciallo.Widget;
 using Frent;
@@ -10,12 +11,15 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.Liquify)]
 public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
+    [DataMember]
     public readonly ReactiveProperty<LiquifyMode> Mode = new(LiquifyMode.Push);
+    [DataMember]
     public readonly ReactiveProperty<float> Radius = new(64f);
+    [DataMember]
     public readonly ReactiveProperty<float> Strength = new(0.5f);
 
     [Substate]

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Serialization;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Rendering;
@@ -15,7 +16,7 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
@@ -27,6 +28,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         NewCelFolder, // Create a cel folder and put new vector fill layers into it
     }
 
+    [DataMember]
     public readonly ReactiveProperty<CreationStrategy> Strategy = new(CreationStrategy.WithinAllCels);
     [Substate]
     internal VectorFillLayerCreationHover Hover;
@@ -352,8 +354,10 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 [RegisterState]
 public class VectorFillLayerCreationHover : Interaction, IPropertyProvider
 {
+    [StateAccess] internal BucketFillTool BucketFill;
+
     public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
-        AppPreference.BucketFill.DrawModeProperty(container);
+        BucketFill.DrawModeProperty(container);
 
     public override void Start(CursorButtonData data)
     {

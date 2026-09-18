@@ -296,7 +296,7 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
             PolylineSamples.Uniform(points),
             _startSnapTarget,
             _anchorSnapTargets.Count > 0 ? _anchorSnapTargets[^1] : null,
-            AppPreference.PaintStrokeSnapDistance.Value);
+            Tool.SnapDistance.Value);
         var geometry = _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
         new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", PrimaryLayer.World.Create())
             .NewStroke().AddToLayerTree(targetLayer)

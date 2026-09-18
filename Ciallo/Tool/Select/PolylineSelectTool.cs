@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Serialization;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -18,13 +19,15 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.Select)]
 public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum EditMode { RectTransform, BezierDeform, }
 
-    public ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
+    [DataMember]
+    public readonly ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
+    [DataMember]
     public readonly ReactiveProperty<float> SimplificationRatio = new(0.25f);
 
     [Substate]
@@ -47,10 +50,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     public Trigger EditModeChanged = new("EditModeChanged");
 
-    public PolylineSelectTool()
-    {
-        Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
-    }
+    private IDisposable _modeChangedSubscription;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
@@ -120,6 +120,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     protected override void OnActivated()
     {
+        _modeChangedSubscription = Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
         if (PrimaryLayer.Has<VectorFillLayerSetting>())
             PrimaryLayer.Get<OverlayHolder>().Visible = true;
         PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
@@ -133,6 +134,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     protected override void OnDeactivated()
     {
+        _modeChangedSubscription.Dispose();
         if (PrimaryLayer.Has<VectorFillLayerSetting>())
             PrimaryLayer.Get<OverlayHolder>().Visible = false;
         PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;

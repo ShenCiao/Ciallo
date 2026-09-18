@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using Ciallo.Data;
 using Ciallo.Rendering;
 using Frent;
@@ -11,9 +12,16 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 public class VectorFillTool : InteractionScope, ILayerDependent
 {
+    [DataMember]
+    public readonly ReactiveProperty<float> MarkerRadius = new(15f);
+    [DataMember]
+    public readonly ReactiveProperty<Color?> LayerBoundedAreaColor = new(new(0.62f, 0.62f, 0.62f, 1f));
+    [DataMember]
+    public readonly ReactiveProperty<bool> ShowReferenceLayerWireframe = new(false);
+
     [Substate]
     internal VectorFillHover Hover;
 
@@ -43,7 +51,7 @@ public class VectorFillTool : InteractionScope, ILayerDependent
         PrimaryLayer.Get<OverlayHolder>().Visible = true;
 
         var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
-        AppPreference.ShowVectorFillReferenceLayerWireframe
+        ShowReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => SetWireframeVisibility(referenceLayers, visible),
                 _ => SetWireframeVisibility(referenceLayers, false));

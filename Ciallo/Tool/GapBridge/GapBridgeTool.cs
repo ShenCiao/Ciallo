@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -14,10 +15,15 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.GapBridge)]
 public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
+    [DataMember]
+    public readonly ReactiveProperty<float> DetectMaxGapLength = new(24f);
+    [DataMember]
+    public readonly ReactiveProperty<float> HitRadius = new(6f);
+
     [Substate]
     internal GapBridgeHover Hover;
 
@@ -48,13 +54,13 @@ public class GapBridgeTool : InteractionScope, IPropertyProvider, ILayerDependen
                 Step = 1f,
                 ExpEdit = true,
                 AllowGreater = true,
-            }.BindNumber(AppPreference.GapBridgeDetectMaxGapLength));
+            }.BindNumber(DetectMaxGapLength));
     }
 
     protected override void OnActivated()
     {
         Arrangement = PrimaryLayer.Get<ArrangementManager>();
-        _preview = new GapBridgePreviewManager(Document.Get<WorldOverlay>(), Arrangement.SourceShapes);
+        _preview = new GapBridgePreviewManager(Document.Get<WorldOverlay>(), Arrangement.SourceShapes, this);
         _preview.Refresh(Arrangement.ArrReady.CurrentValue);
 
         _arrReadySub = Arrangement.ArrReady.Subscribe(arr =>

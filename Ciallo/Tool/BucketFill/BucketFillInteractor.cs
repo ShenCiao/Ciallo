@@ -21,7 +21,7 @@ public class BucketFillInteractor : CapturingInteraction
         _context = Tool.Context;
         _context.SourceChanged += CancelForSourceChange;
         _brush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
-        _atBottom = AppPreference.BucketFill.PlaceAtBottom.Value;
+        _atBottom = Tool.PlaceAtBottom.Value;
         _preview = new BucketFillPreview(PrimaryLayer);
         Query(data.WorldPosition);
     }
@@ -30,7 +30,7 @@ public class BucketFillInteractor : CapturingInteraction
 
     private void Query(Vector2 point)
     {
-        var region = _context.Query(point, AppPreference.BucketFill);
+        var region = _context.Query(point, Tool);
         _preview.Show(region, _brush, _atBottom);
         Document.Get<WorldBody>().DefaultCursorShape = region.IsEmpty ? Control.CursorShape.Forbidden : Control.CursorShape.Cross;
     }
@@ -40,7 +40,7 @@ public class BucketFillInteractor : CapturingInteraction
     public override void End(CursorButtonData data)
     {
         Clear();
-        _context.Commit(data.WorldPosition, AppPreference.BucketFill, _brush, _atBottom);
+        _context.Commit(data.WorldPosition, Tool, _brush, _atBottom);
     }
 
     public override void Cancel() => Clear();

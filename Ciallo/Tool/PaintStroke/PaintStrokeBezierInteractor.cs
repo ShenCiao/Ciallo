@@ -282,7 +282,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             PolylineSamples.Uniform(TessellateCurve()),
             _startSnapTarget,
             _endSnapTarget,
-            AppPreference.PaintStrokeSnapDistance.Value);
+            Tool.SnapDistance.Value);
 
         var geometry = _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
 

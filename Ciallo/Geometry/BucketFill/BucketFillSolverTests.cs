@@ -153,7 +153,7 @@ public class BucketFillSolverTests
         var polygon = AddShape(layer, Rectangle(5, 5, 15, 15), false);
         using (var context = new BucketFillContext(layer))
         {
-            var options = new BucketFillOptions();
+            var options = new BucketFillTool();
             int sourceChanges = 0;
             context.SourceChanged += () => sourceChanges++;
             var result = context.Query(new(3, 6), options);

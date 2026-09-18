@@ -31,11 +31,6 @@ public class ReactivePropertyConverter : JsonConverter
 
     public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
     {
-        if (reader.TokenType == JsonToken.Null)
-        {
-            return Activator.CreateInstance(objectType);
-        }
-
         var valueType = objectType.GetGenericArguments()[0];
         var deserializedValue = serializer.Deserialize(reader, valueType);
         if (existingValue == null) return Activator.CreateInstance(objectType, deserializedValue);

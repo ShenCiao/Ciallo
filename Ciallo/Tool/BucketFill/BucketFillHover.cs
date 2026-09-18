@@ -22,8 +22,8 @@ public class BucketFillHover : Interaction, IPropertyProvider
         _context.SourceChanged += Refresh;
         _preview = new BucketFillContourPreview(PrimaryLayer);
         _subscriptions = new();
-        AppPreference.BucketFill.GapAware.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
-        AppPreference.BucketFill.GapFactor.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
+        Tool.GapAware.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
+        Tool.GapFactor.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
         _point = data.WorldPosition;
         Refresh();
     }
@@ -50,11 +50,11 @@ public class BucketFillHover : Interaction, IPropertyProvider
             Document.Get<WorldBody>().DefaultCursorShape = Control.CursorShape.Cross;
             return;
         }
-        var region = _context.Query(_point, AppPreference.BucketFill);
+        var region = _context.Query(_point, Tool);
         _preview.Show(region);
         Document.Get<WorldBody>().DefaultCursorShape = region.IsEmpty ? Control.CursorShape.Forbidden : Control.CursorShape.Cross;
     }
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
-        AppPreference.BucketFill.DrawPolygonProperties(container, Document);
+        Tool.DrawPolygonProperties(container, Document);
 }

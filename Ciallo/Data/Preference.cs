@@ -66,20 +66,7 @@ public class Preference
     public ReactiveProperty<ImmutableArray<BezierPoint>> PenPressureRemapCurve = new(BezierCurveFactory.Linear());
 
     [DataMember]
-    public ReactiveProperty<bool> PaintStrokeSnapEnabled = new(false);
-    [DataMember]
-    public ReactiveProperty<float> PaintStrokeSnapDistance = new(24f);
-    [DataMember]
-    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
-
-    [DataMember]
-    public ReactiveProperty<bool> PaintStrokePressureTaperStartEnabled = new(false);
-    [DataMember]
-    public ReactiveProperty<bool> PaintStrokePressureTaperEndEnabled = new(false);
-    [DataMember]
-    public ReactiveProperty<float> PaintStrokePressureTaperStartLength = new(24f);
-    [DataMember]
-    public ReactiveProperty<float> PaintStrokePressureTaperEndLength = new(24f);
+    public ToolPreferences Tools => InteractionManager.Tools;
 
     #region Save Load Json
 
@@ -123,26 +110,6 @@ public class Preference
         using var file = FileAccess.Open(Path, FileAccess.ModeFlags.Write);
         file.StoreString(content);
     }
-
-    #endregion
-
-    #region Tool
-
-    [DataMember]
-    public BucketFillOptions BucketFill = new();
-
-    [DataMember]
-    public ReactiveProperty<float> VectorFillMarkerRadius = new(15.0f);
-
-    [DataMember]
-    public ReactiveProperty<Color?> VectorFillLayerBoundedAreaColor = new(new(0.62f, 0.62f, 0.62f, 1.0f));
-
-    [DataMember]
-    public ReactiveProperty<bool> ShowVectorFillReferenceLayerWireframe = new(false);
-    [DataMember]
-    public ReactiveProperty<float> GapBridgeDetectMaxGapLength = new(24f);
-    [DataMember]
-    public ReactiveProperty<float> GapBridgeHitRadius = new(6f);
 
     #endregion
 

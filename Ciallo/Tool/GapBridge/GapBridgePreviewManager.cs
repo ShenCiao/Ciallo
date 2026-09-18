@@ -18,9 +18,11 @@ public sealed class GapBridgePreviewManager : IDisposable
     private List<GapBridge> _bridges = [];
     private int _nextFaceColorIndex;
     private readonly IReadOnlySet<Entity> _sourceShapes;
+    private readonly GapBridgeTool _tool;
 
-    public GapBridgePreviewManager(Node2D parent, IReadOnlySet<Entity> sourceShapes)
+    public GapBridgePreviewManager(Node2D parent, IReadOnlySet<Entity> sourceShapes, GapBridgeTool tool)
     {
+        _tool = tool;
         _sourceShapes = sourceShapes;
         _root = new Node2D { Visible = false };
         _root.AddChild(_facesRoot);
@@ -54,7 +56,7 @@ public sealed class GapBridgePreviewManager : IDisposable
         return GapBridge.TryPickNearest(
             _bridges,
             worldPosition,
-            AppPreference.GapBridgeHitRadius.Value,
+            _tool.HitRadius.Value,
             out bridge);
     }
 
@@ -104,7 +106,7 @@ public sealed class GapBridgePreviewManager : IDisposable
         foreach (var child in _bridgesRoot.GetChildren())
             child.QueueFree();
 
-        var maxGapLength = AppPreference.GapBridgeDetectMaxGapLength.Value;
+        var maxGapLength = _tool.DetectMaxGapLength.Value;
         _bridges = GapBridgeDetector.QueryBridges(arr, _sourceShapes, maxGapLength);
 
         foreach (var bridge in _bridges)

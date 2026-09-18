@@ -114,7 +114,7 @@ public class PaintStrokeInteractor : CapturingInteraction
             Generator.CurrentSamples,
             _startSnapTarget,
             _endSnapTarget,
-            AppPreference.PaintStrokeSnapDistance.Value);
+            Tool.SnapDistance.Value);
         return _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
     }
 

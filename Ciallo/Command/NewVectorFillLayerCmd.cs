@@ -2,6 +2,7 @@ using System.Linq;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Ciallo.Rendering;
+using Ciallo.Tool;
 using Frent;
 using Godot;
 using ObservableCollections;
@@ -68,7 +69,7 @@ public class NewVectorFillLayerCmd : CommandBase
         targetE.AddNode(boundedAreaPreview);
         targetE.Get<ShapeLayerView>().AddChild(boundedAreaPreview, false, Node.InternalMode.Front);
         // Color & visibility — independent of arrangement state.
-        AppPreference.VectorFillLayerBoundedAreaColor.Subscribe(color =>
+        InteractionManager.Tools.VectorFill.LayerBoundedAreaColor.Subscribe(color =>
         {
             if (!color.HasValue)
             {

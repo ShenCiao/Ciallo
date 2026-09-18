@@ -65,13 +65,13 @@ public sealed class BucketFillContext : IDisposable
         SourceChanged?.Invoke();
     }
 
-    public BucketFillRegion Query(Vector2 point, BucketFillOptions options)
+    public BucketFillRegion Query(Vector2 point, BucketFillTool options)
     {
         _solver ??= BucketFillSolver.Build([.. _strokes.Values]);
         return _solver.Query(point, options.GapAware.Value, options.GapFactor.Value);
     }
 
-    public bool Commit(Vector2 point, BucketFillOptions options, Entity brush, bool placeAtBottom)
+    public bool Commit(Vector2 point, BucketFillTool options, Entity brush, bool placeAtBottom)
     {
         // Release queries the current geometry synchronously; source changes cancel capture.
         var region = Query(point, options);

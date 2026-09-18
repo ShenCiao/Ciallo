@@ -14,6 +14,9 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class VectorFillHover : Interaction, IPropertyProvider
 {
+    [StateAccess] internal VectorFillTool Tool;
+    [StateAccess] internal BucketFillTool BucketFill;
+
     private readonly List<StrokeView> _contours = [];
     // ponytail: cache leans on PointQueryFace returning a stable Rid per face (native arrangement_2d). Same face -> equal Rid -> skip redraw.
     private Rid _cachedFace;
@@ -96,7 +99,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
-        AppPreference.BucketFill.DrawModeProperty(container);
+        BucketFill.DrawModeProperty(container);
 
         container.AddChild(new Label
         {
@@ -134,7 +137,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
         //     {
         //         MinValue = 1.0f,
         //         MaxValue = 32f,
-        //     }.BindNumber(AppPreference.VectorFillMarkerRadius)
+        //     }.BindNumber(Tool.MarkerRadius)
         // ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
 
         var fillColor = sm.WorkingVectorFillBrush
@@ -145,14 +148,14 @@ public class VectorFillHover : Interaction, IPropertyProvider
         ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
 
         container.AddProperty("Bounded area color",
-            new NullableColorPickerButton().BindColor(AppPreference.VectorFillLayerBoundedAreaColor)
+            new NullableColorPickerButton().BindColor(Tool.LayerBoundedAreaColor)
         ).VisibleIf(sm.PrimaryLayer, e => e.TryHas<VectorFillLayerSetting>());
 
         var showWireframe = new CheckButton()
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             CustomMinimumSize = new(128, 0),
-        }.BindBool(AppPreference.ShowVectorFillReferenceLayerWireframe);
+        }.BindBool(Tool.ShowReferenceLayerWireframe);
         container.AddProperty("Show reference wireframe", showWireframe);
 
         var editReferenceLayers = new Button

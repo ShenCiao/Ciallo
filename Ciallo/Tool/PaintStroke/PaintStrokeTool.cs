@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Ciallo.Rendering;
@@ -13,10 +14,28 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.PaintStroke)]
 public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
+    [DataMember]
+    public readonly ReactiveProperty<bool> SnapEnabled = new(false);
+    [DataMember]
+    public readonly ReactiveProperty<float> SnapDistance = new(24f);
+    [DataMember]
+    public readonly ReactiveProperty<int> Mode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
+    [DataMember]
+    public readonly ReactiveProperty<bool> PressureTaperStartEnabled = new(false);
+    [DataMember]
+    public readonly ReactiveProperty<bool> PressureTaperEndEnabled = new(false);
+    [DataMember]
+    public readonly ReactiveProperty<float> PressureTaperStartLength = new(24f);
+    [DataMember]
+    public readonly ReactiveProperty<float> PressureTaperEndLength = new(24f);
+
+    [StateAccess]
+    internal VectorFillTool VectorFill;
+
     [Substate]
     internal PaintStrokeHover Hover;
 
@@ -35,25 +54,25 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     public readonly Subject<Unit> DeactivateSignal = new();
 
     internal StrokePressureTaper PressureTaper => new(
-        AppPreference.PaintStrokePressureTaperStartEnabled.Value ? AppPreference.PaintStrokePressureTaperStartLength.Value : 0,
-        AppPreference.PaintStrokePressureTaperEndEnabled.Value ? AppPreference.PaintStrokePressureTaperEndLength.Value : 0);
+        PressureTaperStartEnabled.Value ? PressureTaperStartLength.Value : 0,
+        PressureTaperEndEnabled.Value ? PressureTaperEndLength.Value : 0);
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
         sm.Configure(this)
             .InitialTransition(Hover)
             .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleStartPressureTaper),
-                () => AppPreference.PaintStrokePressureTaperStartEnabled.Value = !AppPreference.PaintStrokePressureTaperStartEnabled.Value)
+                () => PressureTaperStartEnabled.Value = !PressureTaperStartEnabled.Value)
             .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleEndPressureTaper),
-                () => AppPreference.PaintStrokePressureTaperEndEnabled.Value = !AppPreference.PaintStrokePressureTaperEndEnabled.Value);
+                () => PressureTaperEndEnabled.Value = !PressureTaperEndEnabled.Value);
         sm.Configure(Hover)
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
                 // Route to bezier or freehand based on mode
-                if (AppPreference.PaintStrokeMode.Value == 1)
+                if (Mode.Value == 1)
                     return quadBezier;
 
-                if (AppPreference.PaintStrokeMode.Value == 2)
+                if (Mode.Value == 2)
                     return polyCubicBezier;
 
                 return freehand;
@@ -89,25 +108,25 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             FocusMode = Control.FocusModeEnum.None,
             TooltipText = "Multiplies input pressure by a factor rising from 0 to 1 over the start interval.".Tr()
                 + "\n" + pressureTaperEffect,
-        }.BindBool(AppPreference.PaintStrokePressureTaperStartEnabled));
+        }.BindBool(PressureTaperStartEnabled));
         container.AddProperty("Start taper length", CreatePressureTaperLengthSlider()
-            .BindNumber(AppPreference.PaintStrokePressureTaperStartLength))
-            .VisibleIf(AppPreference.PaintStrokePressureTaperStartEnabled, enabled => enabled);
+            .BindNumber(PressureTaperStartLength))
+            .VisibleIf(PressureTaperStartEnabled, enabled => enabled);
 
         container.AddProperty("End pressure taper", new CheckBox
         {
             FocusMode = Control.FocusModeEnum.None,
             TooltipText = "Multiplies input pressure by a factor falling from 1 to 0 over the end interval.".Tr()
                 + "\n" + pressureTaperEffect,
-        }.BindBool(AppPreference.PaintStrokePressureTaperEndEnabled));
+        }.BindBool(PressureTaperEndEnabled));
         container.AddProperty("End taper length", CreatePressureTaperLengthSlider()
-            .BindNumber(AppPreference.PaintStrokePressureTaperEndLength))
-            .VisibleIf(AppPreference.PaintStrokePressureTaperEndEnabled, enabled => enabled);
+            .BindNumber(PressureTaperEndLength))
+            .VisibleIf(PressureTaperEndEnabled, enabled => enabled);
 
         container.AddProperty("Snapping", new CheckBox
         {
             ToggleMode = true,
-        }.BindBool(AppPreference.PaintStrokeSnapEnabled));
+        }.BindBool(SnapEnabled));
 
         container.AddProperty("Snap distance",
             new SpinSlider
@@ -117,7 +136,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
                 Step = 1f,
                 ExpEdit = true,
                 AllowGreater = true,
-            }.BindNumber(AppPreference.PaintStrokeSnapDistance));
+            }.BindNumber(SnapDistance));
     }
 
     private static SpinSlider CreatePressureTaperLengthSlider() => new()
@@ -134,10 +153,10 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     {
         Arrangement = PrimaryLayer.Get<ArrangementManager>();
 
-        AppPreference.PaintStrokePressureTaperStartEnabled.CombineLatest(
-                AppPreference.PaintStrokePressureTaperEndEnabled,
-                AppPreference.PaintStrokePressureTaperStartLength,
-                AppPreference.PaintStrokePressureTaperEndLength,
+        PressureTaperStartEnabled.CombineLatest(
+                PressureTaperEndEnabled,
+                PressureTaperStartLength,
+                PressureTaperEndLength,
                 (_, _, _, _) => Unit.Default)
             .Skip(1)
             .TakeUntil(DeactivateSignal)
@@ -146,7 +165,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
         var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
-        AppPreference.ShowVectorFillReferenceLayerWireframe
+        VectorFill.ShowReferenceLayerWireframe
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => VectorFillTool.SetWireframeVisibility(referenceLayers, visible),
                 _ => VectorFillTool.SetWireframeVisibility(referenceLayers, false));
@@ -172,7 +191,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     public PaintStrokeSnapTarget? TryFindSnapTarget(Vector2 worldPosition)
     {
-        if (!AppPreference.PaintStrokeSnapEnabled.Value)
+        if (!SnapEnabled.Value)
             return null;
 
         var arr = Arrangement.ArrReady.CurrentValue;
@@ -182,7 +201,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         return _snap.TryFindTarget(
             arr,
             worldPosition,
-            AppPreference.PaintStrokeSnapDistance.Value);
+            SnapDistance.Value);
     }
 
     internal Entity ResolveStrokeTargetLayer()

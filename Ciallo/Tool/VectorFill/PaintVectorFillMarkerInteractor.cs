@@ -10,11 +10,13 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintVectorFillMarkerInteractor : CapturingInteraction
 {
+    [StateAccess] internal VectorFillTool Tool;
+
     private VectorFillMarkerView _markerPreview;
     private Polygon2D _fillPreview;
     private Entity _fillBrush;
 
-    private float MarkerRadius => AppPreference.VectorFillMarkerRadius.Value;
+    private float MarkerRadius => Tool.MarkerRadius.Value;
 
     public override void Start(CursorButtonData data)
     {

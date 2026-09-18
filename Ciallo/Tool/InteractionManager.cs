@@ -27,6 +27,7 @@ public static partial class InteractionManager
     private static TimeSpan _accumulatedMotionInterval;
 
     public static readonly GlobalInteractiveScope Global;
+    public static ToolPreferences Tools { get; } = new();
     public static readonly StateMachine StateMachine;
     public static readonly StateMachine.TriggerWithParameters<Entity, ImmutableArray<Entity>>
         DocumentOpened;
@@ -126,7 +127,7 @@ public static partial class InteractionManager
         InputRoutes = StateMachine.BuildInputRoutes();
 
         // One process-lifetime subscription. Property panels only bind the shared selection.
-        AppPreference.BucketFill.Mode.Skip(1).Subscribe(_ =>
+        Tools.BucketFill.Mode.Skip(1).Subscribe(_ =>
         {
             if (ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill)
             {

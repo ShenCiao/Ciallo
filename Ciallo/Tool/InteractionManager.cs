@@ -17,10 +17,7 @@ public static partial class InteractionManager
     private static readonly Trigger TimelineRollingChangedTrigger = new("TimelineRollingChanged");
     private static readonly Trigger ToolButtonSwitchTrigger = new("ToolButtonSwitch");
 
-    // Tool-button hotkeys route to RequestTool before raw interaction hotkeys. This index contains
-    // hotkeys used directly as state-machine triggers: Cancel and Confirm.
-    private static readonly ImmutableArray<Hotkey> RoutedInteractionHotkeys =
-        [AppHotkeys.Global.InteractionCancel, AppHotkeys.Global.InteractionConfirm];
+    private static readonly Dictionary<InteractionState, Trigger[]> InputRoutes;
 
     private static Entity _document = Entity.Null;
     private static ImmutableArray<Entity> _selectedLayers = ImmutableArray<Entity>.Empty;
@@ -126,6 +123,7 @@ public static partial class InteractionManager
         StateMachine.OnTransitionCompleted(_ => StateChanged?.Invoke());
 
         InteractionStateGraph.Configure(StateMachine);
+        InputRoutes = StateMachine.BuildInputRoutes();
 
         // One process-lifetime subscription. Property panels only bind the shared selection.
         AppPreference.BucketFill.Mode.Skip(1).Subscribe(_ =>
@@ -204,21 +202,14 @@ public static partial class InteractionManager
         _lastDeliveredCursor = data;
         _accumulatedMotionInterval = TimeSpan.Zero;
 
-        if (TryFire(Trigger.Get(button.ButtonIndex, button.Pressed))) return true;
+        if (StateMachine.TryHandleInput(button, InputRoutes)) return true;
 
         return StateMachine.State is Interaction session && session.OnMouseButton(button, data);
     }
 
     public static bool DispatchKey(InputEventKey key)
     {
-        // Interaction hotkeys used directly as triggers. Godot action matching has priority.
-        foreach (var hotkey in RoutedInteractionHotkeys)
-        {
-            if (hotkey.IsPressedBy(key) && TryFire(Trigger.Press(hotkey))) return true;
-            if (hotkey.IsReleasedBy(key) && TryFire(Trigger.Release(hotkey))) return true;
-        }
-
-        if (TryFire(Trigger.Get(key.Keycode, key.Pressed))) return true;
+        if (StateMachine.TryHandleInput(key, InputRoutes)) return true;
 
         return StateMachine.State is Interaction session && session.OnKey(key, _latestCursor);
         // Tool button shortcut handled by Godot gui system has lowest priority

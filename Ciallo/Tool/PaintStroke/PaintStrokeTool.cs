@@ -41,7 +41,11 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     public override void ConfigureStateMachine(StateMachine sm)
     {
         sm.Configure(this)
-            .InitialTransition(Hover);
+            .InitialTransition(Hover)
+            .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleStartPressureTaper),
+                () => AppPreference.PaintStrokePressureTaperStartEnabled.Value = !AppPreference.PaintStrokePressureTaperStartEnabled.Value)
+            .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleEndPressureTaper),
+                () => AppPreference.PaintStrokePressureTaperEndEnabled.Value = !AppPreference.PaintStrokePressureTaperEndEnabled.Value);
         sm.Configure(Hover)
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {

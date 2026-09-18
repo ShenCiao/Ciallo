@@ -1,4 +1,6 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Toggle Start Pressure Taper,Toggle Start Pressure Taper,切换起笔笔压渐入,切換起筆筆壓漸入,始点の筆圧テーパーを切り替え,시작 필압 테이퍼 전환,Druckverjüngung am Anfang umschalten,Activer ou désactiver l’effilement de pression au début
+Toggle End Pressure Taper,Toggle End Pressure Taper,切换收笔笔压渐出,切換收筆筆壓漸出,終点の筆圧テーパーを切り替え,끝 필압 테이퍼 전환,Druckverjüngung am Ende umschalten,Activer ou désactiver l’effilement de pression à la fin
 Start pressure taper,Start pressure taper,起笔笔压渐入,起筆筆壓漸入,始点の筆圧テーパー,시작 필압 테이퍼,Druckverjüngung am Anfang,Effilement de pression au début
 End pressure taper,End pressure taper,收笔笔压渐出,收筆筆壓漸出,終点の筆圧テーパー,끝 필압 테이퍼,Druckverjüngung am Ende,Effilement de pression à la fin
 Start taper length,Start taper length,起笔渐入长度,起筆漸入長度,始点テーパーの長さ,시작 테이퍼 길이,Verjüngungslänge am Anfang,Longueur d’effilement au début

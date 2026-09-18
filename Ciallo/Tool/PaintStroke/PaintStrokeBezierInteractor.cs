@@ -49,6 +49,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         AdjustingWeights // Phase 3: dragging to adjust weights
     }
     private Phase _phase = Phase.DraggingP2;
+    private Vector2 _startScreenPosition;
+    private bool _canConfirmP2OnRelease;
 
     // Wireframe visualization
     private Node2D _wireframe;
@@ -97,6 +99,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         _w2 = 1f;
         _phase3ControlPointConvergence = 0f;
         _phase = Phase.DraggingP2;
+        _startScreenPosition = data.ScreenPosition;
+        _canConfirmP2OnRelease = false;
 
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
         _endSnapTarget = null;
@@ -111,6 +115,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         switch (_phase)
         {
             case Phase.DraggingP2:
+                _canConfirmP2OnRelease |= data.ScreenPosition != _startScreenPosition;
                 UpdateP2Preview(data.WorldPosition);
                 break;
 
@@ -148,6 +153,14 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         {
             if (_phase == Phase.DraggingP2)
             {
+                // A stationary first click keeps the endpoint following the cursor
+                // until the next release. A drag confirms on its first release.
+                if (!_canConfirmP2OnRelease && data.ScreenPosition == _startScreenPosition)
+                {
+                    _canConfirmP2OnRelease = true;
+                    return true;
+                }
+
                 ConfirmP2(data.WorldPosition);
                 RefreshVisuals();
                 return true;
@@ -346,7 +359,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         // Handle line (p0 -> p1 -> p2)
         _wireframeHandleLine = new StrokeView
         {
-            Material = AutoloadRendering.WireframeMaterial
+            Material = AutoloadRendering.WireframeMaterial,
+            Visible = false
         };
         _wireframe.AddChild(_wireframeHandleLine);
 
@@ -367,6 +381,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         if (_wireframe == null) return;
 
         // Update handle line (p0 -> p1 -> p2)
+        _wireframeHandleLine.Visible = _phase != Phase.DraggingP2;
         Vector2[] handlePoints = [_p0, _p1, _p2];
         float[] handleRadii = [1f, 1f, 1f];
         float[] handlePressures = [1f, 1f, 1f];

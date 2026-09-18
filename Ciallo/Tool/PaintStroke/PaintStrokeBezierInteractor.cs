@@ -25,6 +25,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
     public Entity BrushE;
     public StrokeView StrokePreview;
+    private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
+    private Func<float, float> _radiusSampler;
 
     private PaintStrokeSnapTarget? _startSnapTarget;
     private PaintStrokeSnapTarget? _endSnapTarget;
@@ -82,6 +84,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             AppStrokeBrushLibrary.SelectedIndex.Value = -1;
         }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
+        _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
         StrokePreview = new StrokeView { Material = brushMaterial };
@@ -106,7 +109,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         _endSnapTarget = null;
 
         BuildWireframe();
-        UpdatePreview();
+        RefreshPressureTaper();
         UpdateSnapHint();
     }
 
@@ -211,7 +214,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     private void RefreshVisuals()
     {
         UpdateWireframe();
-        UpdatePreview();
+        RefreshPressureTaper();
         UpdateSnapHint();
     }
 
@@ -274,69 +277,31 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         // controls the weights and must never become the stroke's endpoint snap.
         RefreshEndSnapTarget(_p2);
 
-        // Tessellate the rational quadratic Bézier curve
-        var curvePoints = TessellateCurve();
-
-        // Create empty arrays for the generator geometry
-        var emptyRadii = new float[curvePoints.Length];
-        var emptyPressures = new float[curvePoints.Length];
-        var emptyTilts = new Vector2[curvePoints.Length];
-
-        // Apply snapping to endpoints
-        var geometry = PaintStrokeSnap.BuildRepairedGeometry(
+        var samples = PaintStrokeSnap.BuildRepairedGeometry(
             Tool.Arrangement.ArrReady.CurrentValue,
-            new PolylineGeneratorGeometry(curvePoints, emptyRadii, emptyPressures, emptyTilts),
+            PolylineSamples.Uniform(TessellateCurve()),
             _startSnapTarget,
             _endSnapTarget,
             AppPreference.PaintStrokeSnapDistance.Value);
 
-        // Sample radius and pressure
-        var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        var radiusSampler = brushSetting.ToRadiusSampler();
-        var radii = new float[geometry.Positions.Length];
-        var pressures = new float[geometry.Positions.Length];
-        var tilts = new Vector2[geometry.Positions.Length];
-
-        for (int i = 0; i < geometry.Positions.Length; i++)
-        {
-            float t = (float)i / (geometry.Positions.Length - 1);
-            pressures[i] = 1f; // Uniform pressure for bezier mode
-            radii[i] = radiusSampler(pressures[i]);
-            tilts[i] = Vector2.Zero;
-        }
-
-        var positions = new Vector2[geometry.Positions.Length];
-        for (int i = 0; i < geometry.Positions.Length; i++)
-            positions[i] = geometry.Positions[i];
+        var geometry = _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
 
         new CommandBuilder("Paint Stroke (Bezier)", PrimaryLayer.World.Create())
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(
-                positions.ToImmutableArray(),
-                radii.ToImmutableArray(),
-                pressures.ToImmutableArray(),
-                tilts.ToImmutableArray())
+                geometry.Positions.ToImmutableArray(),
+                geometry.Radii.ToImmutableArray(),
+                geometry.Pressures.ToImmutableArray(),
+                geometry.Tilts.ToImmutableArray())
             .Commit();
     }
 
-    private void UpdatePreview()
+    internal void RefreshPressureTaper()
     {
-        var curvePoints = TessellateCurve();
-
-        var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        var radiusSampler = brushSetting.ToRadiusSampler();
-        var radii = new float[curvePoints.Length];
-        var pressures = new float[curvePoints.Length];
-
-        for (int i = 0; i < curvePoints.Length; i++)
-        {
-            pressures[i] = 1f;
-            radii[i] = radiusSampler(pressures[i]);
-        }
-
-        StrokePreview.SetGeometry(curvePoints, radii, pressures);
+        var geometry = _geometryBuilder.Build(PolylineSamples.Uniform(TessellateCurve()), Tool.PressureTaper, _radiusSampler);
+        StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 
     private Vector2[] TessellateCurve()

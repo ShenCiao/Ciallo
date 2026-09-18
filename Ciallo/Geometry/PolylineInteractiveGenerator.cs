@@ -6,38 +6,16 @@ using NumericsVector2 = System.Numerics.Vector2;
 
 namespace Ciallo.Geometry;
 
-public readonly struct PolylineGeneratorGeometry(
-    IReadOnlyList<Vector2> positions,
-    IReadOnlyList<float> radii,
-    IReadOnlyList<float> pressures,
-    IReadOnlyList<Vector2> tilts)
-{
-    public IReadOnlyList<Vector2> Positions { get; } = positions;
-    public IReadOnlyList<float> Radii { get; } = radii;
-    public IReadOnlyList<float> Pressures { get; } = pressures;
-    public IReadOnlyList<Vector2> Tilts { get; } = tilts;
-    public int Count => Positions.Count;
-}
-
 /// <summary>
 /// Generates interactive polyline geometry from cursor input.
 /// </summary>
 /// <remarks>
-/// CurrentGeometry is a short-lived view over internal buffers. During Moving it
+/// CurrentSamples is a short-lived view over internal buffers. During Moving it
 /// may include transient stroke prediction; after End it contains stable samples
 /// only. Callers should consume it immediately and persist copies only.
 /// </remarks>
 public class PolylineInteractiveGenerator
 {
-    public enum RadiusMode
-    {
-        Fixed,
-        Sampled,
-    }
-
-    public RadiusMode Mode = RadiusMode.Fixed;
-    public float FixedRadius = 1f;
-    public Func<float, float> RadiusSampler;
     public float CommitSimplificationScreenTolerancePx = 0.15f;
     public float CommitSimplificationMaxSegmentScreenPx = 32f;
 
@@ -46,17 +24,14 @@ public class PolylineInteractiveGenerator
     private readonly List<ModelerResult> _modelerResults = new(256);
 
     private readonly List<Vector2> _stablePositions = new(2048);
-    private readonly List<float> _stableRadii = new(2048);
     private readonly List<float> _stablePressures = new(2048);
     private readonly List<Vector2> _stableTilts = new(2048);
 
     private readonly List<Vector2> _predictionPositions = new(256);
-    private readonly List<float> _predictionRadii = new(256);
     private readonly List<float> _predictionPressures = new(256);
     private readonly List<Vector2> _predictionTilts = new(256);
 
     private readonly List<Vector2> _positions = new(2304);
-    private readonly List<float> _radii = new(2304);
     private readonly List<float> _pressures = new(2304);
     private readonly List<Vector2> _tilts = new(2304);
     private readonly List<RawStylusSample> _rawSamples = new(256);
@@ -67,7 +42,7 @@ public class PolylineInteractiveGenerator
     private float _worldUnitsPerPixel = 1f;
     private bool _strokeStarted;
 
-    public PolylineGeneratorGeometry CurrentGeometry => new(_positions, _radii, _pressures, _tilts);
+    public PolylineSamples CurrentSamples => new(_positions, _pressures, _tilts);
 
     // Upper bound for the per-input dt handed to the modeler. Past this bound the
     // spring integrator's sub-step exceeds the explicit-Euler stability limit and
@@ -128,12 +103,10 @@ public class PolylineInteractiveGenerator
     public void Clear()
     {
         _stablePositions.Clear();
-        _stableRadii.Clear();
         _stablePressures.Clear();
         _stableTilts.Clear();
         ClearPredictionGeometry();
         _positions.Clear();
-        _radii.Clear();
         _pressures.Clear();
         _tilts.Clear();
         _rawSamples.Clear();
@@ -183,7 +156,7 @@ public class PolylineInteractiveGenerator
 
         _modelerResults.Clear();
         _modeler.Predict(_modelerResults);
-        AppendResults(_modelerResults, _predictionPositions, _predictionRadii, _predictionPressures, _predictionTilts);
+        AppendResults(_modelerResults, _predictionPositions, _predictionPressures, _predictionTilts);
     }
 
     private void AppendRawPrediction(ModelerInput input)
@@ -195,25 +168,22 @@ public class PolylineInteractiveGenerator
         float pressure = input.Pressure < 0 ? 1f : Mathf.Clamp(input.Pressure, 0f, 1f);
         _predictionPositions.Add(position);
         _predictionPressures.Add(pressure);
-        _predictionRadii.Add(CalculateRadius(pressure));
         _predictionTilts.Add(TiltAt(input.Time.TotalSeconds));
     }
 
     private void ClearPredictionGeometry()
     {
         _predictionPositions.Clear();
-        _predictionRadii.Clear();
         _predictionPressures.Clear();
         _predictionTilts.Clear();
     }
 
     private void AppendStableResults(IReadOnlyList<ModelerResult> results) =>
-        AppendResults(results, _stablePositions, _stableRadii, _stablePressures, _stableTilts);
+        AppendResults(results, _stablePositions, _stablePressures, _stableTilts);
 
     private void AppendResults(
         IReadOnlyList<ModelerResult> results,
         List<Vector2> positions,
-        List<float> radii,
         List<float> pressures,
         List<Vector2> tilts)
     {
@@ -229,7 +199,6 @@ public class PolylineInteractiveGenerator
             float pressure = result.Pressure < 0 ? 1f : Mathf.Clamp(result.Pressure, 0f, 1f);
             positions.Add(position);
             pressures.Add(pressure);
-            radii.Add(CalculateRadius(pressure));
             tilts.Add(TiltAt(result.Time.TotalSeconds));
         }
     }
@@ -237,15 +206,12 @@ public class PolylineInteractiveGenerator
     private void ComposeCurrentGeometry()
     {
         _positions.Clear();
-        _radii.Clear();
         _pressures.Clear();
         _tilts.Clear();
         _positions.AddRange(_stablePositions);
-        _radii.AddRange(_stableRadii);
         _pressures.AddRange(_stablePressures);
         _tilts.AddRange(_stableTilts);
         _positions.AddRange(_predictionPositions);
-        _radii.AddRange(_predictionRadii);
         _pressures.AddRange(_predictionPressures);
         _tilts.AddRange(_predictionTilts);
     }
@@ -268,7 +234,6 @@ public class PolylineInteractiveGenerator
 
         _stablePositions.Clear();
         _stablePositions.AddRange(simplifiedPositions);
-        KeepOriginalIndices(_stableRadii, originalIndices);
         KeepOriginalIndices(_stablePressures, originalIndices);
         KeepOriginalIndices(_stableTilts, originalIndices);
     }
@@ -281,16 +246,6 @@ public class PolylineInteractiveGenerator
 
         values.Clear();
         values.AddRange(kept);
-    }
-
-    private float CalculateRadius(float pressure)
-    {
-        return Mode switch
-        {
-            RadiusMode.Fixed => FixedRadius,
-            RadiusMode.Sampled => RadiusSampler!(pressure),
-            _ => throw new InvalidOperationException($"Unsupported RadiusMode: {Mode}")
-        };
     }
 
     private void AddRawSample(Vector2 position, Vector2 tilt, double time) =>

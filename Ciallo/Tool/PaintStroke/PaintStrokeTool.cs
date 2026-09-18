@@ -34,6 +34,10 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     public readonly Subject<Unit> DeactivateSignal = new();
 
+    internal StrokePressureTaper PressureTaper => new(
+        AppPreference.PaintStrokePressureTaperStartEnabled.Value ? AppPreference.PaintStrokePressureTaperStartLength.Value : 0,
+        AppPreference.PaintStrokePressureTaperEndEnabled.Value ? AppPreference.PaintStrokePressureTaperEndLength.Value : 0);
+
     public override void ConfigureStateMachine(StateMachine sm)
     {
         sm.Configure(this)
@@ -75,6 +79,27 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
+        var pressureTaperEffect = "Affects all brush properties mapped from pressure. Brush mappings determine changes in width and opacity.".Tr();
+        container.AddProperty("Start pressure taper", new CheckBox
+        {
+            FocusMode = Control.FocusModeEnum.None,
+            TooltipText = "Multiplies input pressure by a factor rising from 0 to 1 over the start interval.".Tr()
+                + "\n" + pressureTaperEffect,
+        }.BindBool(AppPreference.PaintStrokePressureTaperStartEnabled));
+        container.AddProperty("Start taper length", CreatePressureTaperLengthSlider()
+            .BindNumber(AppPreference.PaintStrokePressureTaperStartLength))
+            .VisibleIf(AppPreference.PaintStrokePressureTaperStartEnabled, enabled => enabled);
+
+        container.AddProperty("End pressure taper", new CheckBox
+        {
+            FocusMode = Control.FocusModeEnum.None,
+            TooltipText = "Multiplies input pressure by a factor falling from 1 to 0 over the end interval.".Tr()
+                + "\n" + pressureTaperEffect,
+        }.BindBool(AppPreference.PaintStrokePressureTaperEndEnabled));
+        container.AddProperty("End taper length", CreatePressureTaperLengthSlider()
+            .BindNumber(AppPreference.PaintStrokePressureTaperEndLength))
+            .VisibleIf(AppPreference.PaintStrokePressureTaperEndEnabled, enabled => enabled);
+
         container.AddProperty("Snapping", new CheckBox
         {
             ToggleMode = true,
@@ -91,9 +116,28 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             }.BindNumber(AppPreference.PaintStrokeSnapDistance));
     }
 
+    private static SpinSlider CreatePressureTaperLengthSlider() => new()
+    {
+        MinValue = 0,
+        MaxValue = 256,
+        Step = 1,
+        ExpEdit = true,
+        AllowGreater = true,
+        TooltipText = "Distance along the stroke in canvas units. Zero disables this end.".Tr(),
+    };
+
     protected override void OnActivated()
     {
         Arrangement = PrimaryLayer.Get<ArrangementManager>();
+
+        AppPreference.PaintStrokePressureTaperStartEnabled.CombineLatest(
+                AppPreference.PaintStrokePressureTaperEndEnabled,
+                AppPreference.PaintStrokePressureTaperStartLength,
+                AppPreference.PaintStrokePressureTaperEndLength,
+                (_, _, _, _) => Unit.Default)
+            .Skip(1)
+            .TakeUntil(DeactivateSignal)
+            .Subscribe(_ => RefreshPressureTaper());
 
         if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
@@ -102,6 +146,18 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .TakeUntil(DeactivateSignal)
             .Subscribe(visible => VectorFillTool.SetWireframeVisibility(referenceLayers, visible),
                 _ => VectorFillTool.SetWireframeVisibility(referenceLayers, false));
+    }
+
+    private void RefreshPressureTaper()
+    {
+        // Rebuild from the active interaction's source samples, without routing a
+        // synthetic movement or reentering its state (which would end the stroke).
+        switch (InteractionManager.StateMachine.State)
+        {
+            case PaintStrokeInteractor stroke: stroke.RefreshPressureTaper(); break;
+            case PaintStrokeBezierInteractor bezier: bezier.RefreshPressureTaper(); break;
+            case PaintStrokePolyCubicBezierInteractor cubic: cubic.RefreshPressureTaper(); break;
+        }
     }
 
     protected override void OnDeactivated()

@@ -72,6 +72,15 @@ public class Preference
     [DataMember]
     public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
 
+    [DataMember]
+    public ReactiveProperty<bool> PaintStrokePressureTaperStartEnabled = new(false);
+    [DataMember]
+    public ReactiveProperty<bool> PaintStrokePressureTaperEndEnabled = new(false);
+    [DataMember]
+    public ReactiveProperty<float> PaintStrokePressureTaperStartLength = new(24f);
+    [DataMember]
+    public ReactiveProperty<float> PaintStrokePressureTaperEndLength = new(24f);
+
     #region Save Load Json
 
     public static readonly string Path = "user://Preference.json";

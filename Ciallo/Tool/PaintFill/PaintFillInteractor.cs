@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -11,11 +12,7 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintFillInteractor : CapturingInteraction
 {
-    private readonly PolylineInteractiveGenerator _generator = new()
-    {
-        Mode = PolylineInteractiveGenerator.RadiusMode.Fixed,
-        FixedRadius = AppPreference.StrokeWireframeRadius,
-    };
+    private readonly PolylineInteractiveGenerator _generator = new();
     private StrokeView _dashPreview;
     private Entity _fillBrush;
 
@@ -37,7 +34,7 @@ public class PaintFillInteractor : CapturingInteraction
     public override void Moving(CursorMotionData data)
     {
         _generator.Update(data);
-        var geometry = _generator.CurrentGeometry;
+        var geometry = _generator.CurrentSamples;
         ImmutableArray<Vector2> points = [.. geometry.Positions, geometry.Positions[0]];
         _dashPreview.SetGeometry(points, AppPreference.StrokeWireframeRadius);
     }
@@ -45,7 +42,7 @@ public class PaintFillInteractor : CapturingInteraction
     public override void End(CursorButtonData data)
     {
         _generator.End(data);
-        var geometry = _generator.CurrentGeometry;
+        var geometry = _generator.CurrentSamples;
         if (geometry.Count < 3)
         {
             Clear();
@@ -56,7 +53,7 @@ public class PaintFillInteractor : CapturingInteraction
             .AddToLayerTree(PrimaryLayer)
             .SetSampledPolyline(
                 [.. geometry.Positions, geometry.Positions[0]],
-                [.. geometry.Radii, geometry.Radii[0]],
+                Enumerable.Repeat(AppPreference.StrokeWireframeRadius, geometry.Count + 1).ToImmutableArray(),
                 [.. geometry.Pressures, geometry.Pressures[0]],
                 [.. geometry.Tilts, geometry.Tilts[0]])
             .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, _fillBrush)

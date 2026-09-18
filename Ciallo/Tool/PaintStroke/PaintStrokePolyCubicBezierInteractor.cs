@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -16,6 +17,9 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
     [StateAccess] public PaintStrokeTool Tool { get; set; }
     public Entity BrushE;
     public StrokeView StrokePreview;
+    private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
+    private Func<float, float> _radiusSampler;
+    private PolylineSamples _previewSamples;
 
     private readonly List<Vector2> _anchors = [];
     private readonly List<Vector2> _outHandles = [];
@@ -49,6 +53,7 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
     {
         Input.MouseMode = Input.MouseModeEnum.Hidden;
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
+        _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
         StrokePreview = new StrokeView { Material = BrushE.Get<StrokeBrushMaterial>() };
         PrimaryLayer.Get<ShapeLayerView>().AddChild(StrokePreview);
         _snapDots = AutoloadRendering.CreateDots();
@@ -185,17 +190,16 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
 
     private void RefreshPreview(Vector2 cursor)
     {
-        var points = BuildPolyline(cursor);
-        if (points.Count >= 2)
-        {
-            var sampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
-            var radii = new float[points.Count];
-            var pressures = new float[points.Count];
-            for (int i = 0; i < points.Count; i++) { pressures[i] = 1f; radii[i] = sampler(1f); }
-            StrokePreview.SetGeometry(points.ToArray(), radii, pressures);
-        }
+        _previewSamples = PolylineSamples.Uniform(BuildPolyline(cursor));
+        RefreshPressureTaper();
         UpdateWireframe();
         UpdateSnapHint();
+    }
+
+    internal void RefreshPressureTaper()
+    {
+        var geometry = _geometryBuilder.Build(_previewSamples, Tool.PressureTaper, _radiusSampler);
+        StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 
     private List<Vector2> BuildPolyline(Vector2 cursor, bool includePending = true)
@@ -287,21 +291,18 @@ public class PaintStrokePolyCubicBezierInteractor : CapturingInteraction
         if (points.Count < 2) return;
         var targetLayer = Tool.ResolveStrokeTargetLayer();
         if (targetLayer.IsNull || targetLayer.IsDyingOrDead) return;
-        var sampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
-        var radii = new float[points.Count];
-        var pressures = new float[points.Count];
-        var tilts = new Vector2[points.Count];
-        for (int i = 0; i < points.Count; i++) { pressures[i] = 1f; radii[i] = sampler(1f); }
-        var geometry = PaintStrokeSnap.BuildRepairedGeometry(
+        var samples = PaintStrokeSnap.BuildRepairedGeometry(
             Tool.Arrangement.ArrReady.CurrentValue,
-            new PolylineGeneratorGeometry(points.ToArray(), radii, pressures, tilts),
+            PolylineSamples.Uniform(points),
             _startSnapTarget,
             _anchorSnapTargets.Count > 0 ? _anchorSnapTargets[^1] : null,
             AppPreference.PaintStrokeSnapDistance.Value);
+        var geometry = _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
         new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", PrimaryLayer.World.Create())
             .NewStroke().AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
-            .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)
+            .SetSampledPolyline(geometry.Positions.ToImmutableArray(), geometry.Radii.ToImmutableArray(),
+                geometry.Pressures.ToImmutableArray(), geometry.Tilts.ToImmutableArray())
             .Commit();
     }
 

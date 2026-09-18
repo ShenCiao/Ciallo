@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -16,10 +17,9 @@ public class PaintStrokeInteractor : CapturingInteraction
     public PaintStrokeTool Tool { get; set; }
     public Entity BrushE;
     public StrokeView StrokePreview;
-    public readonly PolylineInteractiveGenerator Generator = new()
-    {
-        Mode = PolylineInteractiveGenerator.RadiusMode.Sampled,
-    };
+    public readonly PolylineInteractiveGenerator Generator = new();
+    private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
+    private Func<float, float> _radiusSampler;
     private PaintStrokeSnapTarget? _startSnapTarget;
     private PaintStrokeSnapTarget? _endSnapTarget;
     private readonly List<Vector2> _snapHintPoints = new(2);
@@ -54,12 +54,12 @@ public class PaintStrokeInteractor : CapturingInteraction
         Document.Get<WorldOverlay>().AddChild(_snapDots);
 
         var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        Generator.RadiusSampler = brushSetting.ToRadiusSampler();
+        _radiusSampler = brushSetting.ToRadiusSampler();
 
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
         _endSnapTarget = null;
         Generator.Start(data);
-        UpdatePreview();
+        RefreshPressureTaper();
         UpdateSnapHint();
     }
 
@@ -67,7 +67,7 @@ public class PaintStrokeInteractor : CapturingInteraction
     {
         Generator.Update(data);
         RefreshEndSnapTarget(data.WorldPosition);
-        UpdatePreview();
+        RefreshPressureTaper();
         UpdateSnapHint();
     }
 
@@ -86,7 +86,8 @@ public class PaintStrokeInteractor : CapturingInteraction
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
-            .SetSampledPolyline(geometry.Positions, geometry.Radii, geometry.Pressures, geometry.Tilts)
+            .SetSampledPolyline(geometry.Positions.ToImmutableArray(), geometry.Radii.ToImmutableArray(),
+                geometry.Pressures.ToImmutableArray(), geometry.Tilts.ToImmutableArray())
             .Commit();
         Clear();
     }
@@ -108,18 +109,19 @@ public class PaintStrokeInteractor : CapturingInteraction
     protected PaintStrokeGeometry BuildCommitGeometry(CursorButtonData data)
     {
         RefreshEndSnapTarget(data.WorldPosition);
-        return PaintStrokeSnap.BuildRepairedGeometry(
+        var samples = PaintStrokeSnap.BuildRepairedGeometry(
             Tool.Arrangement.ArrReady.CurrentValue,
-            Generator.CurrentGeometry,
+            Generator.CurrentSamples,
             _startSnapTarget,
             _endSnapTarget,
             AppPreference.PaintStrokeSnapDistance.Value);
+        return _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
     }
 
-    private void UpdatePreview()
+    internal void RefreshPressureTaper()
     {
-        var generatorGeometry = Generator.CurrentGeometry;
-        StrokePreview.SetGeometry(generatorGeometry.Positions, generatorGeometry.Radii, generatorGeometry.Pressures);
+        var geometry = _geometryBuilder.Build(Generator.CurrentSamples, Tool.PressureTaper, _radiusSampler);
+        StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 
     private void RefreshEndSnapTarget(Vector2 worldPosition)

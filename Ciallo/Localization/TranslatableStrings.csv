@@ -110,7 +110,8 @@ Pressure to radius,Pressure to radius,压力到半径,壓力到半徑,圧力か�
 Pressure to flow,Pressure to flow,压力到流量,壓力到流量,圧力から流量へ,압력→흐름,Druck zu Fluss,Pression vers flux
 Radius,Radius,半径,半徑,半径,반지름,Radius,Rayon
 Simplify,Simplify,简化,簡化,単純化,단순화,Vereinfachen,Simplifier
-Simplification ratio,Simplification ratio,简化比率,簡化比率,単純化率,단순화 비율,Vereinfachungsrate,Taux de simplification
+Simplification tolerance,Simplification tolerance,简化容差,簡化容差,単純化の許容誤差,단순화 허용 오차,Vereinfachungstoleranz,Tolérance de simplification
+Position and radius tolerance in canvas units. Zero keeps all points.,Position and radius tolerance in canvas units. Zero keeps all points.,位置和半径的容差，以画布单位计。设为零时保留所有点。,位置和半徑的容差，以畫布單位計。設為零時保留所有點。,キャンバス単位での位置と半径の許容誤差。0の場合はすべての点を保持します。,캔버스 단위의 위치 및 반지름 허용 오차입니다. 0이면 모든 점을 유지합니다.,Toleranz für Position und Radius in Leinwandeinheiten. Bei null bleiben alle Punkte erhalten.,Tolérance de position et de rayon en unités du canevas. Zéro conserve tous les points.
 Subdivide,Subdivide,细分,細分,細分化,세분화,Unterteilen,Subdiviser
 Linear subdivide,Linear subdivide,线性细分,線性細分,リニア細分化,선형 세분화,Lineare Unterteilung,Subdivision linéaire
 Smooth subdivide,Smooth subdivide,平滑细分,平滑細分,スムーズ細分化,부드러운 세분화,Glatte Unterteilung,Subdivision lissée

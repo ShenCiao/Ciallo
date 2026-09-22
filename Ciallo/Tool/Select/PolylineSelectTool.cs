@@ -28,7 +28,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     [DataMember]
     public readonly ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
     [DataMember]
-    public readonly ReactiveProperty<float> SimplificationRatio = new(0.25f);
+    public readonly ReactiveProperty<float> SimplificationTolerance = new(0.5f);
 
     [Substate]
     internal PolylineNoSelectionHover HoverWithoutSelection;
@@ -273,13 +273,16 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 return e.Get<SampledPolyline>().Count > 1; // naively ignore single point.
             });
 
-        var simplificationRatioEdit = new SpinSlider()
+        var simplificationToleranceEdit = new SpinSlider()
         {
-            MinValue = 0.1,
-            MaxValue = 0.5,
+            MinValue = 0,
+            MaxValue = 10,
+            Step = 0.1,
+            AllowGreater = true,
+            TooltipText = "Position and radius tolerance in canvas units. Zero keeps all points.",
         };
-        simplificationRatioEdit.BindNumber(SimplificationRatio);
-        container.CreatePropertyBox("Simplification ratio", simplificationRatioEdit).AddToChildOf(polylineEditBox);
+        simplificationToleranceEdit.BindNumber(SimplificationTolerance);
+        container.CreatePropertyBox("Simplification tolerance", simplificationToleranceEdit).AddToChildOf(polylineEditBox);
 
         var simplifyButton = container.CreateButton("Simplify").AddToChildOf(polylineEditBox);
         simplifyButton.Pressed += () =>
@@ -288,8 +291,9 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             foreach (var polylineE in selectionManager.SelectedShapes)
             {
                 var geom = polylineE.Get<SampledPolyline>();
-                if (geom.Length < 4) continue;
-                geom.Positions.Value.SimplifyCurvatureDistance(SimplificationRatio.Value, out var indices);
+                geom.Positions.Value.SimplifyRdp(
+                    SimplificationTolerance.Value, out var indices, radii: geom.Radii.Value);
+                if (indices.Count == geom.Count) continue;
 
                 var positions = ImmutableArray.CreateBuilder<Vector2>(indices.Count);
                 var radii = ImmutableArray.CreateBuilder<float>(indices.Count);

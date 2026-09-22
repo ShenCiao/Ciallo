@@ -10,21 +10,22 @@ public static partial class PolylineExtension
     /// <summary>
     /// Simplifies an open polyline with the Ramer-Douglas-Peucker algorithm.
     /// Points are removed when their perpendicular distance to the current range's
-    /// endpoint line is less than or equal to <paramref name="tolerance"/>, and
-    /// the optional source segment length constraint allows the removal.
-    /// This matches Blender's curve simplification model: tolerance is an epsilon
-    /// distance, not a target removal ratio.
+    /// endpoint line and optional radius interpolation error are within
+    /// <paramref name="tolerance"/>, and the optional source segment length
+    /// constraint allows the removal.
     /// </summary>
     /// <param name="polyline">Input polyline points.</param>
-    /// <param name="tolerance">Maximum allowed deviation in the same space as <paramref name="polyline"/>.</param>
+    /// <param name="tolerance">Position and radius error threshold in the same units as <paramref name="polyline"/>.</param>
     /// <param name="originalIndex">Indices of kept points in the original polyline.</param>
     /// <param name="maxSegmentLength">Maximum original polyline path length allowed between two kept points. Values less than or equal to zero disable this constraint.</param>
+    /// <param name="radii">Optional point radii in the same units as the positions, checked against the same tolerance.</param>
     /// <returns>Simplified polyline.</returns>
     public static List<Vector2> SimplifyRdp(
         this IReadOnlyList<Vector2> polyline,
         float tolerance,
         out List<int> originalIndex,
-        float maxSegmentLength = 0f)
+        float maxSegmentLength = 0f,
+        IReadOnlyList<float> radii = null)
     {
         int count = polyline.Count;
         if (count <= 2 || tolerance <= 0f)
@@ -57,7 +58,7 @@ public static partial class PolylineExtension
 
             for (int i = first + 1; i < last; i++)
             {
-                float distance = PerpendicularDistance(polyline, first, last, i);
+                float distance = SimplificationError(polyline, radii, first, last, i);
                 if (distance > maxDistance)
                 {
                     maxDistance = distance;
@@ -107,7 +108,8 @@ public static partial class PolylineExtension
         return middle;
     }
 
-    private static float PerpendicularDistance(IReadOnlyList<Vector2> polyline, int first, int last, int index)
+    private static float SimplificationError(
+        IReadOnlyList<Vector2> polyline, IReadOnlyList<float> radii, int first, int last, int index)
     {
         var from = polyline[first];
         var to = polyline[last];
@@ -120,130 +122,20 @@ public static partial class PolylineExtension
             lambda = ray.Dot(value - from) / rayLengthSquared;
 
         var interpolated = from.Lerp(to, lambda);
-        return value.DistanceTo(interpolated);
-    }
-
-    /// <summary>
-    /// The Visvalingam–Whyatt algorithm to simplify the polyline.
-    /// Remove the smallest effective area points until the remaining point count reaches (ratio * count).
-    /// ratio in [0,1] keeps that fraction of points (clamped). ratio >= 1 keeps all.
-    /// </summary>
-    /// <remarks>
-    /// This algorithm does not fit well for our polylines, whose points are dense in turnings/corners and sparse in straight segments.
-    /// It tends to remove less points in straight segments and more in corners, which is opposite to our need.
-    /// </remarks>
-    /// <param name="polyline">The polyline to Simplify.</param>
-    /// <param name="simplificationRatio">Fraction of points to remove, in [0,1]</param>
-    /// <param name="originalIndex">The output point indices in the original polyline.</param>
-    /// <returns>Simplified polyline.</returns>
-    public static List<Vector2> SimplifyVm(this IReadOnlyList<Vector2> polyline, float simplificationRatio, out List<int> originalIndex)
-    {
-        int count = polyline.Count;
-        float ratio = 1f - simplificationRatio;
-        if (count == 0) throw new ArgumentException("Polyline cannot be empty.", nameof(polyline));
-        if (count <= 2 || ratio >= 1f)
-        {
-            originalIndex = Enumerable.Range(0, count).ToList();
-            return polyline.ToList();
-        }
-        if (ratio <= 0f)
-            ratio = 0f; // keep minimum 2 points anyway
-
-        int targetCount = (int)MathF.Round(count * ratio);
-        if (targetCount < 2) targetCount = 2;
-        if (targetCount > count) targetCount = count;
-        if (targetCount == count)
-        {
-            originalIndex = [.. Enumerable.Range(0, count)];
-            return [.. polyline];
-        }
-
-        // Node arrays (index-based linked list)
-        var prev = new int[count];
-        var next = new int[count];
-        var removed = new bool[count];
-        var area = new float[count];
-        for (int i = 0; i < count; i++)
-        {
-            prev[i] = i - 1;
-            next[i] = i + 1;
-        }
-        next[count - 1] = count; // sentinel > last index
-
-        float TriangleArea(int i)
-        {
-            int p = prev[i];
-            int n = next[i];
-            if (p < 0 || n >= count) return float.PositiveInfinity; // endpoints not removable
-            return Geometry.TriangleArea(polyline[p], polyline[i], polyline[n]);
-        }
-
-        var heap = new PriorityQueue<int, float>();
-        for (int i = 1; i < count - 1; i++)
-        {
-            area[i] = TriangleArea(i);
-            heap.Enqueue(i, area[i]);
-        }
-
-        int remaining = count;
-        // Remove until desired count
-        while (remaining > targetCount && heap.Count > 0)
-        {
-            var i = heap.Dequeue();
-            if (removed[i]) continue; // already gone by a newer entry
-            // stale entry check (priority queue lacks decrease-key)
-            float currentArea = TriangleArea(i);
-            if (MathF.Abs(currentArea - area[i]) > 1e-6f)
-            {
-                // area changed since enqueued; re-enqueue with updated value
-                area[i] = currentArea;
-                heap.Enqueue(i, area[i]);
-                continue;
-            }
-
-            // Remove this point
-            removed[i] = true;
-            remaining--;
-            int p = prev[i];
-            int n = next[i];
-            if (p >= 0) next[p] = n;
-            if (n < count) prev[n] = p;
-
-            // Update neighbor areas (if they are not endpoints and not removed)
-            if (p > 0 && p < count - 1 && !removed[p])
-            {
-                area[p] = TriangleArea(p);
-                heap.Enqueue(p, area[p]);
-            }
-            if (n > 0 && n < count - 1 && !removed[n])
-            {
-                area[n] = TriangleArea(n);
-                heap.Enqueue(n, area[n]);
-            }
-        }
-
-        // Collect remaining points in order
-        List<Vector2> result = [];
-        originalIndex = [];
-        int idx = 0;
-        while (idx < count) // simple traversal from start
-        {
-            if (!removed[idx])
-            {
-                result.Add(polyline[idx]);
-                originalIndex.Add(idx);
-            }
-            idx = next[idx];
-            if (idx >= count) break;
-        }
-
-        return result;
+        float distance = value.DistanceTo(interpolated);
+        return radii is null
+            ? distance
+            : MathF.Max(distance, MathF.Abs(radii[index] - Mathf.Lerp(radii[first], radii[last], lambda)));
     }
 
     /// <summary>
     /// A variant of Visvalingam–Whyatt with Curvature-weighted distance metric.
     /// Prefer removing points on straight segments, keep dense points in corners.
     /// </summary>
+    /// <remarks>
+    /// Retained for possible future exposure as a user-selectable algorithm.
+    /// The selection tool currently uses <see cref="SimplifyRdp"/>.
+    /// </remarks>
     /// <param name="polyline">Input polyline points.</param>
     /// <param name="simplificationRatio">
     /// Fraction of points to remove, in [0,1].

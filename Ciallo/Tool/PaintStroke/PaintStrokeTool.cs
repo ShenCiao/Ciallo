@@ -93,6 +93,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .Permit(InteractionManager.InputCaptureLost, Hover);
 
         sm.Configure(polyCubicBezier)
+            .Permit(PolyCubicBezierInteractor.Closed, Hover)
             .PermitStandardExits(Hover);
 
     }

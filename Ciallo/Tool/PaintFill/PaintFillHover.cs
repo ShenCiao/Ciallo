@@ -11,6 +11,8 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintFillHover : Interaction, IPropertyProvider
 {
+    [StateAccess] public PaintFillTool Tool { get; set; }
+
     public override void Start(CursorButtonData data)
     {
         Document.Get<WorldBody>().DefaultCursorShape = Control.CursorShape.Cross;
@@ -26,6 +28,15 @@ public class PaintFillHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        var mode = new OptionButton
+        {
+            CustomMinimumSize = new(0, 32),
+            TooltipText = "Poly Cubic Bézier: press Enter to close with a straight line. Click the first point to close with a curve; drag before releasing to align the handles at the join.".Tr(),
+        };
+        mode.AddItem("Freehand");
+        mode.AddItem("Poly Cubic Bézier");
+        container.AddProperty("Mode", mode.BindSelectionIndex(Tool.Mode));
+
         container.AddChild(new Label
         {
             Text = "Fill brush".Tr(),

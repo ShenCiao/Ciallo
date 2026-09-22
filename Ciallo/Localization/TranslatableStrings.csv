@@ -1,4 +1,10 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+New polygon,New polygon,新建多边形,新增多邊形,新しいポリゴン,새 다각형,Neues Polygon,Nouveau polygone
+Operation,Operation,运算,運算,演算,연산,Operation,Opération
+Union,Union,并集,聯集,合体,합집합,Vereinigung,Union
+Subtract,Subtract,差集,差集,型抜き,차집합,Subtraktion,Soustraction
+Intersect,Intersect,交集,交集,交差,교집합,Schnittmenge,Intersection
+Exclude,Exclude,异或,互斥或,排他,배타적 논리합,Ausschluss,Exclusion
 Toggle Start Pressure Taper,Toggle Start Pressure Taper,切换起笔笔压渐入,切換起筆筆壓漸入,始点の筆圧テーパーを切り替え,시작 필압 테이퍼 전환,Druckverjüngung am Anfang umschalten,Activer ou désactiver l’effilement de pression au début
 Toggle End Pressure Taper,Toggle End Pressure Taper,切换收笔笔压渐出,切換收筆筆壓漸出,終点の筆圧テーパーを切り替え,끝 필압 테이퍼 전환,Druckverjüngung am Ende umschalten,Activer ou désactiver l’effilement de pression à la fin
 Start pressure taper,Start pressure taper,起笔笔压渐入,起筆筆壓漸入,始点の筆圧テーパー,시작 필압 테이퍼,Druckverjüngung am Anfang,Effilement de pression au début

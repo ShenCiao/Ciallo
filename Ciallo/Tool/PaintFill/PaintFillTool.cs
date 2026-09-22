@@ -17,11 +17,14 @@ public class PaintFillTool : InteractionScope, ILayerDependent
     [DataMember]
     public readonly ReactiveProperty<int> Mode = new(0); // 0 = Freehand, 1 = PolyCubicBezier
 
+    [DataMember]
+    public readonly ReactiveProperty<Geometry2D.PolyBooleanOperation?> BooleanOperation = new(null);
+
     [Substate]
     internal PaintFillHover Hover;
 
     [Substate]
-    internal PaintFillInteractor Left;
+    internal PaintFillInteractor Freehand;
 
     [Substate]
     internal PaintFillPolyCubicBezierInteractor PolyCubicBezier;
@@ -31,9 +34,9 @@ public class PaintFillTool : InteractionScope, ILayerDependent
         sm.Configure(this)
             .InitialTransition(Hover);
         sm.Configure(Hover)
-            .PermitDynamic(Trigger.Press(MouseButton.Left), () => Mode.Value == 1 ? PolyCubicBezier : Left)
+            .PermitDynamic(Trigger.Press(MouseButton.Left), () => Mode.Value == 1 ? PolyCubicBezier : Freehand)
             .PermitReentry(Trigger.Refresh);
-        sm.Configure(Left)
+        sm.Configure(Freehand)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
             .PermitStandardExits(Hover);
         sm.Configure(PolyCubicBezier)

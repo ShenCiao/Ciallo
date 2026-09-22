@@ -169,6 +169,26 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var selectionChanged = selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default);
 
+        var booleanBox = container.CreateBox().AddToChildOf(container)
+            .VisibleIf(selectionChanged, _ => selectedShapes.Count(shape => shape.Has<FilledPolygonSetting>()) >= 2);
+        booleanBox.Name = "PolygonBooleanOperations";
+        var booleanButtons = new GridContainer { Columns = 2, Name = "Buttons" }.AddToChildOf(booleanBox);
+        foreach (var operation in Enum.GetValues<Geometry2D.PolyBooleanOperation>())
+        {
+            var button = container.CreateButton(PolygonBooleanActions.Label(operation)).AddToChildOf(booleanButtons);
+            button.Name = operation.ToString();
+            button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            button.TooltipText = operation == Geometry2D.PolyBooleanOperation.Difference
+                ? "Subtract all selected upper polygons from the bottom polygon. The result keeps the bottom polygon's fill brush.".Tr()
+                : "Combine the selected polygons. The result keeps the bottom polygon's fill brush.".Tr();
+            selectionChanged.Subscribe(_ => button.Disabled =
+                !PolygonBooleanActions.CanApplySelection(selectionManager.PrimaryLayer.CurrentValue, selectedShapes.ToArray())).AddTo(button);
+            button.Pressed += () =>
+            {
+                if (PolygonBooleanActions.ApplySelection(PrimaryLayer, operation)) Fire(Trigger.Refresh);
+            };
+        }
+
         // --- Stroke brush switcher
         var strokeBrushSwitcher = StrokeBrushPreviewList.New().AddToChildOf(container);
         strokeBrushSwitcher.CustomMinimumSize = new(0, 256);

@@ -12,13 +12,17 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintFillInteractor : CapturingInteraction
 {
+    [StateAccess] public PaintFillTool Tool { get; set; }
+
     private readonly PolylineInteractiveGenerator _generator = new();
     private StrokeView _dashPreview;
     private Entity _fillBrush;
+    private Geometry2D.PolyBooleanOperation? _operation;
 
     public override void BeforeSourceExit(Interaction session)
     {
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
+        _operation = Tool.BooleanOperation.Value;
     }
 
     public override void Start(CursorButtonData data)
@@ -50,14 +54,20 @@ public class PaintFillInteractor : CapturingInteraction
             CommitPolygon(PrimaryLayer, _fillBrush, new PolylineSamples(
                 [.. geometry.Positions, geometry.Positions[0]],
                 [.. geometry.Pressures, geometry.Pressures[0]],
-                [.. geometry.Tilts, geometry.Tilts[0]]));
+                [.. geometry.Tilts, geometry.Tilts[0]]), _operation);
         Clear();
     }
 
-    internal static void CommitPolygon(Entity layer, Entity brush, PolylineSamples geometry)
+    internal static void CommitPolygon(Entity layer, Entity brush, PolylineSamples geometry,
+        Geometry2D.PolyBooleanOperation? operation = null)
     {
         // Signed area would also reject valid self-intersecting rings (e.g. a figure eight).
         if (!HasNonCollinearPoints(geometry)) return;
+        if (operation.HasValue)
+        {
+            PolygonBooleanActions.Paint(layer, brush, [.. geometry.Positions], operation.Value);
+            return;
+        }
         new CommandBuilder("Paint Fill", layer.World.Create())
             .NewFilledPolygon()
             .AddToLayerTree(layer)

@@ -37,6 +37,18 @@ public class PaintFillHover : Interaction, IPropertyProvider
         mode.AddItem("Poly Cubic Bézier");
         container.AddProperty("Mode", mode.BindSelectionIndex(Tool.Mode));
 
+        var operation = new OptionButton
+        {
+            Name = "PaintFillBooleanOperation",
+            CustomMinimumSize = new(0, 32),
+            TooltipText = "Modify overlapping polygons using the same fill brush in this layer. If polygons are selected, modify only those. Subtract removes the drawn area; Intersect keeps it.".Tr(),
+        };
+        operation.BindValue<Geometry2D.PolyBooleanOperation?>(
+            [null, Geometry2D.PolyBooleanOperation.Union, Geometry2D.PolyBooleanOperation.Difference,
+                Geometry2D.PolyBooleanOperation.Intersection, Geometry2D.PolyBooleanOperation.Xor],
+            Tool.BooleanOperation, value => PolygonBooleanActions.Label(value).Tr());
+        container.AddProperty("Operation", operation);
+
         container.AddChild(new Label
         {
             Text = "Fill brush".Tr(),

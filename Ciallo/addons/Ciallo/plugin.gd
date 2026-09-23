@@ -60,7 +60,7 @@ class _StripAutoloadExportPlugin extends EditorExportPlugin:
 			var key := "autoload/" + autoload_name
 			if ProjectSettings.has_setting(key):
 				_saved[key] = ProjectSettings.get_setting(key)
-				ProjectSettings.set_setting(key, "")
+				ProjectSettings.set_setting(key, null)
 				print("[Ciallo] Export: stripped autoload '", autoload_name, "'")
 
 	func _export_end() -> void:

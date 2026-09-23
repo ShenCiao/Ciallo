@@ -20,6 +20,8 @@ public partial class DynamicGridItemList : DynamicGridContainer
     [Signal]
     public delegate void ItemClickedEventHandler(int idx);
 
+    public BaseButton.ActionModeEnum ActionMode { get; set; } = BaseButton.ActionModeEnum.Press;
+
     public Control SelectedControl
     {
         get;
@@ -135,7 +137,8 @@ public partial class DynamicGridItemList : DynamicGridContainer
                 _dragSource = GetLayoutChildren()[idx];
                 _dragStartGlobalPos = mb.GlobalPosition;
                 _isDragging = false;
-                EmitSignalItemClicked(idx);
+                if (ActionMode == BaseButton.ActionModeEnum.Press)
+                    EmitSignalItemClicked(idx);
                 AcceptEvent();
                 break;
             }
@@ -175,19 +178,29 @@ public partial class DynamicGridItemList : DynamicGridContainer
 
     private void FinishDrag(Vector2 localPos)
     {
-        if (_isDragging && _dragSource != null && IsInstanceValid(_dragSource))
+        int clickedIndex = -1;
+        if (_dragSource != null && IsInstanceValid(_dragSource))
         {
             var children = GetLayoutChildren();
             int srcIdx = children.IndexOf(_dragSource);
-            int slot = ComputeDropSlot(localPos);
-            int dstIdx = slot > srcIdx ? slot - 1 : slot;
-            if (srcIdx >= 0 && dstIdx != srcIdx)
-                EmitSignalMoved(srcIdx, dstIdx);
+            if (_isDragging)
+            {
+                int slot = ComputeDropSlot(localPos);
+                int dstIdx = slot > srcIdx ? slot - 1 : slot;
+                if (srcIdx >= 0 && dstIdx != srcIdx)
+                    EmitSignalMoved(srcIdx, dstIdx);
+            }
+            else if (ActionMode == BaseButton.ActionModeEnum.Release && srcIdx >= 0 && HitTestIndex(localPos) == srcIdx)
+            {
+                clickedIndex = srcIdx;
+            }
         }
         _dragSource = null;
         _isDragging = false;
         _dropSlot = -1;
         UpdateDropHintLine();
+        if (clickedIndex >= 0)
+            EmitSignalItemClicked(clickedIndex);
     }
 
     private int ComputeDropSlot(Vector2 localPos)

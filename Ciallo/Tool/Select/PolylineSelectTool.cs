@@ -192,6 +192,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         // --- Stroke brush switcher
         var strokeBrushSwitcher = StrokeBrushPreviewList.New().AddToChildOf(container);
         strokeBrushSwitcher.CustomMinimumSize = new(0, 256);
+        strokeBrushSwitcher.PreviewList.ActionMode = BaseButton.ActionModeEnum.Release;
         strokeBrushSwitcher.Document = Document;
         strokeBrushSwitcher.BindBrushes(Document.Get<BrushManager>().StrokeBrushes);
         strokeBrushSwitcher.VisibleIf(
@@ -226,6 +227,13 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 return;
             }
 
+            if (selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == brushE))
+            {
+                selectedShapes.Clear();
+                Fire(Trigger.Refresh);
+                return;
+            }
+
             var cmd = new CommandBuilder("Set Selected Stroke Brush");
             foreach (var shapeE in selectedShapes)
                 cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);
@@ -236,6 +244,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         // --- Vector fill brush switcher
         var vectorFillBrushSwitcher = VectorFillBrushPreviewList.New().AddToChildOf(container);
         vectorFillBrushSwitcher.CustomMinimumSize = new(0, 256);
+        vectorFillBrushSwitcher.PreviewList.ActionMode = BaseButton.ActionModeEnum.Release;
         vectorFillBrushSwitcher.Document = Document;
         vectorFillBrushSwitcher.BindBrushes(Document.Get<BrushManager>().VectorFillBrushes);
         vectorFillBrushSwitcher.VisibleIf(selectionChanged,
@@ -243,7 +252,11 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         selectionChanged.Subscribe(_ =>
         {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>())) return;
+            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>()))
+            {
+                vectorFillBrushSwitcher.Select(Entity.Null);
+                return;
+            }
             var firstE = GetVectorFillBrushE(selectedShapes.First()).Value;
             bool allSame = selectedShapes.All(e => GetVectorFillBrushE(e).Value == firstE);
             vectorFillBrushSwitcher.Select(allSame ? firstE : Entity.Null);
@@ -251,6 +264,13 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         vectorFillBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {
+            if (selectedShapes.Count > 0 && selectedShapes.All(e => GetVectorFillBrushE(e).Value == brushE))
+            {
+                selectedShapes.Clear();
+                Fire(Trigger.Refresh);
+                return;
+            }
+
             var cmd = new CommandBuilder("Set Selected Vector Fill Brush");
             foreach (var shapeE in selectedShapes)
             {

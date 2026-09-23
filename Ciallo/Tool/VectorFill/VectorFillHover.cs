@@ -109,6 +109,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
         var brushPreview = VectorFillBrushPreviewList.New(Document);
         brushPreview.CustomMinimumSize = new(0, 256);
         container.AddChild(brushPreview);
+        brushPreview.DrawNameProperty(container);
 
         var sm = Document.Get<SelectionManager>();
 

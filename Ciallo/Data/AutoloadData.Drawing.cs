@@ -170,7 +170,9 @@ public partial class AutoloadData
                     break;
                 case "fill_brush":
                     if (firstFillBrush.IsNull) firstFillBrush = target;
-                    command.NewVectorFillBrush().SetProperty(e => e.Get<FillBrushSetting>().FillColor, Color.FromHtml(edit.Color));
+                    command.NewVectorFillBrush()
+                        .SetProperty(e => e.Get<FillBrushSetting>().Name, edit.Name ?? edit.Id)
+                        .SetProperty(e => e.Get<FillBrushSetting>().FillColor, Color.FromHtml(edit.Color));
                     break;
                 case "stroke": case "polygon":
                     if (edit.Op == "stroke") command.NewStroke(); else command.NewFilledPolygon();
@@ -267,7 +269,11 @@ public partial class AutoloadData
                 row["name"] = entity.Get<StrokeBrushSetting>().Name.Value;
                 row["color"] = "#" + entity.Get<StrokeBrushSetting>().Color.Value.ToHtml();
             }
-            if (entity.Has<FillBrushSetting>()) row["color"] = "#" + entity.Get<FillBrushSetting>().FillColor.Value.ToHtml();
+            if (entity.Has<FillBrushSetting>())
+            {
+                row["name"] = entity.Get<FillBrushSetting>().Name.Value;
+                row["color"] = "#" + entity.Get<FillBrushSetting>().FillColor.Value.ToHtml();
+            }
             if (entity.Has<StrokeSetting>()) row["brush"] = DrawingId(entity.Get<StrokeSetting>().Brush.Value);
             if (entity.Has<FilledPolygonSetting>()) row["brush"] = DrawingId(entity.Get<FilledPolygonSetting>().BrushE.Value);
             if (entity.Has<SampledPolyline>())

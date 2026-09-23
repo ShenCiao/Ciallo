@@ -80,6 +80,19 @@ public partial class VectorFillBrushPreviewList : Container
         PreviewList.SelectedControl = e.IsNull ? null : GetOrCreateBrushPreview(e);
     }
 
+    public void DrawNameProperty(PropertyContainer container)
+    {
+        var nameEdit = new LineEdit
+        {
+            FocusMode = FocusModeEnum.Click,
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
+        };
+        var name = WorkingBrush.Select(e => e.TryGet<FillBrushSetting>()?.Name)
+            .Flatten().AddTo(nameEdit);
+        container.AddProperty("Name", nameEdit.BindString(name))
+            .VisibleIf(WorkingBrush, Entity.IsNotNull);
+    }
+
     private Control GetOrCreateBrushPreview(Entity e)
     {
         if (PreviewMap.TryGetValue(e, out var box))
@@ -107,9 +120,34 @@ public partial class VectorFillBrushPreviewList : Container
         container.AddChild(markerPreview);
         box.AddChild(container);
 
+        var nameLabel = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
+            MouseFilter = MouseFilterEnum.Ignore,
+            ZIndex = 1,
+            AnchorTop = 0.5f,
+            AnchorBottom = 0.5f,
+            AnchorRight = 1,
+            OffsetLeft = 4,
+            OffsetRight = -4,
+            OffsetTop = 16,
+            OffsetBottom = 16,
+            GrowVertical = GrowDirection.Both,
+        };
+        nameLabel.AddThemeConstantOverride("outline_size", 8);
+        nameLabel.AddThemeColorOverride("font_color", Colors.White);
+        nameLabel.AddThemeColorOverride("font_outline_color", Colors.Black);
+        var nameOverlay = new Control { MouseFilter = MouseFilterEnum.Ignore };
+        nameOverlay.AddChild(nameLabel);
+        box.AddChild(nameOverlay);
+
         var setting = e.Get<FillBrushSetting>();
+        setting.Name.Subscribe(name => nameLabel.Text = name).AddTo(e);
         setting.MarkerTexture.Subscribe(markerPreview.SetTexture).AddTo(e);
-        setting.MarkerColor.Subscribe(markerPreview.SetModulate).AddTo(e);
+        setting.MarkerColor.Subscribe(markerPreview.SetSelfModulate).AddTo(e);
         setting.FillColor.Subscribe(background.SetColor).AddTo(e);
         return box;
     }

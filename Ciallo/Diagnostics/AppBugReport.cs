@@ -344,7 +344,7 @@ public static class AppBugReport
         if (entity.Has<StrokeBrushSetting>())
             return $"Stroke \"{entity.Get<StrokeBrushSetting>().Name.Value}\"";
         if (entity.Has<FillBrushSetting>())
-            return "Vector fill brush";
+            return $"Vector fill \"{entity.Get<FillBrushSetting>().Name.Value}\"";
         return $"Entity {entity.PackedValue}";
     }
 

@@ -10,7 +10,6 @@ using Godot;
 using MessagePack;
 using ObservableCollections;
 using R3;
-using FileAccess = Godot.FileAccess;
 
 namespace Ciallo.Data;
 
@@ -34,112 +33,101 @@ public static partial class AppStrokeBrushLibrary
 
     public static readonly string BrushFolder = "user://Brush/";
 
-    private static string SanitizeFileName(string fileName)
-    {
-        var invalids = Path.GetInvalidFileNameChars();
-        foreach (var c in invalids)
-            fileName = fileName.Replace(c, '_');
-        if (string.IsNullOrWhiteSpace(fileName))
-            fileName = "Unknown name brush";
-        return fileName;
-    }
-
     public static void Save()
     {
         if (AppCommandLineOptions.FactoryStartup) return;
-        // Ensure folder exists
-        using var baseDir = DirAccess.Open("user://");
-        if (!baseDir.DirExists("Brush"))
-            baseDir.MakeDir("Brush");
+        SaveBrushes(ProjectSettings.GlobalizePath(BrushFolder), BrushSettings.ToArray());
+    }
 
-        // Clear
-        using var dirAccess = DirAccess.Open(BrushFolder);
-        dirAccess.ListDirBegin();
-        string fileName;
-        while ((fileName = dirAccess.GetNext()) != "")
-            if (fileName.EndsWith(".bin"))
-                dirAccess.Remove(fileName);
-        dirAccess.ListDirEnd();
+    internal static void SaveBrushes(string folder, IReadOnlyList<StrokeBrushSetting> brushes)
+    {
+        // New filenames keep the previous manifest and its files usable until commit.
+        var snapshot = brushes.Select(brush => (
+            Name: Guid.NewGuid().ToString("N"), Content: MessagePackSerializer.Serialize(brush))).ToArray();
+        foreach (var entry in snapshot)
+            UserDataFiles.WriteAtomic(Path.Combine(folder, entry.Name + ".bin"), entry.Content);
 
-        HashSet<string> seenNames = new();
-        // Save
-        List<string> fileNames = [];
-        foreach (var brush in BrushSettings)
+        var names = snapshot.Select(entry => entry.Name).ToArray();
+        UserDataFiles.WriteAtomic(Path.Combine(folder, "manifest"), MessagePackSerializer.Serialize(names));
+        var retained = names.ToHashSet(StringComparer.Ordinal);
+        foreach (var path in Directory.EnumerateFiles(folder, "*.bin"))
+            if (!retained.Contains(Path.GetFileNameWithoutExtension(path)))
+                UserDataFiles.TryDelete(path);
+    }
+
+    internal static List<StrokeBrushSetting> LoadBrushes(string folder)
+    {
+        if (!Directory.Exists(folder)) return [];
+        var files = Directory.EnumerateFiles(folder, "*.bin")
+            .ToDictionary(Path.GetFileNameWithoutExtension, StringComparer.Ordinal);
+        string manifestPath = Path.Combine(folder, "manifest");
+        string[] names = files.Keys.Order(StringComparer.Ordinal).ToArray();
+        if (File.Exists(manifestPath))
         {
-            var name = SanitizeFileName(brush.Name.Value);
-            if (seenNames.Contains(name))
+            try
             {
-                int suffix = 1;
-                while (seenNames.Contains(name + "_" + suffix))
-                    suffix++;
-                name = name + "_" + suffix;
+                names = MessagePackSerializer.Deserialize<string[]>(File.ReadAllBytes(manifestPath));
+                if (names == null || names.Any(string.IsNullOrWhiteSpace))
+                    throw new InvalidDataException("Invalid brush manifest.");
             }
-            var path = BrushFolder + name + ".bin";
-            seenNames.Add(name);
-
-            var content = MessagePackSerializer.Serialize(brush);
-            using var file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
-            file.StoreBuffer(content);
-            fileNames.Add(name);
+            catch (Exception exception) when (exception is MessagePackSerializationException or InvalidDataException)
+            {
+                GD.PrintErr($"Discarding invalid brush manifest '{manifestPath}': {exception.Message}");
+                UserDataFiles.TryDelete(manifestPath);
+                names = files.Keys.Order(StringComparer.Ordinal).ToArray();
+            }
         }
-        using var manifest = FileAccess.Open(BrushFolder + "manifest", FileAccess.ModeFlags.Write);
-        manifest.StoreBuffer(MessagePackSerializer.Serialize(fileNames));
+
+        List<StrokeBrushSetting> loaded = [];
+        foreach (var name in names.Distinct(StringComparer.Ordinal))
+        {
+            // Resolve only enumerated files: manifest entries cannot escape the brush folder.
+            if (!files.TryGetValue(name, out var path))
+            {
+                GD.PrintErr($"Skipping missing brush '{name}' in '{folder}'.");
+                continue;
+            }
+            try
+            {
+                var brush = MessagePackSerializer.Deserialize<StrokeBrushSetting>(File.ReadAllBytes(path));
+                ValidateLoadedBrush(brush);
+                loaded.Add(brush);
+            }
+            catch (Exception exception)
+            {
+                GD.PrintErr($"Cannot load brush '{path}': {exception.Message}");
+                if (exception is MessagePackSerializationException or InvalidDataException)
+                    UserDataFiles.TryDelete(path);
+            }
+        }
+        return loaded;
+    }
+
+    private static void ValidateLoadedBrush(StrokeBrushSetting brush)
+    {
+        if (brush?.Name?.Value == null || brush.Labels == null)
+            throw new InvalidDataException("Brush is missing its name or labels.");
+        foreach (var curve in new[] { brush.Pressure2RadiusCurve, brush.Pressure2FlowCurve, brush.DiskOpacityCurve, brush.FalloffCurve })
+            if (curve == null || curve.Value.IsDefaultOrEmpty || curve.Value.Length < 2 ||
+                curve.Value.Any(point => !point.P.IsFinite() || !point.In.IsFinite() || !point.Out.IsFinite()))
+                throw new InvalidDataException("Brush contains an invalid mapping curve.");
     }
 
     public static bool TryLoad()
     {
         if (AppCommandLineOptions.FactoryStartup) return false;
-        // Check folder
-        using var baseDir = DirAccess.Open("user://");
-        if (!baseDir.DirExists("Brush")) return false;
-
-        // Get manifest
-        List<string> manifestFileNames = [];
-        if (FileAccess.FileExists(BrushFolder + "manifest"))
+        try
         {
-            using var file = FileAccess.Open(BrushFolder + "manifest", FileAccess.ModeFlags.Read);
-            var manifestByte = file.GetBuffer((long)file.GetLength());
-            manifestFileNames = MessagePackSerializer.Deserialize<List<string>>(manifestByte);
+            var loaded = LoadBrushes(ProjectSettings.GlobalizePath(BrushFolder));
+            BrushSettings.Clear();
+            BrushSettings.AddRange(loaded);
+            return loaded.Count > 0;
         }
-
-        // List files
-        using var brushDir = DirAccess.Open(BrushFolder);
-        var fileNames = new List<string>();
-        brushDir.ListDirBegin();
-        string fileEntry;
-        while ((fileEntry = brushDir.GetNext()) != "")
-            if (fileEntry.EndsWith(".bin"))
-                fileNames.Add(fileEntry.GetBaseName());
-        brushDir.ListDirEnd();
-
-        if (fileNames.Count == 0) return false;
-
-        // Load
-        BrushSettings.Clear();
-        BrushSettings.AddRange(Enumerable.Repeat<StrokeBrushSetting>(null, manifestFileNames.Count));
-
-        foreach (var name in fileNames)
+        catch (Exception exception)
         {
-            StrokeBrushSetting strokeBrush;
-            try
-            {
-                using var file = FileAccess.Open(BrushFolder + name + ".bin", FileAccess.ModeFlags.Read);
-                var content = file.GetBuffer((long)file.GetLength());
-                strokeBrush = MessagePackSerializer.Deserialize<StrokeBrushSetting>(content);
-            }
-            catch (Exception)
-            {
-                continue;
-            }
-            if (strokeBrush == null)
-                continue;
-            var index = manifestFileNames.IndexOf(name);
-            if (index >= 0)
-                BrushSettings[index] = strokeBrush;
-            else
-                BrushSettings.Add(strokeBrush);
+            GD.PrintErr($"Cannot load brush library: {exception.Message}");
+            return false;
         }
-        return true;
     }
 
     public static void BindToGui(BrushPanel panel)

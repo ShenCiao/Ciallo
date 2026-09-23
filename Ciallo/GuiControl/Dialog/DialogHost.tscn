@@ -34,7 +34,6 @@ file_mode = 0
 display_mode = 1
 access = 2
 filters = PackedStringArray("*.ciallo;")
-use_native_dialog = true
 script = ExtResource("3_1xav8")
 
 [node name="AboutCiallo" parent="." unique_id=2025639422 instance=ExtResource("4_3ccb4")]
@@ -65,14 +64,11 @@ initial_position = 4
 display_mode = 1
 access = 2
 filters = PackedStringArray("*.scn", "*.tscn")
-use_native_dialog = true
 script = ExtResource("7_xkft4")
 
 [node name="WarnUser" type="AcceptDialog" parent="." unique_id=1656009061]
 unique_name_in_owner = true
 initial_position = 4
-transient = false
-always_on_top = true
 
 [node name="SaveChangeDialog" type="ConfirmationDialog" parent="." unique_id=819494425]
 unique_name_in_owner = true
@@ -90,7 +86,6 @@ unique_name_in_owner = true
 initial_position = 4
 access = 2
 filters = PackedStringArray("*.ciallo;")
-use_native_dialog = true
 script = ExtResource("10_0gwwr")
 
 [node name="ConfigureGlobalPenPressure" parent="." unique_id=44268714 instance=ExtResource("12_1xav8")]

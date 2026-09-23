@@ -25,6 +25,8 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
     [DataMember]
     public readonly ReactiveProperty<int> Mode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
     [DataMember]
+    public readonly ReactiveProperty<float> CurvePressure = new(1f);
+    [DataMember]
     public readonly ReactiveProperty<bool> PressureTaperStartEnabled = new(false);
     [DataMember]
     public readonly ReactiveProperty<bool> PressureTaperEndEnabled = new(false);
@@ -103,6 +105,15 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
     public void DrawPropertyAfterSubstates(PropertyContainer container)
     {
+        container.AddProperty("Curve pressure", new SpinSlider
+        {
+            MinValue = 0,
+            MaxValue = 1,
+            Step = 0.01,
+            TooltipText = "Input pressure for Bézier strokes before pressure taper and brush mappings.".Tr(),
+        }.BindNumber(CurvePressure))
+            .VisibleIf(Mode, mode => mode != 0);
+
         var pressureTaperEffect = "Affects all brush properties mapped from pressure. Brush mappings determine changes in width and opacity.".Tr();
         container.AddProperty("Start pressure taper", new CheckBox
         {
@@ -158,10 +169,11 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
                 PressureTaperEndEnabled,
                 PressureTaperStartLength,
                 PressureTaperEndLength,
-                (_, _, _, _) => Unit.Default)
+                CurvePressure,
+                (_, _, _, _, _) => Unit.Default)
             .Skip(1)
             .TakeUntil(DeactivateSignal)
-            .Subscribe(_ => RefreshPressureTaper());
+            .Subscribe(_ => RefreshPressurePreview());
 
         if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
@@ -172,15 +184,15 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
                 _ => VectorFillTool.SetWireframeVisibility(referenceLayers, false));
     }
 
-    private void RefreshPressureTaper()
+    private void RefreshPressurePreview()
     {
         // Rebuild from the active interaction's source samples, without routing a
         // synthetic movement or reentering its state (which would end the stroke).
         switch (InteractionManager.StateMachine.State)
         {
-            case PaintStrokeInteractor stroke: stroke.RefreshPressureTaper(); break;
-            case PaintStrokeBezierInteractor bezier: bezier.RefreshPressureTaper(); break;
-            case PaintStrokePolyCubicBezierInteractor cubic: cubic.RefreshPressureTaper(); break;
+            case PaintStrokeInteractor stroke: stroke.RefreshPressurePreview(); break;
+            case PaintStrokeBezierInteractor bezier: bezier.RefreshPressurePreview(); break;
+            case PaintStrokePolyCubicBezierInteractor cubic: cubic.RefreshPressurePreview(); break;
         }
     }
 

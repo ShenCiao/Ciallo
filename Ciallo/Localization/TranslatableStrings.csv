@@ -1,4 +1,6 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Curve pressure,Curve pressure,曲线笔压,曲線筆壓,曲線の筆圧,곡선 필압,Kurvendruck,Pression de la courbe
+Input pressure for Bézier strokes before pressure taper and brush mappings.,Input pressure for Bézier strokes before pressure taper and brush mappings.,贝塞尔笔画的原始笔压，随后应用笔压渐入渐出和笔刷映射。,貝茲筆畫的原始筆壓，隨後套用筆壓漸入漸出和筆刷映射。,筆圧テーパーとブラシのマッピングを適用する前のベジェストロークの入力筆圧。,필압 테이퍼와 브러시 매핑을 적용하기 전 베지에 획의 입력 필압입니다.,Eingabedruck für Bézierstriche vor Druckverjüngung und Pinselzuordnungen.,Pression d’entrée des traits de Bézier avant l’effilement de pression et les courbes du pinceau.
 New polygon,New polygon,新建多边形,新增多邊形,新しいポリゴン,새 다각형,Neues Polygon,Nouveau polygone
 Operation,Operation,运算,運算,演算,연산,Operation,Opération
 Union,Union,并集,聯集,合体,합집합,Vereinigung,Union

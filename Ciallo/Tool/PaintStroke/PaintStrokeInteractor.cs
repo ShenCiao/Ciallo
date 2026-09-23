@@ -59,7 +59,7 @@ public class PaintStrokeInteractor : CapturingInteraction
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
         _endSnapTarget = null;
         Generator.Start(data);
-        RefreshPressureTaper();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
@@ -67,7 +67,7 @@ public class PaintStrokeInteractor : CapturingInteraction
     {
         Generator.Update(data);
         RefreshEndSnapTarget(data.WorldPosition);
-        RefreshPressureTaper();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
@@ -118,7 +118,7 @@ public class PaintStrokeInteractor : CapturingInteraction
         return _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
     }
 
-    internal void RefreshPressureTaper()
+    internal void RefreshPressurePreview()
     {
         var geometry = _geometryBuilder.Build(Generator.CurrentSamples, Tool.PressureTaper, _radiusSampler);
         StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);

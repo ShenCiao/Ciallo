@@ -109,7 +109,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         _endSnapTarget = null;
 
         BuildWireframe();
-        RefreshPressureTaper();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
@@ -214,7 +214,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     private void RefreshVisuals()
     {
         UpdateWireframe();
-        RefreshPressureTaper();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
@@ -279,7 +279,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
         var samples = PaintStrokeSnap.BuildRepairedGeometry(
             Tool.Arrangement.ArrReady.CurrentValue,
-            PolylineSamples.Uniform(TessellateCurve()),
+            PolylineSamples.Uniform(TessellateCurve(), Tool.CurvePressure.Value),
             _startSnapTarget,
             _endSnapTarget,
             Tool.SnapDistance.Value);
@@ -298,9 +298,10 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             .Commit();
     }
 
-    internal void RefreshPressureTaper()
+    internal void RefreshPressurePreview()
     {
-        var geometry = _geometryBuilder.Build(PolylineSamples.Uniform(TessellateCurve()), Tool.PressureTaper, _radiusSampler);
+        var geometry = _geometryBuilder.Build(
+            PolylineSamples.Uniform(TessellateCurve(), Tool.CurvePressure.Value), Tool.PressureTaper, _radiusSampler);
         StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 

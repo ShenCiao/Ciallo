@@ -52,6 +52,7 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     }
 
     protected virtual bool CloseOnConfirm => false;
+    protected virtual float InputPressure => 1f;
     protected PaintStrokeSnapTarget? StartSnapTarget => _anchors[0].SnapTarget;
     protected PaintStrokeSnapTarget? EndSnapTarget => _anchors[^1].SnapTarget;
     protected PaintStrokeSnapTarget? PreviewSnapTarget { get; private set; }
@@ -204,7 +205,7 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
                 AppendCubic(_points, _anchors[^1], _pending);
             else if (CloseOnConfirm)
                 AppendCubic(_points, _anchors[^1] with { OutHandle = _anchors[^1].Position }, ClosureAnchor);
-            Commit(PolylineSamples.Uniform(_points), closed);
+            Commit(PolylineSamples.Uniform(_points, InputPressure), closed);
         }
         Clear();
     }

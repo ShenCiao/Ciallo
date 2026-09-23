@@ -11,10 +11,10 @@ public readonly record struct PolylineSamples(
 {
     public int Count => Positions.Count;
 
-    public static PolylineSamples Uniform(IReadOnlyList<Vector2> positions)
+    public static PolylineSamples Uniform(IReadOnlyList<Vector2> positions, float pressure = 1f)
     {
         var pressures = new float[positions.Count];
-        System.Array.Fill(pressures, 1f);
+        System.Array.Fill(pressures, pressure);
         return new(positions, pressures, new Vector2[positions.Count]);
     }
 }

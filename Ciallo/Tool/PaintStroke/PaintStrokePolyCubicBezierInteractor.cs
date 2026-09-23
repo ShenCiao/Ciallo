@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -19,11 +20,13 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
     private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
     private Func<float, float> _radiusSampler;
     private PolylineSamples _previewSamples;
+    private float _previewPressure;
     private readonly List<float> _previewPressures = [];
     private readonly List<Vector2> _previewTilts = [];
     private readonly List<Vector2> _snapHintPoints = new(2);
     private MultiMeshInstance2D _snapDots;
 
+    protected override float InputPressure => Tool.CurvePressure.Value;
     protected override PaintStrokeSnapTarget? FindSnapTarget(Vector2 position) => Tool.TryFindSnapTarget(position);
 
     protected override void CreatePreview()
@@ -45,11 +48,11 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
         }
         while (_previewPressures.Count < points.Count)
         {
-            _previewPressures.Add(1f);
+            _previewPressures.Add(_previewPressure);
             _previewTilts.Add(Vector2.Zero);
         }
         _previewSamples = new(points, _previewPressures, _previewTilts);
-        RefreshPressureTaper();
+        RefreshPressurePreview();
         _snapHintPoints.Clear();
         if (StartSnapTarget is { } start)
             _snapHintPoints.Add(start.HitPoint);
@@ -61,8 +64,13 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
             _snapDots.SetDotGeometry(_snapHintPoints, AppPreference.StrokeDotRadius);
     }
 
-    internal void RefreshPressureTaper()
+    internal void RefreshPressurePreview()
     {
+        if (_previewPressure != InputPressure)
+        {
+            _previewPressure = InputPressure;
+            CollectionsMarshal.AsSpan(_previewPressures).Fill(_previewPressure);
+        }
         var geometry = _geometryBuilder.Build(_previewSamples, Tool.PressureTaper, _radiusSampler);
         _preview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }

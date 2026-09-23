@@ -16,6 +16,7 @@ public class PaintStrokeTaperTests
     {
         var input = new PolylineSamples([new(0, 0), new(30, 0)], [0.2f, 0.8f], [Vector2.Zero, Vector2.One]);
         var geometry = new PaintStrokeGeometryBuilder().Build(input, new(40, 20), p => 0.1f + p * p);
+        AssertThat(geometry.Positions.Count).IsEqual(3);
         int peak = geometry.Positions.ToList().IndexOf(new(20, 0));
         AssertThat(peak > 0 && peak < geometry.Positions.Count - 1).IsTrue();
         Near(geometry.Pressures[peak], 0.6f);
@@ -26,27 +27,32 @@ public class PaintStrokeTaperTests
         AssertThat(input.Pressures.ToArray()).ContainsExactly(0.2f, 0.8f);
     }
 
-    [TestCase]
-    public void ResamplingPreservesVaryingPressureBeforeNonlinearRadiusMapping()
+    [TestCase(1)]
+    [TestCase(8)]
+    [TestCase(32)]
+    public void TaperKeepsSourceDensityEvenWithNonlinearRadiusMapping(int spacing)
     {
-        var input = new PolylineSamples([new(0, 0), new(10, 0)], [0.2f, 0.8f], [Vector2.Zero, Vector2.Zero]);
-        static float Radius(float p) => 0.2f + 2 * p * p;
-        var geometry = new PaintStrokeGeometryBuilder().Build(input, new(10, 0), Radius);
-        // The renderer interpolates stored pp/radii linearly between samples.
-        for (int i = 1; i < geometry.Positions.Count; i++)
-        {
-            float t = (geometry.Positions[i - 1].X + geometry.Positions[i].X) / 20;
-            float expected = (0.2f + 0.6f * t) * t;
-            Near((geometry.Pressures[i - 1] + geometry.Pressures[i]) / 2, expected, 0.001f);
-            Near((geometry.Radii[i - 1] + geometry.Radii[i]) / 2, Radius(expected), 0.002f);
-        }
+        var positions = Enumerable.Range(0, 320 / spacing + 1)
+            .Select(i => new Vector2(i * spacing, 0)).ToArray();
+        var input = new PolylineSamples(positions,
+            positions.Select(p => 0.2f + 0.8f * p.X / 320).ToArray(),
+            new Vector2[positions.Length]);
+        var geometry = new PaintStrokeGeometryBuilder().Build(input, new(25, 17), p => 0.2f + 2 * p * p);
+
+        // Only the two shoulders can add points, regardless of source density,
+        // stylus pressure variation, or the brush's pressure-to-radius mapping.
+        var expected = positions.Concat([new Vector2(25, 0), new Vector2(303, 0)])
+            .Distinct().OrderBy(p => p.X).ToArray();
+        AssertThat(geometry.Positions.ToArray()).ContainsExactly(expected);
+        Near(geometry.Pressures[0], 0);
+        Near(geometry.Pressures[^1], 0);
     }
 
     [TestCase]
-    public void RoundedSubsamplesCannotOverwriteEndpointsOrTheShortStrokePeak()
+    public void RoundedTaperShouldersPreserveEndpointsAndPeak()
     {
         var input = PolylineSamples.Uniform([new(100_000_000, 0), new(100_000_032, 0)]);
-        var geometry = new PaintStrokeGeometryBuilder().Build(input, new(32, 32), p => 0.2f + p);
+        var geometry = new PaintStrokeGeometryBuilder().Build(input, new(15, 15), p => 0.2f + p);
         Near(geometry.Pressures[0], 0);
         Near(geometry.Pressures[^1], 0);
         Near(geometry.Pressures.Max(), 1);

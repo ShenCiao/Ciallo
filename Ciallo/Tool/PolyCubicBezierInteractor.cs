@@ -42,7 +42,8 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     private const float ClosureDragDistancePixels = 3f;
 
     private readonly record struct Anchor(
-        Vector2 Position, Vector2 InHandle, Vector2 OutHandle, PaintStrokeSnapTarget? SnapTarget)
+        Vector2 Position, Vector2 InHandle, Vector2 OutHandle, PaintStrokeSnapTarget? SnapTarget,
+        Vector2 UnsnappedPosition)
     {
         public Anchor WithHandle(Vector2 handle) => this with
         {
@@ -67,12 +68,10 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     public override void Start(CursorButtonData data)
     {
         Input.MouseMode = Input.MouseModeEnum.Hidden;
-        var snap = FindSnapTarget(data.WorldPosition);
-        Vector2 start = snap?.HitPoint ?? data.WorldPosition;
-        _pending = new(start, start, start, snap);
+        _pending = CreateAnchor(data.WorldPosition);
         _anchors.Add(_pending);
-        _points.Add(start);
-        _sampledFirstOutHandle = start;
+        _points.Add(_pending.Position);
+        _sampledFirstOutHandle = _pending.OutHandle;
         _committedPointCount = 1;
         _dotsDirty = _handlesDirty = true;
         _placingFirst = true;
@@ -132,9 +131,7 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
                 }
 
                 _redo.Clear();
-                var snap = FindSnapTarget(data.WorldPosition);
-                Vector2 position = snap?.HitPoint ?? data.WorldPosition;
-                _pending = new(position, position, position, snap);
+                _pending = CreateAnchor(data.WorldPosition);
                 _dragging = true;
                 _dotsDirty = _handlesDirty = true;
                 RefreshPreview(data.WorldPosition);
@@ -199,6 +196,8 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
         bool closed = CloseOnConfirm || _closed;
         if (_anchors.Count > 1)
         {
+            if (!closed)
+                RefreshLastAnchorSnap();
             TrimPendingPoints();
             UpdateFirstSegment(_closed ? _pending : _anchors[0]);
             if (_closed)
@@ -211,6 +210,57 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     }
 
     public override void Cancel() => Clear();
+
+    internal void RefreshSnapping()
+    {
+        // The first anchor owns the snap decision made when the interaction began.
+        // Only the current endpoint can follow later changes to the snap setting.
+        if (!_closing)
+        {
+            if (_dragging && !_placingFirst)
+                _pending = Resnap(_pending);
+            else if (!_dragging && _anchors.Count > 1)
+                RefreshLastAnchorSnap();
+        }
+        _dotsDirty = _handlesDirty = true;
+        RefreshPreview(LatestCursor.WorldPosition);
+    }
+
+    private Anchor CreateAnchor(Vector2 cursor)
+    {
+        var snap = FindSnapTarget(cursor);
+        Vector2 position = snap?.HitPoint ?? cursor;
+        return new(position, position, position, snap, cursor);
+    }
+
+    private Anchor Resnap(Anchor anchor)
+    {
+        var snap = FindSnapTarget(anchor.UnsnappedPosition);
+        Vector2 position = snap?.HitPoint ?? anchor.UnsnappedPosition;
+        Vector2 offset = position - anchor.Position;
+        return anchor with
+        {
+            Position = position,
+            InHandle = anchor.InHandle + offset,
+            OutHandle = anchor.OutHandle + offset,
+            SnapTarget = snap,
+        };
+    }
+
+    private void RefreshLastAnchorSnap()
+    {
+        var anchor = _anchors[^1];
+        var updated = Resnap(anchor);
+        if (updated == anchor) return;
+
+        TrimPendingPoints();
+        int lastSegmentCount = _segmentPointCounts[^1];
+        _points.RemoveRange(_committedPointCount - lastSegmentCount, lastSegmentCount);
+        _committedPointCount -= lastSegmentCount;
+        _segmentPointCounts.RemoveAt(_segmentPointCounts.Count - 1);
+        _anchors.RemoveAt(_anchors.Count - 1);
+        AddAnchor(updated);
+    }
 
     private Anchor ClosureAnchor => _anchors[0] with
     {
@@ -284,7 +334,7 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
         else if (!_placingFirst)
         {
             cursor = PreviewSnapTarget?.HitPoint ?? cursor;
-            var next = _dragging ? _pending : new Anchor(cursor, cursor, cursor, null);
+            var next = _dragging ? _pending : new Anchor(cursor, cursor, cursor, null, cursor);
             if (next.Position.DistanceSquaredTo(_anchors[^1].Position) > 1e-6f)
                 AppendCubic(_points, _anchors[^1], next);
         }

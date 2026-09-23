@@ -370,6 +370,12 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         _wireframeDragHint.SetGeometry(dragHintPoints, dragHintRadii, dragHintPressures);
     }
 
+    internal void RefreshSnapping()
+    {
+        RefreshEndSnapTarget(_p2);
+        UpdateSnapHint();
+    }
+
     private void RefreshEndSnapTarget(Vector2 worldPosition)
     {
         _endSnapTarget = Tool.TryFindSnapTarget(worldPosition);

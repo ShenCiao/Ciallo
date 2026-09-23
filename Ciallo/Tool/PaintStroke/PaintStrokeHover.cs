@@ -154,6 +154,8 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         AppStrokeBrushLibrary.SelectedIndex.Value = -1;
     }
 
+    internal void RefreshSnapping() => RefreshSnap(LatestCursor.WorldPosition);
+
     private void RefreshSnap(Vector2 worldPosition)
     {
         var target = Tool.TryFindSnapTarget(worldPosition);

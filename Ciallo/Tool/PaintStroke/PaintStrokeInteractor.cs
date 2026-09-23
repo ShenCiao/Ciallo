@@ -124,6 +124,12 @@ public class PaintStrokeInteractor : CapturingInteraction
         StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 
+    internal void RefreshSnapping()
+    {
+        RefreshEndSnapTarget(LatestCursor.WorldPosition);
+        UpdateSnapHint();
+    }
+
     private void RefreshEndSnapTarget(Vector2 worldPosition)
     {
         _endSnapTarget = Tool.TryFindSnapTarget(worldPosition);

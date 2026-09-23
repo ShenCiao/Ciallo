@@ -66,7 +66,9 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleStartPressureTaper),
                 () => PressureTaperStartEnabled.Value = !PressureTaperStartEnabled.Value)
             .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleEndPressureTaper),
-                () => PressureTaperEndEnabled.Value = !PressureTaperEndEnabled.Value);
+                () => PressureTaperEndEnabled.Value = !PressureTaperEndEnabled.Value)
+            .InternalTransition(Trigger.Press(AppHotkeys.Tool.PaintStrokeToggleSnapping),
+                () => SnapEnabled.Value = !SnapEnabled.Value);
         sm.Configure(Hover)
             .PermitDynamicIf(Trigger.Press(MouseButton.Left), () =>
             {
@@ -137,7 +139,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
 
         container.AddProperty("Snapping", new CheckBox
         {
-            ToggleMode = true,
+            FocusMode = Control.FocusModeEnum.None,
         }.BindBool(SnapEnabled));
 
         container.AddProperty("Snap distance",
@@ -148,7 +150,8 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
                 Step = 1f,
                 ExpEdit = true,
                 AllowGreater = true,
-            }.BindNumber(SnapDistance));
+            }.BindNumber(SnapDistance))
+            .VisibleIf(SnapEnabled, enabled => enabled);
     }
 
     private static SpinSlider CreatePressureTaperLengthSlider() => new()
@@ -175,6 +178,11 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             .TakeUntil(DeactivateSignal)
             .Subscribe(_ => RefreshPressurePreview());
 
+        SnapEnabled.CombineLatest(SnapDistance, (_, _) => Unit.Default)
+            .Skip(1)
+            .TakeUntil(DeactivateSignal)
+            .Subscribe(_ => RefreshSnapping());
+
         if (!PrimaryLayer.Has<VectorFillLayerSetting>()) return;
 
         var referenceLayers = PrimaryLayer.Get<VectorFillLayerSetting>().ReferenceLayers;
@@ -193,6 +201,17 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             case PaintStrokeInteractor stroke: stroke.RefreshPressurePreview(); break;
             case PaintStrokeBezierInteractor bezier: bezier.RefreshPressurePreview(); break;
             case PaintStrokePolyCubicBezierInteractor cubic: cubic.RefreshPressurePreview(); break;
+        }
+    }
+
+    private void RefreshSnapping()
+    {
+        switch (InteractionManager.StateMachine.State)
+        {
+            case PaintStrokeHover hover: hover.RefreshSnapping(); break;
+            case PaintStrokeInteractor stroke: stroke.RefreshSnapping(); break;
+            case PaintStrokeBezierInteractor bezier: bezier.RefreshSnapping(); break;
+            case PaintStrokePolyCubicBezierInteractor cubic: cubic.RefreshSnapping(); break;
         }
     }
 

@@ -37,10 +37,13 @@ uniform vec4 MaterialColor : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 instance uniform vec4 OverridingColor = vec4(0.0, 0.0, 0.0, -1.0);
 // Canvas mode is used for drawing wireframe
 uniform int RadiusMode : hint_enum("World", "Canvas") = 0;
-// Viewport pixels, measured from the radius interpolated by the vertex shader.
-// Widths between the two thresholds fade in.
-uniform float MinimumScreenDiameter : hint_range(0.0, 4.0, 0.05) = 0.1;
-uniform float FullOpacityScreenDiameter : hint_range(0.0, 8.0, 0.05) = 1.0;
+// Diameters and padding are measured in render-target pixels.
+uniform float CullScreenDiameter : hint_range(0.0, 0.25, 0.005) = 0.01;
+const float ThinDiameter = 1.75;
+const float UnfilteredDiameter = 2.5;
+const float CenterlineDiameter = 0.75;
+// Includes the filter support and MSAA sample locations around a pixel center.
+const float CarrierPaddingPixels = 1.5;
 // Dash
 uniform float DashLength = -1.0; // radius-normalized length
 uniform float GapLength = -1.0;
@@ -73,14 +76,14 @@ varying flat float n1;
 varying flat float pp0; // pen pressure
 varying flat float pp1;
 varying vec2 p;
-varying float r;
+varying flat float filterWeight;
+varying flat float carrierPadding;
 
 varying flat vec2 tangent;
 varying flat vec2 normal;
 varying flat float segmentLength;
 varying flat float sinTheta;
 varying flat float cosTheta;
-varying flat float tanTheta;
 varying flat float scale;
 
 bool hasFlag(int flags, int flag) {
@@ -108,11 +111,20 @@ void vertex() {
 	segmentLength = distance(p1, p0);
 	cosTheta = (r0 - r1)/distance(p0, p1);
 	sinTheta = sqrt(1.0 - cosTheta * cosTheta);
-	tanTheta = abs(cosTheta) < 1e-5 ? 1e10 * sign(cosTheta) : sinTheta/cosTheta;
-	if(abs(tanTheta) < 1e-5) tanTheta = 1e10;
 
 	tangent = normalize(p1 - p0);
 	normal = vec2(-tangent.y, tangent.x);
+
+	mat2 localToScreen = mat2((CANVAS_MATRIX * MODEL_MATRIX)[0].xy,
+		(CANVAS_MATRIX * MODEL_MATRIX)[1].xy);
+	mat2 screenToLocal = inverse(localToScreen);
+	float pixelsPerLocalUnit = 1.0 / length(transpose(screenToLocal) * normal);
+	float endpointDiameter0Px = 2.0 * r0 * pixelsPerLocalUnit;
+	float endpointDiameter1Px = 2.0 * r1 * pixelsPerLocalUnit;
+	float minimumEndpointDiameterPx = min(endpointDiameter0Px, endpointDiameter1Px);
+
+	filterWeight = 1.0 - smoothstep(ThinDiameter, UnfilteredDiameter, minimumEndpointDiameterPx);
+	bool tooSmall = max(endpointDiameter0Px, endpointDiameter1Px) < CullScreenDiameter;
 
 	vec2 position = vec2[](p0, p0, p1, p1)[VERTEX_ID];
 	vec2 offsetSign = vec2[](
@@ -121,16 +133,23 @@ void vertex() {
         vec2(1.0, -1.0),
         vec2(1.0, 1.0)
     )[VERTEX_ID];
-	r = vec4(r0, r0, r1, r1)[VERTEX_ID];
+	float endpointRadius = vec4(r0, r0, r1, r1)[VERTEX_ID];
+	// The largest inverse scale covers the filter even under nonuniform scale.
+	float trace = dot(screenToLocal[0], screenToLocal[0]) + dot(screenToLocal[1], screenToLocal[1]);
+	float det = determinant(screenToLocal);
+	float maximumUnitsPerPixel = sqrt(0.5 * (trace + sqrt(max(trace * trace - 4.0 * det * det, 0.0))));
+	carrierPadding = CarrierPaddingPixels * filterWeight * maximumUnitsPerPixel;
+	float geometryRadius = endpointRadius + carrierPadding;
 
 	float tanHalfTheta = sqrt((1.0+cosTheta) / (1.0-cosTheta));
     float cotHalfTheta = 1.0 / tanHalfTheta;
     float normalTanValue = vec4(tanHalfTheta, tanHalfTheta, cotHalfTheta, cotHalfTheta)[VERTEX_ID];
     bool isIll = normalTanValue > 10.0 || normalTanValue < 0.1;
 
-	if(!isIll)
+	if(!isIll && !tooSmall)
 	{
-		vec2 offset = offsetSign.x * r * tangent + offsetSign.y * r * normal * normalTanValue;
+		vec2 offset = offsetSign.x * geometryRadius * tangent
+			+ offsetSign.y * geometryRadius * normal * normalTanValue;
 		p = position + offset;
 	} else {
 		p = vec2(0.0);
@@ -162,17 +181,15 @@ float noise1D(float x) {
 }
 
 bool solveTheQuadraticEq(vec2 pLocal, out vec2 result){
-	float a, b, c, delta;
-    a = 1.0 - cosTheta * cosTheta;
-    b = 2.0 * (r0 * cosTheta - pLocal.x);
-    c = pLocal.x * pLocal.x + pLocal.y * pLocal.y - r0 * r0;
-    delta = b * b - 4.0*a*c;
-    if(delta <= 0.0) return false;
-
-	float tempMathBlock = b + (b < 0.0 ? -1.0 : 1.0) * sqrt(delta);
-    float x1 = -2.0 * c / tempMathBlock;
-    float x2 = -tempMathBlock / (2.0*a);
-    result = vec2(min(x1, x2), max(x1, x2));
+	float a = sinTheta * sinTheta;
+	float radiusAtX = r0 - cosTheta * pLocal.x;
+	// Solve around the sample's x coordinate.  b*b - 4*a*c loses the
+	// subpixel radius when x*x is large, even for a constant-width line.
+	float discriminant = radiusAtX * radiusAtX - a * pLocal.y * pLocal.y;
+	if(discriminant <= 0.0) return false;
+	float center = pLocal.x - cosTheta * radiusAtX / a;
+	float extent = sqrt(discriminant) / a;
+	result = vec2(center - extent, center + extent);
 	return result.y > 0.0 && result.x < segmentLength;
 }
 
@@ -184,16 +201,69 @@ vec4 emptySample() {
 #endif
 }
 
+float centerlineRadiusAt(float x) {
+	float clampedX = clamp(x, 0.0, segmentLength);
+	return max(r0 - cosTheta * clampedX, 1e-7);
+}
+
+// Center of the generating disk nearest to a point on the tapered boundary.
+// Clamping selects the circular caps, including their slanted tangent joins.
+float nearestDiskX(vec2 localPosition) {
+	return clamp(localPosition.x - abs(localPosition.y) * cosTheta / sinTheta,
+		0.0, segmentLength);
+}
+
+// Area CDF of a pixel square projected onto a local direction.  Unlike a
+// single linear ramp, this retains the energy of oblique subpixel lines.
+float pixelProjectionCDF(float z, vec2 projectedPixel) {
+	vec2 dimensions = abs(projectedPixel);
+	float a = max(dimensions.x, dimensions.y);
+	float b = min(dimensions.x, dimensions.y);
+	if(b < a * 1e-4) return clamp(z / a + 0.5, 0.0, 1.0);
+	float h = 0.5 * (a + b);
+	float x = abs(z);
+	float tail;
+	if(x >= h) tail = 0.0;
+	else if(x <= 0.5 * (a - b)) tail = 0.5 - x / a;
+	else tail = (h - x) * (h - x) / (2.0 * a * b);
+	return z >= 0.0 ? 1.0 - tail : tail;
+}
+
+float realStrokeCoverage(vec2 localPosition, vec2 localDx, vec2 localDy) {
+	float centerX = nearestDiskX(localPosition);
+	float radius = centerlineRadiusAt(centerX);
+	vec2 offset = localPosition - vec2(centerX, 0.0);
+	float distanceToCenter = length(offset);
+	vec2 direction = distanceToCenter > 1e-7 ? offset / distanceToCenter : vec2(0.0, 1.0);
+	vec2 projectedPixel = vec2(dot(direction, localDx), dot(direction, localDy));
+	// Integrate BOTH edges of a finite-width cross section.  A single smoothed
+	// SDF edge would leave ~50% opacity when the true radius tends to zero.
+	float coverage = pixelProjectionCDF(radius - distanceToCenter, projectedPixel)
+		- pixelProjectionCDF(-radius - distanceToCenter, projectedPixel);
+	// Short segments (including single-point strokes) have finite support in x too.
+	float longitudinalFootprint = abs(localDx.x) + abs(localDy.x);
+	return coverage * min(1.0, (segmentLength + r0 + r1) / longitudinalFootprint);
+}
+
+float carrierCoverage(vec2 localPosition, vec2 localDx, vec2 localDy) {
+	vec2 upperNormal = vec2(cosTheta, sinTheta);
+	vec2 lowerNormal = vec2(cosTheta, -sinTheta);
+	float upper = pixelProjectionCDF(r0 + carrierPadding - dot(upperNormal, localPosition),
+		vec2(dot(upperNormal, localDx), dot(upperNormal, localDy)));
+	float lower = pixelProjectionCDF(r0 + carrierPadding - dot(lowerNormal, localPosition),
+		vec2(dot(lowerNormal, localDx), dot(lowerNormal, localDy)));
+	vec2 xFootprint = vec2(localDx.x, localDy.x);
+	float ends = pixelProjectionCDF(localPosition.x + r0 + carrierPadding, xFootprint)
+		- pixelProjectionCDF(localPosition.x - segmentLength - r1 - carrierPadding, xFootprint);
+	return max(upper + lower - 1.0, 0.0) * ends;
+}
+
 // Return the contribution before framebuffer blending: premultiplied color for
 // Normal/Add, or a destination multiplier for Multiply/Erase.
-vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
-		vec2 localDx, vec2 localDy, vec2 radiusGradient, float visibility) {
-	vec2 pLocal = vec2(dot(samplePosition-p0, tangent), dot(samplePosition-p0, normal));
-	float d0 = distance(samplePosition, p0);
-    float d1 = distance(samplePosition, p1);
-	float cosPhi0 = pLocal.x / d0;
-    float cosPhi1 = (pLocal.x - segmentLength) / d1;
-	vec2 p_r = pLocal - vec2(abs(pLocal.y)/tanTheta, 0);
+vec4 evaluateBrush(vec2 pLocal, vec2 localDx, vec2 localDy, float geometricCoverage) {
+	float d0 = length(pLocal);
+    float d1 = length(pLocal - vec2(segmentLength, 0.0));
+	vec2 p_r = pLocal - vec2(abs(pLocal.y) * cosTheta / sinTheta, 0);
 	float r_p = r0 - cosTheta * p_r.x;
 
 	float t = mix(pp0, pp1, p_r.x/segmentLength);
@@ -208,17 +278,15 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 
 	/*----------------------------------------------------------*/
 	if(StrokeType == Vanilla){
-		if(cosPhi0 < cosTheta) {
+		if(pLocal.x < cosTheta * d0) {
 			if(d0 > r0) return emptySample();
-		} else if(cosPhi1 > cosTheta) {
+		} else if(pLocal.x - segmentLength > cosTheta * d1) {
 			if(d1 > r1) return emptySample();
 		}
 
 		vec4 brush = OverridingColor.a >= 0.0 ? OverridingColor : MaterialColor;
 		float targetFlow = brush.a * flowRatio;
-		// Fade before the joint correction so two overlapping caps still reach
-		// the faded target opacity. Keep the brush's branch selection unchanged.
-		float coverage = targetFlow * visibility;
+		float coverage = targetFlow * geometricCoverage;
 		if(targetFlow < 0.999){ // Can avoid little white dot
 			if(d0 < r0 && d1 < r1){
 				return emptySample();
@@ -266,7 +334,8 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 		// Main loop
  		while(i < MAX_i && currStampIdx < endStampIdx){
 			float currN = currStampIdx * StampInterval;
- 			float currStampLocalX = n2x(currN - n0);
+			float currStampLocalX = n2x(currN - n0);
+			float stampRadius = r0 - cosTheta * currStampLocalX;
  			vec2 pToCurrStamp = pLocal - vec2(currStampLocalX, 0.0);
 			// Rotation noise
 			float rotationNoise = hasFlag(ActiveStampFlags, StampFlags.RotationNoise) ? noise1D(currStampIdx) : 0.0;
@@ -275,12 +344,13 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 			mat2 stampTransform = CoordinateTransform * mat2(vec2(cosRot, sinRot), vec2(-sinRot, cosRot));
 			pToCurrStamp *= stampTransform;
 
-			vec2 uv = (pToCurrStamp/sampleRadius + 1.0)/2.0;
+			vec2 uv = (pToCurrStamp/stampRadius + 1.0)/2.0;
 			// Explicit gradients keep mip selection defined across the varying stamp loop.
-			vec2 uvDx = 0.5 * (localDx * stampTransform - pToCurrStamp * radiusGradient.x / sampleRadius) / sampleRadius;
-			vec2 uvDy = 0.5 * (localDy * stampTransform - pToCurrStamp * radiusGradient.y / sampleRadius) / sampleRadius;
+			// Each stamp has one radius, independent of the fragment sampling it.
+			vec2 uvDx = 0.5 * (localDx * stampTransform) / stampRadius;
+			vec2 uvDy = 0.5 * (localDy * stampTransform) / stampRadius;
 			float textureMask = hasFlag(ActiveStampFlags, StampFlags.MaskTexture) ? textureGrad(MultiplyTexture, uv, uvDx, uvDy).r : 1.0;
-			float nr = length(pToCurrStamp/sampleRadius); // normalized r
+			float nr = length(pToCurrStamp/stampRadius); // normalized r
 			float dotMask = hasFlag(ActiveStampFlags, StampFlags.MaskDisk) ? sampleCurve(DiskOpacityCurve, nr) : 1.0;
 			float stampSample = hasFlag(ActiveStampFlags, StampFlags.StampTexture) ? textureGrad(StampTexture, uv, uvDx, uvDy).r : 1.0;
 			bool isOutDisk = uv.x > 1.0 || uv.y > 1.0 || nr > 1.0;
@@ -297,22 +367,22 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 			currStampIdx += 1.0;
  		}
 #if defined(BLEND_MUL)
-		return mix(vec4(1.0), currMul, visibility);
+		return mix(vec4(1.0), currMul, geometricCoverage);
 #elif defined(BLEND_ADD)
-		float addAmount = max(currA, 0.0) * visibility;
+		float addAmount = max(currA, 0.0) * geometricCoverage;
 		return vec4(MaterialColor.rgb * addAmount, addAmount);
 #elif defined(BLEND_ERASE)
-		float keep = 1.0 - clamp(currA, 0.0, 1.0) * visibility;
+		float keep = 1.0 - clamp(currA, 0.0, 1.0) * geometricCoverage;
 		return vec4(vec3(keep), keep);
 #else
-		float alpha = clamp(currA, 0.0, 1.0) * visibility;
+		float alpha = clamp(currA, 0.0, 1.0) * geometricCoverage;
 		return vec4(MaterialColor.rgb * alpha, alpha);
 #endif
  	}
 	/*----------------------------------------------------------*/
 	if(StrokeType == Airbrush){
-		if(cosPhi0 < cosTheta && d0 > r0) return emptySample();
-		if(cosPhi1 > cosTheta && d1 > r1) return emptySample();
+		if(pLocal.x < cosTheta * d0 && d0 > r0) return emptySample();
+		if(pLocal.x - segmentLength > cosTheta * d1 && d1 > r1) return emptySample();
 		float flow = MaterialColor.a * flowRatio;
 		vec2 result;
 		if(!solveTheQuadraticEq(pLocal, result)) return emptySample();
@@ -326,16 +396,16 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 		float curveFall = sampleCurve(FalloffCurve, lambda);
 		float tau = deltaN * AlphaDensity * flow * curveFall;
 #if defined(BLEND_ADD)
-		float addAmount = max(tau, 0.0) * visibility;
+		float addAmount = max(tau, 0.0) * geometricCoverage;
 		return vec4(MaterialColor.rgb * addAmount, addAmount);
 #elif defined(BLEND_MUL)
-		return vec4(mix(vec3(1.0), exp(-tau * (vec3(1.0) - MaterialColor.rgb)), visibility), 1.0);
+		return vec4(mix(vec3(1.0), exp(-tau * (vec3(1.0) - MaterialColor.rgb)), geometricCoverage), 1.0);
 #elif defined(BLEND_ERASE)
-		float keep = 1.0 - (1.0 - exp(-tau)) * visibility;
+		float keep = 1.0 - (1.0 - exp(-tau)) * geometricCoverage;
 		return vec4(vec3(keep), keep);
 #else
 		float keep = exp(-tau);
-		float A = (1.0 - keep) * visibility;
+		float A = (1.0 - keep) * geometricCoverage;
 		return vec4(MaterialColor.rgb * A, A);
 #endif
 	}
@@ -343,25 +413,46 @@ vec4 evaluateBrush(vec2 samplePosition, float sampleRadius,
 }
 
 void fragment() {
-	// Evaluate derivatives before the cutoff or any brush branches.
 	vec2 positionDx = dFdx(p);
 	vec2 positionDy = dFdy(p);
-	vec2 radiusGradient = vec2(dFdx(r), dFdy(r));
 	vec2 localDx = vec2(dot(positionDx, tangent), dot(positionDx, normal));
 	vec2 localDy = vec2(dot(positionDy, tangent), dot(positionDy, normal));
 	float unitsPerPixel = length(vec2(localDx.y, localDy.y));
-	float screenDiameter = 2.0 * r / unitsPerPixel;
-	if(screenDiameter <= MinimumScreenDiameter) discard;
-	// Equal thresholds select a hard cutoff without undefined smoothstep edges.
-	float visibility = FullOpacityScreenDiameter > MinimumScreenDiameter
-		? smoothstep(MinimumScreenDiameter, FullOpacityScreenDiameter, screenDiameter)
-		: 1.0;
 
-	// Keep pixel-center derivatives above; use a covered location to evaluate the
-	// brush so MSAA edge fragments do not sample outside the carrier geometry.
-	vec2 brushPosition = interpolateAtCentroid(p);
-	float brushRadius = interpolateAtCentroid(r);
-	vec4 contribution = evaluateBrush(brushPosition, brushRadius, localDx, localDy, radiusGradient, visibility);
+	// Full filtering integrates around the pixel center.  As padding shrinks,
+	// return continuously to the covered MSAA location of the unexpanded path.
+	vec2 samplePosition = mix(interpolateAtCentroid(p), p, filterWeight);
+	vec2 brushLocal = vec2(dot(samplePosition - p0, tangent), dot(samplePosition - p0, normal));
+	float geometricCoverage = 1.0;
+	if(filterWeight > 0.0) {
+		vec2 pixelLocal = vec2(dot(p - p0, tangent), dot(p - p0, normal));
+		geometricCoverage = realStrokeCoverage(pixelLocal, localDx, localDy);
+		// When padding shrinks, MSAA already supplies part of the coverage.
+		// Normalize by the carrier's coverage to avoid applying it twice.
+		if(filterWeight < 1.0) {
+			geometricCoverage = min(geometricCoverage / max(carrierCoverage(pixelLocal, localDx, localDy), 1e-7), 1.0);
+		}
+		if(geometricCoverage <= 0.0) discard;
+
+		float screenDiameter = 2.0 * centerlineRadiusAt(brushLocal.x) / unitsPerPixel;
+		float yWeight = smoothstep(CenterlineDiameter, ThinDiameter, screenDiameter);
+		// Only brush evaluation is moved; coverage always uses the true position.
+		brushLocal.y *= yWeight;
+
+		// A filtered pixel may have its center outside the real shape.  Sample
+		// a representative point inside its nearest disk, keeping x in the body.
+		float diskX = nearestDiskX(brushLocal);
+		float diskRadius = centerlineRadiusAt(diskX);
+		vec2 diskOffset = brushLocal - vec2(diskX, 0.0);
+		float distanceToDisk = length(diskOffset);
+		if(distanceToDisk > diskRadius * 0.999) {
+			brushLocal = vec2(diskX, 0.0) + diskOffset * (diskRadius * 0.999 / distanceToDisk);
+		}
+	}
+
+	// Keep the original pixel footprint for texture LOD, even when evaluating
+	// at the centerline.  Collapsing texture gradients would alias tiny stamps.
+	vec4 contribution = evaluateBrush(brushLocal, localDx, localDy, geometricCoverage);
 
 #if defined(BLEND_MUL) || defined(BLEND_ERASE)
 	COLOR = contribution;

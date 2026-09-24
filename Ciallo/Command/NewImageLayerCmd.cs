@@ -17,6 +17,7 @@ public class NewImageLayerCmd : CommandBase
 
     public NewImageLayerCmd(Image image)
     {
+        image.GenerateMipmaps();
         _imageLayerSetting = new ImageLayerSetting
         {
             Texture = ImageTexture.CreateFromImage(image)
@@ -48,6 +49,7 @@ public class NewImageLayerCmd : CommandBase
         var sprite = new Sprite2D
         {
             Texture = setting.Texture,
+            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
         };
         targetE.AddNode(sprite);
 

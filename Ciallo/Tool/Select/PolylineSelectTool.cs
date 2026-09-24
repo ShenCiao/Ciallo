@@ -201,17 +201,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 ? selectedShapes.All(e => e.Has<StrokeSetting>())
                 : !layer.IsNull && layer.Has<ShapeLayerSetting>());
 
-        selectionChanged.Subscribe(_ =>
-        {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>()))
-            {
-                strokeBrushSwitcher.Select(Entity.Null);
-                return;
-            }
-            var firstE = selectedShapes.First().Get<StrokeSetting>().Brush.Value;
-            bool allSame = selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == firstE);
-            strokeBrushSwitcher.Select(allSame ? firstE : Entity.Null);
-        }).AddTo(strokeBrushSwitcher);
+        ObserveSelectionBrush(selectedShapes, e => e.Has<StrokeSetting>(), e => e.Get<StrokeSetting>().Brush)
+            .Subscribe(strokeBrushSwitcher.Select).AddTo(strokeBrushSwitcher);
 
         strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {
@@ -238,7 +229,6 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             foreach (var shapeE in selectedShapes)
                 cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);
             cmd.Commit();
-            strokeBrushSwitcher.Select(brushE);
         }).AddTo(strokeBrushSwitcher);
 
         // --- Vector fill brush switcher
@@ -250,17 +240,9 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         vectorFillBrushSwitcher.VisibleIf(selectionChanged,
             _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>()));
 
-        selectionChanged.Subscribe(_ =>
-        {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>()))
-            {
-                vectorFillBrushSwitcher.Select(Entity.Null);
-                return;
-            }
-            var firstE = GetVectorFillBrushE(selectedShapes.First()).Value;
-            bool allSame = selectedShapes.All(e => GetVectorFillBrushE(e).Value == firstE);
-            vectorFillBrushSwitcher.Select(allSame ? firstE : Entity.Null);
-        }).AddTo(vectorFillBrushSwitcher);
+        ObserveSelectionBrush(selectedShapes,
+                e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>(), GetVectorFillBrushE)
+            .Subscribe(vectorFillBrushSwitcher.Select).AddTo(vectorFillBrushSwitcher);
 
         vectorFillBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {
@@ -280,7 +262,6 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                     cmd.SetTarget(shapeE).SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brushE);
             }
             cmd.Commit();
-            vectorFillBrushSwitcher.Select(brushE);
         }).AddTo(vectorFillBrushSwitcher);
 
         var polylineEditBox = container.CreateBox()
@@ -449,6 +430,22 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             builder.Commit();
         };
 
+    }
+
+    private static Observable<Entity> ObserveSelectionBrush(ObservableList<Entity> selectedShapes,
+        Func<Entity, bool> hasBrush, Func<Entity, ReactiveProperty<Entity>> getBrush)
+    {
+        return selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default)
+            .Select(_ =>
+            {
+                if (selectedShapes.Count == 0 || !selectedShapes.All(hasBrush))
+                    return Observable.Return(Entity.Null);
+
+                return Observable.CombineLatest(selectedShapes.Select(e => getBrush(e).AsObservable()))
+                    .Select(brushes => brushes.All(e => e == brushes[0]) ? brushes[0] : Entity.Null);
+            })
+            .Switch()
+            .DistinctUntilChanged();
     }
 
     private static ReactiveProperty<Entity> GetVectorFillBrushE(Entity e)

@@ -17,7 +17,7 @@ public partial class StrokeBrushPreviewList : Container
     protected readonly Dictionary<Entity, Control> PreviewMap = [];
     protected ISynchronizedView<Entity, Control> SyncView;
     protected ObservableList<Entity> Brushes;
-    protected ReactiveProperty<Entity> WorkingBrush;
+    private Entity _selectedBrush;
     public Entity Document;
     private CompositeDisposable _brushesSubs;
     private CompositeDisposable _workingBrushSubs;
@@ -59,7 +59,6 @@ public partial class StrokeBrushPreviewList : Container
 
     public void BindWorkingBrush(ReactiveProperty<Entity> workingBrush)
     {
-        WorkingBrush = workingBrush;
         _workingBrushSubs?.Dispose();
         _workingBrushSubs = new();
         workingBrush.Subscribe(Select).AddTo(_workingBrushSubs);
@@ -71,7 +70,10 @@ public partial class StrokeBrushPreviewList : Container
 
     public void Select(Entity e)
     {
+        _selectedBrush = e;
         PreviewList.SelectedControl = e.IsNull ? null : GetOrCreateBrushPreview(e);
+        CopyButton.Disabled = e.IsNull;
+        RemoveButton.Disabled = e.IsNull;
     }
 
     private Control GetOrCreateBrushPreview(Entity e)
@@ -135,11 +137,12 @@ public partial class StrokeBrushPreviewList : Container
 
     public override void _Ready()
     {
-        CopyButton.Pressed += () => OnAddOrCopyButtonPressed(WorkingBrush.Value);
+        Select(_selectedBrush);
+        CopyButton.Pressed += () => OnAddOrCopyButtonPressed(_selectedBrush);
 
         RemoveButton.Pressed += () =>
         {
-            var oldE = WorkingBrush?.Value ?? Entity.Null;
+            var oldE = _selectedBrush;
             if (oldE.IsNull) return;
             var es = SyncView.Filtered.Select(tup => tup.Value).ToList();
             var oldIdx = es.IndexOf(oldE);
@@ -147,11 +150,10 @@ public partial class StrokeBrushPreviewList : Container
             int nextIdx = oldIdx == es.Count - 1 ? oldIdx - 1 : oldIdx + 1;
             Entity nextWorking = nextIdx == -1 ? Entity.Null : es[nextIdx];
 
-            new CommandBuilder("Delete Stroke Brush", Document)
-                .SetProperty(e => e.Get<SelectionManager>().WorkingStrokeBrush, nextWorking)
-                .SetTarget(oldE)
-                .DeleteBrush()
-                .Commit();
+            var command = new CommandBuilder("Delete Stroke Brush", Document);
+            if (Document.Get<SelectionManager>().WorkingStrokeBrush.Value == oldE)
+                command.SetProperty(e => e.Get<SelectionManager>().WorkingStrokeBrush, nextWorking);
+            command.SetTarget(oldE).DeleteBrush().Commit();
         };
 
         EditButton.Pressed += () => Document.Get<StrokeBrushEditor>().Popup();

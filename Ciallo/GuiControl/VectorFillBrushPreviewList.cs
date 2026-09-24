@@ -24,6 +24,7 @@ public partial class VectorFillBrushPreviewList : Container
     protected ISynchronizedView<Entity, Control> SyncView;
     protected ObservableList<Entity> Brushes;
     protected ReactiveProperty<Entity> WorkingBrush;
+    private Entity _selectedBrush;
     public Entity Document;
     private CompositeDisposable _brushesSubs;
     private CompositeDisposable _workingBrushSubs;
@@ -77,7 +78,10 @@ public partial class VectorFillBrushPreviewList : Container
 
     public void Select(Entity e)
     {
+        _selectedBrush = e;
         PreviewList.SelectedControl = e.IsNull ? null : GetOrCreateBrushPreview(e);
+        CopyButton.Disabled = e.IsNull;
+        RemoveButton.Disabled = e.IsNull;
     }
 
     public void DrawNameProperty(PropertyContainer container)
@@ -154,13 +158,14 @@ public partial class VectorFillBrushPreviewList : Container
 
     public override void _Ready()
     {
+        Select(_selectedBrush);
         AddButton.Pressed += () => OnAddOrCopyButtonPressed();
 
-        CopyButton.Pressed += () => OnAddOrCopyButtonPressed(WorkingBrush.Value);
+        CopyButton.Pressed += () => OnAddOrCopyButtonPressed(_selectedBrush);
 
         RemoveButton.Pressed += () =>
         {
-            var oldE = WorkingBrush.Value;
+            var oldE = _selectedBrush;
             if (oldE.IsNull) return;
             var es = SyncView.Filtered.Select(tup => tup.Value).ToList();
             var oldIdx = es.IndexOf(oldE);
@@ -168,11 +173,10 @@ public partial class VectorFillBrushPreviewList : Container
             int nextIdx = oldIdx == es.Count - 1 ? oldIdx - 1 : oldIdx + 1;
             Entity nextWorking = nextIdx == -1 ? Entity.Null : es[nextIdx];
 
-            new CommandBuilder("Delete Vector Fill Brush", Document)
-                .SetProperty(e => e.Get<SelectionManager>().WorkingVectorFillBrush, nextWorking)
-                .SetTarget(oldE)
-                .DeleteBrush()
-                .Commit();
+            var command = new CommandBuilder("Delete Vector Fill Brush", Document);
+            if (Document.Get<SelectionManager>().WorkingVectorFillBrush.Value == oldE)
+                command.SetProperty(e => e.Get<SelectionManager>().WorkingVectorFillBrush, nextWorking);
+            command.SetTarget(oldE).DeleteBrush().Commit();
         };
     }
 

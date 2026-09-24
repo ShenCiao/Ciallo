@@ -180,17 +180,22 @@ float noise1D(float x) {
     return hash1(floor(x)) * RotationNoiseAmplitude;
 }
 
-bool solveTheQuadraticEq(vec2 pLocal, out vec2 result){
+// Find centerline positions t whose corresponding brush disk contains sampleLocal:
+// (sampleLocal.x - t)^2 + sampleLocal.y^2 <= (r0 - cosTheta * t)^2.
+// centerlineXInterval contains ordered segment-local x positions, not stamp indices.
+// The interval is not clamped to [0, segmentLength]; Airbrush integrates it continuously.
+// Return true when the interval overlaps the segment with nonzero length.
+bool findCoveringCenterlineInterval(vec2 sampleLocal, out vec2 centerlineXInterval){
 	float a = sinTheta * sinTheta;
-	float radiusAtX = r0 - cosTheta * pLocal.x;
+	float radiusAtSampleX = r0 - cosTheta * sampleLocal.x;
 	// Solve around the sample's x coordinate.  b*b - 4*a*c loses the
 	// subpixel radius when x*x is large, even for a constant-width line.
-	float discriminant = radiusAtX * radiusAtX - a * pLocal.y * pLocal.y;
+	float discriminant = radiusAtSampleX * radiusAtSampleX - a * sampleLocal.y * sampleLocal.y;
 	if(discriminant <= 0.0) return false;
-	float center = pLocal.x - cosTheta * radiusAtX / a;
-	float extent = sqrt(discriminant) / a;
-	result = vec2(center - extent, center + extent);
-	return result.y > 0.0 && result.x < segmentLength;
+	float intervalMidpointX = sampleLocal.x - cosTheta * radiusAtSampleX / a;
+	float intervalHalfLength = sqrt(discriminant) / a;
+	centerlineXInterval = vec2(intervalMidpointX - intervalHalfLength, intervalMidpointX + intervalHalfLength);
+	return centerlineXInterval.y > 0.0 && centerlineXInterval.x < segmentLength;
 }
 
 vec4 emptySample() {
@@ -311,15 +316,12 @@ vec4 evaluateBrush(vec2 pLocal, vec2 localDx, vec2 localDy, float geometricCover
 	}
 	/*----------------------------------------------------------*/
   	if(StrokeType == Stamp){
- 		// The quadratic equation
-	    vec2 result;
-		if(!solveTheQuadraticEq(pLocal, result)) return emptySample();
-		float x1 = result.x;
-		float x2 = result.y;
+		vec2 centerlineXInterval;
+		if(!findCoveringCenterlineInterval(pLocal, centerlineXInterval)) return emptySample();
 
- 		float startN = x1 < 0.0 ? n0 : x2n(x1) + n0;
+		float startN = centerlineXInterval.x < 0.0 ? n0 : x2n(centerlineXInterval.x) + n0;
 		float startStampIdx = startN / StampInterval;
- 		float endN = x2 > segmentLength ? n1 : x2n(x2) + n0;
+		float endN = centerlineXInterval.y > segmentLength ? n1 : x2n(centerlineXInterval.y) + n0;
 		float endStampIdx = endN / StampInterval;
 
  		int i = 0;
@@ -384,12 +386,10 @@ vec4 evaluateBrush(vec2 pLocal, vec2 localDx, vec2 localDy, float geometricCover
 		if(pLocal.x < cosTheta * d0 && d0 > r0) return emptySample();
 		if(pLocal.x - segmentLength > cosTheta * d1 && d1 > r1) return emptySample();
 		float flow = MaterialColor.a * flowRatio;
-		vec2 result;
-		if(!solveTheQuadraticEq(pLocal, result)) return emptySample();
-		float x1 = result.x;
-		float x2 = result.y;
-		float startN = x1 < 0.0 ? 0.0 : x2n(x1);
-		float endN = x2 > segmentLength ? (n1 - n0) : x2n(x2);
+		vec2 centerlineXInterval;
+		if(!findCoveringCenterlineInterval(pLocal, centerlineXInterval)) return emptySample();
+		float startN = centerlineXInterval.x < 0.0 ? 0.0 : x2n(centerlineXInterval.x);
+		float endN = centerlineXInterval.y > segmentLength ? (n1 - n0) : x2n(centerlineXInterval.y);
 		float deltaN = endN - startN;
 
 		float lambda = abs(pLocal.y) / sinTheta / r_p;

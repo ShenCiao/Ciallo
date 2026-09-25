@@ -112,7 +112,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             MinValue = 0,
             MaxValue = 1,
             Step = 0.01,
-            TooltipText = "Input pressure for Bézier strokes before pressure taper and brush mappings.".Tr(),
+            TooltipText = "Input pressure for Bézier strokes before pressure taper and brush mappings.",
         }.BindNumber(CurvePressure))
             .VisibleIf(Mode, mode => mode != 0);
 
@@ -161,7 +161,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         Step = 1,
         ExpEdit = true,
         AllowGreater = true,
-        TooltipText = "Distance along the stroke in canvas units. Zero disables this end.".Tr(),
+        TooltipText = "Distance along the stroke in canvas units. Zero disables this end.",
     };
 
     protected override void OnActivated()

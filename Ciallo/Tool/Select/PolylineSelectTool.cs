@@ -179,8 +179,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             button.Name = operation.ToString();
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             button.TooltipText = operation == Geometry2D.PolyBooleanOperation.Difference
-                ? "Subtract all selected upper polygons from the bottom polygon. The result keeps the bottom polygon's fill brush.".Tr()
-                : "Combine the selected polygons. The result keeps the bottom polygon's fill brush.".Tr();
+                ? "Subtract all selected upper polygons from the bottom polygon. The result keeps the bottom polygon's fill brush."
+                : "Combine the selected polygons. The result keeps the bottom polygon's fill brush.";
             selectionChanged.Subscribe(_ => button.Disabled =
                 !PolygonBooleanActions.CanApplySelection(selectionManager.PrimaryLayer.CurrentValue, selectedShapes.ToArray())).AddTo(button);
             button.Pressed += () =>

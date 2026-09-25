@@ -49,7 +49,7 @@ public partial class MarkerPickerPopup : PopupPanel
             Icon = GD.Load<Texture2D>("res://Icon/plus.svg"),
             ExpandIcon = true,
             CustomMinimumSize = new(30, 30),
-            TooltipText = "Import marker".Tr(),
+            TooltipText = "Import marker",
         };
         buttonRow.AddChild(importButton);
 
@@ -58,7 +58,7 @@ public partial class MarkerPickerPopup : PopupPanel
             Icon = GD.Load<Texture2D>("res://Icon/minus.svg"),
             ExpandIcon = true,
             CustomMinimumSize = new(30, 30),
-            TooltipText = "Remove marker".Tr(),
+            TooltipText = "Remove marker",
         };
         buttonRow.AddChild(removeButton);
 
@@ -89,7 +89,7 @@ public partial class MarkerPickerPopup : PopupPanel
 
         _fileDialog = new FileDialog
         {
-            Title = "Open a File".Tr(),
+            Title = "Open a File",
             FileMode = FileDialog.FileModeEnum.OpenFile,
             Access = FileDialog.AccessEnum.Filesystem,
             Filters = [".jpg,*.jpeg,*.png,*.webp,*.tga,*.bmp,*.dds,*.ktx,*.exr,*.hdr,*"],
@@ -155,7 +155,7 @@ public partial class MarkerPickerPopup : PopupPanel
         var image = Image.LoadFromFile(path);
         if (image == null || image.IsEmpty())
         {
-            AppDialogHost.WarnUser.DialogText = "[Cannot Load Image]".Tr();
+            AppDialogHost.WarnUser.DialogText = "[Cannot Load Image]";
             AppDialogHost.WarnUser.Popup();
             return;
         }

@@ -90,7 +90,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
 
         var useBrushButton = new Button()
         {
-            Text = "Use brush".Tr(),
+            Text = "Use brush",
             Alignment = HorizontalAlignment.Left,
             CustomMinimumSize = new(0, 32),
             SizeFlagsHorizontal = Control.SizeFlags.Fill
@@ -99,7 +99,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         useBrushButton.Pressed += OnUseBrushPressed;
         var manageButton = new Button()
         {
-            Text = "Manage brush library".Tr(),
+            Text = "Manage brush library",
             Alignment = HorizontalAlignment.Left,
             CustomMinimumSize = new(0, 32),
             SizeFlagsHorizontal = Control.SizeFlags.Fill

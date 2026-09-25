@@ -20,27 +20,15 @@ public partial class MenuWindow : PopupMenu
     {
         _dockableContainer = GetTree().CurrentScene.GetNode<MainDockableContainer>(MainDockableContainer.ScenePath);
 
-        AddCheckItem(Tr("Tool"), (int)Command.ToolPanel);
-        AddCheckItem(Tr("Tool Properties"), (int)Command.ToolPropertyPanel);
-        AddCheckItem(Tr("Layers"), (int)Command.LayerPanel);
-        AddCheckItem(Tr("Timeline"), (int)Command.TimelinePanel);
+        AddCheckItem("Tool", (int)Command.ToolPanel);
+        AddCheckItem("Tool Properties", (int)Command.ToolPropertyPanel);
+        AddCheckItem("Layers", (int)Command.LayerPanel);
+        AddCheckItem("Timeline", (int)Command.TimelinePanel);
         AddSeparator();
-        AddItem(Tr("Reset Layout"), (int)Command.ResetLayout);
+        AddItem("Reset Layout", (int)Command.ResetLayout);
 
         AboutToPopup += SynchronizePanelChecks;
         IdPressed += id => OnIdPressed((Command)id);
-    }
-
-    public override void _Notification(int what)
-    {
-        base._Notification(what);
-        if (what != NotificationTranslationChanged || !IsNodeReady()) return;
-
-        SetCommandText(Command.ToolPanel, "Tool");
-        SetCommandText(Command.ToolPropertyPanel, "Tool Properties");
-        SetCommandText(Command.LayerPanel, "Layers");
-        SetCommandText(Command.TimelinePanel, "Timeline");
-        SetCommandText(Command.ResetLayout, "Reset Layout");
     }
 
     private void OnIdPressed(Command command)
@@ -86,6 +74,4 @@ public partial class MenuWindow : PopupMenu
     private void SetPanelChecked(Command command, string panelName) =>
         SetItemChecked(GetItemIndex((int)command), _dockableContainer.IsAuxiliaryPanelVisible(panelName));
 
-    private void SetCommandText(Command command, string text) =>
-        SetItemText(GetItemIndex((int)command), Tr(text));
 }

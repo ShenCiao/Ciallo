@@ -103,7 +103,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
         container.AddChild(new Label
         {
-            Text = "Fill brush".Tr(),
+            Text = "Fill brush",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         var brushPreview = VectorFillBrushPreviewList.New(Document);
@@ -161,7 +161,7 @@ public class VectorFillHover : Interaction, IPropertyProvider
 
         var editReferenceLayers = new Button
         {
-            Text = "Edit reference layers".Tr(),
+            Text = "Edit reference layers",
             CustomMinimumSize = new(0, 32),
         };
         editReferenceLayers.Pressed += () =>

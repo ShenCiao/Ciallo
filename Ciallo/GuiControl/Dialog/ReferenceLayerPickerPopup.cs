@@ -65,7 +65,7 @@ public partial class ReferenceLayerPickerPopup : PopupPanel
         var root = new VBoxContainer { SizeFlagsVertical = Control.SizeFlags.ExpandFill };
         margin.AddChild(root);
 
-        root.AddChild(new Label { Text = "Select reference shape layers".Tr() });
+        root.AddChild(new Label { Text = "Select reference shape layers" });
 
         var scroll = new ScrollContainer
         {
@@ -82,11 +82,11 @@ public partial class ReferenceLayerPickerPopup : PopupPanel
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         root.AddChild(buttons);
 
-        var cancel = new Button { Text = "Cancel".Tr() };
+        var cancel = new Button { Text = "Cancel" };
         cancel.Pressed += Hide;
         buttons.AddChild(cancel);
 
-        var apply = new Button { Text = "Apply".Tr() };
+        var apply = new Button { Text = "Apply" };
         apply.Pressed += Apply;
         buttons.AddChild(apply);
     }

@@ -49,7 +49,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     {
         container.AddChild(new Label
         {
-            Text = "[Vector Fill On Shape Layer Hint]".Tr(),
+            Text = "[Vector Fill On Shape Layer Hint]",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
 

@@ -179,7 +179,7 @@ public static class BindItemList
 
         public ItemList BindEnum<T>(ReactiveProperty<T> property, Func<T, string> toName = null) where T : Enum
         {
-            toName ??= value => value.ToString().Tr();
+            toName ??= value => value.ToString();
             var values = (T[])Enum.GetValues(typeof(T));
             control.BindValue(values, property, toName);
             return control;

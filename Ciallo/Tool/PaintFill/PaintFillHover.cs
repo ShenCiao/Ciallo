@@ -31,7 +31,7 @@ public class PaintFillHover : Interaction, IPropertyProvider
         var mode = new OptionButton
         {
             CustomMinimumSize = new(0, 32),
-            TooltipText = "Poly Cubic Bézier: press Enter to close with a straight line. Click the first point to close with a curve; drag before releasing to align the handles at the join.".Tr(),
+            TooltipText = "Poly Cubic Bézier: press Enter to close with a straight line. Click the first point to close with a curve; drag before releasing to align the handles at the join.",
         };
         mode.AddItem("Freehand");
         mode.AddItem("Poly Cubic Bézier");
@@ -41,17 +41,17 @@ public class PaintFillHover : Interaction, IPropertyProvider
         {
             Name = "PaintFillBooleanOperation",
             CustomMinimumSize = new(0, 32),
-            TooltipText = "Modify overlapping polygons using the same fill brush in this layer. If polygons are selected, modify only those. Subtract removes the drawn area; Intersect keeps it.".Tr(),
+            TooltipText = "Modify overlapping polygons using the same fill brush in this layer. If polygons are selected, modify only those. Subtract removes the drawn area; Intersect keeps it.",
         };
         operation.BindValue<Geometry2D.PolyBooleanOperation?>(
             [null, Geometry2D.PolyBooleanOperation.Union, Geometry2D.PolyBooleanOperation.Difference,
                 Geometry2D.PolyBooleanOperation.Intersection, Geometry2D.PolyBooleanOperation.Xor],
-            Tool.BooleanOperation, value => PolygonBooleanActions.Label(value).Tr());
+            Tool.BooleanOperation, value => PolygonBooleanActions.Label(value));
         container.AddProperty("Operation", operation);
 
         container.AddChild(new Label
         {
-            Text = "Fill brush".Tr(),
+            Text = "Fill brush",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         var brushPreview = VectorFillBrushPreviewList.New(Document);

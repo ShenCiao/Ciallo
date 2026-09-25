@@ -179,7 +179,7 @@ public partial class TrackTree : LayerTreeBase
                 block.WorkingButton.Modulate = available ? Colors.White : new Color(1, 1, 1, 0.45f);
                 block.WorkingButton.TooltipText = (available
                     ? "Select matching layers across cels"
-                    : "Archetype unavailable in current cel; selection applies to other cels").Tr();
+                    : "Archetype unavailable in current cel; selection applies to other cels");
             }
 
             sm.SelectedLayers.CombineLatest(folderSetting.CurrentExposedCel,

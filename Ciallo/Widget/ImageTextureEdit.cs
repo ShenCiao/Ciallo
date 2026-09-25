@@ -58,7 +58,7 @@ public partial class ImageTextureEdit : BoxContainer
             var image = Image.LoadFromFile(path);
             if (image == null || image.IsEmpty())
             {
-                AppDialogHost.WarnUser.DialogText = "[Cannot Load Image]".Tr();
+                AppDialogHost.WarnUser.DialogText = "[Cannot Load Image]";
                 AppDialogHost.WarnUser.Popup();
                 return;
             }

@@ -38,7 +38,7 @@ public partial class PropertyContainer : VBoxContainer
         var box = CreateHContainer();
         box.AddChild(new Label
         {
-            Text = name.Tr(),
+            Text = name,
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Left,
             SizeFlagsVertical = SizeFlags.ShrinkBegin,
@@ -71,7 +71,7 @@ public partial class PropertyContainer : VBoxContainer
         control.Visible = checkBox.IsPressed();
 
         checkBox.Pressed += () => control.Visible = checkBox.IsPressed();
-        checkBox.Text = name.Tr();
+        checkBox.Text = name;
         // checkBox.IconAlignment = HorizontalAlignment.Right; // This not work. Bug? 
         checkBox.SizeFlagsVertical = SizeFlags.ShrinkBegin;
 
@@ -86,7 +86,7 @@ public partial class PropertyContainer : VBoxContainer
         var button = new Button()
         {
             Name = text,
-            Text = text.Tr(),
+            Text = text,
             Alignment = HorizontalAlignment.Left,
             CustomMinimumSize = new(0, 32),
             SizeFlagsHorizontal = SizeFlags.Fill,

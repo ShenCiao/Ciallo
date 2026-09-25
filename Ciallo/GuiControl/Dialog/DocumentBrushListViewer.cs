@@ -16,7 +16,7 @@ public partial class DocumentBrushListViewer : ItemList, IInitable
 
     public DocumentBrushListViewer()
     {
-        TooltipText = "[Document Brush List Tooltip]".Tr();
+        TooltipText = "[Document Brush List Tooltip]";
         AutoWidth = true;
     }
 
@@ -45,7 +45,7 @@ public partial class DocumentBrushListViewer : ItemList, IInitable
 
             if (toDeleteShapes.Count > 0)
             {
-                AppDialogHost.YesNoDialog.DialogText = "[Delete Brush Hint]".Tr();
+                AppDialogHost.YesNoDialog.DialogText = "[Delete Brush Hint]";
                 if (!await AppDialogHost.YesNoDialog.PopupCollectInput()) return;
             }
 

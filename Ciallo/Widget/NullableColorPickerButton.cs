@@ -32,7 +32,6 @@ public partial class NullableColorPickerButton : ColorPickerButton
         base._Ready();
         var picker = GetPicker();
 
-        HasColorToggle.Text = "Enabled".Tr();
         HasColorToggle.SetPressedNoSignal(HasColor);
         HasColorToggle.Toggled += OnHasColorToggled;
         ColorChanged += OnColorChanged;

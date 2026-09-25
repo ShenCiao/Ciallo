@@ -23,7 +23,7 @@ public partial class MenuEdit : PopupMenu
                 AddSeparator();
                 continue;
             }
-            AddItem(Tr(item.Key));
+            AddItem(item.Key);
             if (item.Value != null) SetItemShortcut(i, item.Value.Shortcut);
         }
 

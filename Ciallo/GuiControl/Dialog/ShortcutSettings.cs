@@ -31,17 +31,9 @@ public partial class ShortcutSettings : AcceptDialog
         keychain.Call(ConfigureRemappingMethod, true, false, true, true, false);
     }
 
-    public override void _Ready() => UpdateTranslation();
-
-    public override void _Notification(int what)
+    public override void _Ready()
     {
-        base._Notification(what);
-        if (what == NotificationTranslationChanged && IsNodeReady()) UpdateTranslation();
-    }
-
-    private void UpdateTranslation()
-    {
-        Title = Tr("Shortcuts");
-        OkButtonText = Tr("Close");
+        Title = "Shortcuts";
+        OkButtonText = "Close";
     }
 }

@@ -701,7 +701,7 @@ public partial class DockableContainer : Container, ISerializationListener
         string title = control.HasMeta(TitleMetadata)
             ? control.GetMeta(TitleMetadata).AsString()
             : control.Name;
-        return Tr(title);
+        return title;
     }
 
     private void RefreshTabTitles()

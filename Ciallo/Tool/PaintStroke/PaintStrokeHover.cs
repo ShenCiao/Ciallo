@@ -131,9 +131,9 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
             .Flatten();
         var radiusControl = new SpinSlider
         {
-            MinValue = 0.5f,
+            MinValue = 0.01f,
             MaxValue = 256f,
-            Step = 0.03333333f,
+            Step = 0.01f,
             AllowGreater = true,
             ExpEdit = true,
         }.BindNumber(radius);

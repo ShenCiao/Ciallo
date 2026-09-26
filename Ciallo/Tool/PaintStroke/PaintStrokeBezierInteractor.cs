@@ -53,6 +53,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     private Phase _phase = Phase.DraggingP2;
     private Vector2 _startScreenPosition;
     private bool _canConfirmP2OnRelease;
+    private const float EndpointDragThresholdPixels = 4f;
 
     // Wireframe visualization
     private Node2D _wireframe;
@@ -118,7 +119,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         switch (_phase)
         {
             case Phase.DraggingP2:
-                _canConfirmP2OnRelease |= data.ScreenPosition != _startScreenPosition;
+                _canConfirmP2OnRelease |= HasReachedEndpointDragThreshold(data.ScreenPosition);
                 UpdateP2Preview(data.WorldPosition);
                 break;
 
@@ -156,15 +157,20 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         {
             if (_phase == Phase.DraggingP2)
             {
-                // A stationary first click keeps the endpoint following the cursor
-                // until the next release. A drag confirms on its first release.
-                if (!_canConfirmP2OnRelease && data.ScreenPosition == _startScreenPosition)
+                // Include the release position in case no motion event delivered it.
+                _canConfirmP2OnRelease |= HasReachedEndpointDragThreshold(data.ScreenPosition);
+                if (_canConfirmP2OnRelease)
                 {
+                    ConfirmP2(data.WorldPosition);
+                }
+                else
+                {
+                    // A first click within the threshold keeps P2 following the cursor.
+                    // The next release confirms even a segment shorter than the threshold.
                     _canConfirmP2OnRelease = true;
-                    return true;
+                    UpdateP2Preview(data.WorldPosition);
                 }
 
-                ConfirmP2(data.WorldPosition);
                 RefreshVisuals();
                 return true;
             }
@@ -178,6 +184,10 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
         return base.OnMouseButton(button, data);
     }
+
+    private bool HasReachedEndpointDragThreshold(Vector2 screenPosition) =>
+        screenPosition.DistanceSquaredTo(_startScreenPosition) >=
+        EndpointDragThresholdPixels * EndpointDragThresholdPixels;
 
     private void UpdateP2Preview(Vector2 cursor)
     {
@@ -220,37 +230,42 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
     /// <summary>
     /// Adjust the elevated cubic's internal weights from drag components.
-    /// The normal is midpoint-to-P1; its positive direction increases bulge.
+    /// The normal follows P1's internal angle bisector, pointing away from the anchors.
+    /// Its positive direction increases bulge.
     /// The orthogonal tangent is oriented to agree with P0-to-P2.
     /// </summary>
     private void AdjustWeightsFromDrag(Vector2 dragWorldPos)
     {
-        // No meaningful direction if the anchors or the control offset collapse.
+        // A coincident point pair cannot define the P1 angle and baseline.
         if (_p0.DistanceSquaredTo(_p2) < 1e-4f)
             return;
 
-        Vector2 baselineDir = (_p2 - _p0).Normalized();
-        Vector2 midpointToControl = _p1 - (_p0 + _p2) * 0.5f;
-        if (midpointToControl.LengthSquared() < 1e-4f)
+        Vector2 startToControl = _p1 - _p0;
+        Vector2 endToControl = _p1 - _p2;
+        if (startToControl.LengthSquared() < 1e-4f || endToControl.LengthSquared() < 1e-4f)
             return;
 
-        Vector2 normalDir = midpointToControl.Normalized();
+        Vector2 bisector = startToControl.Normalized() + endToControl.Normalized();
+        // Opposing rays (a straight segment through P1) have no outward direction.
+        if (bisector.LengthSquared() < 1e-10f)
+            return;
+
+        Vector2 normalDir = bisector.Normalized();
         Vector2 tangentDir = new Vector2(-normalDir.Y, normalDir.X);
-        if (tangentDir.Dot(baselineDir) < 0f)
+        if (tangentDir.Dot(_p2 - _p0) < 0f)
             tangentDir = -tangentDir;
 
         // Decompose drag
         Vector2 dragDelta = dragWorldPos - _p1;
         float normalComponent = dragDelta.Dot(normalDir);
         float tangentComponent = dragDelta.Dot(tangentDir);
-        float towardP1Component = normalComponent;
 
         // The product controls overall bulge; the ratio controls which elevated
         // handle is followed more closely.
-        float normalLog = towardP1Component * NormalWeightSensitivity;
+        float normalLog = normalComponent * NormalWeightSensitivity;
         float tangentLog = tangentComponent * TangentWeightSensitivity;
         _phase3ControlPointConvergence = 1f - Mathf.Exp(
-            -Mathf.Max(0f, towardP1Component) * NormalControlPointConvergence);
+            -Mathf.Max(0f, normalComponent) * NormalControlPointConvergence);
         float baseLogMean = 0.5f * (Mathf.Log(_phase3BaseW1) + Mathf.Log(_phase3BaseW2));
         float baseLogRatio = 0.5f * (Mathf.Log(_phase3BaseW1) - Mathf.Log(_phase3BaseW2));
         // C1 is the P0-P1 handle and C2 is the P1-P2 handle. Therefore a

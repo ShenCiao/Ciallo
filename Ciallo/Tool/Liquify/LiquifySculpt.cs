@@ -27,8 +27,8 @@ public static class LiquifySculpt
     // displacement is (1/5)^2 = 4%, so a drag accumulates smoothly instead of
     // snapping the geometry on a single dab.
     private const float RadialEffectScale = 1f / 5f;
-    // Thickness nudges stay small per dab so the stroke width changes feel
-    // continuous instead of jumping.
+    // Log-radius change per unit of brush influence and pointer travel. Applying
+    // it in log space makes thickness changes proportional and reversible.
     private const float ThicknessEffectScale = 1f / 10f;
 
     // This is intentionally endpoint-dab sculpting, not true segment integration.
@@ -59,11 +59,11 @@ public static class LiquifySculpt
         if (influence <= 0f)
             return radius;
 
-        float delta = influence * ThicknessEffectScale * StepScale(dab);
+        float logScale = influence * ThicknessEffectScale * StepScale(dab);
         return mode switch
         {
-            LiquifyMode.Thicken => Mathf.Max(1f, radius + delta),
-            LiquifyMode.Thin => Mathf.Max(1f, radius - delta),
+            LiquifyMode.Thicken => radius * Mathf.Exp(logScale),
+            LiquifyMode.Thin => radius * Mathf.Exp(-logScale),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
     }

@@ -29,6 +29,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     public readonly ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
     [DataMember]
     public readonly ReactiveProperty<float> SimplificationTolerance = new(0.5f);
+    [DataMember]
+    public readonly ReactiveProperty<float> StrokeRadiusMultiplier = new(1f);
 
     [Substate]
     internal PolylineNoSelectionHover HoverWithoutSelection;
@@ -203,6 +205,41 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         ObserveSelectionBrush(selectedShapes, e => e.Has<StrokeSetting>(), e => e.Get<StrokeSetting>().Brush)
             .Subscribe(strokeBrushSwitcher.Select).AddTo(strokeBrushSwitcher);
+
+        var strokeRadiusEditBox = container.CreateBox().AddToChildOf(container);
+        strokeRadiusEditBox.Name = "StrokeRadiusMultiplier";
+        strokeRadiusEditBox.VisibleIf(selectionChanged,
+            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<StrokeSetting>()));
+
+        var strokeRadiusMultiplierEdit = new SpinSlider
+        {
+            MinValue = 0.01f,
+            MaxValue = 100f,
+            Step = 0.01f,
+            ExpEdit = true,
+            AllowGreater = true,
+            TooltipText = "Multiply every selected stroke radius by this factor. For example, 0.5 halves each radius.",
+        }.BindNumber(StrokeRadiusMultiplier);
+        container.CreatePropertyBox("Radius multiplier", strokeRadiusMultiplierEdit)
+            .AddToChildOf(strokeRadiusEditBox);
+
+        var applyStrokeRadiusMultiplier = container.CreateButton("Apply to selected strokes")
+            .AddToChildOf(strokeRadiusEditBox);
+        applyStrokeRadiusMultiplier.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        applyStrokeRadiusMultiplier.Pressed += () =>
+        {
+            float multiplier = StrokeRadiusMultiplier.Value;
+            if (multiplier == 1f) return;
+
+            var command = new CommandBuilder("Scale Selected Stroke Radii");
+            foreach (var strokeE in selectedShapes)
+            {
+                var radii = strokeE.Get<SampledPolyline>().Radii.Value;
+                command.SetTarget(strokeE).SetSampledPolyline(
+                    radii: radii.Select(radius => radius * multiplier).ToImmutableArray());
+            }
+            command.Commit();
+        };
 
         strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
         {

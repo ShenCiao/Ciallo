@@ -71,15 +71,27 @@ internal static class LayerSelectionActions
     public static void SetProperty<T>(string action, ImmutableArray<Entity> layers,
         Func<CommonLayerSetting, ReactiveProperty<T>> property, T value, bool sequence = false)
     {
-        if (layers.IsEmpty) return;
-        var command = new CommandBuilder(action, layers[0].Document);
+        var command = CreatePropertyCommand(new CommandBuilder(action), layers, property, value);
+        if (sequence) command.CommitSequence();
+        else command.Commit();
+    }
+
+    public static void Rename(Entity layer, string name) =>
+        SetProperty("Rename Layer", [layer], setting => setting.Name, name);
+
+    public static void SetVisible(ImmutableArray<Entity> layers, bool visible) =>
+        CreatePropertyCommand(new CommandBuilder(), layers, setting => setting.IsVisible, visible)
+            .CommitOpenSequence(HistorySequenceKind.LayerVisibility);
+
+    private static CommandBuilder CreatePropertyCommand<T>(CommandBuilder command, ImmutableArray<Entity> layers,
+        Func<CommonLayerSetting, ReactiveProperty<T>> property, T value)
+    {
         foreach (var layer in layers)
         {
             var setting = property(layer.Get<CommonLayerSetting>());
             if (!EqualityComparer<T>.Default.Equals(setting.Value, value))
                 command.SetTarget(layer).SetProperty(setting, value);
         }
-        if (sequence) command.CommitSequence();
-        else command.Commit();
+        return command;
     }
 }

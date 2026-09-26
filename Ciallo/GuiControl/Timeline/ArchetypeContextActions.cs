@@ -59,6 +59,7 @@ internal static class ArchetypeContextActions
 
     public static void Rename(Entity folder, string name, string newName)
     {
+        if (name == newName) return;
         var setting = folder.Get<FolderLayerSetting>();
         var command = new CommandBuilder("Rename Cel Child Archetype", folder);
         foreach (var layer in setting.CelChildrenByName[name])
@@ -69,8 +70,7 @@ internal static class ArchetypeContextActions
     }
 
     public static void SetVisible(Entity folder, string name, bool visible) =>
-        LayerSelectionActions.SetProperty("Cel Child Archetype Visibility", Capture(folder, name).Layers,
-            setting => setting.IsVisible, visible);
+        LayerSelectionActions.SetVisible(Capture(folder, name).Layers, visible);
 
     public static bool CanSplit(ArchetypeContext context) =>
         !context.Units.IsEmpty && context.Layers.All(layer => layer.Has<ShapeLayerSetting>());

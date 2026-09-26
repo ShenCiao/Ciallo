@@ -113,8 +113,8 @@ public abstract partial class LayerTreeBase : ScrollContainer
             SyncSelection();
         };
         commonSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(subs);
-        block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetProperty(
-            "Layer Visibility", LayerSelectionActions.ContextLayers(e), s => s.IsVisible, value)).AddTo(subs);
+        block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetVisible(
+            LayerSelectionActions.ContextLayers(e), value)).AddTo(subs);
         StyleBoxFlat markColorStyleBox = null;
         commonSetting.MarkColor.Subscribe(markColor =>
         {
@@ -134,7 +134,14 @@ public abstract partial class LayerTreeBase : ScrollContainer
             block.WorkingButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
             block.WorkingButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
         }).AddTo(subs);
-        var lineEdit = block.LabelLineEdit.BindString(commonSetting.Name, subs);
+        var lineEdit = block.LabelLineEdit;
+        commonSetting.Name.Subscribe(value =>
+        {
+            if (lineEdit.Text != value) lineEdit.Text = value;
+        }).AddTo(subs);
+        lineEdit.OnTextSubmittedAsObservable()
+            .Subscribe(value => LayerSelectionActions.Rename(e, value)).AddTo(subs);
+        lineEdit.SubmitOnFocusExit();
 
         if (ShouldShowDropdownArrow(e))
         {

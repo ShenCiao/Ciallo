@@ -16,6 +16,7 @@ public partial class CommandManager
     private readonly List<HistoryAction> _undoStack = [];
     private readonly List<HistoryAction> _redoStack = [];
     private HistoryAction _openSequenceAction;
+    private HistorySequenceKind _openSequenceKind;
     private HistoryAction _closedOpenSequenceAction;
     private long _currentVersion;
     private long _savedVersion;
@@ -103,18 +104,20 @@ public partial class CommandManager
 
     /// <summary>
     /// Creates a new undoable action on the first call, then keeps appending later segments
-    /// to that same action until another history-writing entrypoint starts a different action.
+    /// of the same kind to that action until another history-writing entrypoint
+    /// or sequence kind starts a different action.
     /// </summary>
-    public void CommitOpenSequence(string actionName, List<ICommand> commands, bool execute = true)
+    public void CommitOpenSequence(HistorySequenceKind kind, List<ICommand> commands, bool execute = true)
     {
         if (commands.Count == 0) return;
 
+        string actionName = kind.GetActionName();
         var segment = PrepareSegment(actionName, commands, execute);
         if (segment == null) return;
 
         ClearRedoStack();
 
-        if (TryResolveOpenSequenceAction(out var targetAction))
+        if (TryResolveOpenSequenceAction(kind, out var targetAction))
         {
             targetAction.Append(segment);
             BumpVersion(targetAction);
@@ -122,6 +125,7 @@ public partial class CommandManager
         else
         {
             _openSequenceAction = AddSeparateAction(actionName, segment);
+            _openSequenceKind = kind;
         }
 
         TrimUndoStack();
@@ -147,11 +151,11 @@ public partial class CommandManager
     }
 
     public void CommitOpenSequence(
-        string actionName,
+        HistorySequenceKind kind,
         ICommand command,
         bool execute = true)
     {
-        CommitOpenSequence(actionName, [command], execute);
+        CommitOpenSequence(kind, [command], execute);
     }
 
     public void Undo()
@@ -228,9 +232,10 @@ public partial class CommandManager
         return false;
     }
 
-    private bool TryResolveOpenSequenceAction(out HistoryAction action)
+    private bool TryResolveOpenSequenceAction(HistorySequenceKind kind, out HistoryAction action)
     {
-        if (_openSequenceAction != null && TryResolveLatestAction(out action) && ReferenceEquals(action, _openSequenceAction))
+        if (_openSequenceAction != null && _openSequenceKind == kind &&
+            TryResolveLatestAction(out action) && ReferenceEquals(action, _openSequenceAction))
             return true;
 
         _openSequenceAction = null;

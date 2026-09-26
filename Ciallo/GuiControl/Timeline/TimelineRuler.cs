@@ -468,7 +468,7 @@ public partial class TimelineRuler : Control
                 }
                 else if (_dragMode == DragMode.StartHandle)
                 {
-                    var cmd = new CommandBuilder("Set Playback Start")
+                    var cmd = new CommandBuilder()
                         .SetProperty(_playbackStart, _playbackStartAtDragStart, _playbackStart.Value);
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
@@ -477,11 +477,11 @@ public partial class TimelineRuler : Control
                         if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
                             cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
-                    cmd.CommitOpenSequence();
+                    cmd.CommitOpenSequence(HistorySequenceKind.TimelineInteraction);
                 }
                 else if (_dragMode == DragMode.EndHandle)
                 {
-                    var cmd = new CommandBuilder("Set Playback End")
+                    var cmd = new CommandBuilder()
                         .SetProperty(_playbackEnd, _playbackEndAtDragStart, _playbackEnd.Value);
                     if (_currentFrame != null && _currentFrame.Value != _frameAtDragStart)
                     {
@@ -490,7 +490,7 @@ public partial class TimelineRuler : Control
                         if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
                             cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
                     }
-                    cmd.CommitOpenSequence();
+                    cmd.CommitOpenSequence(HistorySequenceKind.TimelineInteraction);
                 }
                 _dragMode = DragMode.None;
             }

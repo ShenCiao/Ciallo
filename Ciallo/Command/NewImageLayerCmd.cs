@@ -73,6 +73,10 @@ public class NewImageLayerCmd : CommandBase
             layerOverlay.UpdateGeometry();
         }).AddTo(targetE);
 
+        // Body; Adding it only for keeping Godot nodes complete during moving with index
+        var bodyHolder = new BodyHolder();
+        targetE.AddNode(bodyHolder);
+
         // Layer panel
         targetE.Document.Get<LayerTree>().Create(targetE);
 
@@ -96,6 +100,9 @@ public class NewImageLayerCmd : CommandBase
 
             // Overlay
             et.Parent.Get<OverlayHolder>().InsertNodeAt(layerOverlay, et.Index);
+
+            // Body
+            et.Parent.Get<BodyHolder>().InsertNodeAt(bodyHolder, et.Index);
         }).AddTo(targetE);
 
         events.Removed.Subscribe(_ =>
@@ -105,6 +112,9 @@ public class NewImageLayerCmd : CommandBase
 
             // Timeline track
             targetE.Get<TrackRowWrapper>().RemoveFromParent();
+
+            // Body
+            bodyHolder.RemoveFromParent();
 
             // Overlay
             layerOverlay.RemoveFromParent();

@@ -16,7 +16,6 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     private readonly List<Vector2> _points = [];
     private readonly List<int> _segmentPointCounts = [];
     private readonly List<Vector2> _firstSegmentPoints = [];
-    private readonly CubicBezierSampler _sampler = new();
     private int _committedPointCount;
     private Vector2 _sampledFirstOutHandle;
     private readonly List<Vector2> _dotPositions = [];
@@ -36,8 +35,9 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     private readonly List<StrokeView> _handleLines = [];
     private MultiMeshInstance2D _controlPoints;
 
-    private const float SampleSpacing = 6f;
+    private const float SampleSpacing = 8f; // Document units, independent of canvas zoom.
     private const float MaxDeviation = 2f;
+    private const float MaxTurnAngle = MathF.PI / 18; // 10 degrees, independent of curve scale.
     private const float CloseDistancePixels = 8f;
     private const float ClosureDragDistancePixels = 3f;
 
@@ -357,8 +357,8 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     }
 
     private void AppendCubic(List<Vector2> result, Anchor from, Anchor to) =>
-        _sampler.AppendTo(result, from.Position, from.OutHandle, to.InHandle, to.Position,
-            SampleSpacing, MaxDeviation);
+        CubicBezierSampler.AppendTo(result, from.Position, from.OutHandle, to.InHandle, to.Position,
+            SampleSpacing, MaxDeviation, MaxTurnAngle);
 
     private void BuildWireframe()
     {

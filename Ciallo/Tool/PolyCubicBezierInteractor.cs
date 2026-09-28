@@ -36,7 +36,7 @@ public abstract class PolyCubicBezierInteractor : CapturingInteraction
     private readonly List<StrokeView> _handleLines = [];
     private MultiMeshInstance2D _controlPoints;
 
-    private const float SampleSpacing = 8f;
+    private const float SampleSpacing = 6f;
     private const float MaxDeviation = 2f;
     private const float CloseDistancePixels = 8f;
     private const float ClosureDragDistancePixels = 3f;

@@ -68,7 +68,7 @@ public sealed class BucketFillContext : IDisposable
     public BucketFillRegion Query(Vector2 point, BucketFillTool options)
     {
         _solver ??= BucketFillSolver.Build([.. _strokes.Values]);
-        return _solver.Query(point, options.GapAware.Value, options.GapFactor.Value);
+        return _solver.Query(point, options.GapAware.Value, options.GapFactor.Value, options.IgnoreHoles.Value);
     }
 
     public bool Commit(Vector2 point, BucketFillTool options, Entity brush, bool placeAtBottom)

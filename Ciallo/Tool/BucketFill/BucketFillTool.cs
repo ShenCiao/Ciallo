@@ -15,8 +15,8 @@ using StateMachine = StateMachine<InteractionState, Trigger>;
 // Output selected by the shared Bucket Fill button.
 public enum BucketFillOutput
 {
-    Marker,
     Polygon,
+    Marker,
 }
 
 // Polygon bucket fill owns its interaction lifecycle independently of live marker filling.
@@ -24,9 +24,11 @@ public enum BucketFillOutput
 public class BucketFillTool : InteractionScope, ILayerDependent
 {
     [DataMember]
-    public readonly ReactiveProperty<BucketFillOutput> Mode = new(BucketFillOutput.Marker);
+    public readonly ReactiveProperty<BucketFillOutput> Mode = new(BucketFillOutput.Polygon);
     [DataMember]
     public readonly ReactiveProperty<bool> PlaceAtBottom = new(true);
+    [DataMember]
+    public readonly ReactiveProperty<bool> IgnoreHoles = new(false);
     [DataMember]
     public readonly ReactiveProperty<bool> GapAware = new(true);
     [DataMember]
@@ -66,6 +68,7 @@ public class BucketFillTool : InteractionScope, ILayerDependent
     {
         DrawModeProperty(container);
         container.AddProperty("Place at bottom", new CheckBox().BindBool(PlaceAtBottom));
+        container.AddProperty("Ignore holes", new CheckBox().BindBool(IgnoreHoles));
         container.AddProperty("Gap aware", new CheckBox().BindBool(GapAware));
         container.AddProperty("Gap factor", new SpinSlider { MinValue = 0, MaxValue = 1, Step = 0.01 }
             .BindNumber(GapFactor)).VisibleIf(GapAware, value => value);

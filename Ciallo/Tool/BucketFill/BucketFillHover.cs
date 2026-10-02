@@ -22,6 +22,7 @@ public class BucketFillHover : Interaction, IPropertyProvider
         _context.SourceChanged += Refresh;
         _preview = new BucketFillContourPreview(PrimaryLayer);
         _subscriptions = new();
+        Tool.IgnoreHoles.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
         Tool.GapAware.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
         Tool.GapFactor.Skip(1).Subscribe(_ => Refresh()).AddTo(_subscriptions);
         _point = data.WorldPosition;

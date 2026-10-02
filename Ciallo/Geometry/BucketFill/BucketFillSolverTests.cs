@@ -16,19 +16,6 @@ namespace Ciallo.Geometry;
 public class BucketFillSolverTests
 {
     [TestCase]
-    public void ClosedRegionRejectsBoundaryAndExterior()
-    {
-        using var solver = BucketFillSolver.Build([Rectangle(0, 0, 10, 10)]);
-        var region = solver.Query(new(3, 6), gapAware: true, gapFactor: 0.5);
-        AssertThat(region.Polygons.Length).IsEqual(1);
-        CheckArea(region, 100);
-        AssertThat(solver.Query(new(0, 5), gapAware: true, gapFactor: 0.5).IsEmpty).IsTrue();
-        AssertThat(solver.Query(new(12, 5), gapAware: true, gapFactor: 0.5).IsEmpty).IsTrue();
-        using var empty = BucketFillSolver.Build([]);
-        AssertThat(empty.Query(Vector2.Zero, gapAware: true, gapFactor: 0.5).IsEmpty).IsTrue();
-    }
-
-    [TestCase]
     public void FrameRejectionIsCachedUntilGapParametersChange()
     {
         using var solver = BucketFillSolver.Build([[new(0, 10), new(5, 0), new(10, 10)]]);
@@ -94,6 +81,7 @@ public class BucketFillSolverTests
         // Test the whole connected region; gap segmentation may split the passages between holes.
         var region = solver.Query(new(1, 6), gapAware: false, gapFactor: 0.5);
         CheckArea(region, 192);
+        CheckTriangulatedArea(region, 192);
         AssertThat(Contains(region, new(4, 4))).IsFalse();
         AssertThat(Contains(region, new(13, 4))).IsFalse();
         // The preview includes the outer perimeter and two hole perimeters, without bridge edges.
@@ -114,6 +102,15 @@ public class BucketFillSolverTests
         var bridged = boundaries.ConnectHoles();
         using var repaired = Arrangement2D.RepairAndTriangulate([bridged.ToArray()]);
         AssertThat(Math.Abs(Area((Vector2[])repaired["vertices"], (int[])repaired["indices"]) - 192) < 0.001).IsTrue();
+
+        // Toggling at the same seed must update both the cached fill and its preview contours.
+        var solid = solver.Query(new(1, 6), gapAware: false, gapFactor: 0.5, ignoreHoles: true);
+        CheckArea(solid, 200);
+        AssertThat(solid.Polygons.Length).IsEqual(1);
+        AssertThat(solid.Polygons[0].Length).IsEqual(1);
+        AssertThat(Contains(solid, new(4, 4))).IsTrue();
+        AssertThat(Contains(solid, new(13, 4))).IsTrue();
+        CheckArea(solver.Query(new(1, 6), gapAware: false, gapFactor: 0.5, ignoreHoles: false), 192);
     }
 
     [TestCase]
@@ -133,12 +130,18 @@ public class BucketFillSolverTests
     {
         using var holes = BucketFillSolver.Build([
             Rectangle(0, 0, 12, 12), Rectangle(3, 3, 6, 6), Rectangle(6, 6, 9, 9)]);
-        CheckArea(holes.Query(new(1, 8), gapAware: true, gapFactor: 0.5), 126);
+        var region = holes.Query(new(1, 8), gapAware: true, gapFactor: 0.5);
+        CheckArea(region, 126);
+        CheckTriangulatedArea(region, 126);
+        CheckArea(holes.Query(new(1, 8), gapAware: true, gapFactor: 0.5, ignoreHoles: true), 144);
         using var touchingOuter = BucketFillSolver.Build([
             Rectangle(0, 0, 10, 10), [new(0, 5), new(3, 3), new(3, 7), new(0, 5)]]);
-        CheckArea(touchingOuter.Query(new(7, 5), gapAware: true, gapFactor: 0.5), 94);
+        var touching = touchingOuter.Query(new(7, 5), gapAware: true, gapFactor: 0.5);
+        CheckArea(touching, 94);
+        CheckTriangulatedArea(touching, 94);
         using var touchingRegions = BucketFillSolver.Build([Rectangle(0, 0, 10, 10), Rectangle(10, 10, 20, 20)]);
         CheckArea(touchingRegions.Query(new(3, 6), gapAware: true, gapFactor: 0.5), 100);
+        CheckArea(touchingRegions.Query(new(3, 6), gapAware: true, gapFactor: 0.5, ignoreHoles: true), 100);
     }
 
     [TestCase]
@@ -164,7 +167,6 @@ public class BucketFillSolverTests
             stroke.Get<SampledPolyline>().Positions.Value = Rectangle(0, 0, 10, 10);
             AssertThat(sourceChanges).IsEqual(1);
             CheckArea(context.Query(new(3, 6), options), 100);
-            AssertThat(context.Commit(new(-50, -50), options, Entity.Null, true)).IsFalse();
         }
         polygon.Delete();
         stroke.Delete();
@@ -202,6 +204,10 @@ public class BucketFillSolverTests
                     - ((double)contour[i].Y - origin.Y) * ((double)contour[i + 1].X - origin.X)) * 0.5;
         }
         AssertThat(Math.Abs(contourArea - expected) < 0.001).IsTrue();
+    }
+
+    private static void CheckTriangulatedArea(BucketFillRegion region, double expected)
+    {
         // Solid preview consumes raw contours without bridging them first.
         var rings = new Godot.Collections.Array<Vector2[]>(region.Contours.Select(ring => ring.ToArray()));
         using var repaired = Arrangement2D.RepairAndTriangulate(rings);

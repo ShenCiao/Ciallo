@@ -16,6 +16,7 @@ public sealed class BucketFillSolver : IDisposable
     private int _cachedSeed = -1;
     private bool _cachedGapAware;
     private double _cachedGapFactor;
+    private bool _cachedIgnoreHoles;
     private BucketFillRegion _cachedRegion;
     public int TriangleCount => _mesh.TriangleCount;
 
@@ -75,13 +76,14 @@ public sealed class BucketFillSolver : IDisposable
         }
     }
 
-    public BucketFillRegion Query(Vector2 seed, bool gapAware, double gapFactor)
+    public BucketFillRegion Query(Vector2 seed, bool gapAware, double gapFactor, bool ignoreHoles = false)
     {
         if (!double.IsFinite(gapFactor) || gapFactor is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(gapFactor), "Gap factor must be between zero and one.");
         int start = _mesh.Locate(seed);
         if (start < 0 || _frameTriangles[start]) return BucketFillRegion.Empty;
-        if (_cachedSeed == start && _cachedGapAware == gapAware && _cachedGapFactor == gapFactor) return _cachedRegion;
+        if (_cachedSeed == start && _cachedGapAware == gapAware && _cachedGapFactor == gapFactor &&
+            _cachedIgnoreHoles == ignoreHoles) return _cachedRegion;
         int[] labels;
         double[] weights;
         int label = 1;
@@ -134,10 +136,11 @@ public sealed class BucketFillSolver : IDisposable
             }
         }
         // Rejected regions must also reach the cache, or hovering repeats the full propagation.
-        var region = touchesFrame ? BucketFillRegion.Empty : ExtractRegion(selected);
+        var region = touchesFrame ? BucketFillRegion.Empty : ExtractRegion(selected, ignoreHoles);
         _cachedSeed = start;
         _cachedGapAware = gapAware;
         _cachedGapFactor = gapFactor;
+        _cachedIgnoreHoles = ignoreHoles;
         return _cachedRegion = region;
     }
 
@@ -165,7 +168,7 @@ public sealed class BucketFillSolver : IDisposable
         }
     }
 
-    private BucketFillRegion ExtractRegion(bool[] selected)
+    private BucketFillRegion ExtractRegion(bool[] selected, bool ignoreHoles)
     {
         var visited = new bool[_mesh.Triangles.Length];
         var outers = new List<(Vector2[] Points, double Area)>();
@@ -190,7 +193,7 @@ public sealed class BucketFillSolver : IDisposable
             if (ring.Count < 3) continue;
             double area = SignedArea(ring);
             if (area > 0) outers.Add(([.. ring], area));
-            else if (area < 0) holes.Add([.. ring]);
+            else if (area < 0 && !ignoreHoles) holes.Add([.. ring]);
         }
         if (outers.Count == 0) return BucketFillRegion.Empty;
         var groups = new List<Vector2[]>[outers.Count];

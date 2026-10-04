@@ -366,7 +366,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
             if (insertIndex < parentChildren.Count)
             {
                 refBlock = GetBlock(parentChildren[insertIndex]);
-                lineGlobalY = refBlock.Node.GlobalPosition.Y + refBlock.Node.Size.Y;
+                lineGlobalY = refBlock.Wrapper.GetGlobalRect().End.Y;
             }
             else
             {

@@ -22,7 +22,7 @@ public class PaintFillPolyCubicBezierInteractor : PolyCubicBezierInteractor
     {
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
         _operation = Tool.BooleanOperation.Value;
-        _preview = PaintFillInteractor.CreatePreview(PrimaryLayer);
+        _preview = PaintFillInteractor.CreatePreview(Document);
     }
 
     protected override void UpdatePreview(IReadOnlyList<Vector2> points) =>

@@ -29,13 +29,13 @@ public class PaintFillInteractor : CapturingInteraction
     {
         _generator.Start(data);
 
-        _dashPreview = CreatePreview(PrimaryLayer);
+        _dashPreview = CreatePreview(Document);
     }
 
-    internal static StrokeView CreatePreview(Entity layer)
+    internal static StrokeView CreatePreview(Entity document)
     {
         var preview = new StrokeView { Material = AutoloadRendering.DashWireframeMaterial };
-        layer.Get<ShapeLayerView>().AddChild(preview);
+        document.Get<WorldOverlay>().AddChild(preview);
         return preview;
     }
 

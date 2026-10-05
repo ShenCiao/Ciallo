@@ -1,4 +1,14 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Thickness adjustment,Thickness adjustment,粗细调整,粗細調整,太さの調整,굵기 조정,Stärke anpassen,Ajustement de l’épaisseur
+Pressure adjustment,Pressure adjustment,笔压调整,筆壓調整,筆圧の調整,필압 조정,Druck anpassen,Ajustement de la pression
+Adjustment strength,Adjustment strength,调整强度,調整強度,調整の強さ,조정 강도,Anpassungsstärke,Intensité de l’ajustement
+Thin (−),Thin (−),变细（−）,變細（−）,細く（−）,가늘게 (−),Dünner (−),Affiner (−)
+Thicken (+),Thicken (+),加粗（+）,加粗（+）,太く（+）,굵게 (+),Dicker (+),Épaissir (+)
+Decrease pressure (−),Decrease pressure (−),减弱笔压（−）,減弱筆壓（−）,筆圧を下げる（−）,필압 감소 (−),Druck senken (−),Réduire la pression (−)
+Increase pressure (+),Increase pressure (+),增强笔压（+）,增強筆壓（+）,筆圧を上げる（+）,필압 증가 (+),Druck erhöhen (+),Augmenter la pression (+)
+Reverse direction,Reverse direction,反向,反向,方向を反転,방향 반전,Richtung umkehren,Inverser le sens
+Negative values decrease; positive values increase. Zero has no effect.,Negative values decrease; positive values increase. Zero has no effect.,负值减弱，正值增强。0 表示无作用。,負值減弱，正值增強。0 表示無作用。,負の値で減少し正の値で増加します。0では変化しません。,음수는 감소시키고 양수는 증가시킵니다. 0은 효과가 없습니다.,Negative Werte verringern; positive Werte erhöhen. Null hat keine Wirkung.,Les valeurs négatives réduisent et les positives augmentent. Zéro n’a aucun effet.
+Edits recorded pressure without changing thickness. Brushes without pressure-driven flow may show no visible change.,Edits recorded pressure without changing thickness. Brushes without pressure-driven flow may show no visible change.,修改笔压记录，保留现有粗细。未启用笔压控制流量的笔刷可能没有可见变化。,修改筆壓記錄，保留現有粗細。未啟用筆壓控制流量的筆刷可能沒有可見變化。,太さを変えずに記録された筆圧を編集します。筆圧で流量が変化しないブラシでは見た目が変わらない場合があります。,기존 굵기를 유지하며 기록된 필압을 편집합니다. 필압으로 유량을 제어하지 않는 브러시는 눈에 보이는 변화가 없을 수 있습니다.,Ändert den gespeicherten Druck ohne die Strichstärke zu ändern. Bei Pinseln ohne druckabhängigen Farbfluss ist möglicherweise keine Änderung sichtbar.,Modifie la pression enregistrée sans changer l’épaisseur. Les pinceaux sans débit lié à la pression peuvent ne présenter aucun changement visible.
 Curve pressure,Curve pressure,曲线笔压,曲線筆壓,曲線の筆圧,곡선 필압,Kurvendruck,Pression de la courbe
 Input pressure for Bézier strokes before pressure taper and brush mappings.,Input pressure for Bézier strokes before pressure taper and brush mappings.,贝塞尔笔画的原始笔压，随后应用笔压渐入渐出和笔刷映射。,貝茲筆畫的原始筆壓，隨後套用筆壓漸入漸出和筆刷映射。,筆圧テーパーとブラシのマッピングを適用する前のベジェストロークの入力筆圧。,필압 테이퍼와 브러시 매핑을 적용하기 전 베지에 획의 입력 필압입니다.,Eingabedruck für Bézierstriche vor Druckverjüngung und Pinselzuordnungen.,Pression d’entrée des traits de Bézier avant l’effilement de pression et les courbes du pinceau.
 New polygon,New polygon,新建多边形,新增多邊形,新しいポリゴン,새 다각형,Neues Polygon,Nouveau polygone
@@ -164,8 +174,6 @@ Erase,Erase,擦除,擦除,消去,지우기,Löschen,Effacer
 Push,Push,推移,推移,押し出し,밀기,Schieben,Pousser
 Expand,Expand,扩张,擴張,膨張,확장,Ausdehnen,Dilater
 Pinch,Pinch,收缩,收縮,つまむ,오므리기,Zusammenziehen,Pincer
-Thicken,Thicken,加粗,加粗,太くする,굵게,Verdicken,Épaissir
-Thin,Thin,变细,變細,細くする,가늘게,Dünner machen,Affiner
 Liquify,Liquify,液化,液化,ゆがみ,픽셀 유동화,Verflüssigen,Fluidité
 No brush selected,No brush selected,未选择画笔,未選擇筆刷,ブラシが選択されていません,브러시가 선택되지 않았습니다,Kein Pinsel ausgewählt,Aucun pinceau sélectionné
 Load research animation,Load research animation,加载研究动画,載入研究動畫,研究用アニメーションを読み込む,연구용 애니메이션 불러오기,Forschungsanimation laden,Charger l'animation de recherche

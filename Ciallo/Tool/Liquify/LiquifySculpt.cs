@@ -29,7 +29,9 @@ public static class LiquifySculpt
     private const float RadialEffectScale = 1f / 5f;
     // Log-radius change per unit of brush influence and pointer travel. Applying
     // it in log space makes thickness changes proportional and reversible.
-    private const float ThicknessEffectScale = 1f / 10f;
+    private const float ScalarEffectScale = 1f / 10f;
+    // A positive base lets recorded zero pressure rise without a discontinuous seed.
+    private const float PressureBase = 0.01f;
 
     // This is intentionally endpoint-dab sculpting, not true segment integration.
     // Delta.Length() scales non-push effects to approximate path-length invariance,
@@ -53,19 +55,23 @@ public static class LiquifySculpt
         };
     }
 
-    public static float ApplyThickness(LiquifyMode mode, Vector2 position, float radius, LiquifyDab dab)
+    public static float ApplyThickness(Vector2 position, float radius, LiquifyDab dab)
     {
         float influence = Influence(position, dab);
-        if (influence <= 0f)
+        if (influence == 0f)
             return radius;
 
-        float logScale = influence * ThicknessEffectScale * StepScale(dab);
-        return mode switch
-        {
-            LiquifyMode.Thicken => radius * Mathf.Exp(logScale),
-            LiquifyMode.Thin => radius * Mathf.Exp(-logScale),
-            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
-        };
+        return radius * Mathf.Exp(influence * ScalarEffectScale * StepScale(dab));
+    }
+
+    public static float ApplyPressure(Vector2 position, float pressure, LiquifyDab dab)
+    {
+        float logScale = Influence(position, dab) * ScalarEffectScale * StepScale(dab);
+        if (logScale == 0f)
+            return pressure;
+
+        float factor = Mathf.Exp(logScale);
+        return Mathf.Clamp((pressure + PressureBase) * factor - PressureBase, 0f, 1f);
     }
 
     public static float Influence(Vector2 position, LiquifyDab dab)

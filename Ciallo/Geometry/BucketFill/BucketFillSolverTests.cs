@@ -57,6 +57,46 @@ public class BucketFillSolverTests
     }
 
     [TestCase]
+    public void ClosedStrokeWaistStaysConnectedAcrossSeedTriangles()
+    {
+        // The closed stroke's repeated first point is on the waist, but is not an endpoint.
+        using var solver = BucketFillSolver.Build([[
+            new(4.8f, 4), new(0, 0), new(10, 0), new(5.2f, 4), new(5.2f, 6),
+            new(10, 10), new(0, 10), new(4.8f, 6), new(4.8f, 4)]]);
+        var region = solver.Query(new(3, 2), gapAware: true, gapFactor: 1);
+        CheckArea(region, 42.4);
+        CheckTriangulatedArea(region, 42.4);
+        AssertThat(Contains(region, new(7, 8))).IsTrue();
+        AssertThat(ReferenceEquals(region, solver.Query(new(7, 8), gapAware: true, gapFactor: 1))).IsTrue();
+    }
+
+    [TestCase]
+    public void EndpointGapIsSelectedBeyondNarrowerStrokeWaist()
+    {
+        // A 0.4-wide waist must remain open so the fill can seal the 1-wide endpoint gap.
+        using var solver = BucketFillSolver.Build([[
+            new(4.5f, 0), new(0, 0), new(4.8f, 4), new(4.8f, 6), new(0, 10),
+            new(10, 10), new(5.2f, 6), new(5.2f, 4), new(10, 0), new(5.5f, 0)]]);
+        var region = solver.Query(new(7, 8), gapAware: true, gapFactor: 0.5);
+        CheckArea(region, 42.4);
+        CheckTriangulatedArea(region, 42.4);
+        AssertThat(Contains(region, new(3, 2))).IsTrue();
+        AssertThat(Contains(region, new(5, -1))).IsFalse();
+        CheckArea(solver.Query(new(3, 2), gapAware: true, gapFactor: 0.5), 42.4);
+    }
+
+    [TestCase]
+    public void EndpointCanSealAgainstAnInteriorStrokePoint()
+    {
+        using var solver = BucketFillSolver.Build([
+            [new(0, 0), new(20, 0), new(20, 10), new(10, 10), new(0, 10), new(0, 0)],
+            [new(10, 0), new(10, 4.8f), new(10, 9.6f)]]);
+        var region = solver.Query(new(4, 5), gapAware: true, gapFactor: 0.5);
+        CheckArea(region, 100);
+        AssertThat(Contains(region, new(16, 5))).IsFalse();
+    }
+
+    [TestCase]
     public void GapAwareOptionSeparatesConnectedRooms()
     {
         using var solver = BucketFillSolver.Build([
@@ -78,7 +118,6 @@ public class BucketFillSolverTests
     {
         using var solver = BucketFillSolver.Build([
             Rectangle(0, 0, 20, 10), Rectangle(3, 3, 5, 5), Rectangle(12, 3, 14, 5)]);
-        // Test the whole connected region; gap segmentation may split the passages between holes.
         var region = solver.Query(new(1, 6), gapAware: false, gapFactor: 0.5);
         CheckArea(region, 192);
         CheckTriangulatedArea(region, 192);

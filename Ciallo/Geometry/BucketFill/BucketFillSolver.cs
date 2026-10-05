@@ -5,12 +5,23 @@ using Godot;
 
 namespace Ciallo.Geometry;
 
+// Follows Blender Grease Pencil's CDT fill approach, based on "Delaunay Painting:
+// Perceptual Image Colouring from Raster Contours with Gaps" by Amal Dev Parakkat,
+// Pooran Memari, and Marie-Paule Cani (2022), https://doi.org/10.1111/cgf.14517.
+// Blender reference: source/blender/editors/sculpt_paint/grease_pencil/fill.cc,
+// delaunay_fill_strokes and add_weights_for_tri.
+//
+// The algorithm uses widest-path propagation and competing region seeds to separate gaps.
+// With gap detection enabled, Ciallo adds a hard constraint: each artificial closing edge
+// must touch at least one original endpoint of an open stroke. BucketFillGraph contracts
+// all other unconstrained triangle adjacencies before competition, preserving narrow passages
+// between stroke interiors while choosing among eligible closing edges. The contracted graph
+// is built once per CDT snapshot and reused across fill queries.
 public sealed class BucketFillSolver : IDisposable
 {
     private readonly CdtMesh2D _mesh;
-    private readonly double[] _edgeWidths;
-    private readonly double[] _capacities;
-    private readonly bool[] _frameTriangles;
+    private readonly BucketFillGraph _triangleGraph;
+    private readonly BucketFillGraph _gapGraph;
     private int[] _outsideLabels;
     private double[] _outsideWeights;
     private int _cachedSeed = -1;
@@ -24,6 +35,7 @@ public sealed class BucketFillSolver : IDisposable
     {
         var vertices = new List<Vector2>();
         var constraints = new List<int>();
+        var endpoints = new HashSet<(double X, double Y)>();
         foreach (var stroke in strokes)
         {
             if (stroke.Length < 2) continue;
@@ -37,6 +49,11 @@ public sealed class BucketFillSolver : IDisposable
                 vertices.Add(stroke[i]);
             }
             if (vertices.Count == first + 1) vertices.RemoveAt(first);
+            if (stroke[0] != stroke[^1])
+            {
+                endpoints.Add((stroke[0].X, stroke[0].Y));
+                endpoints.Add((stroke[^1].X, stroke[^1].Y));
+            }
         }
         int[] frame = [];
         if (vertices.Count > 0)
@@ -55,57 +72,49 @@ public sealed class BucketFillSolver : IDisposable
             vertices.AddRange([min, new(max.X, min.Y), max, new(min.X, max.Y)]);
             frame = [start, start + 1, start + 2, start + 3];
         }
-        return new BucketFillSolver(new CdtMesh2D([.. vertices], [.. constraints], frame));
+        return new BucketFillSolver(new CdtMesh2D([.. vertices], [.. constraints], frame), endpoints);
     }
 
-    private BucketFillSolver(CdtMesh2D mesh)
+    private BucketFillSolver(CdtMesh2D mesh, HashSet<(double X, double Y)> endpoints)
     {
         _mesh = mesh;
-        _edgeWidths = new double[mesh.Triangles.Length];
-        _capacities = new double[mesh.TriangleCount];
-        _frameTriangles = new bool[mesh.TriangleCount];
-        for (int h = 0; h < mesh.Triangles.Length; h++)
-        {
-            int a = mesh.Triangles[h], b = mesh.Triangles[CdtMesh2D.Next(h)];
-            double dx = mesh.Coordinates[2 * a] - mesh.Coordinates[2 * b];
-            double dy = mesh.Coordinates[2 * a + 1] - mesh.Coordinates[2 * b + 1];
-            double width = _edgeWidths[h] = Math.Sqrt(dx * dx + dy * dy);
-            if (mesh.Opposites[h] >= 0 && mesh.Constrained[h] == 0)
-                _capacities[h / 3] = Math.Max(_capacities[h / 3], width);
-            _frameTriangles[h / 3] |= mesh.FrameVertices[a] != 0;
-        }
+        _triangleGraph = BucketFillGraph.BuildTriangles(mesh);
+        _gapGraph = BucketFillGraph.BuildGapRegions(mesh, endpoints);
     }
 
     public BucketFillRegion Query(Vector2 seed, bool gapAware, double gapFactor, bool ignoreHoles = false)
     {
         if (!double.IsFinite(gapFactor) || gapFactor is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(gapFactor), "Gap factor must be between zero and one.");
-        int start = _mesh.Locate(seed);
-        if (start < 0 || _frameTriangles[start]) return BucketFillRegion.Empty;
+        int triangle = _mesh.Locate(seed);
+        if (triangle < 0 || _triangleGraph.FrameNodes[triangle]) return BucketFillRegion.Empty;
+        bool detectGaps = gapAware && gapFactor > 0;
+        var graph = detectGaps ? _gapGraph : _triangleGraph;
+        int start = graph.TriangleNodes[triangle];
         if (_cachedSeed == start && _cachedGapAware == gapAware && _cachedGapFactor == gapFactor &&
             _cachedIgnoreHoles == ignoreHoles) return _cachedRegion;
         int[] labels;
         double[] weights;
         int label = 1;
-        if (gapAware && gapFactor > 0)
+        if (detectGaps)
         {
-            labels = new int[TriangleCount];
+            labels = new int[graph.Count];
             Array.Fill(labels, -1);
-            weights = new double[TriangleCount];
-            Propagate(start, 0, labels, weights);
+            weights = new double[graph.Count];
+            graph.Propagate(start, 0, labels, weights);
             // GP seeds regions that are not reached at their local full capacity.
             while (true)
             {
                 int next = -1;
                 double best = 0;
-                for (int i = 0; i < TriangleCount; i++)
-                    if (weights[i] < _capacities[i] * gapFactor && weights[i] > best)
+                for (int i = 0; i < graph.Count; i++)
+                    if (weights[i] < graph.Capacities[i] * gapFactor && weights[i] > best)
                     {
                         next = i;
                         best = weights[i];
                     }
                 if (next < 0) break;
-                Propagate(next, label++, labels, weights);
+                graph.Propagate(next, label++, labels, weights);
             }
         }
         else
@@ -113,59 +122,39 @@ public sealed class BucketFillSolver : IDisposable
             // Exterior competition is only used with gap detection disabled (or a zero factor).
             if (_outsideWeights == null)
             {
-                _outsideLabels = new int[TriangleCount];
+                _outsideLabels = new int[graph.Count];
                 Array.Fill(_outsideLabels, -1);
-                _outsideWeights = new double[TriangleCount];
-                int exterior = Array.FindIndex(_frameTriangles, value => value);
-                Propagate(exterior, 0, _outsideLabels, _outsideWeights);
+                _outsideWeights = new double[graph.Count];
+                int exterior = Array.FindIndex(graph.FrameNodes, value => value);
+                graph.Propagate(exterior, 0, _outsideLabels, _outsideWeights);
             }
             labels = (int[])_outsideLabels.Clone();
             weights = (double[])_outsideWeights.Clone();
         }
         // The click wins equal-width competition in GP's final propagation pass.
-        Propagate(start, label, labels, weights);
-        var selected = new bool[TriangleCount];
+        graph.Propagate(start, label, labels, weights);
         bool touchesFrame = false;
-        for (int i = 0; i < TriangleCount; i++)
+        for (int i = 0; i < graph.Count; i++)
         {
-            selected[i] = labels[i] == label;
-            if (selected[i] && _frameTriangles[i])
+            if (labels[i] == label && graph.FrameNodes[i])
             {
                 touchesFrame = true;
                 break;
             }
         }
         // Rejected regions must also reach the cache, or hovering repeats the full propagation.
-        var region = touchesFrame ? BucketFillRegion.Empty : ExtractRegion(selected, ignoreHoles);
+        var region = BucketFillRegion.Empty;
+        if (!touchesFrame)
+        {
+            var selected = new bool[TriangleCount];
+            for (int i = 0; i < selected.Length; i++) selected[i] = labels[graph.TriangleNodes[i]] == label;
+            region = ExtractRegion(selected, ignoreHoles);
+        }
         _cachedSeed = start;
         _cachedGapAware = gapAware;
         _cachedGapFactor = gapFactor;
         _cachedIgnoreHoles = ignoreHoles;
         return _cachedRegion = region;
-    }
-
-    private void Propagate(int seed, int label, int[] labels, double[] weights)
-    {
-        labels[seed] = label;
-        weights[seed] = _capacities[seed];
-        var queue = new Queue<int>();
-        queue.Enqueue(seed);
-        while (queue.TryDequeue(out int triangle))
-        {
-            for (int h = triangle * 3; h < triangle * 3 + 3; h++)
-            {
-                int opposite = _mesh.Opposites[h];
-                if (opposite < 0 || _mesh.Constrained[h] != 0) continue;
-                int next = opposite / 3;
-                double weight = Math.Min(_edgeWidths[h], weights[triangle]);
-                if (weight > weights[next] || (weight == weights[next] && labels[next] != label))
-                {
-                    weights[next] = weight;
-                    labels[next] = label;
-                    queue.Enqueue(next);
-                }
-            }
-        }
     }
 
     private BucketFillRegion ExtractRegion(bool[] selected, bool ignoreHoles)

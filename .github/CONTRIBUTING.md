@@ -32,6 +32,9 @@ Enable the "Embedded game size stretches..." option in the game run window.
 ![](/.github/EnableStretch.png)
 
 For local engine builds and cache management, see [Engine setup](../docs/engine-setup.md).
+FFmpeg is optional.
+Run `./engine.sh ffmpeg` when using PNG export or running its integration tests.
+See [Bundled FFmpeg](../Ciallo/ExternalData/ffmpeg/README.md) for setup and packaging details.
 
 ### How to export locally
 
@@ -39,6 +42,7 @@ Download and install matching export templates when needed, then use the presets
 
 ```sh
 ./engine.sh sync --templates
+./engine.sh ffmpeg
 ```
 
 Official Windows, Linux, and macOS packages are built by CI. Signing and notarization are only configured there, so local exports are development builds.

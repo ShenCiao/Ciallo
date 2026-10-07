@@ -6,6 +6,9 @@
 `./engine.sh setup` installs pinned gdvm and jq releases into `.ciallo/tools`,
 checks their hashes against `tools/engine/tools.lock`, and enables the Git hooks.
 Developers need Git, .NET 10, and a shell with curl; Windows uses Git Bash.
+FFmpeg is optional for normal builds and development runs. PNG export and application
+packaging use the separate `./engine.sh ffmpeg` command; see
+[Bundled FFmpeg](../Ciallo/ExternalData/ffmpeg/README.md) for requirements and setup.
 
 ## Published engines and C#
 

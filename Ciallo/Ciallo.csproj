@@ -17,6 +17,7 @@
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="FFMpegCore" Version="5.5.0" />
         <PackageReference Include="Frent" Version="0.7.1-beta" />
         <PackageReference Include="GodotSharp.SourceGenerators" Version="2.7.0-260308-1543.Release" />
         <PackageReference Include="Humanizer" Version="3.0.10" />

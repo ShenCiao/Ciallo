@@ -30,6 +30,7 @@ source "$script_dir/bootstrap.sh"
 source "$script_dir/csharp.sh"
 source "$script_dir/shortcuts.sh"
 source "$script_dir/templates.sh"
+source "$script_dir/ffmpeg.sh"
 required_version() {
     jq -er '."msbuild-sdks"."Godot.NET.Sdk" | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-ciallo\\.g[0-9a-f]{9,40}$"))' "$project/global.json"
 }
@@ -77,6 +78,19 @@ sync_engine() {
     gdvm prune
 }
 case "$command_name" in
+    ffmpeg)
+        [ "${#arguments[@]}" -le 1 ] || fail 'Usage: ./engine.sh ffmpeg [win-x64|linux-x64|osx-arm64|all]'
+        ffmpeg_rid=${arguments[0]:-}
+        if [ -z "$ffmpeg_rid" ]; then
+            case "$os" in
+                windows) ffmpeg_rid=win-x64 ;;
+                linux) ffmpeg_rid=linux-x64 ;;
+                macos) ffmpeg_rid=osx-arm64 ;;
+            esac
+        fi
+        if [ "$ffmpeg_rid" = all ]; then
+            for ffmpeg_rid in win-x64 linux-x64 osx-arm64; do prepare_ffmpeg "$ffmpeg_rid"; done
+        else prepare_ffmpeg "$ffmpeg_rid"; fi ;;
     setup)
         git -C "$root" config --local core.hooksPath Ciallo/.githooks
         sync_engine ;;
@@ -114,6 +128,6 @@ case "$command_name" in
         jq . "$state/ready.json" ;;
     clean) gdvm prune ;;
     version) required_version ;;
-    help) printf 'Usage: ./engine.sh setup|sync|local on [editor]|local off|open|status|clean [--templates] [--no-shortcut]\n' ;;
+    help) printf 'Usage: ./engine.sh setup|sync|local on [editor]|local off|open|status|clean [--templates] [--no-shortcut]\n       ./engine.sh ffmpeg [win-x64|linux-x64|osx-arm64|all]\n' ;;
     *) fail "Unknown command: $command_name" ;;
 esac

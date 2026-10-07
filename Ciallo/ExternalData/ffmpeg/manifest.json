@@ -1,0 +1,41 @@
+{
+  "win-x64": {
+    "version": "n8.1.3-14-g330caae0c1",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-06-13-06/ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1.zip",
+    "archive_sha256": "0b61370a3ed65970dae2624784a22a7667365431953ec1784f57eed10a06efd3",
+    "archive_format": "zip",
+    "archive_entry": "ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1/bin/ffmpeg.exe",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/330caae0c1",
+    "build": "https://github.com/BtbN/FFmpeg-Builds",
+    "executable": "ffmpeg.exe",
+    "sha256": "ef8102b213fa97069404d32d194fa333ddf2bb8c806a3429bf6b8eafaac92aff",
+    "bytes": 134092288
+  },
+  "linux-x64": {
+    "version": "n8.1.3-14-g330caae0c1",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-06-13-06/ffmpeg-n8.1.3-14-g330caae0c1-linux64-lgpl-8.1.tar.xz",
+    "archive_sha256": "949b6f5696c3c8598093e018abc4b563d7eca585863e4886d09a537e8296ee92",
+    "archive_format": "tar.xz",
+    "archive_entry": "ffmpeg-n8.1.3-14-g330caae0c1-linux64-lgpl-8.1/bin/ffmpeg",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/330caae0c1",
+    "build": "https://github.com/BtbN/FFmpeg-Builds",
+    "executable": "ffmpeg",
+    "sha256": "e62cf3471d4484e0381e3d6b5b2551639171856c0666d3e5968507c417f0d8a2",
+    "bytes": 142166568
+  },
+  "osx-arm64": {
+    "version": "8.1",
+    "url": "https://www.osxexperts.net/ffmpeg81arm.zip",
+    "archive_sha256": "ebb82529562b71170807bbc6b0e7eb4f0b13af8cbb0e085bb9e8f6fe709598ad",
+    "archive_format": "zip",
+    "archive_entry": "ffmpeg",
+    "license": "GPL-2.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1",
+    "build": "https://www.osxexperts.net/",
+    "executable": "ffmpeg",
+    "sha256": "9a08d61f9328e8164ba560ee7a79958e357307fcfeea6fe626b7d66cdc287028",
+    "bytes": 51860280
+  }
+}

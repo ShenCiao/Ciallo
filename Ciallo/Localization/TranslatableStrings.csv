@@ -1,4 +1,7 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Output format,Output format,输出格式,輸出格式,出力形式,출력 형식,Ausgabeformat,Format de sortie
+Cannot export image.,Cannot export image.,无法导出图像。,無法匯出圖像。,画像をエクスポートできません。,이미지를 내보낼 수 없습니다.,Bild kann nicht exportiert werden.,Impossible d’exporter l’image.
+PNG · 16 bits/channel · sRGB,PNG · 16 bits/channel · sRGB,PNG · 16 位/通道 · sRGB,PNG · 16 位元/通道 · sRGB,PNG · 16ビット/チャンネル · sRGB,PNG · 채널당 16비트 · sRGB,PNG · 16 Bit/Kanal · sRGB,PNG · 16 bits/canal · sRGB
 Thickness adjustment,Thickness adjustment,粗细调整,粗細調整,太さの調整,굵기 조정,Stärke anpassen,Ajustement de l’épaisseur
 Pressure adjustment,Pressure adjustment,笔压调整,筆壓調整,筆圧の調整,필압 조정,Druck anpassen,Ajustement de la pression
 Adjustment strength,Adjustment strength,调整强度,調整強度,調整の強さ,조정 강도,Anpassungsstärke,Intensité de l’ajustement

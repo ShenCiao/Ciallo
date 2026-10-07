@@ -11,15 +11,20 @@ const LOCAL_RUNSETTINGS_PATH := "res://.runsettings.local"
 const LOCAL_GODOT_BIN_MARKER := "        <!-- LOCAL_GODOT_BIN -->"
 
 var _export_plugin: _StripAutoloadExportPlugin
+var _ffmpeg_export_plugin: _FFmpegExportPlugin
 
 
 func _enter_tree() -> void:
 	_write_local_runsettings()
 	_export_plugin = _StripAutoloadExportPlugin.new(STRIP_AUTOLOADS)
 	add_export_plugin(_export_plugin)
+	_ffmpeg_export_plugin = _FFmpegExportPlugin.new()
+	add_export_plugin(_ffmpeg_export_plugin)
 
 
 func _exit_tree() -> void:
+	remove_export_plugin(_ffmpeg_export_plugin)
+	_ffmpeg_export_plugin = null
 	remove_export_plugin(_export_plugin)
 	_export_plugin = null
 
@@ -67,3 +72,38 @@ class _StripAutoloadExportPlugin extends EditorExportPlugin:
 		for key: String in _saved:
 			ProjectSettings.set_setting(key, _saved[key])
 		_saved.clear()
+
+
+class _FFmpegExportPlugin extends EditorExportPlugin:
+	func _get_name() -> String:
+		return "CialloFFmpeg"
+
+	func _export_begin(
+		features: PackedStringArray, _is_debug: bool, _path: String, _flags: int
+	) -> void:
+		var rid: String
+		var executable: String = "ffmpeg"
+		var target: String = "ffmpeg"
+		if features.has("windows") and features.has("x86_64"):
+			rid = "win-x64"
+			executable = "ffmpeg.exe"
+		elif features.has("linux") and features.has("x86_64"):
+			rid = "linux-x64"
+		elif features.has("macos") and features.has("arm64"):
+			rid = "osx-arm64"
+			target = "Contents/Helpers/ffmpeg"
+		else:
+			get_export_platform().add_message(EditorExportPlatform.EXPORT_MESSAGE_ERROR,
+				"FFmpeg", "No bundled FFmpeg for the selected platform and architecture.")
+			return
+		var source: String = "res://ExternalData/ffmpeg/" + rid + "/"
+		if not FileAccess.file_exists(source + executable):
+			get_export_platform().add_message(EditorExportPlatform.EXPORT_MESSAGE_ERROR,
+				"FFmpeg", "FFmpeg binary is missing. Run ./engine.sh ffmpeg " + rid + " before exporting.")
+			return
+		# Native executables must remain outside the PCK. macOS's exporter also
+		# signs this helper before signing and notarizing the enclosing app.
+		add_shared_object(source + executable, PackedStringArray(), target)
+		for filename: String in ["NOTICE.txt", "LICENSE.txt"]:
+			add_file("res://ExternalData/ffmpeg/" + filename,
+				FileAccess.get_file_as_bytes(source + filename), false)

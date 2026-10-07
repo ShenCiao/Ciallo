@@ -47,6 +47,16 @@ The executable stays outside the PCK. License notices are stored inside the PCK
 at `res://ExternalData/ffmpeg/`. The application uses these bundled binaries and
 does not download tools at runtime.
 
+For a local Linux application export, set the helper's executable permissions
+before running or packaging the exported directory:
+
+```sh
+chmod 755 /path/to/export/ffmpeg/ffmpeg
+```
+
+CI applies these permissions before the PNG encoding check and preserves them
+in the Linux ZIP package.
+
 To update a binary, verify the supplier archive and executable hashes, update
 `manifest.json` and the platform's notices, run `./engine.sh ffmpeg <target>`, and run
 `dotnet test Ciallo/Ciallo.csproj --filter FullyQualifiedName~ExportPngTests`.

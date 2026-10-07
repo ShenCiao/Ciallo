@@ -394,6 +394,14 @@ jobs:
             "Linux" { Join-Path $outDir "ffmpeg/ffmpeg" }
             "macOS" { Join-Path $outFile "Contents/Helpers/ffmpeg/ffmpeg" }
           }
+          if ($IsLinux) {
+            # Godot copies shared objects without preserving their executable bits.
+            # Set the exported helper's permissions before running it and creating the ZIP.
+            & chmod 755 -- $ffmpeg
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not make the exported FFmpeg executable: $ffmpeg"
+            }
+          }
           & $ffmpeg -hide_banner -loglevel error -f lavfi -i "color=size=2x2:rate=1" -frames:v 1 -c:v png -pix_fmt rgba64be -vf "setparams=color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr:range=full" -f image2 -update 1 -y "$env:RUNNER_TEMP/ffmpeg-png16.png"
           if ($LASTEXITCODE -ne 0) {
             throw "Bundled FFmpeg could not encode PNG16 from its exported location."

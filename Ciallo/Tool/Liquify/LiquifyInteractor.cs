@@ -30,7 +30,7 @@ public class LiquifyInteractor : CapturingInteraction
     public override void Start(CursorButtonData data)
     {
         _mode = Tool.Mode.Value;
-        _processingEs = LiquifyTargetScope.Resolve(Document, PrimaryLayer);
+        _processingEs = LiquifyTargetScope.Resolve(Document, SelectedLayers);
         _origPolylines = new Vector2[_processingEs.Length][];
         _currPolylines = new Vector2[_processingEs.Length][];
         _origRadii = new float[_processingEs.Length][];

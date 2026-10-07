@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using Ciallo.Data;
 using Frent;
 using Godot;
 using R3;
@@ -107,7 +109,12 @@ public static partial class InteractionManager
             }
             else if (transition.Trigger == SelectedLayersChanged.Trigger)
             {
-                _selectedLayers = (ImmutableArray<Entity>)transition.Parameters[0];
+                var nextLayers = (ImmutableArray<Entity>)transition.Parameters[0];
+                bool changed = !_selectedLayers.SequenceEqual(nextLayers);
+                _selectedLayers = nextLayers;
+                // Cancel may restore the old shape selection. Clear after exit and before the
+                // next interaction enters, only when the ordered layer selection actually changes.
+                if (changed) _document.Get<SelectionManager>().SelectedShapes.Clear();
             }
             else if (transition.Trigger == TimelineRollingChanged.Trigger)
             {

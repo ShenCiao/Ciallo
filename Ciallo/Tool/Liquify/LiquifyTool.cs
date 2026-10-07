@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.Serialization;
 using Ciallo.Data;
 using Ciallo.Widget;
@@ -60,7 +61,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        layers[0].Has<ShapeLayerSetting>();
+        layers.All(layer => layer.Has<ShapeLayerSetting>());
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {

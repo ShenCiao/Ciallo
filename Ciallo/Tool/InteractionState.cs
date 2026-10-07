@@ -143,7 +143,7 @@ public sealed class RequestedByToolButtonAttribute(ToolButton.Type button) : Att
 // Generated button routing consults CanHandleLayers; manual routing should also use this predicate.
 //
 // CanHandleLayers only ever receives a non-empty snapshot of live non-document layers, so skip null,
-// liveness and document checks. Current tools judge and edit the first layer only.
+// liveness and document checks. Each tool decides which selected layers it supports.
 // Decide from the argument alone: at call time
 // InteractionManager.SelectedLayers still holds the pre-transition snapshot.
 public interface ILayerDependent

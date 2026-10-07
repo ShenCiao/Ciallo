@@ -76,7 +76,7 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
     }
 
     // The one place context becomes a concrete tool. Liveness is settled here so CanHandleLayers only
-    // has to judge fit. Current tools use the first selected layer as their drawing target.
+    // has to judge fit.
     private InteractionState ResolveContext(
         ToolButton.Type? toolButton,
         ImmutableArray<Entity> layers)

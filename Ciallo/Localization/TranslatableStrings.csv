@@ -1,4 +1,10 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Send to back,Send to back,置于底层,置於底層,最背面へ移動,맨 뒤로 보내기,In den Hintergrund,Mettre à l’arrière-plan
+Bring to front,Bring to front,置于顶层,置於頂層,最前面へ移動,맨 앞으로 가져오기,In den Vordergrund,Mettre au premier plan
+Convert to strokes,Convert to strokes,转换为笔画,轉換為筆畫,ストロークに変換,스트로크로 변환,In Striche umwandeln,Convertir en traits
+Convert to filled polygons,Convert to filled polygons,转换为填充多边形,轉換為填滿多邊形,塗りつぶしポリゴンに変換,채워진 다각형으로 변환,In gefüllte Polygone umwandeln,Convertir en polygones remplis
+Outline each boundary with the working stroke brush at full pressure.,Outline each boundary with the working stroke brush at full pressure.,使用当前笔画笔刷以满压力描绘各条边界。,使用目前筆畫筆刷以滿壓力描繪各條邊界。,現在のストロークブラシで各境界を最大筆圧で描きます。,현재 스트로크 브러시로 각 경계를 최대 필압으로 그립니다.,Jede Kontur mit dem aktuellen Strichpinsel bei vollem Druck nachzeichnen.,Tracer chaque contour avec le pinceau de trait actuel à pression maximale.
+Close each stroke and fill it with the working fill brush. Empty regions are skipped.,Close each stroke and fill it with the working fill brush. Empty regions are skipped.,闭合各条笔画并使用当前填充笔刷填充；跳过无法围成填充区域的笔画。,閉合各條筆畫並使用目前填滿筆刷填滿；略過無法圍成填滿區域的筆畫。,各ストロークを閉じて現在の塗りつぶしブラシで塗ります。空の領域はスキップします。,각 스트로크를 닫고 현재 채우기 브러시로 채웁니다. 빈 영역은 건너뜁니다.,Jeden Strich schließen und mit dem aktuellen Füllpinsel füllen. Leere Bereiche werden übersprungen.,Fermer chaque trait et le remplir avec le pinceau de remplissage actuel. Les régions vides sont ignorées.
 Output format,Output format,输出格式,輸出格式,出力形式,출력 형식,Ausgabeformat,Format de sortie
 Cannot export image.,Cannot export image.,无法导出图像。,無法匯出圖像。,画像をエクスポートできません。,이미지를 내보낼 수 없습니다.,Bild kann nicht exportiert werden.,Impossible d’exporter l’image.
 PNG · 16 bits/channel · sRGB,PNG · 16 bits/channel · sRGB,PNG · 16 位/通道 · sRGB,PNG · 16 位元/通道 · sRGB,PNG · 16ビット/チャンネル · sRGB,PNG · 채널당 16비트 · sRGB,PNG · 16 Bit/Kanal · sRGB,PNG · 16 bits/canal · sRGB

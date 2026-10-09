@@ -171,6 +171,43 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var selectionChanged = selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default);
 
+        var stackingButtons = container.CreateHContainer().AddToChildOf(container)
+            .VisibleIf(selectionChanged, _ => selectedShapes.Count > 0);
+        stackingButtons.Name = "ShapeStacking";
+        var sendToBack = container.CreateButton("Send to back").AddToChildOf(stackingButtons);
+        sendToBack.Name = "SendToBack";
+        sendToBack.Pressed += () =>
+        {
+            if (ShapeStackingActions.MoveSelection(PrimaryLayer, toTop: false)) Fire(Trigger.Refresh);
+        };
+        var bringToFront = container.CreateButton("Bring to front").AddToChildOf(stackingButtons);
+        bringToFront.Name = "BringToFront";
+        bringToFront.Pressed += () =>
+        {
+            if (ShapeStackingActions.MoveSelection(PrimaryLayer, toTop: true)) Fire(Trigger.Refresh);
+        };
+
+        var convertButton = container.CreateButton("Convert to filled polygons").AddToChildOf(container);
+        convertButton.Name = "ConvertSelectedShapes";
+        selectionChanged.CombineLatest(selectionManager.PrimaryLayer,
+                selectionManager.WorkingStrokeBrush, selectionManager.WorkingVectorFillBrush,
+                (_, layer, strokeBrush, fillBrush) => (layer, strokeBrush, fillBrush))
+            .Subscribe(state =>
+            {
+                convertButton.Visible = ShapeConversionActions.CanConvert(state.layer, selectedShapes.ToArray());
+                if (!convertButton.Visible) return;
+                bool toStroke = selectedShapes[0].Has<FilledPolygonSetting>();
+                convertButton.Text = toStroke ? "Convert to strokes" : "Convert to filled polygons";
+                convertButton.Disabled = (toStroke ? state.strokeBrush : state.fillBrush).IsNull;
+                convertButton.TooltipText = toStroke
+                    ? "Outline each boundary with the working stroke brush at full pressure."
+                    : "Close each stroke and fill it with the working fill brush. Empty regions are skipped.";
+            }).AddTo(convertButton);
+        convertButton.Pressed += () =>
+        {
+            if (ShapeConversionActions.Apply(PrimaryLayer)) Fire(Trigger.Refresh);
+        };
+
         var booleanBox = container.CreateBox().AddToChildOf(container)
             .VisibleIf(selectionChanged, _ => selectedShapes.Count(shape => shape.Has<FilledPolygonSetting>()) >= 2);
         booleanBox.Name = "PolygonBooleanOperations";

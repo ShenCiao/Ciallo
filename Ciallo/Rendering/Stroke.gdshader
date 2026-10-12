@@ -366,28 +366,30 @@ vec4 evaluateStamp(vec2 brushLocal, vec2 localDx, vec2 localDy, float geometricC
 vec4 evaluateAirbrush(vec2 pixelLocal, vec2 localDx, vec2 localDy) {
 	if (isDashGap(pixelLocal.x)) return emptySample();
 	float sampleX = clamp(pixelLocal.x, 0.0, segmentLength);
-	float radius = centerlineRadiusAt(sampleX);
+	// The covering-disk quadratic is centered on pixelLocal.x, including beyond
+	// the segment ends. Clamping this radius moves its roots and exposes cap seams.
+	float radiusAtPixelX = max(r0 - cosTheta * pixelLocal.x, 1e-7);
 	float flow = MaterialColor.a * pressureFlowRatio(sampleX);
 	float a = sinTheta * sinTheta;
-	float halfWidth = radius / sinTheta;
+	float halfWidth = radiusAtPixelX / sinTheta;
 	float normalFootprint = length(vec2(localDx.y, localDy.y));
 	float tangentFootprint = length(vec2(localDx.x, localDy.x));
 	FilteredCrossSection crossSection = gaussianCrossSection(pixelLocal.y, halfWidth, normalFootprint);
 	float coveredWeight = crossSection.coverage;
 	if (coveredWeight <= 0.0) return emptySample();
 	float y = crossSection.sampleOffset;
-	float extent = sqrt(max(radius * radius - a * y * y, 0.0)) / a;
-	float midpoint = pixelLocal.x - cosTheta * radius / a;
+	float extent = sqrt(max(radiusAtPixelX * radiusAtPixelX - a * y * y, 0.0)) / a;
+	float midpoint = pixelLocal.x - cosTheta * radiusAtPixelX / a;
 	float left = midpoint - extent;
 	float right = midpoint + extent;
 	float fullLength = 2.0 * extent;
 	float footprintHalfLength = FilterSupportPixels * tangentFootprint;
 	if (right <= -footprintHalfLength || left >= segmentLength + footprintHalfLength) return emptySample();
 	float segmentFraction = filteredSegmentFraction(vec2(left, right), fullLength, tangentFootprint);
-	float fullN = fullLength / radius;
+	float fullN = fullLength / radiusAtPixelX;
 	if (abs(cosTheta) >= 1e-3) {
-		float leftRadius = radius - cosTheta * (-cosTheta * radius / a - extent);
-		float rightRadius = radius - cosTheta * (-cosTheta * radius / a + extent);
+		float leftRadius = radiusAtPixelX - cosTheta * (-cosTheta * radiusAtPixelX / a - extent);
+		float rightRadius = radiusAtPixelX - cosTheta * (-cosTheta * radiusAtPixelX / a + extent);
 		fullN = log(leftRadius / rightRadius) / cosTheta;
 	}
 	float depth = fullN * AlphaDensity * flow * sampleCurve(FalloffCurve, abs(y) / halfWidth);

@@ -7,12 +7,12 @@
 [ext_resource type="Material" uid="uid://cnro8325i0qmw" path="res://Rendering/Checkerboard.tres" id="4_pm3jj"]
 [ext_resource type="Script" uid="uid://b6k54smyke07b" path="res://Rendering/WorldView.cs" id="5_pm3jj"]
 [ext_resource type="Script" uid="uid://ci7loyp0at1cr" path="res://Rendering/WorldOverlay.cs" id="6_je3d8"]
+[ext_resource type="Script" uid="uid://c5bv1lwgaymaw" path="res://GuiControl/CanvasSlot.cs" id="6_r867w"]
 [ext_resource type="Script" uid="uid://dc5n5euy0qfdj" path="res://Rendering/WorldBody.cs" id="7_8h3gs"]
 [ext_resource type="Texture2D" uid="uid://bhoa1i50mggd4" path="res://Icon/flip-horizontal.svg" id="8_0jsmf"]
 [ext_resource type="Texture2D" uid="uid://f80karf2gkhx" path="res://Icon/flip-vertical.svg" id="9_ms4ye"]
 
 [node name="PaintPanel" type="PanelContainer" unique_id=265811070]
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -121,48 +121,54 @@ toggle_mode = true
 icon = ExtResource("9_ms4ye")
 expand_icon = true
 
-[node name="WorldEventDispatcher" type="SubViewportContainer" parent="VBoxContainer" unique_id=50397957]
-unique_name_in_owner = true
+[node name="CanvasSlot" type="Control" parent="VBoxContainer" unique_id=1254394234]
+clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
+mouse_filter = 2
+script = ExtResource("6_r867w")
+
+[node name="WorldEventDispatcher" type="SubViewportContainer" parent="VBoxContainer/CanvasSlot" unique_id=50397957]
+unique_name_in_owner = true
+layout_mode = 0
 mouse_filter = 0
 stretch = true
 mouse_target = true
 script = ExtResource("3_7pmtm")
 
-[node name="PaintViewport" type="SubViewport" parent="VBoxContainer/WorldEventDispatcher" unique_id=1906940218]
+[node name="PaintViewport" type="SubViewport" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher" unique_id=1906940218]
 handle_input_locally = false
 use_hdr_2d = true
 canvas_cull_mask = 4293918723
 size = Vector2i(1920, 1035)
 render_target_update_mode = 4
 
-[node name="Background" type="Polygon2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=340478953]
+[node name="Background" type="Polygon2D" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport" unique_id=340478953]
 unique_name_in_owner = true
 visibility_layer = 2
 material = ExtResource("4_pm3jj")
 
-[node name="WorldView" type="Layer2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=445565768]
+[node name="WorldView" type="Layer2D" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport" unique_id=445565768]
 unique_name_in_owner = true
 script = ExtResource("5_pm3jj")
 
-[node name="MainCamera" type="Camera2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=506664957]
+[node name="MainCamera" type="Camera2D" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport" unique_id=506664957]
 unique_name_in_owner = true
 ignore_rotation = false
 
-[node name="WorldOverlay" type="Node2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=1081160953]
+[node name="WorldOverlay" type="Node2D" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport" unique_id=1081160953]
 unique_name_in_owner = true
 visibility_layer = 2
 script = ExtResource("6_je3d8")
 
-[node name="WorldBody" type="Node2D" parent="VBoxContainer/WorldEventDispatcher/PaintViewport" unique_id=175556460]
+[node name="WorldBody" type="Node2D" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport" unique_id=175556460]
 unique_name_in_owner = true
 visibility_layer = 2
 script = ExtResource("7_8h3gs")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="VBoxContainer/WorldEventDispatcher/PaintViewport/WorldBody" unique_id=2125698815]
+[node name="CanvasLayer" type="CanvasLayer" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport/WorldBody" unique_id=2125698815]
 
-[node name="ControlCoverWholeCanvas" type="Control" parent="VBoxContainer/WorldEventDispatcher/PaintViewport/WorldBody/CanvasLayer" unique_id=42245720]
+[node name="ControlCoverWholeCanvas" type="Control" parent="VBoxContainer/CanvasSlot/WorldEventDispatcher/PaintViewport/WorldBody/CanvasLayer" unique_id=42245720]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

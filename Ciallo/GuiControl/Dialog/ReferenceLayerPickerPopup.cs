@@ -34,7 +34,6 @@ public partial class ReferenceLayerPickerPopup : PopupPanel
     public ReferenceLayerPickerPopup()
     {
         Exclusive = true;
-        TransparentBg = false;
     }
 
     public void Popup(Entity document, Entity vectorFillLayer)

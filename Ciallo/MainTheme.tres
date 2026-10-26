@@ -123,6 +123,18 @@ _source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\">
 _source = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\"><circle cx=\"8\" cy=\"8\" r=\"7\" fill=\"#1a1a1a\" fill-opacity=\".25\"/></svg>
 "
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_u23kh"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6qad1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nwvi7"]
@@ -140,6 +152,18 @@ expand_margin_right = 8.0
 expand_margin_bottom = 2.0
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_yhag5"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_js238"]
+content_margin_left = 8.0
+content_margin_top = 2.0
+content_margin_right = 8.0
+content_margin_bottom = 2.0
+bg_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_4as0w"]
 color = Color(0.101961, 0.101961, 0.101961, 0.6)
@@ -187,10 +211,12 @@ PopupMenu/icons/radio_checked = SubResource("DPITexture_rfn4m")
 PopupMenu/icons/radio_checked_disabled = SubResource("DPITexture_u23kh")
 PopupMenu/icons/radio_unchecked = SubResource("DPITexture_ogfsw")
 PopupMenu/icons/radio_unchecked_disabled = SubResource("DPITexture_6qad1")
+PopupPanel/styles/panel = SubResource("StyleBoxFlat_u23kh")
 TabContainer/constants/tab_separation = 16
 TabContainer/styles/panel = SubResource("StyleBoxEmpty_6qad1")
 TabContainer/styles/tab_hovered = SubResource("StyleBoxFlat_nwvi7")
 TabContainer/styles/tab_selected = SubResource("StyleBoxFlat_8twj1")
 TabContainer/styles/tab_unselected = SubResource("StyleBoxEmpty_yhag5")
+TooltipPanel/styles/panel = SubResource("StyleBoxFlat_js238")
 VSplitContainer/constants/separation = 6
 VSplitContainer/styles/split_bar_background = SubResource("StyleBoxLine_4as0w")

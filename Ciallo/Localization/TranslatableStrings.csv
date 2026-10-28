@@ -195,6 +195,8 @@ No working stroke brush is selected.,No working stroke brush is selected.,未选
 Cannot save document.,Cannot save document.,无法保存文档。,無法儲存文件。,ドキュメントを保存できません。,문서를 저장할 수 없습니다.,Dokument kann nicht gespeichert werden.,Impossible d'enregistrer le document.
 Cannot open document.,Cannot open document.,无法打开文档。,無法開啟文件。,ドキュメントを開けません。,문서를 열 수 없습니다.,Dokument kann nicht geöffnet werden.,Impossible d'ouvrir le document.
 Export frame sequence,Export frame sequence,导出帧序列,匯出影格序列,フレームシーケンスをエクスポート,프레임 시퀀스 내보내기,Bildsequenz exportieren,Exporter la séquence d'images
+Export current frame for web,Export current frame for web,导出当前帧供网页显示,匯出目前影格供網頁顯示,現在のフレームをウェブ用にエクスポート,현재 프레임을 웹용으로 내보내기,Aktuelles Bild fürs Web exportieren,Exporter l’image actuelle pour le Web
+Cannot export current frame.,Cannot export current frame.,无法导出当前帧。,無法匯出目前影格。,現在のフレームをエクスポートできません。,현재 프레임을 내보낼 수 없습니다.,Das aktuelle Bild kann nicht exportiert werden.,Impossible d’exporter l’image actuelle.
 Export folder,Export folder,导出文件夹,匯出資料夾,エクスポート先フォルダー,내보내기 폴더,Exportordner,Dossier d'exportation
 File name preview,File name preview,文件名预览,檔案名稱預覽,ファイル名プレビュー,파일 이름 미리보기,Dateinamenvorschau,Aperçu du nom de fichier
 Prefix,Prefix,前缀,前綴,接頭辞,접두사,Präfix,Préfixe

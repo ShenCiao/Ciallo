@@ -8,6 +8,7 @@ namespace Ciallo.GuiControl;
 
 public partial class MenuFile : PopupMenu
 {
+    private ExportRenderExchange _exportRenderExchange;
     public static readonly OrderedDictionary<string, Hotkey> MenuItems = new()
     {
         { "New document", AppHotkeys.Global.FileNewDocument },
@@ -19,10 +20,13 @@ public partial class MenuFile : PopupMenu
         { "-2", null },
         { "Export as image", null },
         { "Export frame sequence", null },
+        { "Export current frame for web", null },
     };
 
     public override void _Ready()
     {
+        _exportRenderExchange = new ExportRenderExchange { Name = "ExportRenderExchange" };
+        AddChild(_exportRenderExchange);
         foreach (var (i, item) in MenuItems.Index())
         {
             if (item.Key.StartsWith('-'))
@@ -71,6 +75,11 @@ public partial class MenuFile : PopupMenu
             case 8: // Export frame sequence
                 if (AppDocumentManager.WorkingDocument.Value.IsNull) break;
                 AppDialogHost.ExportFrameSequence.Popup(AppDocumentManager.WorkingDocument.CurrentValue);
+                break;
+
+            case 9: // Export current frame for web
+                if (AppDocumentManager.WorkingDocument.Value.IsNull) break;
+                _exportRenderExchange.Open();
                 break;
 
             default:

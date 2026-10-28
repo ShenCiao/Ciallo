@@ -1,162 +1,153 @@
-# Ciallo Render Exchange Format Requirements
+# Ciallo Render Exchange Format
 
-## Status
+## Status and goal
 
-This note records the current product-level requirements for a future Ciallo render exchange format. It is not an implementation plan and does not choose the final file extension, binary layout, text grammar, or exact chunk/tag names yet.
+`.glb2dim` is the draft display format used by the WebGPU gallery in
+`ShenCiao/brush-rendering-tutorial`. Its container is RIFF; its JSON description
+and binary resource organization are inspired by GLB. It is independent of
+Khronos glTF/GLB. File identification and compatibility use the signature,
+version, and profile, rather than the filename extension.
 
-The working mental model is a small display-oriented graphics format, closer to `png`, `gif`, or `mp4` in purpose than to `svg` or a Ciallo project file.
+The target is visual agreement with Ciallo at the same viewing conditions:
+no apparent difference at first glance. Bit-identical pixels across GPUs are
+not required. Geometry, brush evaluation, paint order, transparency, and
+compositing must preserve the artwork's appearance.
 
-## Goal (TL;DR)
+The format describes rendering semantics. GPU buffers, shader programs,
+framebuffers, passes, and stencil operations are renderer implementation details.
 
-- Export Ciallo-defined **stroke**, **fill** content and their organizers **layer**, **frame** into a simple 2D render exchange format.
-- Let game engines import the file as one sprite animation clip, or as a single sprite when it contains one frame.
-- Keep the format render/display oriented, not editable like SVG and not a Ciallo project/archive format.
-- Prefer binary for the production format, while leaving room for a text/debug representation if it proves useful.
-- Make the format parseable by a small custom loader.
-- Do not require CPU rendering. Stroke rendering is expected to be GPU/shader based.
+## Supported export
 
-## Core Business Model
+Use **File → Export current frame for web** in Ciallo. The exporter reads the
+working document, including unsaved changes, resolves the current frame and
+visible layer tree, and writes one complete display snapshot. The source project
+is unchanged. Data is prepared before writing and the output is replaced only
+after a complete temporary file has been written.
 
-The current preferred model is:
+Version 1, profile `ciallo-airbrush-1`, supports:
 
-```text
-clip
-  frames[]
-    paint tree in painter order
-```
+- Variable-radius Airbrush polylines with pressure-controlled flow, color,
+  density, falloff, and Normal or Erase brush blending.
+- Solid-color polygon fills triangulated with Ciallo's existing
+  `Arrangement2D.RepairAndTriangulate` implementation.
+- Shape layers and folders, whole-group opacity, Normal/Add/Multiply layer
+  blending, and resolved sibling clipping stacks.
+- The selected cel exposure in a cel folder. Only the current frame is exported;
+  this version does not encode an animation timeline.
 
-- One file represents one clip.
-- A one-frame clip is a single sprite.
-- A multi-frame clip is a frame-by-frame sprite animation.
-- Each frame is a complete display snapshot, not a delta from the previous frame.
-- Paint order follows the SVG painter model: later siblings are painted over earlier siblings.
+Other brush models, dashed strokes, missing brushes, image layers, and other
+unsupported drawing types fail export with an error. Display-affecting data is
+required; the loader does not substitute black or skip required effects.
 
-## Paint Nodes
+Hidden layers are omitted after resolving clipping relationships. A hidden or
+absent clipping base yields zero coverage for its clipped siblings. Editor
+selection, lock state, timeline UI state, and layer-panel state are not exported.
 
-The frame content is a tree of paint nodes:
+## Container and encoding
 
-```text
-paint_node = group | draw_unit
-```
-
-### Group
-
-A `group` is the preferred name for layer-like render grouping.
-
-- A group is a render/compositing concept, not a Ciallo editor-layer object.
-- Group order participates in the same painter model as draw units.
-- Group opacity should mean whole-group opacity, like an SVG `<g opacity="...">`, rather than simply multiplying each child independently.
-- Group settings should be represented as render information, not geometry.
-- Group metadata such as a display/debug name should stay separate from render information.
-
-The format should preserve group/layer rendering semantics where they affect the final visual result, especially for galgame-style rendering. It should not preserve editor-only settings such as locked state, selection, mark color, tree expansion state, or other Ciallo UI details.
-
-Hidden or non-rendered source content should normally be omitted from export instead of being preserved as disabled content.
-
-### Draw Unit
-
-A `draw_unit` is an independent drawable primitive. It is not primarily a material batch and it should not imply stable identity across frames.
-
-The current required draw unit kinds are:
-
-- `stroke_polyline`
-- `triangle_mesh_2d`
-
-Stable object/chunk IDs are not part of the current business requirement. If layer/group semantics are preserved, they should serve rendering/compositing rather than object identity.
-
-## Geometry Requirements
-
-### Stroke
-
-Stroke must remain a native polyline-based primitive. Exporting stroke as a triangle mesh is not an acceptable primary representation.
-
-The stroke primitive should be based on Ciallo's polyline geometry model:
-
-- positions
-- radii
-- pressures
-- tilts
-
-The exact stroke shader contract still needs a formal definition. The format should define a clear GPU/shader-level stroke model rather than embedding arbitrary engine-specific shader source code.
-
-### Fill
-
-Fill should be exported as triangulated polygon geometry.
-
-The format does not need to preserve editable polygon rings, fill rules, or SVG-like path semantics as primary data. The exported fill result should be directly usable as a triangle mesh by a renderer.
-
-## Render Information
-
-Geometry and render information should be separate concepts.
+All integer lengths and binary numeric arrays use little-endian encoding.
+The outer file is a standard RIFF form:
 
 ```text
-draw_unit
-  geometry
-  render_info
-  metadata
-
-group
-  render_info
-  metadata
-  children
+RIFF  uint32(file_length - 8)  C2DI
+  JSON  uint32(payload_length)  UTF-8 description  [zero pad if odd]
+  BIN0  uint32(payload_length)  binary resources   [zero pad if odd]
 ```
 
-Render information is the future home for:
+There is exactly one `JSON` and one `BIN0` chunk. A chunk length excludes its
+8-byte header and optional pad. Unknown chunks may be skipped by length; new
+required rendering semantics must change the supported version/profile. The
+classic RIFF 32-bit lengths apply. The format has no compression or checksum.
 
-- opacity
-- blend mode
-- stroke/fill material references
-- shader/stroke model references
-- texture/color information if material support is added later
+Every resource range is `{ "offset": byte_offset, "count": scalar_count }`,
+relative to the start of the `BIN0` payload. Offsets are multiples of four.
+Positions and tilts are interleaved float32 pairs; radii, pressures, and curves
+are float32 arrays. Triangle indices are uint32. `count` counts scalar values,
+so N positions occupy 2N floats. RIFF's two-byte chunk alignment does not imply
+that BIN0's absolute file offset is four-byte aligned; loaders must account for
+that when creating typed array views.
 
-Metadata is for non-rendering information such as optional names or debug labels.
+## Description and coordinates
 
-Material and color completeness is not a v1 business requirement. If material information is absent, callers may render the geometry as black or choose their own fallback appearance.
+The JSON root contains:
 
-## Layer And Group Policy
+- `version`: integer `1`.
+- `profile`: `"ciallo-airbrush-1"`.
+- `colorSpace`: `"linear-srgb"`.
+- `name`: artwork display name.
+- `width`, `height`: positive reference canvas dimensions.
+- `frame`: the source frame number, for identification only.
+- `brushes`: shared brush records.
+- `nodes`: ordered paint nodes.
 
-The current direction is to preserve SVG-style group semantics, not Ciallo's full layer data model.
+Coordinates use reference-canvas units, origin at the canvas center, positive X
+right and positive Y down. Content is clipped to the reference canvas. Browser
+layout and camera zoom are independent of reference dimensions. Later siblings
+paint over earlier siblings. Colors are straight linear-sRGB RGBA in the file;
+compositing operates on premultiplied linear-sRGB RGBA.
 
-- Keep group/layer compositing where it affects display.
-- Do not use layers as stable cross-frame identity.
-- Do not preserve Ciallo editor-only layer settings.
-- Treat each frame as its own complete render tree.
-- Use group opacity only as render information.
+## Draw records
 
-This keeps the format close to a display format while still preserving the layer/group semantics needed for galgame-style compositing.
+A stroke has `kind: "stroke"`, `brush` (index into `brushes`), and ranges for
+`positions`, `radii`, `pressures`, and `tilts`. Radii are final geometric radii;
+pressure-to-radius authoring has already been applied. The renderer must not
+apply it a second time. The current brush profile does not consume tilt.
 
-## Format Definition Requirements
+A fill has `kind: "fill"`, `color`, and ranges for `positions` and `indices`.
+Every three indices describe a triangle. Editable polygon rings and editor fill
+markers are not needed for playback.
 
-The final syntax/container is intentionally not decided yet. However, the format definition itself must satisfy these requirements:
+A brush record has `color`, `density`, `pressureFlow`, `erase`, and ranges
+`pressure` and `falloff`. Each curve has 512 samples, baked by
+`StrokeBrushMaterial.BakeCurve` at x = i/512. Sampling matches normalized
+level-zero linear texture sampling with clamped endpoints: interpolate at
+`clamp(t * 512 - 0.5, 0, 511)`.
 
-- A parser author should immediately be able to tell whether a file is binary or text.
-- The file should have a clear signature/magic header.
-- The format should make its closest technical model obvious, so readers can infer the relevant parsing strategy.
-- The format should have an obvious answer for how records are separated.
-- The format should have an obvious answer for how tags/chunks are named and interpreted.
+The profile's brush model follows Ciallo's Gaussian Airbrush evaluation in
+`Rendering/Stroke.gdshader`: a 0.6-render-target-pixel Gaussian with two-pixel
+support, variable-radius segment integration, filtered transmittance, and a
+0.01-pixel diameter cull threshold. A one-point stroke uses the same very short
+segment representation as `StrokeView`. Normal outputs premultiplied color;
+Erase attenuates destination RGB and alpha by the same keep factor.
 
-The user requirement to preserve for future format design:
+## Groups and clipping stacks
 
-> A parser author should be able to look at the file and immediately understand whether it is binary or text, what family of related technologies can be used to read it, and which closest existing format model gives it credibility.
+A group has `kind: "group"`, optional display `name`, `opacity`, `blend`, and
+ordered `children`. Blend values are `0` Normal, `1` Add, `2` Multiply. Group
+opacity is applied after its children are composited. Ordinary source-over
+subtrees may be drawn directly when that is equivalent; erasing and
+non-source-over child operations require the same isolation boundaries as
+Godot's automatic `Layer2D` compositor.
 
-Current naming/container ideas are only candidates:
+A clipping stack has `kind: "clip"`, `base` (a group), and ordered `clips`
+(groups). First composite the base's children and apply its opacity. Then apply
+each clipped group's completed image and opacity using the clipped equations
+below. Finally composite the stack into its parent using the base's blend mode.
+The base's blend mode is not applied when establishing the internal stack.
+Clipped groups never increase the stack's alpha.
 
-- `.pngvg` / "PNG Vector Graphics" communicates a PNG-like vector graphics idea, but may imply unwanted PNG compatibility.
-- `.pvg2d` / "Portable Vector Graphics 2D" is another possible name if the format should be clearly independent from PNG.
-- A PNG/RIFF-style binary chunk container is currently the closest technical model under discussion.
-- SVG's painter/group model is the closest rendering semantics under discussion.
-- PLY-like typed arrays are a possible influence for geometry payloads, but literal PLY compatibility is not a current goal.
+For premultiplied source S (after opacity) and destination D:
 
-If the production format is binary, records should probably be chunks rather than text lines. A future text/debug form could mirror the same tags in a line-oriented syntax, but that is not yet a committed requirement.
+| Mode | Ordinary RGB | Clipped RGB |
+| --- | --- | --- |
+| Normal | S.rgb + D.rgb × (1 − S.a) | S.rgb × D.a + D.rgb × (1 − S.a) |
+| Add | S.rgb + D.rgb | S.rgb × D.a + D.rgb |
+| Multiply | S.rgb × (1 − D.a) + D.rgb × (S.rgb + 1 − S.a) | D.rgb × (S.rgb + 1 − S.a) |
 
-## Open Decisions
+Ordinary alpha is S.a + D.a × (1 − S.a). Clipped alpha is D.a. Values above one
+from additive compositing remain available until final display conversion.
+These equations match the project's custom Godot `Layer2D` pipeline, including
+its transparent-backdrop and clipped-Multiply behavior.
 
-- Final format name and extension.
-- Binary-only production format versus paired binary/text forms.
-- Exact magic header/signature.
-- Exact chunk/tag grammar.
-- Whether chunks are flat with begin/end tags or nested length-delimited containers.
-- Exact render info fields for v1.
-- Exact group opacity/compositing contract and acceptable fast-path approximations.
-- Exact shader-level definition of `stroke_polyline`.
-- Whether future material/style tables are mandatory, optional, or extension chunks.
+## Verification and extension
+
+The first complete asset is `Inaba Meguru`: its current visible snapshot is
+loaded by the gallery and compared with the supplied PNG. GPU regression cases
+exercise overlapping group opacity, clipped half-transparent bases, and
+Multiply over transparency. Browser interaction checks cover left/middle drag,
+pointer-centered wheel zoom, keyboard navigation, resizing, and page navigation.
+
+Future format revisions can add brush models and animation. Until a revision is
+implemented and verified by both exporter and loader, the current profile's
+supported surface above is authoritative. File references are resource indices,
+not stable editor object identities.

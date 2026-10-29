@@ -115,25 +115,11 @@ public abstract partial class LayerTreeBase : ScrollContainer
         commonSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(subs);
         block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetVisible(
             LayerSelectionActions.ContextLayers(e), value)).AddTo(subs);
-        StyleBoxFlat markColorStyleBox = null;
-        commonSetting.MarkColor.Subscribe(markColor =>
-        {
-            if (markColor == null)
-            {
-                block.VisibleButton.RemoveThemeStyleboxOverride("normal");
-                block.VisibleButton.RemoveThemeStyleboxOverride("pressed");
-                block.WorkingButton.RemoveThemeStyleboxOverride("normal");
-                block.WorkingButton.RemoveThemeStyleboxOverride("pressed");
-                return;
-            }
-
-            markColorStyleBox ??= new StyleBoxFlat();
-            markColorStyleBox.BgColor = markColor.Value;
-            block.VisibleButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
-            block.VisibleButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
-            block.WorkingButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
-            block.WorkingButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
-        }).AddTo(subs);
+        var labelStyle = new LayerLabelColorStyle(block);
+        commonSetting.MarkColor.Subscribe(labelStyle.Update).AddTo(subs);
+        // Blocks are bound before their wrappers are parented to the displayed layer tree.
+        block.Node.TreeEntered += () => labelStyle.Update(commonSetting.MarkColor.Value);
+        block.Node.ThemeChanged += () => labelStyle.Update(commonSetting.MarkColor.Value);
         var lineEdit = block.LabelLineEdit;
         commonSetting.Name.Subscribe(value =>
         {

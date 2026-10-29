@@ -82,57 +82,10 @@ public partial class StrokeBrushPreviewList : Container
         {
             return box;
         }
-        box = CreateBrushPreview(e);
+        box = BrushPreview.Stroke(e).QueueFreeWith(e);
         PreviewMap.Add(e, box);
         e.OnDelete += ent => PreviewMap.Remove(ent);
         return box;
-    }
-
-    private Control CreateBrushPreview(Entity e)
-    {
-        var wrapper = new PanelContainer()
-        {
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-            SizeFlagsVertical = SizeFlags.ExpandFill,
-        };
-
-        var checkerboard = new ColorRect
-        {
-            Material = AutoloadRendering.CheckerboardMaterial,
-            Color = Colors.Transparent,
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-        };
-        wrapper.AddChild(checkerboard);
-
-        var textureRect = new TextureRect
-        {
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
-            Texture = e.Get<ViewportTexture>(),
-            SizeFlagsHorizontal = SizeFlags.ExpandFill,
-        };
-        wrapper.AddChild(textureRect);
-
-        var nameLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Right,
-        };
-        nameLabel.AddThemeConstantOverride("outline_size", 8);
-        var nameWrapper = new MarginContainer()
-        {
-            SizeFlagsVertical = SizeFlags.ShrinkEnd,
-            SizeFlagsHorizontal = SizeFlags.ShrinkEnd,
-        };
-        nameWrapper.AddThemeConstantOverride("margin_bottom", 12);
-        nameWrapper.AddThemeConstantOverride("margin_right", 8);
-        nameWrapper.AddChild(nameLabel);
-        wrapper.AddChild(nameWrapper);
-
-        var setting = e.Get<StrokeBrushSetting>();
-        setting.Name.Subscribe(name => nameLabel.Text = name).AddTo(e);
-
-        wrapper.QueueFreeWith(e);
-        return wrapper;
     }
 
     public override void _Ready()

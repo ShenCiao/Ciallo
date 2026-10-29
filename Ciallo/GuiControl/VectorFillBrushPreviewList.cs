@@ -11,12 +11,6 @@ using R3;
 
 namespace Ciallo.GuiControl;
 
-/// <summary>
-/// 
-/// </summary>
-/// <remarks>
-/// Terrible code design here, duplicated with StrokeBrushPreview, refactor it once there is another change.
-/// </remarks>
 [SceneTree, Instantiable]
 public partial class VectorFillBrushPreviewList : Container
 {
@@ -103,56 +97,9 @@ public partial class VectorFillBrushPreviewList : Container
         {
             return box;
         }
-        box = CreateBrushPreview(e);
+        box = BrushPreview.Fill(e).QueueFreeWith(e);
         PreviewMap.Add(e, box);
         e.OnDelete += ent => PreviewMap.Remove(ent);
-        return box;
-    }
-
-    private PanelContainer CreateBrushPreview(Entity e)
-    {
-        var box = new PanelContainer().QueueFreeWith(e);
-        var background = new ColorRect() { Material = AutoloadRendering.CheckerboardMaterial };
-        box.AddChild(background);
-        var markerPreview = new TextureRect()
-        {
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
-            CustomMinimumSize = new(32, 32),
-        };
-        var container = new CenterContainer();
-        container.AddChild(markerPreview);
-        box.AddChild(container);
-
-        var nameLabel = new Label
-        {
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
-            AutoTranslateMode = AutoTranslateModeEnum.Disabled,
-            MouseFilter = MouseFilterEnum.Ignore,
-            ZIndex = 1,
-            AnchorTop = 0.5f,
-            AnchorBottom = 0.5f,
-            AnchorRight = 1,
-            OffsetLeft = 4,
-            OffsetRight = -4,
-            OffsetTop = 16,
-            OffsetBottom = 16,
-            GrowVertical = GrowDirection.Both,
-        };
-        nameLabel.AddThemeConstantOverride("outline_size", 8);
-        nameLabel.AddThemeColorOverride("font_color", Colors.White);
-        nameLabel.AddThemeColorOverride("font_outline_color", Colors.Black);
-        var nameOverlay = new Control { MouseFilter = MouseFilterEnum.Ignore };
-        nameOverlay.AddChild(nameLabel);
-        box.AddChild(nameOverlay);
-
-        var setting = e.Get<FillBrushSetting>();
-        setting.Name.Subscribe(name => nameLabel.Text = name).AddTo(e);
-        setting.MarkerTexture.Subscribe(markerPreview.SetTexture).AddTo(e);
-        setting.MarkerColor.Subscribe(markerPreview.SetSelfModulate).AddTo(e);
-        setting.FillColor.Subscribe(background.SetColor).AddTo(e);
         return box;
     }
 

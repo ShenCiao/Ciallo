@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 namespace Ciallo.Widget;
 
 /// <summary>
-/// Extends <see cref="DynamicGridContainer"/> with single-selection and drag-reorder support.
+/// Extends <see cref="DynamicGridContainer"/> with selection highlights and optional drag reordering.
 /// </summary>
 /// <remarks>
 /// When a child is dragged to a new position, <see cref="Moved"/> fires with
@@ -21,15 +23,19 @@ public partial class DynamicGridItemList : DynamicGridContainer
     public delegate void ItemClickedEventHandler(int idx);
 
     public BaseButton.ActionModeEnum ActionMode { get; set; } = BaseButton.ActionModeEnum.Press;
+    public bool ReorderEnabled { get; set; } = true;
+    public IReadOnlyList<Control> SelectedControls { get; private set; } = [];
 
     public Control SelectedControl
     {
-        get;
-        set
-        {
-            field = value;
-            UpdateSelectionHighlight();
-        }
+        get => SelectedControls.FirstOrDefault();
+        set => SetSelectedControls(value == null ? [] : [value]);
+    }
+
+    public void SetSelectedControls(IEnumerable<Control> controls)
+    {
+        SelectedControls = controls.ToArray();
+        UpdateSelectionHighlight();
     }
 
     // ── drag state ─────────────────────────────────────────────────────────
@@ -41,13 +47,7 @@ public partial class DynamicGridItemList : DynamicGridContainer
     private const float DragThreshold = 8f;
 
     // ── visuals ────────────────────────────────────────────────────────────
-    private readonly StrokeRect _selectionHighlight = new()
-    {
-        Color = new(AppPreference.StrokeWireframeColor) { A = 1.0f },
-        Width = 5f,
-        MouseFilter = MouseFilterEnum.Ignore,
-        Visible = false,
-    };
+    private readonly List<StrokeRect> _selectionHighlights = [];
     private readonly ColorRect _dropHintLine = new()
     {
         Color = new(1f, 1f, 0.9f),
@@ -58,7 +58,6 @@ public partial class DynamicGridItemList : DynamicGridContainer
     public DynamicGridItemList()
     {
         MouseFilter = MouseFilterEnum.Stop;
-        AddChild(_selectionHighlight, false, InternalMode.Back);
         AddChild(_dropHintLine, false, InternalMode.Back);
     }
 
@@ -80,20 +79,30 @@ public partial class DynamicGridItemList : DynamicGridContainer
     // ── visuals helpers ────────────────────────────────────────────────────
     private void UpdateSelectionHighlight()
     {
-        if (SelectedControl?.GetParent() == this)
+        while (_selectionHighlights.Count < SelectedControls.Count)
         {
-            _selectionHighlight.Visible = true;
-            FitChildInRect(_selectionHighlight, SelectedControl.GetRect());
+            var highlight = new StrokeRect
+            {
+                Color = new(AppPreference.StrokeWireframeColor) { A = 1.0f },
+                Width = 5f,
+                MouseFilter = MouseFilterEnum.Ignore,
+                ZIndex = 2,
+            };
+            _selectionHighlights.Add(highlight);
+            AddChild(highlight, false, InternalMode.Back);
         }
-        else
+        for (int i = 0; i < _selectionHighlights.Count; i++)
         {
-            _selectionHighlight.Visible = false;
+            var highlight = _selectionHighlights[i];
+            highlight.Visible = i < SelectedControls.Count && SelectedControls[i].GetParent() == this;
+            if (highlight.Visible)
+                FitChildInRect(highlight, SelectedControls[i].GetRect());
         }
     }
 
     private void UpdateDropHintLine()
     {
-        if (!_isDragging || _dropSlot < 0 || _dropSlot > LayoutChildCount)
+        if (!ReorderEnabled || !_isDragging || _dropSlot < 0 || _dropSlot > LayoutChildCount)
         {
             _dropHintLine.Visible = false;
             return;
@@ -153,7 +162,7 @@ public partial class DynamicGridItemList : DynamicGridContainer
                     if (motion.GlobalPosition.DistanceTo(_dragStartGlobalPos) <= DragThreshold) return;
                     _isDragging = true;
                 }
-                _dropSlot = ComputeDropSlot(motion.Position);
+                if (ReorderEnabled) _dropSlot = ComputeDropSlot(motion.Position);
                 UpdateDropHintLine();
                 AcceptEvent();
                 break;
@@ -183,14 +192,14 @@ public partial class DynamicGridItemList : DynamicGridContainer
         {
             var children = GetLayoutChildren();
             int srcIdx = children.IndexOf(_dragSource);
-            if (_isDragging)
+            if (_isDragging && ReorderEnabled)
             {
                 int slot = ComputeDropSlot(localPos);
                 int dstIdx = slot > srcIdx ? slot - 1 : slot;
                 if (srcIdx >= 0 && dstIdx != srcIdx)
                     EmitSignalMoved(srcIdx, dstIdx);
             }
-            else if (ActionMode == BaseButton.ActionModeEnum.Release && srcIdx >= 0 && HitTestIndex(localPos) == srcIdx)
+            else if (!_isDragging && ActionMode == BaseButton.ActionModeEnum.Release && srcIdx >= 0 && HitTestIndex(localPos) == srcIdx)
             {
                 clickedIndex = srcIdx;
             }

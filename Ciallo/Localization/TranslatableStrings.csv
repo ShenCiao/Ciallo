@@ -1,10 +1,18 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
+Stroke brushes,Stroke brushes,线条笔刷,線條筆刷,ストロークブラシ,선 브러시,Strichpinsel,Pinceaux de trait
+Fill brushes,Fill brushes,填充笔刷,填充筆刷,塗りつぶしブラシ,채우기 브러시,Füllpinsel,Pinceaux de remplissage
+Change brush,Change brush,修改笔刷,修改筆刷,ブラシを変更,브러시 변경,Pinsel ändern,Changer de pinceau
+Change stroke brush,Change stroke brush,修改线条笔刷,修改線條筆刷,ストロークブラシを変更,선 브러시 변경,Strichpinsel ändern,Changer le pinceau de trait
+Change fill brush,Change fill brush,修改填充笔刷,修改填充筆刷,塗りつぶしブラシを変更,채우기 브러시 변경,Füllpinsel ändern,Changer le pinceau de remplissage
+Missing brush,Missing brush,缺失笔刷,缺失筆刷,ブラシなし,누락된 브러시,Fehlender Pinsel,Pinceau manquant
+No brush,No brush,无笔刷,無筆刷,ブラシを解除,브러시 없음,Kein Pinsel,Aucun pinceau
+Manage brushes,Manage brushes,管理笔刷,管理筆刷,ブラシを管理,브러시 관리,Pinsel verwalten,Gérer les pinceaux
 Send to back,Send to back,置于底层,置於底層,最背面へ移動,맨 뒤로 보내기,In den Hintergrund,Mettre à l’arrière-plan
 Bring to front,Bring to front,置于顶层,置於頂層,最前面へ移動,맨 앞으로 가져오기,In den Vordergrund,Mettre au premier plan
 Convert to strokes,Convert to strokes,转换为笔画,轉換為筆畫,ストロークに変換,스트로크로 변환,In Striche umwandeln,Convertir en traits
 Convert to filled polygons,Convert to filled polygons,转换为填充多边形,轉換為填滿多邊形,塗りつぶしポリゴンに変換,채워진 다각형으로 변환,In gefüllte Polygone umwandeln,Convertir en polygones remplis
-Outline each boundary with the working stroke brush at full pressure.,Outline each boundary with the working stroke brush at full pressure.,使用当前笔画笔刷以满压力描绘各条边界。,使用目前筆畫筆刷以滿壓力描繪各條邊界。,現在のストロークブラシで各境界を最大筆圧で描きます。,현재 스트로크 브러시로 각 경계를 최대 필압으로 그립니다.,Jede Kontur mit dem aktuellen Strichpinsel bei vollem Druck nachzeichnen.,Tracer chaque contour avec le pinceau de trait actuel à pression maximale.
-Close each stroke and fill it with the working fill brush. Empty regions are skipped.,Close each stroke and fill it with the working fill brush. Empty regions are skipped.,闭合各条笔画并使用当前填充笔刷填充；跳过无法围成填充区域的笔画。,閉合各條筆畫並使用目前填滿筆刷填滿；略過無法圍成填滿區域的筆畫。,各ストロークを閉じて現在の塗りつぶしブラシで塗ります。空の領域はスキップします。,각 스트로크를 닫고 현재 채우기 브러시로 채웁니다. 빈 영역은 건너뜁니다.,Jeden Strich schließen und mit dem aktuellen Füllpinsel füllen. Leere Bereiche werden übersprungen.,Fermer chaque trait et le remplir avec le pinceau de remplissage actuel. Les régions vides sont ignorées.
+Outline each boundary with the working stroke brush at full pressure.,Outline each boundary with the working stroke brush at full pressure.,使用当前线条笔刷以满压力描绘各条边界。,使用目前線條筆刷以滿壓力描繪各條邊界。,現在のストロークブラシで各境界を最大筆圧で描きます。,현재 스트로크 브러시로 각 경계를 최대 필압으로 그립니다.,Jede Kontur mit dem aktuellen Strichpinsel bei vollem Druck nachzeichnen.,Tracer chaque contour avec le pinceau de trait actuel à pression maximale.
+Close each stroke and fill it with the working fill brush. Empty regions are skipped.,Close each stroke and fill it with the working fill brush. Empty regions are skipped.,闭合各条笔画并使用当前填充笔刷填充；跳过无法围成填充区域的笔画。,閉合各條筆畫並使用目前填充筆刷填滿；略過無法圍成填滿區域的筆畫。,各ストロークを閉じて現在の塗りつぶしブラシで塗ります。空の領域はスキップします。,각 스트로크를 닫고 현재 채우기 브러시로 채웁니다. 빈 영역은 건너뜁니다.,Jeden Strich schließen und mit dem aktuellen Füllpinsel füllen. Leere Bereiche werden übersprungen.,Fermer chaque trait et le remplir avec le pinceau de remplissage actuel. Les régions vides sont ignorées.
 Output format,Output format,输出格式,輸出格式,出力形式,출력 형식,Ausgabeformat,Format de sortie
 Cannot export image.,Cannot export image.,无法导出图像。,無法匯出圖像。,画像をエクスポートできません。,이미지를 내보낼 수 없습니다.,Bild kann nicht exportiert werden.,Impossible d’exporter l’image.
 PNG · 16 bits/channel · sRGB,PNG · 16 bits/channel · sRGB,PNG · 16 位/通道 · sRGB,PNG · 16 位元/通道 · sRGB,PNG · 16ビット/チャンネル · sRGB,PNG · 채널당 16비트 · sRGB,PNG · 16 Bit/Kanal · sRGB,PNG · 16 bits/canal · sRGB
@@ -184,14 +192,14 @@ Push,Push,推移,推移,押し出し,밀기,Schieben,Pousser
 Expand,Expand,扩张,擴張,膨張,확장,Ausdehnen,Dilater
 Pinch,Pinch,收缩,收縮,つまむ,오므리기,Zusammenziehen,Pincer
 Liquify,Liquify,液化,液化,ゆがみ,픽셀 유동화,Verflüssigen,Fluidité
-No brush selected,No brush selected,未选择画笔,未選擇筆刷,ブラシが選択されていません,브러시가 선택되지 않았습니다,Kein Pinsel ausgewählt,Aucun pinceau sélectionné
+No brush selected,No brush selected,未选择笔刷,未選擇筆刷,ブラシが選択されていません,브러시가 선택되지 않았습니다,Kein Pinsel ausgewählt,Aucun pinceau sélectionné
 Load research animation,Load research animation,加载研究动画,載入研究動畫,研究用アニメーションを読み込む,연구용 애니메이션 불러오기,Forschungsanimation laden,Charger l'animation de recherche
 Research animation CSV,Research animation CSV,研究动画 CSV,研究動畫 CSV,研究用アニメーション CSV,연구용 애니메이션 CSV,Forschungsanimation-CSV,CSV d'animation de recherche
 Cannot load research animation.,Cannot load research animation.,无法加载研究动画。,無法載入研究動畫。,研究用アニメーションを読み込めません。,연구용 애니메이션을 불러올 수 없습니다.,Forschungsanimation kann nicht geladen werden.,Impossible de charger l'animation de recherche.
 Select a folder containing numeric frame CSV files.,Select a folder containing numeric frame CSV files.,请选择包含数字帧 CSV 文件的文件夹。,請選擇包含數字影格 CSV 檔案的資料夾。,数値フレームのCSVファイルを含むフォルダーを選択してください。,숫자 프레임 CSV 파일이 들어 있는 폴더를 선택하세요.,Wählen Sie einen Ordner mit numerischen Frame-CSV-Dateien aus.,Sélectionnez un dossier contenant des fichiers CSV de frames numériques.
 Selected folder contains no numeric frame CSV files.,Selected folder contains no numeric frame CSV files.,所选文件夹不包含数字帧 CSV 文件。,選取的資料夾不包含數字影格 CSV 檔案。,選択したフォルダーに数値フレームのCSVファイルがありません。,선택한 폴더에 숫자 프레임 CSV 파일이 없습니다.,Der ausgewählte Ordner enthält keine numerischen Frame-CSV-Dateien.,Le dossier sélectionné ne contient aucun fichier CSV de frame numérique.
 Selected animation contains no stroke samples.,Selected animation contains no stroke samples.,所选动画不包含笔画样本。,選取的動畫不包含筆畫樣本。,選択したアニメーションにストロークサンプルがありません。,선택한 애니메이션에 스트로크 샘플이 없습니다.,Die ausgewählte Animation enthält keine Strichproben.,L'animation sélectionnée ne contient aucun échantillon de trait.
-No working stroke brush is selected.,No working stroke brush is selected.,未选择当前工作笔刷。,未選擇目前工作筆刷。,作業中のストロークブラシが選択されていません。,작업 중인 스트로크 브러시가 선택되지 않았습니다.,Kein aktiver Strichpinsel ausgewählt.,Aucun pinceau de trait actif n'est sélectionné.
+No working stroke brush is selected.,No working stroke brush is selected.,未选择当前工作线条笔刷。,未選擇目前工作線條筆刷。,作業中のストロークブラシが選択されていません。,작업 중인 스트로크 브러시가 선택되지 않았습니다.,Kein aktiver Strichpinsel ausgewählt.,Aucun pinceau de trait actif n'est sélectionné.
 Cannot save document.,Cannot save document.,无法保存文档。,無法儲存文件。,ドキュメントを保存できません。,문서를 저장할 수 없습니다.,Dokument kann nicht gespeichert werden.,Impossible d'enregistrer le document.
 Cannot open document.,Cannot open document.,无法打开文档。,無法開啟文件。,ドキュメントを開けません。,문서를 열 수 없습니다.,Dokument kann nicht geöffnet werden.,Impossible d'ouvrir le document.
 Export frame sequence,Export frame sequence,导出帧序列,匯出影格序列,フレームシーケンスをエクスポート,프레임 시퀀스 내보내기,Bildsequenz exportieren,Exporter la séquence d'images
@@ -219,7 +227,7 @@ Go to playback end,Go to playback end,跳到播放终点,跳到播放終點,再�
 Onion skin,Onion skin,洋葱皮,洋蔥皮,オニオンスキン,어니언 스킨,Onion Skin,Pelure d'oignon
 Stop playback,Stop playback,停止播放,停止播放,再生を停止,재생 중지,Wiedergabe stoppen,Arrêter la lecture
 Trim,Trim,修剪,修剪,トリム,자르기,Trimmen,Rogner
-Stroke Brush Library,Stroke Brush Library,线条笔刷库,綫條筆刷庫,ストロークブラシライブラリ,스트로크 브러시 라이브러리,Strichpinselbibliothek,Bibliothèque de pinceaux de trait
+Stroke Brush Library,Stroke Brush Library,线条笔刷库,線條筆刷庫,ストロークブラシライブラリ,스트로크 브러시 라이브러리,Strichpinselbibliothek,Bibliothèque de pinceaux de trait
 Enabled,Enabled,已启用,已啟用,有効,활성화됨,Aktiviert,Activé
 Apply,Apply,应用,套用,適用,적용,Anwenden,Appliquer
 Select reference shape layers,Select reference shape layers,选择参考形状图层,選擇參考形狀圖層,参照シェイプレイヤーを選択,참조 쉐이프 레이어 선택,Referenz-Formebenen auswählen,Sélectionner les calques de forme de référence

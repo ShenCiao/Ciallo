@@ -228,20 +228,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             };
         }
 
-        // --- Stroke brush switcher
-        var strokeBrushSwitcher = StrokeBrushPreviewList.New().AddToChildOf(container);
-        strokeBrushSwitcher.CustomMinimumSize = new(0, 256);
-        strokeBrushSwitcher.PreviewList.ActionMode = BaseButton.ActionModeEnum.Release;
-        strokeBrushSwitcher.Document = Document;
-        strokeBrushSwitcher.BindBrushes(Document.Get<BrushManager>().StrokeBrushes);
-        strokeBrushSwitcher.VisibleIf(
-            selectionChanged.CombineLatest(selectionManager.PrimaryLayer, (_, layer) => layer),
-            layer => selectedShapes.Count > 0
-                ? selectedShapes.All(e => e.Has<StrokeSetting>())
-                : !layer.IsNull && layer.Has<ShapeLayerSetting>());
-
-        ObserveSelectionBrush(selectedShapes, e => e.Has<StrokeSetting>(), e => e.Get<StrokeSetting>().Brush)
-            .Subscribe(strokeBrushSwitcher.Select).AddTo(strokeBrushSwitcher);
+        container.AddChild(new SelectionBrushPanel(Document, ShapeBrushKind.Stroke, () => Fire(Trigger.Refresh)));
+        container.AddChild(new SelectionBrushPanel(Document, ShapeBrushKind.Fill, () => Fire(Trigger.Refresh)));
 
         var strokeRadiusEditBox = container.CreateBox().AddToChildOf(container);
         strokeRadiusEditBox.Name = "StrokeRadiusMultiplier";
@@ -277,66 +265,6 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             }
             command.Commit();
         };
-
-        strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
-        {
-            if (selectedShapes.Count == 0)
-            {
-                var strokes = selectionManager.PrimaryLayer.CurrentValue.Get<LayerTreeNode>().Children
-                    .Where(e => e.Has<StrokeSetting>() && e.Get<StrokeSetting>().Brush.Value == brushE)
-                    .ToArray();
-                if (strokes.Length == 0) return;
-
-                selectedShapes.AddRange(strokes);
-                Fire(Trigger.Refresh);
-                return;
-            }
-
-            if (selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == brushE))
-            {
-                selectedShapes.Clear();
-                Fire(Trigger.Refresh);
-                return;
-            }
-
-            var cmd = new CommandBuilder("Set Selected Stroke Brush");
-            foreach (var shapeE in selectedShapes)
-                cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);
-            cmd.Commit();
-        }).AddTo(strokeBrushSwitcher);
-
-        // --- Vector fill brush switcher
-        var vectorFillBrushSwitcher = VectorFillBrushPreviewList.New().AddToChildOf(container);
-        vectorFillBrushSwitcher.CustomMinimumSize = new(0, 256);
-        vectorFillBrushSwitcher.PreviewList.ActionMode = BaseButton.ActionModeEnum.Release;
-        vectorFillBrushSwitcher.Document = Document;
-        vectorFillBrushSwitcher.BindBrushes(Document.Get<BrushManager>().VectorFillBrushes);
-        vectorFillBrushSwitcher.VisibleIf(selectionChanged,
-            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>()));
-
-        ObserveSelectionBrush(selectedShapes,
-                e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>(), GetVectorFillBrushE)
-            .Subscribe(vectorFillBrushSwitcher.Select).AddTo(vectorFillBrushSwitcher);
-
-        vectorFillBrushSwitcher.BrushClicked.Subscribe(brushE =>
-        {
-            if (selectedShapes.Count > 0 && selectedShapes.All(e => GetVectorFillBrushE(e).Value == brushE))
-            {
-                selectedShapes.Clear();
-                Fire(Trigger.Refresh);
-                return;
-            }
-
-            var cmd = new CommandBuilder("Set Selected Vector Fill Brush");
-            foreach (var shapeE in selectedShapes)
-            {
-                if (shapeE.Has<VectorFillMarkerSetting>())
-                    cmd.SetTarget(shapeE).SetProperty(e => e.Get<VectorFillMarkerSetting>().BrushE, brushE);
-                else
-                    cmd.SetTarget(shapeE).SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brushE);
-            }
-            cmd.Commit();
-        }).AddTo(vectorFillBrushSwitcher);
 
         var polylineEditBox = container.CreateBox()
             .AddToChildOf(container)
@@ -507,25 +435,4 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     }
 
-    private static Observable<Entity> ObserveSelectionBrush(ObservableList<Entity> selectedShapes,
-        Func<Entity, bool> hasBrush, Func<Entity, ReactiveProperty<Entity>> getBrush)
-    {
-        return selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default)
-            .Select(_ =>
-            {
-                if (selectedShapes.Count == 0 || !selectedShapes.All(hasBrush))
-                    return Observable.Return(Entity.Null);
-
-                return Observable.CombineLatest(selectedShapes.Select(e => getBrush(e).AsObservable()))
-                    .Select(brushes => brushes.All(e => e == brushes[0]) ? brushes[0] : Entity.Null);
-            })
-            .Switch()
-            .DistinctUntilChanged();
-    }
-
-    private static ReactiveProperty<Entity> GetVectorFillBrushE(Entity e)
-    {
-        if (e.Has<VectorFillMarkerSetting>()) return e.Get<VectorFillMarkerSetting>().BrushE;
-        return e.Get<FilledPolygonSetting>().BrushE;
-    }
 }

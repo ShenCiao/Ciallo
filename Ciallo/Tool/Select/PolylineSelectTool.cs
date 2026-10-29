@@ -250,8 +250,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         var strokeRadiusMultiplierEdit = new SpinSlider
         {
-            MinValue = 0.01f,
-            MaxValue = 100f,
+            MinValue = 0.25f,
+            MaxValue = 4f,
             Step = 0.01f,
             ExpEdit = true,
             AllowGreater = true,
@@ -350,10 +350,11 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         var simplificationToleranceEdit = new SpinSlider()
         {
-            MinValue = 0,
-            MaxValue = 10,
-            Step = 0.1,
+            MinValue = 0.001,
+            MaxValue = 2,
+            Step = 0.001,
             AllowGreater = true,
+            ExpEdit = true,
             TooltipText = "Position and radius tolerance in canvas units. Zero keeps all points.",
         };
         simplificationToleranceEdit.BindNumber(SimplificationTolerance);
@@ -496,7 +497,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 if (geom.Length < 3) continue;
 
                 // Apply Laplacian smoothing only to positions.
-                const int iterations = 1;
+                const int iterations = 8;
                 const float lambda = 0.5f;
                 var smoothedPositions = geom.Positions.Value.SmoothLaplacian(iterations, lambda);
                 builder.SetTarget(polylineE).SetSampledPolyline([.. smoothedPositions]); // copy but fine

@@ -39,7 +39,7 @@ public class NewFilledPolygonCmd : NewShapeCmdBase
         var setting = targetE.Get<FilledPolygonSetting>();
 
         // View
-        var polygonView = new Polygon2D() { Antialiased = true };
+        var polygonView = new PolygonFillView();
         targetE.AddNode(polygonView);
         setting.BrushE
             .Select(e => e.IsNull
@@ -50,8 +50,7 @@ public class NewFilledPolygonCmd : NewShapeCmdBase
             .AddTo(targetE);
         setting.BrushE.Subscribe(brushE =>
         {
-            polygonView.Material = brushE.IsNull ? AutoloadRendering.MissingFillBrushMaterial : null;
-            polygonView.Texture = brushE.IsNull ? AutoloadRendering.DummyTextureForUV : null;
+            polygonView.MissingBrush = brushE.IsNull;
         }).AddTo(targetE);
 
         sampledPolyline.Positions.Subscribe(ps =>

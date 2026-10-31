@@ -153,7 +153,7 @@ public class PolygonBooleanActionsTests
         // release them before its orphan check; entity teardown also tolerates freed nodes.
         foreach (var shape in _document.World.CreateQuery().With<FilledPolygonSetting>().Build().EnumerateWithEntities())
         {
-            AutoFree(shape.Get<Polygon2D>());
+            AutoFree(shape.Get<PolygonFillView>());
             AutoFree(shape.Get<PolylineWireframe>());
             AutoFree(shape.Get<Body>());
         }

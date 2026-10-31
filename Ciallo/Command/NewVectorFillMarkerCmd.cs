@@ -45,7 +45,7 @@ public class NewVectorFillMarkerCmd : NewShapeCmdBase
         // By design, polygons attached to fill markers are views,
         // Strokes and marker sprites attached are overlays.
         // View
-        var polygonView = new Polygon2D() { Antialiased = true };
+        var polygonView = new PolygonFillView();
         targetE.AddNode(polygonView);
         setting.BrushE
             .Select(e => e.IsNull
@@ -92,8 +92,7 @@ public class NewVectorFillMarkerCmd : NewShapeCmdBase
                 return;
             }
 
-            polygonView.Material = null;
-            polygonView.Texture = null;
+            polygonView.MissingBrush = false;
         }).AddTo(targetE);
         setting.BrushE
             .Select(e => e.IsNull

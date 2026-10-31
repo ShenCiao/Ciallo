@@ -187,7 +187,7 @@ public class PolylineTransformInteractor : CapturingInteraction
             }
             if (e.Has<FilledPolygonSetting>())
             {
-                e.Get<Polygon2D>().SetPolygonFromRawRing(_currPolylines[i]);
+                e.Get<PolygonFillView>().SetPolygonFromRawRing(_currPolylines[i]);
             }
         }
     }
@@ -225,7 +225,7 @@ public class PolylineTransformInteractor : CapturingInteraction
                 e.Get<VectorFillMarkerView>().SetGeometry(points, geom.Radii.Value);
             if (e.Has<FilledPolygonSetting>())
             {
-                e.Get<Polygon2D>().SetPolygonFromRawRing(points);
+                e.Get<PolygonFillView>().SetPolygonFromRawRing(points);
             }
         }
         Clear();

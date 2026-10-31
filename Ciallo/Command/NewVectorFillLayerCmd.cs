@@ -61,10 +61,9 @@ public class NewVectorFillLayerCmd : CommandBase
         NewShapeLayerCmd.CreateNonDataComponents(targetE);
 
         // Bounded area
-        var boundedAreaPreview = new Polygon2D
+        var boundedAreaPreview = new PolygonFillView
         {
             Name = "BoundedArea",
-            Antialiased = true,
         };
         targetE.AddNode(boundedAreaPreview);
         targetE.Get<ShapeLayerView>().AddChild(boundedAreaPreview, false, Node.InternalMode.Front);

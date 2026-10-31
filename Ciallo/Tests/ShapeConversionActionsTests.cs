@@ -140,7 +140,7 @@ public class ShapeConversionActionsTests
         foreach (var shape in _document.World.CreateQuery().With<SampledPolyline>().Build().EnumerateWithEntities())
         {
             if (shape.Has<StrokeSetting>()) AutoFree(shape.Get<StrokeView>());
-            else AutoFree(shape.Get<Polygon2D>());
+            else AutoFree(shape.Get<PolygonFillView>());
             AutoFree(shape.Get<PolylineWireframe>());
             AutoFree(shape.Get<Body>());
         }

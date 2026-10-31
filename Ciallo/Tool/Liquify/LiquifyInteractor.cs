@@ -180,7 +180,7 @@ public class LiquifyInteractor : CapturingInteraction
         if (e.Has<StrokeSetting>())
             e.Get<StrokeView>().SetGeometry(positions, radii, pressures);
         if (e.Has<FilledPolygonSetting>())
-            e.Get<Polygon2D>().SetPolygonFromRawRing(positions.ToImmutableArray());
+            e.Get<PolygonFillView>().SetPolygonFromRawRing(positions.ToImmutableArray());
     }
 
     private void Clear()

@@ -13,7 +13,7 @@ public sealed class GapBridgePreviewManager : IDisposable
     private readonly Node2D _root;
     private readonly Node2D _facesRoot = new();
     private readonly Node2D _bridgesRoot = new();
-    private readonly Dictionary<Rid, Polygon2D> _faceNodes = [];
+    private readonly Dictionary<Rid, PolygonFillView> _faceNodes = [];
     private readonly Dictionary<Rid, Color> _faceColors = [];
     private List<GapBridge> _bridges = [];
     private int _nextFaceColorIndex;
@@ -71,10 +71,7 @@ public sealed class GapBridgePreviewManager : IDisposable
             seen.Add(faceRid);
             if (!_faceNodes.TryGetValue(faceRid, out var faceNode))
             {
-                faceNode = new Polygon2D
-                {
-                    Antialiased = true,
-                };
+                faceNode = new PolygonFillView();
                 _faceNodes[faceRid] = faceNode;
                 _facesRoot.AddChild(faceNode);
             }

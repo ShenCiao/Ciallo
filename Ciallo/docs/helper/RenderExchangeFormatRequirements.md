@@ -24,12 +24,13 @@ visible layer tree, and writes one complete display snapshot. The source project
 is unchanged. Data is prepared before writing and the output is replaced only
 after a complete temporary file has been written.
 
-Version 1, profile `ciallo-airbrush-1`, supports:
+Version 1, profile `ciallo-airbrush-2`, supports:
 
 - Variable-radius Airbrush polylines with pressure-controlled flow, color,
   density, falloff, and Normal or Erase brush blending.
 - Solid-color polygon fills triangulated with Ciallo's existing
-  `Arrangement2D.RepairAndTriangulate` implementation.
+  `Arrangement2D.RepairAndTriangulate` implementation, with its analytic
+  pixel-area antialiasing and exponential alpha mapping.
 - Shape layers and folders, whole-group opacity, Normal/Add/Multiply layer
   blending, and resolved sibling clipping stacks.
 - The selected cel exposure in a cel folder. Only the current frame is exported;
@@ -72,11 +73,12 @@ that when creating typed array views.
 The JSON root contains:
 
 - `version`: integer `1`.
-- `profile`: `"ciallo-airbrush-1"`.
+- `profile`: `"ciallo-airbrush-2"`.
 - `colorSpace`: `"linear-srgb"`.
 - `name`: artwork display name.
 - `width`, `height`: positive reference canvas dimensions.
 - `frame`: the source frame number, for identification only.
+- `polygonAA`: required shared polygon antialiasing settings, described below.
 - `brushes`: shared brush records.
 - `nodes`: ordered paint nodes.
 
@@ -96,6 +98,35 @@ apply it a second time. The current brush profile does not consume tilt.
 A fill has `kind: "fill"`, `color`, and ranges for `positions` and `indices`.
 Every three indices describe a triangle. Editable polygon rings and editor fill
 markers are not needed for playback.
+
+### Polygon antialiasing
+
+`polygonAA` captures the current `PolygonFillRendering` settings:
+
+- `enabled`: boolean; normally `true`.
+- `epsilon`: finite number strictly between zero and one; normally `0.01`.
+- `maxVertexOffsetPixels`: finite nonnegative number; normally `10`.
+
+The profile follows `Rendering/PolygonFillAA.gdshaderinc`. Transform each source
+triangle into render-target pixel coordinates. Expand its vertices using the
+support of an axis-aligned half-pixel square (with the shader's `0.501` rounding
+allowance), limiting each vertex displacement to `maxVertexOffsetPixels` before
+rasterization. This limit also applies to very acute tips.
+
+At each fragment, intersect the original triangle with the unit square centered
+on the pixel. Its area is coverage C in [0, 1]. For the fill's straight alpha A,
+the fragment alpha is `1 - max(1 - clamp(A, 0, 1), epsilon)^C`. Premultiply the
+fill RGB by this alpha and composite triangles in order with source-over.
+Use the shader's small-exponent expansion to retain tiny contributions. Shared
+edges accumulate transmittance multiplicatively; do not apply ordinary `A * C`
+alpha separately to each triangle. Degenerate triangles contribute no coverage.
+An opaque fill at full coverage produces alpha `1 - epsilon`, matching Ciallo.
+
+If disabled, draw the unexpanded triangles with the original alpha. AA operates
+in the current render target's pixels, including when baking a comparison bitmap;
+it is independent of the viewer's optional MSAA setting.
+
+### Brushes
 
 A brush record has `color`, `density`, `pressureFlow`, `erase`, and ranges
 `pressure` and `falloff`. Each curve has 512 samples, baked by

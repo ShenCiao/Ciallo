@@ -37,12 +37,18 @@ public static class RenderExchangeExporter
         var header = JsonSerializer.SerializeToUtf8Bytes(new
         {
             version = 1,
-            profile = "ciallo-airbrush-1",
+            profile = "ciallo-airbrush-2",
             name = setting.Name.Value,
             width = size.X,
             height = size.Y,
             frame = capture.Frame,
             colorSpace = "linear-srgb",
+            polygonAA = new
+            {
+                enabled = PolygonFillRendering.AaEnabled,
+                epsilon = PolygonFillRendering.AaEpsilon,
+                maxVertexOffsetPixels = PolygonFillRendering.AaMaxVertexOffsetPixels,
+            },
             brushes = capture.Brushes,
             nodes,
         });

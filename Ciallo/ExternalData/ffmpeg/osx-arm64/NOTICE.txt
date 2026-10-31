@@ -1,12 +1,10 @@
-FFmpeg 8.1.2 (Shaka build n8.1.2-1)
+FFmpeg 8.1
 Copyright (c) the FFmpeg developers and contributors.
 
 This executable is a separate program distributed with Ciallo.
-License: GPL-3.0-or-later; see LICENSE.txt.
-Binary supplier: https://github.com/shaka-project/static-ffmpeg-binaries
-Binary download: https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-osx-arm64
-SHA-256: e7b9fcd97f95f333512d6e8b8ac24d9dbc08f189f36047695499bd7b57214b22
-FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/n8.1.2
-Build scripts: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1
-Dependency versions: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1/versions.txt
+License: GPL-2.0-or-later; see LICENSE.txt.
+Binary supplier: https://www.osxexperts.net/
+Binary archive: https://www.osxexperts.net/ffmpeg81arm.zip
+Archive SHA-256: ebb82529562b71170807bbc6b0e7eb4f0b13af8cbb0e085bb9e8f6fe709598ad
+FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/n8.1
 Build configuration and enabled libraries: run ffmpeg -version.

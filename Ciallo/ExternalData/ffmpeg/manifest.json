@@ -1,32 +1,41 @@
 {
   "win-x64": {
-    "version": "8.1.2",
-    "url": "https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-win-x64.exe",
-    "license": "GPL-3.0-or-later",
-    "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1.2",
-    "build": "https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1",
+    "version": "n8.1.3-9-g29e619e767",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-win64-lgpl-8.1.zip",
+    "archive_sha256": "4a7642b2264c03e8a0ce8a3825b933ee5580656f45695a086fe7e294045ffc0a",
+    "archive_format": "zip",
+    "archive_entry": "ffmpeg-n8.1.3-9-g29e619e767-win64-lgpl-8.1/bin/ffmpeg.exe",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/29e619e767",
+    "build": "https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-09-30-13-08",
     "executable": "ffmpeg.exe",
-    "sha256": "4044b3924c977ad31229d504c5d5b8685f9553124fbaff6e9c99048b42830341",
-    "bytes": 53763072
+    "sha256": "3d2e4806d8ab7194705718e5c5b39a86d7b42ba8396c7f5e36f2abe65b7145ab",
+    "bytes": 134088704
   },
   "linux-x64": {
-    "version": "8.1.2",
-    "url": "https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64-ubuntu-22.04",
-    "license": "GPL-3.0-or-later",
-    "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1.2",
-    "build": "https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1",
+    "version": "n8.1.3-9-g29e619e767",
+    "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-8.1.tar.xz",
+    "archive_sha256": "dfa863a00ca81f1bdf58a372b18cff4820f0017e55de32778de8ecd8ed92a02e",
+    "archive_format": "tar.xz",
+    "archive_entry": "ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-8.1/bin/ffmpeg",
+    "license": "LGPL-3.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/29e619e767",
+    "build": "https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-09-30-13-08",
     "executable": "ffmpeg",
-    "sha256": "04f43cee9a2abe819b5d576a1b6b27f907f047472b815e305cf322e10bf78ac4",
-    "bytes": 45669568
+    "sha256": "d107dfbdf23395f8d15e7033bc2457c36af45d742a34df0f359cc21e3727ce87",
+    "bytes": 142096680
   },
   "osx-arm64": {
-    "version": "8.1.2",
-    "url": "https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-osx-arm64",
-    "license": "GPL-3.0-or-later",
-    "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1.2",
-    "build": "https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1",
+    "version": "8.1",
+    "url": "https://www.osxexperts.net/ffmpeg81arm.zip",
+    "archive_sha256": "ebb82529562b71170807bbc6b0e7eb4f0b13af8cbb0e085bb9e8f6fe709598ad",
+    "archive_format": "zip",
+    "archive_entry": "ffmpeg",
+    "license": "GPL-2.0-or-later",
+    "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1",
+    "build": "https://www.osxexperts.net/",
     "executable": "ffmpeg",
-    "sha256": "e7b9fcd97f95f333512d6e8b8ac24d9dbc08f189f36047695499bd7b57214b22",
-    "bytes": 34074040
+    "sha256": "9a08d61f9328e8164ba560ee7a79958e357307fcfeea6fe626b7d66cdc287028",
+    "bytes": 51860280
   }
 }

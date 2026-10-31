@@ -21,23 +21,34 @@ When needed, prepare the current platform's executable from the repository root
 ./engine.sh ffmpeg all
 ```
 
-Supported targets are `win-x64`, `linux-x64`, and `osx-arm64`. All three use
-FFmpeg 8.1.2 from the Shaka project's
-[versioned release `n8.1.2-1`](https://github.com/shaka-project/static-ffmpeg-binaries/releases/tag/n8.1.2-1).
-Linux uses the Ubuntu 22.04 build, with FFmpeg libraries linked statically and
-system libraries supplied by the distribution. `manifest.json` records each release
-asset's fixed URL, version, license, size, and SHA-256 hash. Only the manifest,
-license notices, and setup code are committed; executables are ignored by Git.
+Supported targets are `win-x64`, `linux-x64`, and `osx-arm64`:
+
+| Target | Binary supplier | Pinned version |
+| --- | --- | --- |
+| Windows x64, Linux x64 | [BtbN monthly release](https://github.com/BtbN/FFmpeg-Builds/releases/tag/autobuild-2026-09-30-13-08) | `n8.1.3-9-g29e619e767`, static LGPL build |
+| macOS ARM64 | [OSXExperts](https://www.osxexperts.net/ffmpeg81arm.zip) | FFmpeg 8.1 |
+
+BtbN retains the last build of each month for two years. Update these pinned
+downloads before September 2028; they are not permanent archives. OSXExperts uses
+a versioned URL but does not publish a retention guarantee. Linux requires
+glibc 2.28 and kernel 4.18 or newer.
+
+`manifest.json` records the download URLs, versions, licenses, archive formats and
+entries, executable sizes, and SHA-256 hashes of both archives and executables.
+Only the manifest, license notices, and setup code are committed; executables are
+ignored by Git.
 
 The command verifies the installed executable and reuses it when it matches.
-Otherwise it downloads the executable into `.ciallo/ffmpeg-downloads/`, verifies
-its SHA-256 hash, and installs it with execution permissions using an atomic
-rename. Verified cached executables are reused. A failed download or verification
-leaves the previously installed executable intact. No archive extraction is needed.
+Otherwise it downloads the archive into `.ciallo/ffmpeg-downloads/`, verifies
+its SHA-256 hash, extracts only the executable, and verifies the executable hash
+before installing it with execution permissions using an atomic rename. Verified
+cached archives are reused. A failed download or verification leaves the previously
+installed executable intact. ZIP extraction requires `unzip`; Linux archives
+require `tar` with xz support.
 
-The bundled FFmpeg executables use GPL-3.0-or-later. Each platform's `NOTICE.txt`
-links to the upstream source, dependency versions, and build scripts; `LICENSE.txt`
-contains the GPLv3 license distributed with FFmpeg.
+The Windows and Linux executables use LGPL-3.0-or-later; the macOS executable uses
+GPL-2.0-or-later. Each platform's `NOTICE.txt` identifies its supplier, source,
+and build information; `LICENSE.txt` contains the corresponding license text.
 
 Run the command before using PNG export, running its integration tests, or
 packaging Ciallo, and rerun it when the manifest changes. `engine.sh setup`,
@@ -62,8 +73,9 @@ chmod 755 /path/to/export/ffmpeg/ffmpeg
 CI applies these permissions before the PNG encoding check and preserves them
 in the Linux ZIP package.
 
-To update the binaries, select a Shaka versioned release for all three platforms,
-verify the downloaded executables against the release asset SHA-256 digests, update
+To update the binaries, select a retained BtbN month-end release for Windows and
+Linux and a versioned OSXExperts release for macOS. Verify the archives against
+upstream checksums where provided, calculate each executable's hash, update
 `manifest.json` and the platform's notices, run `./engine.sh ffmpeg <target>`, and run
 `dotnet test Ciallo/Ciallo.csproj --filter FullyQualifiedName~ExportPngTests`.
 The release workflow also runs the executable from its exported location and

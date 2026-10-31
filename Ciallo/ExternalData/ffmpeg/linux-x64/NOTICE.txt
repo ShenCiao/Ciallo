@@ -1,12 +1,12 @@
-FFmpeg 8.1.2 (Shaka build n8.1.2-1)
+FFmpeg n8.1.3-9-g29e619e767 (BtbN monthly build, 2026-09-30)
 Copyright (c) the FFmpeg developers and contributors.
 
 This executable is a separate program distributed with Ciallo.
-License: GPL-3.0-or-later; see LICENSE.txt.
-Binary supplier: https://github.com/shaka-project/static-ffmpeg-binaries
-Binary download: https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64-ubuntu-22.04
-SHA-256: 04f43cee9a2abe819b5d576a1b6b27f907f047472b815e305cf322e10bf78ac4
-FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/n8.1.2
-Build scripts: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1
-Dependency versions: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1/versions.txt
+License: LGPL-3.0-or-later; see LICENSE.txt.
+Binary supplier: https://github.com/BtbN/FFmpeg-Builds
+Binary archive: https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-8.1.tar.xz
+Archive SHA-256: dfa863a00ca81f1bdf58a372b18cff4820f0017e55de32778de8ecd8ed92a02e
+Executable SHA-256: d107dfbdf23395f8d15e7033bc2457c36af45d742a34df0f359cc21e3727ce87
+FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/29e619e767
+Build scripts: https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-09-30-13-08
 Build configuration and enabled libraries: run ffmpeg -version.

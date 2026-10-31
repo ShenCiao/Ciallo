@@ -11,13 +11,13 @@
   },
   "linux-x64": {
     "version": "8.1.2",
-    "url": "https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64",
+    "url": "https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64-ubuntu-22.04",
     "license": "GPL-3.0-or-later",
     "source": "https://github.com/FFmpeg/FFmpeg/tree/n8.1.2",
     "build": "https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1",
     "executable": "ffmpeg",
-    "sha256": "9eac5b2b5076db5ff853a6fa0dcd6b8de7d0cac8481eadda6c47cd935825f1ee",
-    "bytes": 48299480
+    "sha256": "04f43cee9a2abe819b5d576a1b6b27f907f047472b815e305cf322e10bf78ac4",
+    "bytes": 45669568
   },
   "osx-arm64": {
     "version": "8.1.2",

@@ -24,7 +24,8 @@ When needed, prepare the current platform's executable from the repository root
 Supported targets are `win-x64`, `linux-x64`, and `osx-arm64`. All three use
 FFmpeg 8.1.2 from the Shaka project's
 [versioned release `n8.1.2-1`](https://github.com/shaka-project/static-ffmpeg-binaries/releases/tag/n8.1.2-1).
-The Linux asset is the fully static build. `manifest.json` records each release
+Linux uses the Ubuntu 22.04 build, with FFmpeg libraries linked statically and
+system libraries supplied by the distribution. `manifest.json` records each release
 asset's fixed URL, version, license, size, and SHA-256 hash. Only the manifest,
 license notices, and setup code are committed; executables are ignored by Git.
 

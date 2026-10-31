@@ -4,8 +4,8 @@ Copyright (c) the FFmpeg developers and contributors.
 This executable is a separate program distributed with Ciallo.
 License: GPL-3.0-or-later; see LICENSE.txt.
 Binary supplier: https://github.com/shaka-project/static-ffmpeg-binaries
-Binary download: https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64
-SHA-256: 9eac5b2b5076db5ff853a6fa0dcd6b8de7d0cac8481eadda6c47cd935825f1ee
+Binary download: https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-linux-x64-ubuntu-22.04
+SHA-256: 04f43cee9a2abe819b5d576a1b6b27f907f047472b815e305cf322e10bf78ac4
 FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/n8.1.2
 Build scripts: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1
 Dependency versions: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1/versions.txt

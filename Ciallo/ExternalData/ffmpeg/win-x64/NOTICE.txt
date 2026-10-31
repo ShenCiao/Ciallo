@@ -1,10 +1,12 @@
-FFmpeg n8.1.3-14-g330caae0c1
+FFmpeg 8.1.2 (Shaka build n8.1.2-1)
 Copyright (c) the FFmpeg developers and contributors.
 
 This executable is a separate program distributed with Ciallo.
-License: LGPL-3.0-or-later; see LICENSE.txt.
-Binary supplier: https://github.com/BtbN/FFmpeg-Builds
-Binary archive: https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-06-13-06/ffmpeg-n8.1.3-14-g330caae0c1-win64-lgpl-8.1.zip
-Archive SHA-256: 0b61370a3ed65970dae2624784a22a7667365431953ec1784f57eed10a06efd3
-FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/330caae0c1
+License: GPL-3.0-or-later; see LICENSE.txt.
+Binary supplier: https://github.com/shaka-project/static-ffmpeg-binaries
+Binary download: https://github.com/shaka-project/static-ffmpeg-binaries/releases/download/n8.1.2-1/ffmpeg-win-x64.exe
+SHA-256: 4044b3924c977ad31229d504c5d5b8685f9553124fbaff6e9c99048b42830341
+FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/n8.1.2
+Build scripts: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1
+Dependency versions: https://github.com/shaka-project/static-ffmpeg-binaries/tree/n8.1.2-1/versions.txt
 Build configuration and enabled libraries: run ffmpeg -version.

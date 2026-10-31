@@ -10,26 +10,23 @@ namespace Ciallo.Tool;
 
 public static class ShapeConversionActions
 {
-    public static bool CanConvert(Entity layer, IReadOnlyCollection<Entity> selected) =>
-        selected.Count > 0
-        && selected.All(shape => shape.Get<LayerTreeNode>().ParentValue == layer)
-        && (selected.All(shape => shape.Has<StrokeSetting>())
-            || selected.All(shape => shape.Has<FilledPolygonSetting>()));
+    public static bool CanConvert(IEnumerable<Entity> selected, bool toStroke) =>
+        selected.Any(shape => toStroke ? shape.Has<FilledPolygonSetting>() : shape.Has<StrokeSetting>());
 
-    public static bool Apply(Entity layer)
+    public static bool Apply(Entity document, bool toStroke)
     {
-        var manager = layer.Document.Get<SelectionManager>();
+        var manager = document.Get<SelectionManager>();
         var selection = manager.SelectedShapes;
         Entity[] before = [.. selection];
-        if (!CanConvert(layer, before)) return false;
-        bool toStroke = before[0].Has<FilledPolygonSetting>();
+        var sources = before.Where(shape => toStroke ? shape.Has<FilledPolygonSetting>() : shape.Has<StrokeSetting>()).ToArray();
+        if (sources.Length == 0) return false;
         var brush = toStroke ? manager.WorkingStrokeBrush.Value : manager.WorkingVectorFillBrush.Value;
         if (brush.IsNull) return false;
 
         // Normalize only to discover real boundaries/empty regions. Stroke-to-fill keeps
         // the original path positions, including self-intersections, just like Paint Fill.
         var replacements = new Dictionary<Entity, ImmutableArray<ImmutableArray<Vector2>>>();
-        foreach (var source in before)
+        foreach (var source in sources)
         {
             var positions = source.Get<SampledPolyline>().Positions.Value;
             if (positions.Length < 3) continue;
@@ -45,11 +42,13 @@ public static class ShapeConversionActions
             ? brush.Get<StrokeBrushSetting>().ToRadiusSampler()(1f)
             : AppPreference.StrokeWireframeRadius;
         var results = new Dictionary<Entity, List<Entity>>();
-        var command = new CommandBuilder(toStroke ? "Convert to strokes" : "Convert to filled polygons", layer);
+        var command = new CommandBuilder(toStroke ? "Convert to strokes" : "Convert to filled polygons", document);
         command.Commands.Add(new DelegateCommand(selection.Clear, () => SetSelection(before)));
         foreach (var (source, rings) in replacements.OrderByDescending(pair => pair.Key.Get<LayerTreeNode>().Index))
         {
-            int index = source.Get<LayerTreeNode>().Index;
+            var sourceNode = source.Get<LayerTreeNode>();
+            var layer = sourceNode.ParentValue;
+            int index = sourceNode.Index;
             command.SetTarget(source).RemoveFromLayerTree().DeleteShape();
             List<Entity> converted = [];
             results.Add(source, converted);

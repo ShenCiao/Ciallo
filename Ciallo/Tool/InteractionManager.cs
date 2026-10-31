@@ -112,9 +112,9 @@ public static partial class InteractionManager
                 var nextLayers = (ImmutableArray<Entity>)transition.Parameters[0];
                 bool changed = !_selectedLayers.SequenceEqual(nextLayers);
                 _selectedLayers = nextLayers;
-                // Cancel may restore the old shape selection. Clear after exit and before the
-                // next interaction enters, only when the ordered layer selection actually changes.
-                if (changed) _document.Get<SelectionManager>().SelectedShapes.Clear();
+                // Cancel may restore the old selection. Reconcile after exit so added layers
+                // and a new primary layer keep selected objects in the remaining scope.
+                if (changed) _document.Get<SelectionManager>().RetainShapesInLayers(nextLayers);
             }
             else if (transition.Trigger == TimelineRollingChanged.Trigger)
             {

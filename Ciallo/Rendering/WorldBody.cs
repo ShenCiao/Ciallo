@@ -66,7 +66,20 @@ public partial class WorldBody : BodyHolder
             Position = _paintPanel.ToCameraWorldPosition(CursorWorldPosition),
             CollisionMask = (uint)AppGodotLayers.Physics2DLayerMask.Stroke,
         };
-        var hits = GetWorld2D().DirectSpaceState.IntersectPoint(pointQuery, 32);
+        List<Body> hits = [];
+        Array<Rid> exclude = [];
+        const int batchSize = 32;
+        while (true)
+        {
+            var batch = GetWorld2D().DirectSpaceState.IntersectPoint(pointQuery, batchSize);
+            foreach (var hit in batch.Select(hit => (Body)hit["collider"]).Distinct())
+            {
+                hits.Add(hit);
+                exclude.Add(hit.GetRid());
+            }
+            if (batch.Count < batchSize) break;
+            pointQuery.Exclude = exclude;
+        }
         var body = hits.Count > 0 ? TopMostFromHits(hits) : null;
 
         SetHoveringBody(body);
@@ -167,11 +180,9 @@ public partial class WorldBody : BodyHolder
         return n.GetIndexPathTo(this);
     }
 
-    private Body TopMostFromHits(Array<Dictionary> hits)
+    private Body TopMostFromHits(IEnumerable<Body> hits)
     {
         return hits
-            .Select(d => (Body)d["collider"])
-            .Distinct()
             .OrderByDescending(GetCanvasLayer)
             .ThenByDescending(n => n.ZIndex)
             .ThenByDescending(GetIndexPath, NodeIndexPathComparer.Instance) // child parent hierarchy
@@ -190,16 +201,17 @@ public partial class WorldBody : BodyHolder
         };
         List<Entity> result = [];
         Array<Rid> exclude = [];
-        const int maxIteration = 256;
-        // IntersectShape returns multiple shapes rather than multiple physics bodies.
-        // So set max result to 1 and exclude the hit body in the next query to get all bodies in the rect.
-        for (int i = 0; i < maxIteration; i++)
+        const int batchSize = 64;
+        // A body may produce many shape hits; exclude complete bodies between batches.
+        while (true)
         {
-            var hit = GetWorld2D().DirectSpaceState.IntersectShape(rectQuery, 1);
-            if (hit.Count == 0) break;
-            var body = (Body)hit[0]["collider"];
-            result.Add(body.SelfEntity);
-            exclude.Add(body.GetRid());
+            var batch = GetWorld2D().DirectSpaceState.IntersectShape(rectQuery, batchSize);
+            foreach (var body in batch.Select(hit => (Body)hit["collider"]).Distinct())
+            {
+                if (!body.SelfEntity.IsNull) result.Add(body.SelfEntity);
+                exclude.Add(body.GetRid());
+            }
+            if (batch.Count < batchSize) break;
             rectQuery.Exclude = exclude;
         }
         return result;

@@ -33,13 +33,13 @@ public sealed class ShapeBrushSelection : IDisposable
         DocumentBrushes = kind == ShapeBrushKind.Stroke ? brushes.StrokeBrushes : brushes.VectorFillBrushes;
         DocumentBrushes.ObserveChanged().Subscribe(_ => Refresh()).AddTo(_subscriptions);
         _selection.SelectedShapes.ObserveChanged().Subscribe(_ => RefreshSelection()).AddTo(_subscriptions);
-        _selection.PrimaryLayer.Subscribe(layer =>
+        _selection.SelectedLayers.Subscribe(layers =>
         {
             _layerSubscriptions.Dispose();
             _layerSubscriptions = new();
-            if (!layer.IsNull)
-                layer.Get<LayerTreeNode>().ObserveMutation().Subscribe(_ => BindShapes(layer)).AddTo(_layerSubscriptions);
-            BindShapes(layer);
+            foreach (var layer in layers)
+                layer.Get<LayerTreeNode>().ObserveMutation().Subscribe(_ => BindShapes(layers)).AddTo(_layerSubscriptions);
+            BindShapes(layers);
         }).AddTo(_subscriptions);
     }
 
@@ -55,11 +55,11 @@ public sealed class ShapeBrushSelection : IDisposable
             : shape.Get<VectorFillMarkerSetting>().BrushE;
     }
 
-    private void BindShapes(Entity layer)
+    private void BindShapes(ImmutableArray<Entity> layers)
     {
         _shapeSubscriptions.Dispose();
         _shapeSubscriptions = new();
-        _shapes = layer.IsNull ? [] : layer.Get<LayerTreeNode>().Children.Where(MatchesKind).ToArray();
+        _shapes = layers.SelectMany(layer => layer.Get<LayerTreeNode>().Children).Where(MatchesKind).ToArray();
         foreach (var shape in _shapes)
             Brush(shape).Skip(1).Subscribe(_ => Refresh()).AddTo(_shapeSubscriptions);
         Refresh();

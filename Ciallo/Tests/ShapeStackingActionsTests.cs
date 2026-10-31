@@ -39,22 +39,38 @@ public class ShapeStackingActionsTests
             layer.Get<LayerTreeNode>().AddChild(shape);
             return shape;
         })];
+        var otherLayer = _document.World.Create();
+        otherLayer.Add(new LayerTreeNode());
+        _document.Get<LayerTreeNode>().AddChild(otherLayer);
+        Entity[] otherShapes = [.. Enumerable.Range(0, 3).Select(_ =>
+        {
+            var shape = _document.World.Create();
+            shape.Add(new LayerTreeNode());
+            otherLayer.Get<LayerTreeNode>().AddChild(shape);
+            return shape;
+        })];
         var selection = _document.Get<SelectionManager>().SelectedShapes;
-        selection.AddRange([shapes[3], shapes[1]]); // Click order differs from stacking order.
+        selection.AddRange([shapes[3], otherShapes[1], shapes[1]]); // Click order differs from stacking order.
         Entity[] expected = toTop
             ? [shapes[0], shapes[2], shapes[4], shapes[1], shapes[3]]
             : [shapes[1], shapes[3], shapes[0], shapes[2], shapes[4]];
         var history = _document.Get<CommandManager>();
+        Entity[] otherExpected = toTop
+            ? [otherShapes[0], otherShapes[2], otherShapes[1]]
+            : [otherShapes[1], otherShapes[0], otherShapes[2]];
 
-        AssertThat(ShapeStackingActions.MoveSelection(layer, toTop)).IsTrue();
+        AssertThat(ShapeStackingActions.MoveSelection(_document, toTop)).IsTrue();
         AssertThat(layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(expected);
-        AssertThat(selection.ToArray()).ContainsExactly(shapes[3], shapes[1]);
-        AssertThat(ShapeStackingActions.MoveSelection(layer, toTop)).IsFalse();
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(otherExpected);
+        AssertThat(selection.ToArray()).ContainsExactly(shapes[3], otherShapes[1], shapes[1]);
+        AssertThat(ShapeStackingActions.MoveSelection(_document, toTop)).IsFalse();
         history.Undo();
         AssertThat(layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(shapes);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(otherShapes);
         AssertThat(history.HasUndo).IsFalse();
         history.Redo();
         AssertThat(layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(expected);
-        AssertThat(selection.ToArray()).ContainsExactly(shapes[3], shapes[1]);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(otherExpected);
+        AssertThat(selection.ToArray()).ContainsExactly(shapes[3], otherShapes[1], shapes[1]);
     }
 }

@@ -118,28 +118,29 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
+        layers.All(layer => layer.Has<ShapeLayerSetting>() || layer.Has<VectorFillLayerSetting>());
 
     protected override void OnActivated()
     {
         _modeChangedSubscription = Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
-        if (PrimaryLayer.Has<VectorFillLayerSetting>())
-            PrimaryLayer.Get<OverlayHolder>().Visible = true;
-        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
-        // Guard selection
-        var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
-        var deselect = selectedShapes
-            .Where(e => e.Get<LayerTreeNode>().ParentValue != PrimaryLayer).Reverse().ToArray();
-        foreach (var e in deselect)
-            selectedShapes.Remove(e);
+        foreach (var layer in SelectedLayers)
+        {
+            if (layer.Has<VectorFillLayerSetting>())
+                layer.Get<OverlayHolder>().Visible = true;
+            layer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
+        }
+        Document.Get<SelectionManager>().RetainShapesInLayers(SelectedLayers);
     }
 
     protected override void OnDeactivated()
     {
         _modeChangedSubscription.Dispose();
-        if (PrimaryLayer.Has<VectorFillLayerSetting>())
-            PrimaryLayer.Get<OverlayHolder>().Visible = false;
-        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        foreach (var layer in SelectedLayers)
+        {
+            if (layer.Has<VectorFillLayerSetting>())
+                layer.Get<OverlayHolder>().Visible = false;
+            layer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        }
     }
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
@@ -150,10 +151,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectAllButton = container.CreateButton("Select all").AddToChildOf(selectionButtonGroup);
         selectAllButton.Pressed += () =>
         {
-            var layerE = selectionManager.PrimaryLayer.CurrentValue;
-            if (layerE.IsDyingOrDead) return;
             selectionManager.SelectedShapes.Clear();
-            selectionManager.SelectedShapes.AddRange(layerE.Get<LayerTreeNode>().Children);
+            selectionManager.SelectedShapes.AddRange(SelectedLayers.SelectMany(layer => layer.Get<LayerTreeNode>().Children));
             Fire(Trigger.Refresh);
         };
         var deselectAllButton = container.CreateButton("Deselect").AddToChildOf(selectionButtonGroup);
@@ -178,36 +177,34 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         sendToBack.Name = "SendToBack";
         sendToBack.Pressed += () =>
         {
-            if (ShapeStackingActions.MoveSelection(PrimaryLayer, toTop: false)) Fire(Trigger.Refresh);
+            if (ShapeStackingActions.MoveSelection(Document, toTop: false)) Fire(Trigger.Refresh);
         };
         var bringToFront = container.CreateButton("Bring to front").AddToChildOf(stackingButtons);
         bringToFront.Name = "BringToFront";
         bringToFront.Pressed += () =>
         {
-            if (ShapeStackingActions.MoveSelection(PrimaryLayer, toTop: true)) Fire(Trigger.Refresh);
+            if (ShapeStackingActions.MoveSelection(Document, toTop: true)) Fire(Trigger.Refresh);
         };
 
-        var convertButton = container.CreateButton("Convert to filled polygons").AddToChildOf(container);
-        convertButton.Name = "ConvertSelectedShapes";
-        selectionChanged.CombineLatest(selectionManager.PrimaryLayer,
-                selectionManager.WorkingStrokeBrush, selectionManager.WorkingVectorFillBrush,
-                (_, layer, strokeBrush, fillBrush) => (layer, strokeBrush, fillBrush))
-            .Subscribe(state =>
-            {
-                convertButton.Visible = ShapeConversionActions.CanConvert(state.layer, selectedShapes.ToArray());
-                if (!convertButton.Visible) return;
-                bool toStroke = selectedShapes[0].Has<FilledPolygonSetting>();
-                convertButton.Text = toStroke ? "Convert to strokes" : "Convert to filled polygons";
-                convertButton.Disabled = (toStroke ? state.strokeBrush : state.fillBrush).IsNull;
-                convertButton.TooltipText = toStroke
-                    ? "Outline each boundary with the working stroke brush at full pressure."
-                    : "Close each stroke and fill it with the working fill brush. Empty regions are skipped.";
-            }).AddTo(convertButton);
-        convertButton.Pressed += () =>
+        foreach (bool toStroke in new[] { false, true })
         {
-            if (ShapeConversionActions.Apply(PrimaryLayer)) Fire(Trigger.Refresh);
-        };
-
+            var convertButton = container.CreateButton(toStroke ? "Convert to strokes" : "Convert to filled polygons")
+                .AddToChildOf(container);
+            convertButton.Name = toStroke ? "ConvertToStrokes" : "ConvertToFilledPolygons";
+            convertButton.TooltipText = toStroke
+                ? "Outline each boundary with the working stroke brush at full pressure."
+                : "Close each stroke and fill it with the working fill brush. Empty regions are skipped.";
+            var workingBrush = toStroke ? selectionManager.WorkingStrokeBrush : selectionManager.WorkingVectorFillBrush;
+            selectionChanged.CombineLatest(workingBrush, (_, brush) => brush).Subscribe(brush =>
+            {
+                convertButton.Visible = ShapeConversionActions.CanConvert(selectedShapes, toStroke);
+                convertButton.Disabled = brush.IsNull;
+            }).AddTo(convertButton);
+            convertButton.Pressed += () =>
+            {
+                if (ShapeConversionActions.Apply(Document, toStroke)) Fire(Trigger.Refresh);
+            };
+        }
         var booleanBox = container.CreateBox().AddToChildOf(container)
             .VisibleIf(selectionChanged, _ => selectedShapes.Count(shape => shape.Has<FilledPolygonSetting>()) >= 2);
         booleanBox.Name = "PolygonBooleanOperations";
@@ -218,13 +215,13 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             button.Name = operation.ToString();
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             button.TooltipText = operation == Geometry2D.PolyBooleanOperation.Difference
-                ? "Subtract all selected upper polygons from the bottom polygon. The result keeps the bottom polygon's fill brush."
-                : "Combine the selected polygons. The result keeps the bottom polygon's fill brush.";
+                ? "Within each layer, subtract selected upper polygons from the bottom polygon and keep its fill brush."
+                : "Within each layer, combine selected polygons and keep the bottom polygon's fill brush.";
             selectionChanged.Subscribe(_ => button.Disabled =
-                !PolygonBooleanActions.CanApplySelection(selectionManager.PrimaryLayer.CurrentValue, selectedShapes.ToArray())).AddTo(button);
+                !PolygonBooleanActions.CanApplySelection(selectedShapes)).AddTo(button);
             button.Pressed += () =>
             {
-                if (PolygonBooleanActions.ApplySelection(PrimaryLayer, operation)) Fire(Trigger.Refresh);
+                if (PolygonBooleanActions.ApplySelection(Document, operation)) Fire(Trigger.Refresh);
             };
         }
 

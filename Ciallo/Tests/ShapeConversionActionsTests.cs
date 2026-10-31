@@ -25,13 +25,7 @@ public class ShapeConversionActionsTests
     public void SetUp()
     {
         _document = AppDocumentManager.Create(new DocumentSetting());
-        _layer = _document.World.Create();
-        _layer.Add(new LayerTreeNode());
-        _layer.Add(new ShapeLayerSetting());
-        _layer.AddNode(new ShapeLayerView());
-        _layer.AddNode(new OverlayHolder());
-        _layer.AddNode(new BodyHolder());
-        _document.Get<LayerTreeNode>().AddChild(_layer);
+        _layer = AddLayer();
         _strokeBrush = _document.World.Create();
         _strokeBrush.Add(new StrokeBrushSetting());
         _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 7f;
@@ -53,7 +47,7 @@ public class ShapeConversionActionsTests
     }
 
     [TestCase]
-    public void HoledPolygonSplitsWithoutBridgesAndRestoresStackingSelectionAndBrushSnapshot()
+    public void HoledPolygonsAcrossLayersRestoreStackingSelectionAndBrushSnapshotTogether()
     {
         var outer = Rectangle(0, 0, 20, 20);
         var hole = Rectangle(5, 5, 15, 15);
@@ -61,17 +55,20 @@ public class ShapeConversionActionsTests
             { outer, hole.Reverse().ToArray() }.ConnectHoles();
         var bottom = AddShape([.. ring, ring[0]], false);
         var untouched = AddShape(Rectangle(30, 0, 40, 10), false);
-        var top = AddShape(Rectangle(50, 0, 60, 10), false);
+        var otherLayer = AddLayer();
+        var top = AddShape(Rectangle(50, 0, 60, 10), false, otherLayer);
+        var selectedStroke = AddShape(Rectangle(70, 0, 80, 10), true, otherLayer);
         var manager = _document.Get<SelectionManager>();
-        manager.SelectedShapes.AddRange([top, bottom]);
+        manager.SelectedShapes.AddRange([top, bottom, selectedStroke]);
         var history = _document.Get<CommandManager>();
 
-        AssertThat(ShapeConversionActions.Apply(_layer)).IsTrue();
+        AssertThat(ShapeConversionActions.Apply(_document, toStroke: true)).IsTrue();
         var after = manager.SelectedShapes.ToArray();
-        AssertThat(after.Length).IsEqual(3);
-        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched, after[0]);
+        AssertThat(after.Length).IsEqual(4);
+        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[0], selectedStroke);
         float expectedRadius = _strokeBrush.Get<StrokeBrushSetting>().ToRadiusSampler()(1f);
-        foreach (var shape in after)
+        foreach (var shape in after.Take(3))
         {
             var geometry = shape.Get<SampledPolyline>();
             AssertThat(shape.Get<StrokeSetting>().Brush.Value).IsEqual(_strokeBrush);
@@ -80,7 +77,7 @@ public class ShapeConversionActionsTests
             AssertThat(geometry.Radii.Value.All(r => r == expectedRadius)).IsTrue();
         }
         // Total perimeter is 80 + 40: no out-and-back bridge is stroked.
-        float perimeter = after.Skip(1).Sum(shape =>
+        float perimeter = after.Skip(1).Take(2).Sum(shape =>
         {
             var points = shape.Get<SampledPolyline>().Positions.Value;
             return Enumerable.Range(1, points.Length - 1).Sum(i => points[i].DistanceTo(points[i - 1]));
@@ -88,15 +85,18 @@ public class ShapeConversionActionsTests
         AssertThat(Mathf.Abs(perimeter - 120f) < 0.001f).IsTrue();
 
         history.Undo();
-        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(bottom, untouched, top);
-        AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(top, bottom);
+        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(bottom, untouched);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(top, selectedStroke);
+        AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(top, bottom, selectedStroke);
         AssertThat(history.HasUndo).IsFalse();
         manager.WorkingStrokeBrush.Value = Entity.Null;
         _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 20f;
         history.Redo();
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(after);
-        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched, after[0]);
-        AssertThat(after.All(shape => shape.Get<SampledPolyline>().Radii.Value.All(r => r == expectedRadius))).IsTrue();
+        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[0], selectedStroke);
+        AssertThat(after.Take(3).All(shape => shape.Get<SampledPolyline>().Radii.Value.All(r => r == expectedRadius))).IsTrue();
+        AssertThat(selectedStroke.Get<SampledPolyline>().Radii.Value.All(r => r == 2f)).IsTrue();
         RegisterHistoryNodesForCleanup();
     }
 
@@ -111,15 +111,15 @@ public class ShapeConversionActionsTests
         manager.SelectedShapes.AddRange([line, valid, point]);
         var history = _document.Get<CommandManager>();
 
-        AssertThat(ShapeConversionActions.Apply(_layer)).IsTrue();
+        AssertThat(ShapeConversionActions.Apply(_document, toStroke: false)).IsTrue();
         var fill = manager.SelectedShapes[1];
         AssertThat(fill.Get<FilledPolygonSetting>().BrushE.Value).IsEqual(_fillBrush);
         AssertThat(fill.Get<SampledPolyline>().Positions.Value.ToArray()).ContainsExactly(bowTie.Add(bowTie[0]).ToArray());
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(line, fill, point);
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(fill, point, line);
-        // The skipped strokes make the resulting selection mixed, hence non-convertible.
-        AssertThat(ShapeConversionActions.CanConvert(_layer, manager.SelectedShapes.ToArray())).IsFalse();
-        AssertThat(ShapeConversionActions.Apply(_layer)).IsFalse();
+        // A mixed selection stays convertible, but degenerate strokes produce no further change.
+        AssertThat(ShapeConversionActions.CanConvert(manager.SelectedShapes, toStroke: false)).IsTrue();
+        AssertThat(ShapeConversionActions.Apply(_document, toStroke: false)).IsFalse();
         history.Undo();
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(line, valid, point);
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(valid, point, line);
@@ -128,7 +128,7 @@ public class ShapeConversionActionsTests
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(line, fill, point);
         history.Undo();
         manager.SelectedShapes.Remove(valid);
-        AssertThat(ShapeConversionActions.Apply(_layer)).IsFalse();
+        AssertThat(ShapeConversionActions.Apply(_document, toStroke: false)).IsFalse();
         AssertThat(history.HasUndo).IsFalse();
         RegisterHistoryNodesForCleanup();
     }
@@ -146,13 +146,25 @@ public class ShapeConversionActionsTests
         }
     }
 
-    private Entity AddShape(ImmutableArray<Vector2> points, bool stroke)
+    private Entity AddLayer()
+    {
+        var layer = _document.World.Create();
+        layer.Add(new LayerTreeNode());
+        layer.Add(new ShapeLayerSetting());
+        layer.AddNode(AutoFree(new ShapeLayerView()));
+        layer.AddNode(AutoFree(new OverlayHolder()));
+        layer.AddNode(AutoFree(new BodyHolder()));
+        _document.Get<LayerTreeNode>().AddChild(layer);
+        return layer;
+    }
+
+    private Entity AddShape(ImmutableArray<Vector2> points, bool stroke, Entity layer = default)
     {
         var shape = _document.World.Create();
         var command = new CommandBuilder("Fixture", shape);
         if (stroke) command.NewStroke().SetProperty(e => e.Get<StrokeSetting>().Brush, _strokeBrush);
         else command.NewFilledPolygon().SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, _fillBrush);
-        command.AddToLayerTree(_layer).SetSampledPolyline(points,
+        command.AddToLayerTree(layer.IsNull ? _layer : layer).SetSampledPolyline(points,
             [.. Enumerable.Repeat(2f, points.Length)],
             [.. Enumerable.Repeat(0.25f, points.Length)],
             [.. Enumerable.Repeat(Vector2.Zero, points.Length)]).Do();

@@ -22,12 +22,9 @@ public class PolylineNoSelectionHover : Interaction
     {
         Subs = new();
         var worldBody = Document.Get<WorldBody>();
-        var layerBody = PrimaryLayer.Get<BodyHolder>();
-
-        // Enable cursor detections on shapes of primary layer
         worldBody.EnableHoverDetection = true;
         worldBody.CursorWorldPosition = data.WorldPosition;
-        layerBody.SetChildrenBodyCursor(Control.CursorShape.Move);
+        SetLayerCursors(Control.CursorShape.Move);
 
         // --- hover hinter
         Document.Get<WorldBody>().HoveringBody.Subscribe(ToggleWireframe).AddTo(Subs);
@@ -55,7 +52,7 @@ public class PolylineNoSelectionHover : Interaction
     public override void Cancel()
     {
         Subs.Dispose();
-        PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+        SetLayerCursors(Control.CursorShape.Arrow);
         Document.Get<WorldBody>().EnableHoverDetection = false;
 
         // overlays
@@ -108,17 +105,23 @@ public class PolylineNoSelectionHover : Interaction
 
         if (key.IsPressed() && key.Keycode == Key.Shift)
         {
-            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Arrow);
+            SetLayerCursors(Control.CursorShape.Arrow);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 
         if (key.IsReleased() && key.Keycode == Key.Shift)
         {
-            PrimaryLayer.Get<BodyHolder>().SetChildrenBodyCursor(Control.CursorShape.Move);
+            SetLayerCursors(Control.CursorShape.Move);
             Document.Get<WorldBody>().ForceUpdateCursor();
         }
 
         return false;
+    }
+
+    private static void SetLayerCursors(Control.CursorShape cursor)
+    {
+        foreach (var layer in SelectedLayers)
+            layer.Get<BodyHolder>().SetChildrenBodyCursor(cursor);
     }
 
     private static void DeleteShapes(Entity[] shapeEs)

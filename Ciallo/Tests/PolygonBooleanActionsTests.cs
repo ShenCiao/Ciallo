@@ -26,13 +26,7 @@ public class PolygonBooleanActionsTests
     public void SetUp()
     {
         _document = AppDocumentManager.Create(new DocumentSetting());
-        _layer = _document.World.Create();
-        _layer.Add(new LayerTreeNode());
-        _layer.Add(new ShapeLayerSetting());
-        _layer.AddNode(new ShapeLayerView());
-        _layer.AddNode(new OverlayHolder());
-        _layer.AddNode(new BodyHolder());
-        _document.Get<LayerTreeNode>().AddChild(_layer);
+        _layer = AddLayer();
         _brush = _document.World.Create();
         _brush.Add(new FillBrushSetting());
         _otherBrush = _document.World.Create();
@@ -63,7 +57,7 @@ public class PolygonBooleanActionsTests
         // Opposite to stacking order: operand direction must not depend on click order.
         selection.AddRange([cutter, bottom]);
         var history = _document.Get<CommandManager>();
-        AssertThat(PolygonBooleanActions.ApplySelection(_layer, Operation.Difference)).IsTrue();
+        AssertThat(PolygonBooleanActions.ApplySelection(_document, Operation.Difference)).IsTrue();
         var split = selection.ToArray();
         AssertThat(split.Length).IsEqual(2);
         CheckRenderedArea([.. split.Select(Positions)], 80);
@@ -78,12 +72,47 @@ public class PolygonBooleanActionsTests
         AssertThat(selection.ToArray()).ContainsExactly(split);
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(split[0], split[1], untouched);
 
-        PolygonBooleanActions.ApplySelection(_layer, Operation.Intersection);
+        PolygonBooleanActions.ApplySelection(_document, Operation.Intersection);
         AssertThat(selection.Count).IsEqual(0);
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(untouched);
         history.Undo();
         AssertThat(selection.ToArray()).ContainsExactly(split);
         CheckRenderedArea([.. selection.Select(Positions)], 80);
+        RegisterHistoryNodesForCleanup();
+    }
+
+    [TestCase]
+    public void CrossLayerDifferenceKeepsPerLayerOperandsAndRestoresAnEmptyLayerInOneUndo()
+    {
+        var otherLayer = AddLayer();
+        var singleLayer = AddLayer();
+        var bottom = AddPolygon(Rectangle(0, 0, 10, 10), _brush);
+        var cutter = AddPolygon(Rectangle(4, -1, 6, 11), _otherBrush);
+        var otherBottom = AddPolygon(Rectangle(0, 0, 5, 5), _otherBrush, otherLayer);
+        var otherCutter = AddPolygon(Rectangle(-1, -1, 6, 6), _brush, otherLayer);
+        var single = AddPolygon(Rectangle(0, 0, 10, 10), _brush, singleLayer);
+        var selection = _document.Get<SelectionManager>().SelectedShapes;
+        Entity[] before = [otherCutter, single, cutter, bottom, otherBottom];
+        selection.AddRange(before);
+        var history = _document.Get<CommandManager>();
+
+        AssertThat(PolygonBooleanActions.ApplySelection(_document, Operation.Difference)).IsTrue();
+        var results = _layer.Get<LayerTreeNode>().Children.ToArray();
+        AssertThat(results.Length).IsEqual(2);
+        CheckRenderedArea([.. results.Select(Positions)], 80);
+        AssertThat(results.All(shape => shape.Get<FilledPolygonSetting>().BrushE.Value == _brush)).IsTrue();
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.Count).IsEqual(0);
+        AssertThat(singleLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(single);
+        AssertThat(selection.ToArray()).ContainsExactly(single, results[0], results[1]);
+        AssertThat(PolygonBooleanActions.CanApplySelection([results[0], single])).IsFalse();
+        history.Undo();
+        AssertThat(selection.ToArray()).ContainsExactly(before);
+        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(bottom, cutter);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(otherBottom, otherCutter);
+        AssertThat(history.HasUndo).IsFalse();
+        history.Redo();
+        AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(results);
+        AssertThat(otherLayer.Get<LayerTreeNode>().Children.Count).IsEqual(0);
         RegisterHistoryNodesForCleanup();
     }
 
@@ -130,10 +159,22 @@ public class PolygonBooleanActionsTests
         }
     }
 
-    private Entity AddPolygon(ImmutableArray<Vector2> ring, Entity brush)
+    private Entity AddLayer()
+    {
+        var layer = _document.World.Create();
+        layer.Add(new LayerTreeNode());
+        layer.Add(new ShapeLayerSetting());
+        layer.AddNode(AutoFree(new ShapeLayerView()));
+        layer.AddNode(AutoFree(new OverlayHolder()));
+        layer.AddNode(AutoFree(new BodyHolder()));
+        _document.Get<LayerTreeNode>().AddChild(layer);
+        return layer;
+    }
+
+    private Entity AddPolygon(ImmutableArray<Vector2> ring, Entity brush, Entity layer = default)
     {
         var shape = _document.World.Create();
-        new CommandBuilder("Fixture", shape).NewFilledPolygon().AddToLayerTree(_layer)
+        new CommandBuilder("Fixture", shape).NewFilledPolygon().AddToLayerTree(layer.IsNull ? _layer : layer)
             .SetSampledPolyline(ring, [.. Enumerable.Repeat(1f, ring.Length)],
                 [.. Enumerable.Repeat(1f, ring.Length)], [.. Enumerable.Repeat(Vector2.Zero, ring.Length)])
             .SetProperty(entity => entity.Get<FilledPolygonSetting>().BrushE, brush).Do();

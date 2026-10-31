@@ -35,6 +35,14 @@ public class SelectionManager
             .ToReadOnlyReactiveProperty();
     }
 
+    public void RetainShapesInLayers(ImmutableArray<Entity> layers)
+    {
+        var retainedLayers = layers.ToHashSet();
+        foreach (var shape in SelectedShapes.ToArray().Reverse())
+            if (!retainedLayers.Contains(shape.Get<LayerTreeNode>().ParentValue))
+                SelectedShapes.Remove(shape);
+    }
+
     public void InitWorkingCelFolder(LayerTreeNode root)
     {
         var layerTreeChanged = root.ObserveMutation().DebounceFrame(1).ObserveOn(GodotFrameProvider.BeforeProcess);

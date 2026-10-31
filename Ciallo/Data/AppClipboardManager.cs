@@ -40,7 +40,9 @@ public static class AppClipboardManager
     {
         Clear();
 
-        foreach (var shapeE in shapeEs)
+        // Flatten into the paste target in document stacking order, independent of click order.
+        foreach (var shapeE in shapeEs.OrderBy(shape => shape.Document.Get<LayerTreeNode>().FindPathTo(shape),
+                     NodeIndexPathComparer.Instance))
         {
             var clipboardE = ClipboardWorld.Create();
             NewShapeCmdBase.CreateCopyCommand(shapeE).CreateDataOnly(clipboardE);

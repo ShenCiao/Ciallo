@@ -23,17 +23,24 @@ public static class PolygonBooleanActions
         _ => throw new ArgumentOutOfRangeException(nameof(operation)),
     };
 
-    public static bool CanApplySelection(Entity layer, IReadOnlyCollection<Entity> selected) =>
-        selected.Count >= 2 && selected.All(shape => shape.Has<FilledPolygonSetting>()
-            && shape.Get<LayerTreeNode>().ParentValue == layer);
+    public static bool CanApplySelection(IEnumerable<Entity> selected) =>
+        SelectedPolygonsByLayer(selected).Any(group => group.Count() >= 2);
 
-    public static bool ApplySelection(Entity layer, Operation operation)
+    private static IEnumerable<IGrouping<Entity, Entity>> SelectedPolygonsByLayer(IEnumerable<Entity> selected) =>
+        selected.Where(shape => shape.Has<FilledPolygonSetting>()).GroupBy(shape => shape.Get<LayerTreeNode>().ParentValue);
+
+    public static bool ApplySelection(Entity document, Operation operation)
     {
-        var selected = layer.Document.Get<SelectionManager>().SelectedShapes.ToArray();
-        if (!CanApplySelection(layer, selected)) return false;
-        var sources = selected.OrderBy(shape => shape.Get<LayerTreeNode>().Index).ToArray();
-        var result = PolygonBoolean.Apply(sources.Select(Positions), operation);
-        Commit(layer, Label(operation), [new(sources, result, Brush(sources[0]))], selectResults: true);
+        var selected = document.Get<SelectionManager>().SelectedShapes.ToArray();
+        List<Replacement> replacements = [];
+        foreach (var group in SelectedPolygonsByLayer(selected).Where(group => group.Count() >= 2))
+        {
+            var sources = group.OrderBy(shape => shape.Get<LayerTreeNode>().Index).ToArray();
+            var result = PolygonBoolean.Apply(sources.Select(Positions), operation);
+            replacements.Add(new(group.Key, sources, result, Brush(sources[0])));
+        }
+        if (replacements.Count == 0) return false;
+        Commit(document, Label(operation), replacements, selectResults: true);
         return true;
     }
 
@@ -53,7 +60,7 @@ public static class PolygonBooleanActions
         if (operation is Operation.Difference or Operation.Intersection)
         {
             foreach (var target in targets)
-                replacements.Add(new([target], PolygonBoolean.Apply([Positions(target), ring], operation), brush));
+                replacements.Add(new(layer, [target], PolygonBoolean.Apply([Positions(target), ring], operation), brush));
         }
         else
         {
@@ -62,28 +69,29 @@ public static class PolygonBooleanActions
             var existing = PolygonBoolean.Apply(targets.Select(Positions), Operation.Union);
             var result = PolygonBoolean.Apply(existing.Append(ring), operation);
             if (targets.Length == 0 && result.IsEmpty) return;
-            replacements.Add(new(targets, result, brush));
+            replacements.Add(new(layer, targets, result, brush));
         }
-        Commit(layer, $"Paint Fill {Label(operation)}", replacements, selectedPolygons.Count > 0);
+        Commit(layer.Document, $"Paint Fill {Label(operation)}", replacements, selectedPolygons.Count > 0);
     }
 
-    private sealed record Replacement(Entity[] Sources, ImmutableArray<ImmutableArray<Vector2>> Polygons, Entity Brush);
+    private sealed record Replacement(Entity Layer, Entity[] Sources, ImmutableArray<ImmutableArray<Vector2>> Polygons, Entity Brush);
 
     private static ImmutableArray<Vector2> Positions(Entity shape) => shape.Get<SampledPolyline>().Positions.Value;
     private static Entity Brush(Entity shape) => shape.Get<FilledPolygonSetting>().BrushE.Value;
 
-    private static void Commit(Entity layer, string action, IReadOnlyList<Replacement> replacements, bool selectResults)
+    private static void Commit(Entity document, string action, IReadOnlyList<Replacement> replacements, bool selectResults)
     {
-        var selection = layer.Document.Get<SelectionManager>().SelectedShapes;
+        var selection = document.Get<SelectionManager>().SelectedShapes;
         Entity[] before = [.. selection];
         var removed = replacements.SelectMany(replacement => replacement.Sources).ToHashSet();
         List<Entity> after = [.. before.Where(shape => !removed.Contains(shape))];
-        var command = new CommandBuilder(action, layer);
+        var command = new CommandBuilder(action, document);
 
         // Restore selection only after undo has restored its objects and their tree positions.
         command.Commands.Add(new DelegateCommand(selection.Clear, () => SetSelection(before)));
         foreach (var replacement in replacements.OrderByDescending(InsertionIndex))
         {
+            var layer = replacement.Layer;
             int index = InsertionIndex(replacement);
             foreach (var source in replacement.Sources.OrderByDescending(shape => shape.Get<LayerTreeNode>().Index))
                 command.SetTarget(source).RemoveFromLayerTree().DeleteShape();
@@ -104,7 +112,7 @@ public static class PolygonBooleanActions
         return;
 
         int InsertionIndex(Replacement replacement) => replacement.Sources.Length == 0
-            ? layer.Get<LayerTreeNode>().Children.Count
+            ? replacement.Layer.Get<LayerTreeNode>().Children.Count
             : replacement.Sources.Min(shape => shape.Get<LayerTreeNode>().Index);
 
         void SetSelection(IEnumerable<Entity> shapes)

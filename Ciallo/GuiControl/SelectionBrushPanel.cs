@@ -47,9 +47,9 @@ public partial class SelectionBrushPanel : VBoxContainer
         {
             palette.SetBrushes(brushes);
             palette.Visible = brushes.Length > 0;
-            var layer = document.Get<SelectionManager>().PrimaryLayer.CurrentValue;
-            Visible = brushes.Length > 0 || (!layer.IsNull && (kind == ShapeBrushKind.Stroke
-                ? layer.Has<ShapeLayerSetting>() : layer.Has<VectorFillLayerSetting>()));
+            var layers = document.Get<SelectionManager>().SelectedLayers.Value;
+            Visible = brushes.Length > 0 || layers.Any(layer => kind == ShapeBrushKind.Stroke
+                ? layer.Has<ShapeLayerSetting>() : layer.Has<VectorFillLayerSetting>());
         }).AddTo(this);
         model.SelectedBrushes.Subscribe(brushes =>
         {
@@ -86,7 +86,7 @@ public partial class SelectionBrushPanel : VBoxContainer
         }
         RefreshChoices();
         model.DocumentBrushes.ObserveChanged().Subscribe(_ => RefreshChoices()).AddTo(dialog);
-        document.Get<SelectionManager>().PrimaryLayer.Skip(1).Subscribe(_ => dialog.Hide()).AddTo(dialog);
+        document.Get<SelectionManager>().SelectedLayers.Skip(1).Subscribe(_ => dialog.Hide()).AddTo(dialog);
         palette.BrushClicked += brush =>
         {
             dialog.Hide();

@@ -7,25 +7,29 @@ namespace Ciallo.Geometry;
 
 public static partial class PolylineExtension
 {
+    private const float SimplificationPressureTolerance = 0.2f;
+
     /// <summary>
     /// Simplifies an open polyline with the Ramer-Douglas-Peucker algorithm.
-    /// Points are removed when their perpendicular distance to the current range's
-    /// endpoint line and optional radius interpolation error are within
-    /// <paramref name="tolerance"/>, and the optional source segment length
-    /// constraint allows the removal.
+    /// Points are removed when their distance to the current range's endpoint
+    /// segment and optional radius interpolation error are within
+    /// <paramref name="tolerance"/>, optional pressure interpolation error is
+    /// within 0.2, and the optional source segment length constraint allows removal.
     /// </summary>
     /// <param name="polyline">Input polyline points.</param>
     /// <param name="tolerance">Position and radius error threshold in the same units as <paramref name="polyline"/>.</param>
     /// <param name="originalIndex">Indices of kept points in the original polyline.</param>
     /// <param name="maxSegmentLength">Maximum original polyline path length allowed between two kept points. Values less than or equal to zero disable this constraint.</param>
     /// <param name="radii">Optional point radii in the same units as the positions, checked against the same tolerance.</param>
+    /// <param name="pressures">Optional point pressures, checked against a fixed tolerance of 0.2 independently of the spatial tolerance.</param>
     /// <returns>Simplified polyline.</returns>
     public static List<Vector2> SimplifyRdp(
         this IReadOnlyList<Vector2> polyline,
         float tolerance,
         out List<int> originalIndex,
         float maxSegmentLength = 0f,
-        IReadOnlyList<float> radii = null)
+        IReadOnlyList<float> radii = null,
+        IReadOnlyList<float> pressures = null)
     {
         int count = polyline.Count;
         if (count <= 2 || tolerance <= 0f)
@@ -53,20 +57,20 @@ public static partial class PolylineExtension
             if (last - first < 2)
                 continue;
 
-            float maxDistance = -1f;
+            float maxError = -1f;
             int maxIndex = -1;
 
             for (int i = first + 1; i < last; i++)
             {
-                float distance = SimplificationError(polyline, radii, first, last, i);
-                if (distance > maxDistance)
+                float error = SimplificationError(polyline, radii, pressures, tolerance, first, last, i);
+                if (error > maxError)
                 {
-                    maxDistance = distance;
+                    maxError = error;
                     maxIndex = i;
                 }
             }
 
-            if (maxDistance > tolerance)
+            if (maxError > 1f)
             {
                 stack.Push((first, maxIndex));
                 stack.Push((maxIndex, last));
@@ -109,7 +113,8 @@ public static partial class PolylineExtension
     }
 
     private static float SimplificationError(
-        IReadOnlyList<Vector2> polyline, IReadOnlyList<float> radii, int first, int last, int index)
+        IReadOnlyList<Vector2> polyline, IReadOnlyList<float> radii, IReadOnlyList<float> pressures,
+        float tolerance, int first, int last, int index)
     {
         var from = polyline[first];
         var to = polyline[last];
@@ -119,13 +124,20 @@ public static partial class PolylineExtension
         float lambda = 0f;
         float rayLengthSquared = ray.LengthSquared();
         if (rayLengthSquared > 0f)
-            lambda = ray.Dot(value - from) / rayLengthSquared;
+            lambda = Mathf.Clamp(ray.Dot(value - from) / rayLengthSquared, 0f, 1f);
 
         var interpolated = from.Lerp(to, lambda);
         float distance = value.DistanceTo(interpolated);
-        return radii is null
-            ? distance
-            : MathF.Max(distance, MathF.Abs(radii[index] - Mathf.Lerp(radii[first], radii[last], lambda)));
+        if (radii is not null)
+            distance = MathF.Max(distance, MathF.Abs(radii[index] - Mathf.Lerp(radii[first], radii[last], lambda)));
+
+        float error = distance / tolerance;
+        if (pressures is not null)
+        {
+            float pressureError = MathF.Abs(pressures[index] - Mathf.Lerp(pressures[first], pressures[last], lambda));
+            error = MathF.Max(error, pressureError / SimplificationPressureTolerance);
+        }
+        return error;
     }
 
     /// <summary>

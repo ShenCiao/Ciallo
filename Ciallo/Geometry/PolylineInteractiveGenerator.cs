@@ -230,7 +230,8 @@ public class PolylineInteractiveGenerator
 
         float worldTolerance = CommitSimplificationScreenTolerancePx * _worldUnitsPerPixel;
         float maxSegmentLength = CommitSimplificationMaxSegmentScreenPx * _worldUnitsPerPixel;
-        var simplifiedPositions = _stablePositions.SimplifyRdp(worldTolerance, out var originalIndices, maxSegmentLength);
+        var simplifiedPositions = _stablePositions.SimplifyRdp(
+            worldTolerance, out var originalIndices, maxSegmentLength, pressures: _stablePressures);
 
         _stablePositions.Clear();
         _stablePositions.AddRange(simplifiedPositions);

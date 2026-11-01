@@ -293,7 +293,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             {
                 var geom = polylineE.Get<SampledPolyline>();
                 geom.Positions.Value.SimplifyRdp(
-                    SimplificationTolerance.Value, out var indices, radii: geom.Radii.Value);
+                    SimplificationTolerance.Value, out var indices,
+                    radii: geom.Radii.Value, pressures: geom.Pressures.Value);
                 if (indices.Count == geom.Count) continue;
 
                 var positions = ImmutableArray.CreateBuilder<Vector2>(indices.Count);

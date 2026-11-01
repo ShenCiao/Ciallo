@@ -14,7 +14,7 @@ offset_bottom = 120.0
 
 [node name="InputTypeLabel" type="Label" parent="VBoxContainer" unique_id=1559710489]
 layout_mode = 2
-text = "Press a key or a key combination to set the shortcut"
+text = "[Set Shortcut Hint]"
 
 [node name="EnteredShortcut" type="LineEdit" parent="VBoxContainer" unique_id=23531479]
 visible = false

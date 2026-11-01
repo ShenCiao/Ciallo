@@ -1,6 +1,4 @@
 key,en,zh_CN,zh_TW,ja,ko,de,fr
-"Within each layer, subtract selected upper polygons from the bottom polygon and keep its fill brush.","Within each layer, subtract selected upper polygons from the bottom polygon and keep its fill brush.",在各图层内从最下方多边形减去上方选中的多边形，并保留最下方多边形的填充笔刷。,在各圖層內從最下方多邊形減去上方選中的多邊形，並保留最下方多邊形的填充筆刷。,各レイヤー内で最背面のポリゴンから選択中の上側のポリゴンを引き最背面の塗りつぶしブラシを保持します。,각 레이어에서 맨 아래 다각형에서 선택한 위쪽 다각형을 빼고 맨 아래 다각형의 채우기 브러시를 유지합니다.,In jeder Ebene die ausgewählten oberen Polygone vom untersten abziehen und dessen Füllpinsel behalten.,Dans chaque calque soustraire les polygones sélectionnés du polygone inférieur et conserver son pinceau de remplissage.
-"Within each layer, combine selected polygons and keep the bottom polygon's fill brush.","Within each layer, combine selected polygons and keep the bottom polygon's fill brush.",在各图层内合并选中的多边形，并保留最下方多边形的填充笔刷。,在各圖層內合併選中的多邊形，並保留最下方多邊形的填充筆刷。,各レイヤー内で選択中のポリゴンを結合し最背面の塗りつぶしブラシを保持します。,각 레이어에서 선택한 다각형을 결합하고 맨 아래 다각형의 채우기 브러시를 유지합니다.,In jeder Ebene die ausgewählten Polygone kombinieren und den Füllpinsel des untersten behalten.,Dans chaque calque combiner les polygones sélectionnés et conserver le pinceau de remplissage du polygone inférieur.
 Stroke brushes,Stroke brushes,线条笔刷,線條筆刷,ストロークブラシ,선 브러시,Strichpinsel,Pinceaux de trait
 Fill brushes,Fill brushes,填充笔刷,填充筆刷,塗りつぶしブラシ,채우기 브러시,Füllpinsel,Pinceaux de remplissage
 Change brush,Change brush,修改笔刷,修改筆刷,ブラシを変更,브러시 변경,Pinsel ändern,Changer de pinceau
@@ -13,8 +11,6 @@ Send to back,Send to back,置于底层,置於底層,最背面へ移動,맨 뒤�
 Bring to front,Bring to front,置于顶层,置於頂層,最前面へ移動,맨 앞으로 가져오기,In den Vordergrund,Mettre au premier plan
 Convert to strokes,Convert to strokes,转换为笔画,轉換為筆畫,ストロークに変換,스트로크로 변환,In Striche umwandeln,Convertir en traits
 Convert to filled polygons,Convert to filled polygons,转换为填充多边形,轉換為填滿多邊形,塗りつぶしポリゴンに変換,채워진 다각형으로 변환,In gefüllte Polygone umwandeln,Convertir en polygones remplis
-Outline each boundary with the working stroke brush at full pressure.,Outline each boundary with the working stroke brush at full pressure.,使用当前线条笔刷以满压力描绘各条边界。,使用目前線條筆刷以滿壓力描繪各條邊界。,現在のストロークブラシで各境界を最大筆圧で描きます。,현재 스트로크 브러시로 각 경계를 최대 필압으로 그립니다.,Jede Kontur mit dem aktuellen Strichpinsel bei vollem Druck nachzeichnen.,Tracer chaque contour avec le pinceau de trait actuel à pression maximale.
-Close each stroke and fill it with the working fill brush. Empty regions are skipped.,Close each stroke and fill it with the working fill brush. Empty regions are skipped.,闭合各条笔画并使用当前填充笔刷填充；跳过无法围成填充区域的笔画。,閉合各條筆畫並使用目前填充筆刷填滿；略過無法圍成填滿區域的筆畫。,各ストロークを閉じて現在の塗りつぶしブラシで塗ります。空の領域はスキップします。,각 스트로크를 닫고 현재 채우기 브러시로 채웁니다. 빈 영역은 건너뜁니다.,Jeden Strich schließen und mit dem aktuellen Füllpinsel füllen. Leere Bereiche werden übersprungen.,Fermer chaque trait et le remplir avec le pinceau de remplissage actuel. Les régions vides sont ignorées.
 Output format,Output format,输出格式,輸出格式,出力形式,출력 형식,Ausgabeformat,Format de sortie
 Cannot export image.,Cannot export image.,无法导出图像。,無法匯出圖像。,画像をエクスポートできません。,이미지를 내보낼 수 없습니다.,Bild kann nicht exportiert werden.,Impossible d’exporter l’image.
 PNG · 16 bits/channel · sRGB,PNG · 16 bits/channel · sRGB,PNG · 16 位/通道 · sRGB,PNG · 16 位元/通道 · sRGB,PNG · 16ビット/チャンネル · sRGB,PNG · 채널당 16비트 · sRGB,PNG · 16 Bit/Kanal · sRGB,PNG · 16 bits/canal · sRGB
@@ -26,10 +22,7 @@ Thicken (+),Thicken (+),加粗（+）,加粗（+）,太く（+）,굵게 (+),Dic
 Decrease pressure (−),Decrease pressure (−),减弱笔压（−）,減弱筆壓（−）,筆圧を下げる（−）,필압 감소 (−),Druck senken (−),Réduire la pression (−)
 Increase pressure (+),Increase pressure (+),增强笔压（+）,增強筆壓（+）,筆圧を上げる（+）,필압 증가 (+),Druck erhöhen (+),Augmenter la pression (+)
 Reverse direction,Reverse direction,反向,反向,方向を反転,방향 반전,Richtung umkehren,Inverser le sens
-Negative values decrease; positive values increase. Zero has no effect.,Negative values decrease; positive values increase. Zero has no effect.,负值减弱，正值增强。0 表示无作用。,負值減弱，正值增強。0 表示無作用。,負の値で減少し正の値で増加します。0では変化しません。,음수는 감소시키고 양수는 증가시킵니다. 0은 효과가 없습니다.,Negative Werte verringern; positive Werte erhöhen. Null hat keine Wirkung.,Les valeurs négatives réduisent et les positives augmentent. Zéro n’a aucun effet.
-Edits recorded pressure without changing thickness. Brushes without pressure-driven flow may show no visible change.,Edits recorded pressure without changing thickness. Brushes without pressure-driven flow may show no visible change.,修改笔压记录，保留现有粗细。未启用笔压控制流量的笔刷可能没有可见变化。,修改筆壓記錄，保留現有粗細。未啟用筆壓控制流量的筆刷可能沒有可見變化。,太さを変えずに記録された筆圧を編集します。筆圧で流量が変化しないブラシでは見た目が変わらない場合があります。,기존 굵기를 유지하며 기록된 필압을 편집합니다. 필압으로 유량을 제어하지 않는 브러시는 눈에 보이는 변화가 없을 수 있습니다.,Ändert den gespeicherten Druck ohne die Strichstärke zu ändern. Bei Pinseln ohne druckabhängigen Farbfluss ist möglicherweise keine Änderung sichtbar.,Modifie la pression enregistrée sans changer l’épaisseur. Les pinceaux sans débit lié à la pression peuvent ne présenter aucun changement visible.
 Curve pressure,Curve pressure,曲线笔压,曲線筆壓,曲線の筆圧,곡선 필압,Kurvendruck,Pression de la courbe
-Input pressure for Bézier strokes before pressure taper and brush mappings.,Input pressure for Bézier strokes before pressure taper and brush mappings.,贝塞尔笔画的原始笔压，随后应用笔压渐入渐出和笔刷映射。,貝茲筆畫的原始筆壓，隨後套用筆壓漸入漸出和筆刷映射。,筆圧テーパーとブラシのマッピングを適用する前のベジェストロークの入力筆圧。,필압 테이퍼와 브러시 매핑을 적용하기 전 베지에 획의 입력 필압입니다.,Eingabedruck für Bézierstriche vor Druckverjüngung und Pinselzuordnungen.,Pression d’entrée des traits de Bézier avant l’effilement de pression et les courbes du pinceau.
 New polygon,New polygon,新建多边形,新增多邊形,新しいポリゴン,새 다각형,Neues Polygon,Nouveau polygone
 Operation,Operation,运算,運算,演算,연산,Operation,Opération
 Union,Union,并集,聯集,合体,합집합,Vereinigung,Union
@@ -42,10 +35,6 @@ Start pressure taper,Start pressure taper,起笔笔压渐入,起筆筆壓漸入,
 End pressure taper,End pressure taper,收笔笔压渐出,收筆筆壓漸出,終点の筆圧テーパー,끝 필압 테이퍼,Druckverjüngung am Ende,Effilement de pression à la fin
 Start taper length,Start taper length,起笔渐入长度,起筆漸入長度,始点テーパーの長さ,시작 테이퍼 길이,Verjüngungslänge am Anfang,Longueur d’effilement au début
 End taper length,End taper length,收笔渐出长度,收筆漸出長度,終点テーパーの長さ,끝 테이퍼 길이,Verjüngungslänge am Ende,Longueur d’effilement à la fin
-Multiplies input pressure by a factor rising from 0 to 1 over the start interval.,Multiplies input pressure by a factor rising from 0 to 1 over the start interval.,沿起笔区间，将笔压影响系数从 0 增至 1，再乘以实际输入笔压。,沿起筆區間，將筆壓影響係數從 0 增至 1，再乘以實際輸入筆壓。,始点区間で0から1へ増加する係数を入力筆圧に掛けます。,시작 구간에서 0에서 1로 증가하는 계수를 입력 필압에 곱합니다.,Multipliziert den Eingabedruck mit einem Faktor von 0 bis 1 im Anfangsbereich.,Multiplie la pression reçue par un facteur croissant de 0 à 1 sur l’intervalle initial.
-Multiplies input pressure by a factor falling from 1 to 0 over the end interval.,Multiplies input pressure by a factor falling from 1 to 0 over the end interval.,沿收笔区间，将笔压影响系数从 1 降至 0，再乘以实际输入笔压。,沿收筆區間，將筆壓影響係數從 1 降至 0，再乘以實際輸入筆壓。,終点区間で1から0へ減少する係数を入力筆圧に掛けます。,끝 구간에서 1에서 0으로 감소하는 계수를 입력 필압에 곱합니다.,Multipliziert den Eingabedruck mit einem Faktor von 1 bis 0 im Endbereich.,Multiplie la pression reçue par un facteur décroissant de 1 à 0 sur l’intervalle final.
-Affects all brush properties mapped from pressure. Brush mappings determine changes in width and opacity.,Affects all brush properties mapped from pressure. Brush mappings determine changes in width and opacity.,影响所有使用笔压的笔刷属性。是否变细或变淡，由笔刷映射决定。,影響所有使用筆壓的筆刷屬性。是否變細或變淡，由筆刷映射決定。,筆圧に連動するすべてのブラシ属性に影響します。太さや不透明度の変化はブラシのマッピングで決まります。,필압에 연결된 모든 브러시 속성에 영향을 줍니다. 굵기와 불투명도의 변화는 브러시 매핑에 따라 달라집니다.,Wirkt auf alle druckabhängigen Pinseleigenschaften. Breite und Deckkraft hängen von den Pinselzuordnungen ab.,Agit sur toutes les propriétés du pinceau liées à la pression. Les courbes du pinceau déterminent les variations de largeur et d’opacité.
-Distance along the stroke in canvas units. Zero disables this end.,Distance along the stroke in canvas units. Zero disables this end.,沿笔画路径的距离（画布坐标单位）。0 表示关闭这一端的渐变。,沿筆畫路徑的距離（畫布座標單位）。0 表示關閉這一端的漸變。,キャンバス座標でのストロークに沿った距離。0でこの端のテーパーを無効にします。,캔버스 좌표 단위로 측정한 획을 따른 거리입니다. 0이면 이쪽 테이퍼가 비활성화됩니다.,Abstand entlang des Strichs in Leinwandeinheiten. Null deaktiviert dieses Ende.,Distance le long du trait en unités du canevas. Zéro désactive cette extrémité.
 Bucket Fill,Bucket Fill,油漆桶填色,油漆桶填色,バケツ塗りつぶし,페인트통 채우기,Fülleimer,Remplissage au pot
 Marker,Marker,标记,標記,マーカー,마커,Markierung,Marqueur
 Polygon,Polygon,多边形,多邊形,ポリゴン,다각형,Polygon,Polygone
@@ -142,7 +131,6 @@ Pressure to flow,Pressure to flow,压力到流量,壓力到流量,圧力から�
 Radius,Radius,半径,半徑,半径,반지름,Radius,Rayon
 Simplify,Simplify,简化,簡化,単純化,단순화,Vereinfachen,Simplifier
 Simplification tolerance,Simplification tolerance,简化容差,簡化容差,単純化の許容誤差,단순화 허용 오차,Vereinfachungstoleranz,Tolérance de simplification
-Position and radius tolerance in canvas units. Zero keeps all points.,Position and radius tolerance in canvas units. Zero keeps all points.,位置和半径的容差，以画布单位计。设为零时保留所有点。,位置和半徑的容差，以畫布單位計。設為零時保留所有點。,キャンバス単位での位置と半径の許容誤差。0の場合はすべての点を保持します。,캔버스 단위의 위치 및 반지름 허용 오차입니다. 0이면 모든 점을 유지합니다.,Toleranz für Position und Radius in Leinwandeinheiten. Bei null bleiben alle Punkte erhalten.,Tolérance de position et de rayon en unités du canevas. Zéro conserve tous les points.
 Subdivide,Subdivide,细分,細分,細分化,세분화,Unterteilen,Subdiviser
 Linear subdivide,Linear subdivide,线性细分,線性細分,リニア細分化,선형 세분화,Lineare Unterteilung,Subdivision linéaire
 Smooth subdivide,Smooth subdivide,平滑细分,平滑細分,スムーズ細分化,부드러운 세분화,Glatte Unterteilung,Subdivision lissée
@@ -165,7 +153,7 @@ Marker color,Marker color,标记颜色,標記顏色,マーカーの色,마커 �
 Marker radius,Marker radius,标记半径,標記半徑,マーカー半径,마커 반지름,Markierungsradius,Rayon du marqueur
 Show reference wireframe,Show reference wireframe,显示参考线框,顯示參考線框,参照ワイヤーフレームを表示,참조 와이어프레임 표시,Referenz-Drahtgitter anzeigen,Afficher le fil de référence
 Eraser mode,Eraser mode,橡皮擦模式,橡皮擦模式,消しゴムモード,지우개 모드,Radiergummi-Modus,Mode gomme
-Eraser,eraser,橡皮擦,橡皮擦,消しゴム,지우개,Radiergummi,Gomme
+Eraser,Eraser,橡皮擦,橡皮擦,消しゴム,지우개,Radiergummi,Gomme
 Soft eraser,Soft eraser,软橡皮擦,軟橡皮擦,ソフト消しゴム,부드러운 지우개,weicher Radiergummi,Gomme douce
 Mapping pen,Mapping pen,丸笔,丸笔,丸ペン,맵핑 펜,Mapping-Stift,Stylo de cartographie
 Hardness curve,Hardness curve,硬度曲线,硬度曲線,硬さの曲線,경도 곡선,Härtekurve,Courbe de dureté
@@ -178,12 +166,11 @@ Cel,Cel,赛璐珞,賽璐珞,セル,셀,Animations-Cel,Cellulo
 Cel folder,Cel folder,赛璐珞文件夹,賽璐珞資料夾,セルフォルダー,셀 폴더,Cel-Ordner,Dossier de cellulos
 Cel creation method,Cel creation method,赛璐珞创建方式,賽璐珞建立方式,セルの作成方法,셀 생성 방식,Methode zur Erstellung von Cels,Méthode de création de cellulos
 None,None,无,無,なし,없음,Keine,Aucune
-WithinCelFolder,Within cel folder,在赛璐珞文件夹内,在賽璐珞資料夾內,セルフォルダー内,셀 폴더 안,Im Cel-Ordner,Dans le dossier de cellulos
-NewCelFolder,New cel folder,新建赛璐珞文件夹,新增賽璐珞資料夾,新しいセルフォルダー,새 셀 폴더,Neuer Cel-Ordner,Nouveau dossier de cellulos
+New cel folder,New cel folder,新建赛璐珞文件夹,新增賽璐珞資料夾,新しいセルフォルダー,새 셀 폴더,Neuer Cel-Ordner,Nouveau dossier de cellulos
 Vector fill layer,Vector fill layer,矢量填充图层,向量填充圖層,ベクターフィルレイヤー,벡터 채우기 레이어,Vektor-Füllebene,Calque de remplissage vectoriel
 Blend mode,Blend mode,混合模式,混合模式,ブレンドモード,블렌드 모드,Mischmodus,Mode de fusion
 Clipping mask,Clipping mask,剪贴蒙版,剪裁遮色片,クリッピングマスク,클리핑 마스크,Schnittmaske,Masque d'écrêtage
-Add,Add,添加,增加,加算,더하기,Addieren,Ajouter
+Add,Add,添加,新增,追加,추가,Hinzufügen,Ajouter
 Multiply,Multiply,正片叠底,色彩增值,乗算,곱하기,Multiplizieren,Produit
 Bounded area color,Bounded area color,封闭区域颜色,封閉區域顏色,閉じた領域の色,닫힌 영역 색상,Farbe des geschlossenen Bereichs,Couleur de la zone fermée
 Mode,Mode,模式,模式,モード,모드,Modus,Mode
@@ -198,9 +185,6 @@ No brush selected,No brush selected,未选择笔刷,未選擇筆刷,ブラシが
 Load research animation,Load research animation,加载研究动画,載入研究動畫,研究用アニメーションを読み込む,연구용 애니메이션 불러오기,Forschungsanimation laden,Charger l'animation de recherche
 Research animation CSV,Research animation CSV,研究动画 CSV,研究動畫 CSV,研究用アニメーション CSV,연구용 애니메이션 CSV,Forschungsanimation-CSV,CSV d'animation de recherche
 Cannot load research animation.,Cannot load research animation.,无法加载研究动画。,無法載入研究動畫。,研究用アニメーションを読み込めません。,연구용 애니메이션을 불러올 수 없습니다.,Forschungsanimation kann nicht geladen werden.,Impossible de charger l'animation de recherche.
-Select a folder containing numeric frame CSV files.,Select a folder containing numeric frame CSV files.,请选择包含数字帧 CSV 文件的文件夹。,請選擇包含數字影格 CSV 檔案的資料夾。,数値フレームのCSVファイルを含むフォルダーを選択してください。,숫자 프레임 CSV 파일이 들어 있는 폴더를 선택하세요.,Wählen Sie einen Ordner mit numerischen Frame-CSV-Dateien aus.,Sélectionnez un dossier contenant des fichiers CSV de frames numériques.
-Selected folder contains no numeric frame CSV files.,Selected folder contains no numeric frame CSV files.,所选文件夹不包含数字帧 CSV 文件。,選取的資料夾不包含數字影格 CSV 檔案。,選択したフォルダーに数値フレームのCSVファイルがありません。,선택한 폴더에 숫자 프레임 CSV 파일이 없습니다.,Der ausgewählte Ordner enthält keine numerischen Frame-CSV-Dateien.,Le dossier sélectionné ne contient aucun fichier CSV de frame numérique.
-Selected animation contains no stroke samples.,Selected animation contains no stroke samples.,所选动画不包含笔画样本。,選取的動畫不包含筆畫樣本。,選択したアニメーションにストロークサンプルがありません。,선택한 애니메이션에 스트로크 샘플이 없습니다.,Die ausgewählte Animation enthält keine Strichproben.,L'animation sélectionnée ne contient aucun échantillon de trait.
 No working stroke brush is selected.,No working stroke brush is selected.,未选择当前工作线条笔刷。,未選擇目前工作線條筆刷。,作業中のストロークブラシが選択されていません。,작업 중인 스트로크 브러시가 선택되지 않았습니다.,Kein aktiver Strichpinsel ausgewählt.,Aucun pinceau de trait actif n'est sélectionné.
 Cannot save document.,Cannot save document.,无法保存文档。,無法儲存文件。,ドキュメントを保存できません。,문서를 저장할 수 없습니다.,Dokument kann nicht gespeichert werden.,Impossible d'enregistrer le document.
 Cannot open document.,Cannot open document.,无法打开文档。,無法開啟文件。,ドキュメントを開けません。,문서를 열 수 없습니다.,Dokument kann nicht geöffnet werden.,Impossible d'ouvrir le document.
@@ -270,8 +254,8 @@ Yes,Yes,是,是,はい,예,Ja,Oui
 No,No,否,否,いいえ,아니요,Nein,Non
 Color,Color,颜色,顏色,色,색상,Farbe,Couleur
 Marker texture,Marker texture,标记纹理,標記紋理,マーカーテクスチャ,마커 텍스처,Markertextur,Texture du marqueur
-WithinCurrentCel,Within current cel,在当前赛璐珞内,在目前賽璐珞內,現在のセル内,현재 셀 안,In der aktuellen Cel,Dans le cellulo actuel
-WithinAllCels,Within all cels,在所有赛璐珞内,在所有賽璐珞內,すべてのセル内,모든 셀 안,In allen Cels,Dans tous les cellulos
+Within current cel,Within current cel,在当前赛璐珞内,在目前賽璐珞內,現在のセル内,현재 셀 안,In der aktuellen Cel,Dans le cellulo actuel
+Within all cels,Within all cels,在所有赛璐珞内,在所有賽璐珞內,すべてのセル内,모든 셀 안,In allen Cels,Dans tous les cellulos
 Mirror horizontally,Mirror horizontally,水平镜像,水平鏡像,左右反転,가로로 뒤집기,Horizontal spiegeln,Inverser horizontalement
 Mirror vertically,Mirror vertically,垂直镜像,垂直鏡像,上下反転,세로로 뒤집기,Vertikal spiegeln,Inverser verticalement
 Play,Play,播放,播放,再生,재생,Wiedergabe,Lire
@@ -307,5 +291,98 @@ Ignore holes,Ignore holes,忽略洞,忽略洞,穴を無視,구멍 무시,Löcher
 Gap aware,Gap aware,识别间隙,識別間隙,隙間を認識,틈 인식,Lücken erkennen,Détecter les espaces
 Gap factor,Gap factor,间隙系数,間隙係數,隙間係数,틈 계수,Lückenfaktor,Facteur d'espace
 All Cels,All Cels,所有赛璐珞,所有賽璐珞,すべてのセル,모든 셀,Alle Cels,Tous les cellulos
-Select matching layers across cels,Select matching layers across cels,跨赛璐珞选择同名图层,跨賽璐珞選取同名圖層,セル間で同名レイヤーを選択,셀 전체에서 같은 이름의 레이어 선택,Gleichnamige Ebenen über alle Cels auswählen,Sélectionner les calques de même nom dans les cellulos
-Archetype unavailable in current cel; selection applies to other cels,Archetype unavailable in current cel; selection applies to other cels,当前赛璐珞没有此原型；选择仍作用于其它赛璐珞,目前賽璐珞沒有此原型；選取仍套用至其他賽璐珞,現在のセルにはありません。他のセルへの選択は有効です,현재 셀에는 없습니다. 다른 셀에는 선택이 적용됩니다,Im aktuellen Cel nicht vorhanden; Auswahl gilt für andere Cels,Absent du cellulo actuel ; la sélection s’applique aux autres cellulos
+Cannot load image,Cannot load image,无法加载图像,無法載入圖像,画像を読み込めません,이미지를 로드할 수 없습니다,Bild kann nicht geladen werden,Impossible de charger l'image
+Paint brush,Paint brush,画笔,畫筆,ペイントブラシ,페인트 브러시,Pinsel,Pinceau
+Freehand,Freehand,手绘,手繪,フリーハンド,자유 그리기,Freihand,Main levée
+Bezier,Bezier,贝塞尔曲线,貝茲曲線,ベジェ曲線,베지에 곡선,Bézierkurve,Courbe de Bézier
+Poly Cubic Bézier,Poly Cubic Bézier,多段三次贝塞尔曲线,多段三次貝茲曲線,連続三次ベジェ曲線,연속 3차 베지에 곡선,Mehrteilige kubische Bézierkurve,Courbe de Bézier cubique composée
+Radius multiplier,Radius multiplier,半径倍数,半徑倍數,半径の倍率,반지름 배율,Radiusfaktor,Multiplicateur du rayon
+Apply to selected strokes,Apply to selected strokes,应用到所选线条,套用至所選線條,選択したストロークに適用,선택한 선에 적용,Auf ausgewählte Striche anwenden,Appliquer aux traits sélectionnés
+Paint Fill,Paint Fill,填色,填色,塗りつぶし,채우기,Flächen malen,Peindre des formes
+Gap Bridge,Gap Bridge,间隙桥接,間隙橋接,隙間をつなぐ,틈 연결,Lücken überbrücken,Relier les espaces
+Confirm,Confirm,确认,確認,確定,확인,Bestätigen,Confirmer
+Interaction,Interaction,交互,互動,操作,상호작용,Interaktion,Interaction
+Paint Stroke,Paint Stroke,绘制线条,繪製線條,ストロークを描く,선 그리기,Striche zeichnen,Tracer des traits
+Toggle Snapping,Toggle Snapping,切换吸附,切換吸附,スナップを切り替え,스냅 전환,Einrasten umschalten,Activer ou désactiver l’aimantation
+Clip to layer below,Clip to layer below,剪贴到下方图层,剪裁至下方圖層,下のレイヤーでクリッピング,아래 레이어에 클리핑,Auf darunterliegende Ebene beschneiden,Écrêter sur le calque inférieur
+Import...,Import...,导入…,匯入…,インポート…,가져오기…,Importieren…,Importer…
+Export...,Export...,导出…,匯出…,エクスポート…,내보내기…,Exportieren…,Exporter…
+Shortcut Profiles,Shortcut Profiles,快捷键配置,快速鍵設定檔,ショートカットプロファイル,단축키 프로필,Tastenkürzelprofile,Profils de raccourcis
+Ciallo web render draft,Ciallo web render draft,Ciallo 网页渲染草稿,Ciallo 網頁算繪草稿,Ciallo ウェブ描画ドラフト,Ciallo 웹 렌더링 초안,Ciallo-Web-Renderentwurf,Brouillon de rendu Web Ciallo
+{0} fill,{0} fill,{0} 填色,{0} 填色,{0} 塗り,{0} 채우기,{0} Füllung,{0} remplissage
+{0} stroke,{0} stroke,{0} 线条,{0} 線條,{0} 線,{0} 선,{0} Strich,{0} trait
+{0} Converted,{0} Converted,{0} 已转换,{0} 已轉換,{0} 変換済み,{0} 변환됨,{0} konvertiert,{0} converti
+Frame {0},Frame {0},帧 {0},影格 {0},フレーム {0},프레임 {0},Bild {0},Image {0}
+Shortcut profile:,Shortcut profile:,快捷键配置：,快速鍵設定檔：,ショートカットプロファイル：,단축키 프로필:,Tastenkürzelprofil:,Profil de raccourcis :
+Custom,Custom,自定义,自訂,カスタム,사용자 지정,Benutzerdefiniert,Personnalisé
+New,New,新建,新增,新規,새로 만들기,Neu,Nouveau
+Reset,Reset,重置,重設,リセット,초기화,Zurücksetzen,Réinitialiser
+Rename,Rename,重命名,重新命名,名前を変更,이름 변경,Umbenennen,Renommer
+Open Folder,Open Folder,打开文件夹,開啟資料夾,フォルダーを開く,폴더 열기,Ordner öffnen,Ouvrir le dossier
+New Shortcut Profile,New Shortcut Profile,新建快捷键配置,新增快速鍵設定檔,新しいショートカットプロファイル,새 단축키 프로필,Neues Tastenkürzelprofil,Nouveau profil de raccourcis
+Rename Shortcut Profile,Rename Shortcut Profile,重命名快捷键配置,重新命名快速鍵設定檔,ショートカットプロファイルの名前を変更,단축키 프로필 이름 변경,Tastenkürzelprofil umbenennen,Renommer le profil de raccourcis
+Filter by name,Filter by name,按名称筛选,依名稱篩選,名前で絞り込む,이름으로 필터링,Nach Name filtern,Filtrer par nom
+Filter by shortcut,Filter by shortcut,按快捷键筛选,依快速鍵篩選,ショートカットで絞り込む,단축키로 필터링,Nach Tastenkürzel filtern,Filtrer par raccourci
+Clear all,Clear all,清除全部,全部清除,すべてクリア,모두 지우기,Alles leeren,Tout effacer
+Keyboard,Keyboard,键盘,鍵盤,キーボード,키보드,Tastatur,Clavier
+Mouse Button,Mouse Button,鼠标按钮,滑鼠按鈕,マウスボタン,마우스 버튼,Maustaste,Bouton de souris
+Joy Button,Joy Button,手柄按钮,控制器按鈕,ゲームパッドのボタン,게임패드 버튼,Gamepad-Taste,Bouton de manette
+Joy Axis,Joy Axis,手柄轴,控制器軸,ゲームパッドの軸,게임패드 축,Gamepad-Achse,Axe de manette
+Button,Button,按钮,按鈕,ボタン,버튼,Taste,Bouton
+Axis,Axis,轴,軸,軸,축,Achse,Axe
+(Physical),(Physical),（物理键）,（實體鍵）,（物理キー）,(물리 키),(physisch),(physique)
+Set the shortcut,Set the shortcut,设置快捷键,設定快速鍵,ショートカットを設定,단축키 설정,Tastenkürzel festlegen,Définir le raccourci
+Mouse Button Index:,Mouse Button Index:,鼠标按钮编号：,滑鼠按鈕編號：,マウスボタン番号：,마우스 버튼 번호:,Maustastennummer:,Numéro du bouton de souris :
+Joypad Button Index:,Joypad Button Index:,手柄按钮编号：,控制器按鈕編號：,ゲームパッドのボタン番号：,게임패드 버튼 번호:,Gamepad-Tastennummer:,Numéro du bouton de manette :
+Joypad Axis Index:,Joypad Axis Index:,手柄轴编号：,控制器軸編號：,ゲームパッドの軸番号：,게임패드 축 번호:,Gamepad-Achsennummer:,Numéro de l’axe de manette :
+Command / Control (auto),Command / Control (auto),Command / Control（自动）,Command / Control（自動）,Command / Control（自動）,Command / Control (자동),Command / Control (automatisch),Command / Control (auto)
+Angle:,Angle:,角度：,角度：,角度：,각도:,Winkel:,Angle :
+Sensitivity:,Sensitivity:,灵敏度：,靈敏度：,感度：,감도:,Empfindlichkeit:,Sensibilité :
+Left Button,Left Button,左键,左鍵,左ボタン,왼쪽 버튼,Linke Maustaste,Bouton gauche
+Right Button,Right Button,右键,右鍵,右ボタン,오른쪽 버튼,Rechte Maustaste,Bouton droit
+Middle Button,Middle Button,中键,中鍵,中央ボタン,가운데 버튼,Mittlere Maustaste,Bouton central
+Wheel Up Button,Wheel Up Button,滚轮向上,滾輪向上,ホイール上,휠 위로,Mausrad nach oben,Molette vers le haut
+Wheel Down Button,Wheel Down Button,滚轮向下,滾輪向下,ホイール下,휠 아래로,Mausrad nach unten,Molette vers le bas
+Wheel Left Button,Wheel Left Button,滚轮向左,滾輪向左,ホイール左,휠 왼쪽으로,Mausrad nach links,Molette vers la gauche
+Wheel Right Button,Wheel Right Button,滚轮向右,滾輪向右,ホイール右,휠 오른쪽으로,Mausrad nach rechts,Molette vers la droite
+Mouse Thumb Button 1,Mouse Thumb Button 1,鼠标侧键 1,滑鼠側鍵 1,マウスのサイドボタン 1,마우스 측면 버튼 1,Maus-Daumentaste 1,Bouton latéral de souris 1
+Mouse Thumb Button 2,Mouse Thumb Button 2,鼠标侧键 2,滑鼠側鍵 2,マウスのサイドボタン 2,마우스 측면 버튼 2,Maus-Daumentaste 2,Bouton latéral de souris 2
+Paint Brush,Paint Brush,画笔,畫筆,ペイントブラシ,페인트 브러시,Pinsel,Pinceau
+New Document,New Document,新建文档,新增文檔,新しいドキュメント,새 문서,Neues Dokument,Nouveau document
+Open Document,Open Document,打开文档,開啟文檔,ドキュメントを開く,문서 열기,Dokument öffnen,Ouvrir un document
+Save as,Save as,另存为,另存新檔,名前を付けて保存,다른 이름으로 저장,Speichern unter,Enregistrer sous
+Presets,Presets,预设,預設,プリセット,프리셋,Vorgaben,Préréglages
+Constant,Constant,常量,常數,一定,상수,Konstant,Constante
+Linear,Linear,线性,線性,線形,선형,Linear,Linéaire
+Ease In,Ease In,缓入,緩入,イーズイン,서서히 시작,Langsam beginnen,Accélération progressive
+Ease Out,Ease Out,缓出,緩出,イーズアウト,서서히 종료,Langsam enden,Décélération progressive
+Smoothstep,Smoothstep,平滑阶跃,平滑階躍,滑らかなステップ,부드러운 단계,Glatter Übergang,Transition douce
+Additive,Additive,相加,相加,加算,더하기,Additiv,Addition
+Import Failed,Import Failed,导入失败,匯入失敗,インポート失敗,가져오기 실패,Import fehlgeschlagen,Échec de l’importation
+Export Failed,Export Failed,导出失败,匯出失敗,エクスポート失敗,내보내기 실패,Export fehlgeschlagen,Échec de l’exportation
+Already assigned to: %s,Already assigned to: %s,已分配给：%s,已指派給：%s,割り当て済み：%s,이미 할당됨: %s,Bereits zugewiesen: %s,Déjà attribué à : %s
+"DualShock Cross, Xbox A, Nintendo B","DualShock Cross, Xbox A, Nintendo B",DualShock 叉键、Xbox A、Nintendo B,DualShock 叉鍵、Xbox A、Nintendo B,DualShock ×、Xbox A、Nintendo B,"DualShock 십자, Xbox A, Nintendo B","DualShock Kreuz, Xbox A, Nintendo B","Croix DualShock, Xbox A, Nintendo B"
+"DualShock Circle, Xbox B, Nintendo A","DualShock Circle, Xbox B, Nintendo A",DualShock 圆圈键、Xbox B、Nintendo A,DualShock 圓圈鍵、Xbox B、Nintendo A,DualShock ○、Xbox B、Nintendo A,"DualShock 원, Xbox B, Nintendo A","DualShock Kreis, Xbox B, Nintendo A","Cercle DualShock, Xbox B, Nintendo A"
+"DualShock Square, Xbox X, Nintendo Y","DualShock Square, Xbox X, Nintendo Y",DualShock 方块键、Xbox X、Nintendo Y,DualShock 方塊鍵、Xbox X、Nintendo Y,DualShock □、Xbox X、Nintendo Y,"DualShock 사각형, Xbox X, Nintendo Y","DualShock Quadrat, Xbox X, Nintendo Y","Carré DualShock, Xbox X, Nintendo Y"
+"DualShock Triangle, Xbox Y, Nintendo X","DualShock Triangle, Xbox Y, Nintendo X",DualShock 三角键、Xbox Y、Nintendo X,DualShock 三角鍵、Xbox Y、Nintendo X,DualShock △、Xbox Y、Nintendo X,"DualShock 삼각형, Xbox Y, Nintendo X","DualShock Dreieck, Xbox Y, Nintendo X","Triangle DualShock, Xbox Y, Nintendo X"
+"Select, DualShock Share, Nintendo -","Select, DualShock Share, Nintendo -",选择、DualShock 分享、Nintendo -,選擇、DualShock 分享、Nintendo -,Select、DualShock Share、Nintendo -,"선택, DualShock 공유, Nintendo -","Select, DualShock Teilen, Nintendo -","Select, Partage DualShock, Nintendo -"
+"Start, DualShock Options, Nintendo +","Start, DualShock Options, Nintendo +",开始、DualShock 选项、Nintendo +,開始、DualShock 選項、Nintendo +,Start、DualShock Options、Nintendo +,"시작, DualShock 옵션, Nintendo +","Start, DualShock Optionen, Nintendo +","Start, Options DualShock, Nintendo +"
+D-Pad Up,D-Pad Up,方向键上,方向鍵上,方向キー上,방향 패드 위,Steuerkreuz oben,Croix directionnelle haut
+D-Pad Down,D-Pad Down,方向键下,方向鍵下,方向キー下,방향 패드 아래,Steuerkreuz unten,Croix directionnelle bas
+D-Pad Left,D-Pad Left,方向键左,方向鍵左,方向キー左,방향 패드 왼쪽,Steuerkreuz links,Croix directionnelle gauche
+D-Pad Right,D-Pad Right,方向键右,方向鍵右,方向キー右,방향 패드 오른쪽,Steuerkreuz rechts,Croix directionnelle droite
+"Home, DualShock PS, Guide","Home, DualShock PS, Guide",主页、DualShock PS、导航,主頁、DualShock PS、導覽,ホーム、DualShock PS、ガイド,"홈, DualShock PS, 가이드","Home, DualShock PS, Guide","Accueil, DualShock PS, Guide"
+"Xbox Share, PS5 Microphone, Nintendo Capture","Xbox Share, PS5 Microphone, Nintendo Capture",Xbox 分享、PS5 麦克风、Nintendo 截图,Xbox 分享、PS5 麥克風、Nintendo 擷取,Xbox Share、PS5 マイク、Nintendo キャプチャー,"Xbox 공유, PS5 마이크, Nintendo 캡처","Xbox Teilen, PS5 Mikrofon, Nintendo Aufnahme","Partage Xbox, Microphone PS5, Capture Nintendo"
+Xbox Paddle 1,Xbox Paddle 1,Xbox 背键 1,Xbox 背鍵 1,Xbox パドル 1,Xbox 패들 1,Xbox Paddel 1,Palette Xbox 1
+Xbox Paddle 2,Xbox Paddle 2,Xbox 背键 2,Xbox 背鍵 2,Xbox パドル 2,Xbox 패들 2,Xbox Paddel 2,Palette Xbox 2
+Xbox Paddle 3,Xbox Paddle 3,Xbox 背键 3,Xbox 背鍵 3,Xbox パドル 3,Xbox 패들 3,Xbox Paddel 3,Palette Xbox 3
+Xbox Paddle 4,Xbox Paddle 4,Xbox 背键 4,Xbox 背鍵 4,Xbox パドル 4,Xbox 패들 4,Xbox Paddel 4,Palette Xbox 4
+PS4/5 Touchpad,PS4/5 Touchpad,PS4/5 触摸板,PS4/5 觸控板,PS4/5 タッチパッド,PS4/5 터치패드,PS4/5 Touchpad,Pavé tactile PS4/5
+(Left Stick Left),(Left Stick Left),（左摇杆向左）,（左搖桿向左）,（左スティック左）,(왼쪽 스틱 왼쪽),(Linker Stick links),(Stick gauche vers la gauche)
+(Left Stick Right),(Left Stick Right),（左摇杆向右）,（左搖桿向右）,（左スティック右）,(왼쪽 스틱 오른쪽),(Linker Stick rechts),(Stick gauche vers la droite)
+(Left Stick Up),(Left Stick Up),（左摇杆向上）,（左搖桿向上）,（左スティック上）,(왼쪽 스틱 위),(Linker Stick oben),(Stick gauche vers le haut)
+(Left Stick Down),(Left Stick Down),（左摇杆向下）,（左搖桿向下）,（左スティック下）,(왼쪽 스틱 아래),(Linker Stick unten),(Stick gauche vers le bas)
+(Right Stick Left),(Right Stick Left),（右摇杆向左）,（右搖桿向左）,（右スティック左）,(오른쪽 스틱 왼쪽),(Rechter Stick links),(Stick droit vers la gauche)
+(Right Stick Right),(Right Stick Right),（右摇杆向右）,（右搖桿向右）,（右スティック右）,(오른쪽 스틱 오른쪽),(Rechter Stick rechts),(Stick droit vers la droite)
+(Right Stick Up),(Right Stick Up),（右摇杆向上）,（右搖桿向上）,（右スティック上）,(오른쪽 스틱 위),(Rechter Stick oben),(Stick droit vers le haut)
+(Right Stick Down),(Right Stick Down),（右摇杆向下）,（右搖桿向下）,（右スティック下）,(오른쪽 스틱 아래),(Rechter Stick unten),(Stick droit vers le bas)

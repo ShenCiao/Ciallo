@@ -112,16 +112,14 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             MinValue = 0,
             MaxValue = 1,
             Step = 0.01,
-            TooltipText = "Input pressure for Bézier strokes before pressure taper and brush mappings.",
+            TooltipText = "[Curve Pressure Tooltip]",
         }.BindNumber(CurvePressure))
             .VisibleIf(Mode, mode => mode != 0);
 
-        var pressureTaperEffect = "Affects all brush properties mapped from pressure. Brush mappings determine changes in width and opacity.".Tr();
         container.AddProperty("Start pressure taper", new CheckBox
         {
             FocusMode = Control.FocusModeEnum.None,
-            TooltipText = "Multiplies input pressure by a factor rising from 0 to 1 over the start interval.".Tr()
-                + "\n" + pressureTaperEffect,
+            TooltipText = "[Start Pressure Taper Tooltip]",
         }.BindBool(PressureTaperStartEnabled));
         container.AddProperty("Start taper length", CreatePressureTaperLengthSlider()
             .BindNumber(PressureTaperStartLength))
@@ -130,8 +128,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         container.AddProperty("End pressure taper", new CheckBox
         {
             FocusMode = Control.FocusModeEnum.None,
-            TooltipText = "Multiplies input pressure by a factor falling from 1 to 0 over the end interval.".Tr()
-                + "\n" + pressureTaperEffect,
+            TooltipText = "[End Pressure Taper Tooltip]",
         }.BindBool(PressureTaperEndEnabled));
         container.AddProperty("End taper length", CreatePressureTaperLengthSlider()
             .BindNumber(PressureTaperEndLength))
@@ -161,7 +158,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
         Step = 1,
         ExpEdit = true,
         AllowGreater = true,
-        TooltipText = "Distance along the stroke in canvas units. Zero disables this end.",
+        TooltipText = "[Pressure Taper Length Tooltip]",
     };
 
     protected override void OnActivated()

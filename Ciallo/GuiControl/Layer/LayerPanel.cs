@@ -29,7 +29,8 @@ public partial class LayerPanel : VBoxContainer, IInitable
 
         var modes = Enum.GetValues<LayerBlendMode>();
         LayerProperty.BlendMode.Clear();
-        foreach (var mode in modes) LayerProperty.BlendMode.AddItem(mode.ToString());
+        foreach (var mode in modes)
+            LayerProperty.BlendMode.AddItem(mode == LayerBlendMode.Add ? "Additive" : mode.ToString());
         LayerProperty.BlendMode.AllowReselect = true;
         LayerSelectionActions.ObservePrimary(selection, s => s.BlendMode)
             .Subscribe(v => LayerProperty.BlendMode.Select(Array.IndexOf(modes, v))).AddTo(document);

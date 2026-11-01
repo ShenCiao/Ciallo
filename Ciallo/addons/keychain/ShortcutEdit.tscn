@@ -38,8 +38,11 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=570511677]
+[node name="HBoxContainer" type="HFlowContainer" parent="VBoxContainer" unique_id=582009577]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="ProfileLabel" type="Label" parent="VBoxContainer/HBoxContainer" unique_id=1404173835]
 layout_mode = 2
@@ -250,11 +253,11 @@ offset_bottom = 51.0
 
 [node name="DeleteConfirmation" type="ConfirmationDialog" parent="." unique_id=631111364]
 size = Vector2i(427, 100)
-dialog_text = "Are you sure you want to delete this shortcut profile?"
+dialog_text = "[Delete Shortcut Profile Confirmation]"
 
 [node name="ResetConfirmation" type="ConfirmationDialog" parent="." unique_id=77929510]
 size = Vector2i(427, 100)
-dialog_text = "Are you sure you want to restore all shortcuts to their default settings?"
+dialog_text = "[Reset Shortcuts Confirmation]"
 
 [connection signal="item_selected" from="VBoxContainer/HBoxContainer/ProfileOptionButton" to="." method="_on_ProfileOptionButton_item_selected"]
 [connection signal="pressed" from="VBoxContainer/HBoxContainer/NewProfile" to="." method="_on_NewProfile_pressed"]

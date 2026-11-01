@@ -57,7 +57,13 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         {
             AutoHeight = true,
             AutoWidth = true,
-        }.BindEnum(Strategy);
+        }.BindEnum(Strategy, strategy => strategy switch
+        {
+            CreationStrategy.WithinCurrentCel => "Within current cel",
+            CreationStrategy.WithinAllCels => "Within all cels",
+            CreationStrategy.NewCelFolder => "New cel folder",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(strategy)),
+        });
         container.AddProperty("Cel creation method", list)
             .VisibleIf(Document.Get<SelectionManager>().WorkingCelFolder, e => !e.IsNull);
     }
@@ -345,7 +351,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     private static string GetVectorFillCelFolderName(Entity sourceCelFolder)
     {
         string sourceName = sourceCelFolder.Get<CommonLayerSetting>().Name.Value;
-        return string.IsNullOrWhiteSpace(sourceName) ? "Vector fill" : $"{sourceName} Fill";
+        return string.IsNullOrWhiteSpace(sourceName) ? "Vector fill layer".Tr() : string.Format("{0} fill".Tr(), sourceName);
     }
 
     private readonly record struct CelVectorFillPlan(Entity SourceCel, List<Entity> ReferenceLayers);

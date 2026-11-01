@@ -20,7 +20,7 @@ script = ExtResource("1_qp7qr")
 unique_name_in_owner = true
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
-tooltip_text = "Clip to Layer Below (Clipping mask)"
+tooltip_text = "Clip to layer below"
 theme_type_variation = &"IconToggleButton"
 toggle_mode = true
 action_mode = 0
@@ -57,7 +57,7 @@ expand_icon = true
 [node name="NewFolder" type="Button" parent="." unique_id=1065481798]
 custom_minimum_size = Vector2(36, 36)
 layout_mode = 2
-tooltip_text = "New folder layer"
+tooltip_text = "New Folder Layer"
 theme_type_variation = &"IconClickButton"
 action_mode = 0
 icon = ExtResource("4_7h52i")

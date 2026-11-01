@@ -31,7 +31,7 @@ public class PaintFillHover : Interaction, IPropertyProvider
         var mode = new OptionButton
         {
             CustomMinimumSize = new(0, 32),
-            TooltipText = "Poly Cubic Bézier: press Enter to close with a straight line. Click the first point to close with a curve; drag before releasing to align the handles at the join.",
+            TooltipText = "[Poly Bezier Fill Tooltip]",
         };
         mode.AddItem("Freehand");
         mode.AddItem("Poly Cubic Bézier");
@@ -41,7 +41,7 @@ public class PaintFillHover : Interaction, IPropertyProvider
         {
             Name = "PaintFillBooleanOperation",
             CustomMinimumSize = new(0, 32),
-            TooltipText = "Modify overlapping polygons using the same fill brush in this layer. If polygons are selected, modify only those. Subtract removes the drawn area; Intersect keeps it.",
+            TooltipText = "[Paint Fill Operation Tooltip]",
         };
         operation.BindValue<Geometry2D.PolyBooleanOperation?>(
             [null, Geometry2D.PolyBooleanOperation.Union, Geometry2D.PolyBooleanOperation.Difference,

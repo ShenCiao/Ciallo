@@ -130,9 +130,9 @@ internal static class ArchetypeContextActions
         {
             var (stroke, fill) = LayerContextActions.SplitStrokeAndFill(command, layer);
             var name = layer.Get<CommonLayerSetting>().Name.Value;
-            results.Add(layer, [(fill, name + " fill"), (stroke, name + " stroke")]);
+            results.Add(layer, [(fill, string.Format("{0} fill".Tr(), name)), (stroke, string.Format("{0} stroke".Tr(), name))]);
         }
-        ImmutableArray<string> names = [.. context.Names.Select(name => name + " stroke")];
+        ImmutableArray<string> names = [.. context.Names.Select(name => string.Format("{0} stroke".Tr(), name))];
         // Include existing siblings with a result name, preserving the fill-below-stroke order.
         var selected = CelLayerSelection.Resolve([.. ExposedChildren(context.Folder).SelectMany(layer =>
             results.TryGetValue(layer, out var result) ? result : [(layer, layer.Get<CommonLayerSetting>().Name.Value)])], names);

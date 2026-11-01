@@ -101,7 +101,7 @@ public partial class MenuHelp : PopupMenu
         {
             AppBugReport.Exception(exception);
             GD.PrintErr(exception);
-            AppDialogHost.WarnUser.DialogText = "Cannot load research animation.".Tr() + " " + exception.Message;
+            AppDialogHost.WarnUser.DialogText = "Cannot load research animation.".Tr() + " " + exception.Message.Tr();
             AppDialogHost.WarnUser.Popup();
         }
     }

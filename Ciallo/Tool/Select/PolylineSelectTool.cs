@@ -192,8 +192,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 .AddToChildOf(container);
             convertButton.Name = toStroke ? "ConvertToStrokes" : "ConvertToFilledPolygons";
             convertButton.TooltipText = toStroke
-                ? "Outline each boundary with the working stroke brush at full pressure."
-                : "Close each stroke and fill it with the working fill brush. Empty regions are skipped.";
+                ? "[Convert To Strokes Tooltip]"
+                : "[Convert To Filled Polygons Tooltip]";
             var workingBrush = toStroke ? selectionManager.WorkingStrokeBrush : selectionManager.WorkingVectorFillBrush;
             selectionChanged.CombineLatest(workingBrush, (_, brush) => brush).Subscribe(brush =>
             {
@@ -215,8 +215,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             button.Name = operation.ToString();
             button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
             button.TooltipText = operation == Geometry2D.PolyBooleanOperation.Difference
-                ? "Within each layer, subtract selected upper polygons from the bottom polygon and keep its fill brush."
-                : "Within each layer, combine selected polygons and keep the bottom polygon's fill brush.";
+                ? "[Subtract Selected Polygons Tooltip]"
+                : "[Combine Selected Polygons Tooltip]";
             selectionChanged.Subscribe(_ => button.Disabled =
                 !PolygonBooleanActions.CanApplySelection(selectedShapes)).AddTo(button);
             button.Pressed += () =>
@@ -240,7 +240,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             Step = 0.01f,
             ExpEdit = true,
             AllowGreater = true,
-            TooltipText = "Multiply every selected stroke radius by this factor. For example, 0.5 halves each radius.",
+            TooltipText = "[Stroke Radius Multiplier Tooltip]",
         }.BindNumber(StrokeRadiusMultiplier);
         container.CreatePropertyBox("Radius multiplier", strokeRadiusMultiplierEdit)
             .AddToChildOf(strokeRadiusEditBox);
@@ -280,7 +280,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             Step = 0.001,
             AllowGreater = true,
             ExpEdit = true,
-            TooltipText = "Position and radius tolerance in canvas units. Zero keeps all points.",
+            TooltipText = "[Simplification Tolerance Tooltip]",
         };
         simplificationToleranceEdit.BindNumber(SimplificationTolerance);
         container.CreatePropertyBox("Simplification tolerance", simplificationToleranceEdit).AddToChildOf(polylineEditBox);

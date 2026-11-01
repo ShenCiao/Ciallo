@@ -187,6 +187,26 @@ func _construct_tree() -> void:
 	mouse_movement_options.hide()
 
 
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_TRANSLATION_CHANGED or not is_node_ready():
+		return
+	var selectors: Array[OptionButton] = [mouse_shortcut_selector.option_button, joy_key_shortcut_selector.option_button, joy_axis_shortcut_selector.option_button]
+	var selections: Array[int] = []
+	for selector in selectors:
+		selections.append(selector.selected)
+		selector.clear()
+	_fill_selector_options()
+	for i in selectors.size():
+		selectors[i].select(selections[i])
+	var item: TreeItem = tree.get_root()
+	while item != null:
+		var metadata: Variant = item.get_metadata(0)
+		if metadata is InputEvent:
+			item.set_text(0, event_to_str(metadata))
+		item = item.get_next_in_tree()
+	apply_search_filters()
+
+
 func _fill_selector_options() -> void:
 	mouse_shortcut_selector.input_type_l.text = "Mouse Button Index:"
 	joy_key_shortcut_selector.input_type_l.text = "Joypad Button Index:"
@@ -351,12 +371,12 @@ func apply_search_filters() -> void:
 						results.append(tree_item)
 					else:
 						var parent := tree_item.get_parent()
-						if current_name_filter.is_subsequence_ofn(parent.get_text(0)):
+						if current_name_filter.is_subsequence_ofn(tr(parent.get_text(0))):
 							results.append(tree_item)
 		elif not current_name_filter.is_empty():
 			var metadata = tree_item.get_metadata(0)
 			if metadata is StringName:
-				if current_name_filter.is_subsequence_ofn(tree_item.get_text(0)):
+				if current_name_filter.is_subsequence_ofn(tr(tree_item.get_text(0))):
 					results.append(tree_item)
 			elif metadata is InputEvent:
 				tree_item = tree_item.get_next_in_tree()
@@ -517,7 +537,7 @@ func _on_ProfileOptionButton_item_selected(index: int) -> void:
 
 func _on_NewProfile_pressed() -> void:
 	is_editing = false
-	profile_name.text = "New Shortcut Profile"
+	profile_name.text = tr("New Shortcut Profile")
 	profile_settings.title = "New Shortcut Profile"
 	profile_settings.popup_centered_clamped()
 
@@ -553,7 +573,7 @@ func _on_export_profile_pressed() -> void:
 func _on_import_profile_file_selected(path: String) -> void:
 	var resource: Resource = load(path)
 	if not resource is ShortcutProfile:
-		_show_profile_operation_error("Import Failed", "The selected file is not a shortcut profile.")
+		_show_profile_operation_error("Import Failed", "[Invalid Shortcut Profile]")
 		return
 
 	var profile: ShortcutProfile = (resource as ShortcutProfile).duplicate(true) as ShortcutProfile
@@ -564,7 +584,7 @@ func _on_import_profile_file_selected(path: String) -> void:
 	profile.resource_path = Keychain.PROFILES_PATH.path_join(unique_name.validate_filename() + ".tres")
 	profile.fill_bindings(false)
 	if not Keychain.save_profile(profile):
-		_show_profile_operation_error("Import Failed", "The shortcut profile could not be saved.")
+		_show_profile_operation_error("Import Failed", "[Cannot Save Shortcut Profile]")
 		return
 
 	Keychain.profiles.append(profile)
@@ -579,7 +599,7 @@ func _on_export_profile_file_selected(path: String) -> void:
 	var profile: ShortcutProfile = Keychain.selected_profile.duplicate(true) as ShortcutProfile
 	var err: Error = ResourceSaver.save(profile, export_path)
 	if err != OK:
-		_show_profile_operation_error("Export Failed", "The shortcut profile could not be exported.")
+		_show_profile_operation_error("Export Failed", "[Cannot Export Shortcut Profile]")
 
 
 func _get_unique_import_name(base_name: String) -> String:

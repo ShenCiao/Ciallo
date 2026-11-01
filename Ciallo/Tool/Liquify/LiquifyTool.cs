@@ -101,7 +101,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
 
         container.AddChild(new Label
         {
-            Text = "Edits recorded pressure without changing thickness. Brushes without pressure-driven flow may show no visible change.",
+            Text = "[Pressure Adjustment Hint]",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         }.VisibleIf(Mode, LiquifyMode.Pressure));
     }
@@ -116,7 +116,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
             MinValue = -1f,
             MaxValue = 1f,
             Step = 0.01f,
-            TooltipText = "Negative values decrease; positive values increase. Zero has no effect.",
+            TooltipText = "[Adjustment Strength Tooltip]",
         }.BindNumber(strength);
         slider.Ready += () =>
         {

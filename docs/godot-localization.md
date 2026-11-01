@@ -1,6 +1,24 @@
-# Godot localization behavior
+# Translating Ciallo
 
-This guide describes Godot's built-in localization behavior: how translations are registered, how scene-tree nodes translate supported text properties, and when code must translate a string explicitly.
+This guide covers Ciallo's translation workflow and Godot's automatic and explicit translation behavior.
+
+## Translation tables and keys
+
+Maintain application translations, including the embedded Keychain UI, in `Ciallo/Localization/TranslatableStrings.csv` and `Ciallo/Localization/LongStrings.csv`. Both use `key,en,zh_CN,zh_TW,ja,ko,de,fr`; fill every language column, including English.
+
+- **Short text** belongs in `TranslatableStrings.csv`: button/menu names, field labels, mode names, and brief standalone status messages. Use the displayed English wording as the key, preserving case, spaces, and punctuation. A short tooltip that only names an action also belongs here.
+- **Long text** belongs in `LongStrings.csv`: explanatory sentences, interaction instructions, detailed warnings, and multi-line help. Use a concise English summary in square brackets, such as `[Canvas Reference Size Hint]` or `[Stroke Radius Multiplier Tooltip]`. Put the full wording in each language column; the bracketed key itself is not display text. Classify by purpose, not a fixed character count or the property receiving it.
+- Keep each key in exactly one table. When moving or renaming a key, update its C# and authored scene/resource references in the same change. Do not keep aliases for replaced keys.
+- Preserve format placeholders such as `{0}` (C#) and `%s` (Keychain) in every translation. Translate the format before substituting values; do not build translation keys from runtime values. Keep user names, paths, device names, and other external data out of the tables. Generated layer names translate their format once when created and then remain editable document data.
+- Store line breaks as literal `\n` sequences. The CSV importers unescape translations, but not keys. Quote fields containing commas or quotes using CSV escaping. Save as UTF-8.
+
+## Updating translations
+
+1. Review the release diff and the current UI call sites: authored controls, dynamically built menus/tool panels, enum labels, shortcut names, and composed dialogs. A nonempty CSV does not establish that every visible string has a matching key.
+2. Classify the wording and add all seven translations. Reuse an existing key only when the wording and meaning agree. Keep explanatory text behind a bracketed key even if it fits on one line. Shortcut action and group labels use humanized Title Case; translate their display keys without renaming persisted input actions.
+3. Assign keys directly to auto-translated properties. Translate explicitly only at composition or custom-drawing boundaries, as described below. Do not translate user-authored names.
+4. Edit authored `.tscn`, `.tres`, and `.res` properties through Fennara's Godot object model. Let Godot reimport the CSV files to regenerate `.translation` resources; do not edit those generated resources by hand. Both tables' seven generated resources are registered in Project Settings.
+5. Check for duplicate keys, missing language cells, changed placeholders, stale references, and untranslated new UI strings. Build changed C# code and verify the imported translations in Godot, including English and a non-English locale. Check language switching and representative long text in the affected UI.
 
 ## Translation resources and locale
 

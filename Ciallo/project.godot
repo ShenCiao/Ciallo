@@ -259,3 +259,18 @@ textures/vram_compression/import_etc2_astc=true
 viewport/hdr_2d=true
 anti_aliasing/screen_space_roughness_limiter/enabled=false
 environment/screen_space_reflection/roughness_quality=0
+
+[shader_globals]
+
+PolygonFillAaEnabled={
+"type": "bool",
+"value": true
+}
+PolygonFillAaEpsilon={
+"type": "float",
+"value": 0.01
+}
+PolygonFillAaMaxVertexOffsetPixels={
+"type": "float",
+"value": 10.0
+}

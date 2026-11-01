@@ -16,7 +16,6 @@ public partial class TransformOverlayBox : Node2D
         Size = size;
         LocalTransform = localTransform;
         Wireframe = new() { Material = AutoloadRendering.WireframeMaterial };
-        Wireframe.SetInstanceShaderParameter("overridingColor", AppPreference.StrokeWireframeColor);
 
         Dots = AutoloadRendering.CreateDots();
         AddChild(Wireframe);

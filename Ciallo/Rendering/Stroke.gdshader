@@ -29,7 +29,6 @@ const int MaxStampsPerFragment = 128;
 uniform int StrokeType : hint_enum("Vanilla", "Stamp", "Airbrush") = 0;
 uniform int ActiveBrushFlags = 0;
 uniform vec4 MaterialColor : source_color = vec4(0.0, 0.0, 0.0, 1.0);
-instance uniform vec4 OverridingColor = vec4(0.0, 0.0, 0.0, -1.0);
 // Canvas radii are fixed in screen space (e.g. wireframes).
 uniform int RadiusMode : hint_enum("World", "Canvas") = 0;
 // Diameters and padding are measured in render-target pixels.
@@ -275,7 +274,7 @@ vec4 canvasColor(vec4 contribution) {
 
 // Brush evaluation.
 vec4 evaluateVanilla(vec2 pixelLocal, vec2 localDx, vec2 localDy, float geometricCoverage, float flowRatio) {
-	vec4 brush = OverridingColor.a >= 0.0 ? OverridingColor : MaterialColor;
+	vec4 brush = MaterialColor;
 	float targetFlow = brush.a * flowRatio;
 	float coverage = targetFlow * geometricCoverage;
 	// Adjacent segments share endpoint disks. Split their transmittance

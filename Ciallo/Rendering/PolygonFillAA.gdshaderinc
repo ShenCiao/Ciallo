@@ -1,6 +1,6 @@
-uniform bool AaEnabled = true;
-uniform float AaEpsilon : hint_range(0.00001, 0.5) = 0.01;
-uniform float AaMaxVertexOffsetPixels : hint_range(0.0, 32.0) = 10.0;
+global uniform bool PolygonFillAaEnabled;
+global uniform float PolygonFillAaEpsilon;
+global uniform float PolygonFillAaMaxVertexOffsetPixels;
 
 varying flat vec2 aa_triangle_a;
 varying flat vec2 aa_triangle_b;
@@ -25,11 +25,11 @@ vec2 aa_vertex_offset(vec2 previous, vec2 current, vec2 next, float winding) {
 	float h1 = 0.501 * (abs(n1.x) + abs(n1.y));
 	vec2 numerator = vec2(h0 * n1.y - h1 * n0.y, n0.x * h1 - n1.x * h0) * winding;
 	float numerator_length = length(numerator);
-	if (numerator_length == 0.0 || AaMaxVertexOffsetPixels <= 0.0) {
+	if (numerator_length == 0.0 || PolygonFillAaMaxVertexOffsetPixels <= 0.0) {
 		return vec2(0.0);
 	}
 	// Bound the division itself, so an acute tip never creates an infinite offset.
-	float denominator = max(abs(aa_cross(n0, n1)), numerator_length / AaMaxVertexOffsetPixels);
+	float denominator = max(abs(aa_cross(n0, n1)), numerator_length / PolygonFillAaMaxVertexOffsetPixels);
 	return numerator / denominator;
 }
 
@@ -39,7 +39,7 @@ void vertex() {
 	aa_triangle_b = (local_to_screen * vec4(CUSTOM0.zw, 0.0, 1.0)).xy;
 	aa_triangle_c = (local_to_screen * vec4(CUSTOM1.xy, 0.0, 1.0)).xy;
 	mat2 linear = mat2(local_to_screen[0].xy, local_to_screen[1].xy);
-	if (AaEnabled && determinant(linear) != 0.0) {
+	if (PolygonFillAaEnabled && determinant(linear) != 0.0) {
 		float winding = sign(aa_cross(aa_triangle_b - aa_triangle_a, aa_triangle_c - aa_triangle_a));
 		int corner = VERTEX_ID % 3;
 		vec2 offset;
@@ -101,9 +101,9 @@ float polygon_aa_coverage(vec2 pixel_center) {
 }
 
 float polygon_aa_alpha(float target_alpha, vec2 pixel_center) {
-	if (!AaEnabled) return target_alpha;
+	if (!PolygonFillAaEnabled) return target_alpha;
 	float coverage = polygon_aa_coverage(pixel_center);
-	float depth = -log2(max(1.0 - clamp(target_alpha, 0.0, 1.0), AaEpsilon));
+	float depth = -log2(max(1.0 - clamp(target_alpha, 0.0, 1.0), PolygonFillAaEpsilon));
 	float x = coverage * depth;
 	// Avoid cancellation of tiny triangle contributions in 1 - exp2(-x).
 	if (x < 0.001) {

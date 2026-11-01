@@ -25,8 +25,7 @@ internal sealed class BucketFillPreview : IDisposable
     public void Show(BucketFillRegion region, Entity brush, bool atBottom)
     {
         _parent.MoveChild(_view, atBottom ? 0 : -1);
-        _view.Color = brush.IsNull ? Colors.White : brush.Get<FillBrushSetting>().FillColor.Value;
-        _view.MissingBrush = brush.IsNull;
+        _view.Material = brush.IsNull ? PolygonFillRendering.HintMaterial : brush.Get<FillBrushMaterial>();
         if (ReferenceEquals(_cachedRegion, region)) return;
         _cachedRegion = region;
 

@@ -13,7 +13,6 @@ public partial class PolylineWireframe : Node2D
     public PolylineWireframe()
     {
         Wireframe = new() { Material = AutoloadRendering.WireframeMaterial };
-        Wireframe.SetInstanceShaderParameter("overridingColor", AppPreference.StrokeWireframeColor);
         Dots = AutoloadRendering.CreateDots();
 
         AddChild(Wireframe);
@@ -26,15 +25,6 @@ public partial class PolylineWireframe : Node2D
         float dotRadius = AppPreference.StrokeDotRadius;
         Wireframe.SetGeometry(points, wireframeRadius);
         Dots.SetDotGeometry(points, dotRadius);
-    }
-
-    public void SetColor(Color color)
-    {
-        Wireframe.SetInstanceShaderParameter("OverridingColor", color);
-        for (int i = 0; i < Dots.Multimesh.InstanceCount; i++)
-        {
-            Dots.Multimesh.SetInstanceColor(i, color);
-        }
     }
 }
 

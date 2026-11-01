@@ -29,8 +29,10 @@ public class PolygonBooleanActionsTests
         _layer = AddLayer();
         _brush = _document.World.Create();
         _brush.Add(new FillBrushSetting());
+        _brush.Add(new FillBrushMaterial());
         _otherBrush = _document.World.Create();
         _otherBrush.Add(new FillBrushSetting());
+        _otherBrush.Add(new FillBrushMaterial());
     }
 
     [AfterTest]

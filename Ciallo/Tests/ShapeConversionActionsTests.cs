@@ -32,6 +32,7 @@ public class ShapeConversionActionsTests
         _strokeBrush.Get<StrokeBrushSetting>().ActiveBrushFlags.Value = BrushFlags.Pressure2Radius;
         _fillBrush = _document.World.Create();
         _fillBrush.Add(new FillBrushSetting());
+        _fillBrush.Add(new FillBrushMaterial());
         var selection = _document.Get<SelectionManager>();
         selection.WorkingStrokeBrush.Value = _strokeBrush;
         selection.WorkingVectorFillBrush.Value = _fillBrush;

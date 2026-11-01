@@ -61,9 +61,11 @@ public class NewVectorFillLayerCmd : CommandBase
         NewShapeLayerCmd.CreateNonDataComponents(targetE);
 
         // Bounded area
+        var boundedAreaMaterial = new FillBrushMaterial();
         var boundedAreaPreview = new PolygonFillView
         {
             Name = "BoundedArea",
+            Material = boundedAreaMaterial,
         };
         targetE.AddNode(boundedAreaPreview);
         targetE.Get<ShapeLayerView>().AddChild(boundedAreaPreview, false, Node.InternalMode.Front);
@@ -76,7 +78,7 @@ public class NewVectorFillLayerCmd : CommandBase
                 return;
             }
             boundedAreaPreview.Visible = true;
-            boundedAreaPreview.Color = color.Value;
+            boundedAreaMaterial.Color = color.Value;
         }).AddTo(targetE);
 
         // Shape — ArrReady emits whenever the arrangement is settled and safe to query.

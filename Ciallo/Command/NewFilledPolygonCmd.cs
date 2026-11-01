@@ -41,16 +41,11 @@ public class NewFilledPolygonCmd : NewShapeCmdBase
         // View
         var polygonView = new PolygonFillView();
         targetE.AddNode(polygonView);
-        setting.BrushE
-            .Select(e => e.IsNull
-                ? Observable.Return(Colors.White)
-                : e.Get<FillBrushSetting>().FillColor.AsObservable())
-            .Switch()
-            .Subscribe(polygonView.SetColor)
-            .AddTo(targetE);
         setting.BrushE.Subscribe(brushE =>
         {
-            polygonView.MissingBrush = brushE.IsNull;
+            polygonView.Material = brushE.IsNull
+                ? PolygonFillRendering.HintMaterial
+                : brushE.Get<FillBrushMaterial>();
         }).AddTo(targetE);
 
         sampledPolyline.Positions.Subscribe(ps =>

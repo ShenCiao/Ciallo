@@ -71,12 +71,11 @@ public sealed class GapBridgePreviewManager : IDisposable
             seen.Add(faceRid);
             if (!_faceNodes.TryGetValue(faceRid, out var faceNode))
             {
-                faceNode = new PolygonFillView();
+                faceNode = new PolygonFillView { Material = new FillBrushMaterial(GetFaceColor(faceRid)) };
                 _faceNodes[faceRid] = faceNode;
                 _facesRoot.AddChild(faceNode);
             }
 
-            faceNode.Color = GetFaceColor(faceRid);
             faceNode.SetTriangleResult(arr.GetTrianglesFromFace(faceRid));
         }
 

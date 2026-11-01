@@ -15,31 +15,12 @@ public partial class PolygonFillView : MeshInstance2D
     private Transform2D _boundsTransform;
     private int _boundsRevision = -1;
     private int _vertexCount;
-    private Color _color = Colors.White;
-
-    public Color Color
-    {
-        get => _color;
-        set
-        {
-            _color = value;
-            SetInstanceShaderParameter("FillColor", value);
-        }
-    }
-
-    public bool MissingBrush
-    {
-        get => Material == PolygonFillRendering.HintMaterial;
-        set => Material = value ? PolygonFillRendering.HintMaterial : PolygonFillRendering.SolidMaterial;
-    }
 
     public PolygonFillView()
     {
         Mesh = _mesh;
-        MissingBrush = false;
+        Material = PolygonFillRendering.WhiteMaterial;
     }
-
-    public void SetColor(Color color) => Color = color;
 
     public void SetPolygonFromRawRing(ImmutableArray<Vector2> polygon) =>
         SetPolygonFromRawRing(polygon.AsSpan());

@@ -58,60 +58,46 @@ void vertex() {
 #endif
 }
 
-float polygon_aa_coverage(vec2 pixel_center) {
-	vec2 triangle[3] = vec2[](aa_triangle_a - pixel_center, aa_triangle_b - pixel_center, aa_triangle_c - pixel_center);
-	float winding = sign(aa_cross(triangle[1] - triangle[0], triangle[2] - triangle[0]));
-	if (winding == 0.0) return 0.0;
-	vec2 normals[3];
-	float distances[3];
-	bool fully_inside = true;
-	for (int edge = 0; edge < 3; edge++) {
-		vec2 delta = triangle[(edge + 1) % 3] - triangle[edge];
-		vec2 normal = winding * vec2(-delta.y, delta.x);
-		float distance = -dot(normal, triangle[edge]);
-		float radius = 0.5 * (abs(normal.x) + abs(normal.y));
-		if (distance + radius <= 0.0) return 0.0;
-		fully_inside = fully_inside && distance >= radius;
-		normals[edge] = normal;
-		distances[edge] = distance;
+// Signed integral of clamp(y, 0, 1) dx inside the pixel's vertical strip.
+// Closing edges at x=0 or x=1 have dx=0 and add no area.
+float aa_edge_area(vec2 a, vec2 b) {
+	float dx = b.x - a.x;
+	if (dx == 0.0) return 0.0;
+	// Canonical ordering makes reversed shared edges numerically symmetric.
+	vec2 p = dx > 0.0 ? a : b;
+	vec2 q = dx > 0.0 ? b : a;
+	float left = max(p.x, 0.0);
+	float right = min(q.x, 1.0);
+	if (right <= left) return 0.0;
+	float slope = (q.y - p.y) / (q.x - p.x);
+	// Evaluate from the nearer endpoint to limit cancellation when zoomed in.
+	vec2 origin = abs(q.x - 0.5) < abs(p.x - 0.5) ? q : p;
+	float y0 = fma(left - origin.x, slope, origin.y);
+	float y1 = fma(right - origin.x, slope, origin.y);
+	float low = min(y0, y1);
+	float high = max(y0, y1);
+	float average;
+	if (low >= 1.0) {
+		average = 1.0;
+	} else if (high <= 0.0) {
+		return 0.0;
+	} else if (low >= 0.0 && high <= 1.0) {
+		average = 0.5 * (low + high);
+	} else {
+		float bottom = clamp(low, 0.0, 1.0);
+		float top = clamp(high, 0.0, 1.0);
+		average = (0.5 * (bottom + top) * (top - bottom) + max(high - 1.0, 0.0)) / (high - low);
 	}
-	if (fully_inside) return 1.0;
+	return sign(dx) * (right - left) * average;
+}
 
-	// Clip the unit pixel by the three triangle half-planes. Intersection has <= 7 vertices.
-	vec2 polygon[8];
-	vec2 clipped[8];
-	polygon[0] = vec2(-0.5, -0.5);
-	polygon[1] = vec2(0.5, -0.5);
-	polygon[2] = vec2(0.5, 0.5);
-	polygon[3] = vec2(-0.5, 0.5);
-	int count = 4;
-	for (int edge = 0; edge < 3; edge++) {
-		int output_count = 0;
-		vec2 previous = polygon[count - 1];
-		float previous_distance = dot(normals[edge], previous) + distances[edge];
-		for (int i = 0; i < count; i++) {
-			vec2 current = polygon[i];
-			float distance = dot(normals[edge], current) + distances[edge];
-			// Vertices exactly on the clipping plane are emitted only once.
-			if ((distance > 0.0 && previous_distance < 0.0) || (distance < 0.0 && previous_distance > 0.0)) {
-				float t = previous_distance / (previous_distance - distance);
-				clipped[output_count++] = mix(previous, current, t);
-			}
-			if (distance >= 0.0) clipped[output_count++] = current;
-			previous = current;
-			previous_distance = distance;
-		}
-		if (output_count < 3) return 0.0;
-		count = output_count;
-		for (int i = 0; i < count; i++) polygon[i] = clipped[i];
-	}
-	float twice_area = 0.0;
-	vec2 previous = polygon[count - 1];
-	for (int i = 0; i < count; i++) {
-		twice_area += aa_cross(previous, polygon[i]);
-		previous = polygon[i];
-	}
-	return clamp(abs(twice_area) * 0.5, 0.0, 1.0);
+float polygon_aa_coverage(vec2 pixel_center) {
+	vec2 a = aa_triangle_a - pixel_center + vec2(0.5);
+	vec2 b = aa_triangle_b - pixel_center + vec2(0.5);
+	vec2 c = aa_triangle_c - pixel_center + vec2(0.5);
+	if (aa_cross(b - a, c - a) == 0.0) return 0.0;
+	// Green's theorem: the clipped boundary integral equals triangle/pixel area.
+	return clamp(abs(aa_edge_area(a, b) + aa_edge_area(b, c) + aa_edge_area(c, a)), 0.0, 1.0);
 }
 
 float polygon_aa_alpha(float target_alpha, vec2 pixel_center) {

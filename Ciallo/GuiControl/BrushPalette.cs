@@ -24,6 +24,7 @@ public partial class BrushPalette : ScrollContainer
     {
         _kind = kind;
         HorizontalScrollMode = ScrollMode.Disabled;
+        VerticalScrollMode = ScrollMode.Reserve;
         SizeFlagsHorizontal = SizeFlags.ExpandFill;
         SizeFlagsVertical = SizeFlags.ExpandFill;
         CustomMinimumSize = new(0, 200);

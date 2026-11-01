@@ -12,6 +12,11 @@ namespace Ciallo.Widget;
 /// When resizing, children scale uniformly. Once they would fall below MinRowHeight the column
 /// count decreases (fewer columns → larger items).
 /// Once the container width exceed MinRowHeight*current column count, column count increases.
+///
+/// Grid height depends on width; auto scrollbars can toggle forever at the overflow threshold.
+/// When hosted in a <see cref="ScrollContainer"/>, set
+/// <see cref="ScrollContainer.VerticalScrollMode"/> to <see cref="ScrollContainer.ScrollMode.Reserve"/>
+/// so showing or hiding the scrollbar does not change the grid width.
 /// </remarks>
 [GlobalClass, Tool]
 public partial class DynamicGridContainer : Container

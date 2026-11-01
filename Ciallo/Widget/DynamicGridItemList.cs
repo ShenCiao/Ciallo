@@ -10,8 +10,6 @@ namespace Ciallo.Widget;
 /// <remarks>
 /// When a child is dragged to a new position, <see cref="Moved"/> fires with
 /// (sourceIndex, destinationIndex).
-///
-/// If being contained by a ScrollContainer, remember to avoid scrollbar oscillation by setting the
 /// </remarks>
 [GlobalClass, Tool]
 public partial class DynamicGridItemList : DynamicGridContainer

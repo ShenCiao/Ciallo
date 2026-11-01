@@ -73,6 +73,7 @@ public partial class MarkerPickerPopup : PopupPanel
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Reserve,
             CustomMinimumSize = new(280, 280),
         };
         backdrop.AddChild(scroll);

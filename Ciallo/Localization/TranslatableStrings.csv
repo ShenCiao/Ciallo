@@ -188,6 +188,9 @@ Push,Push,推移,推移,押し出し,밀기,Schieben,Pousser
 Pinch / Expand,Pinch / Expand,收缩 / 扩张,收縮 / 擴張,つまむ / 膨張,오므리기 / 확장,Zusammenziehen / Ausdehnen,Pincer / Dilater
 Pinch (−),Pinch (−),收缩（−）,收縮（−）,つまむ（−）,오므리기 (−),Zusammenziehen (−),Pincer (−)
 Expand (+),Expand (+),扩张（+）,擴張（+）,膨張（+）,확장 (+),Ausdehnen (+),Dilater (+)
+Show selection wireframe,Show selection wireframe,显示选中线框,顯示選取線框,選択のワイヤーフレームを表示,선택 와이어프레임 표시,Auswahl-Drahtgitter anzeigen,Afficher le fil de la sélection
+Target: {0} selected shapes,Target: {0} selected shapes,目标：{0} 个选中的形状,目標：{0} 個選取的形狀,対象：選択した {0} 個のシェイプ,대상: 선택한 쉐이프 {0}개,Ziel: {0} ausgewählte Formen,Cible : {0} formes sélectionnées
+Target: all shapes in selected layers,Target: all shapes in selected layers,目标：选中图层中的全部形状,目標：選取圖層中的全部形狀,対象：選択したレイヤーのすべてのシェイプ,대상: 선택한 레이어의 모든 쉐이프,Ziel: alle Formen in den ausgewählten Ebenen,Cible : toutes les formes des calques sélectionnés
 Liquify,Liquify,液化,液化,ゆがみ,픽셀 유동화,Verflüssigen,Fluidité
 No brush selected,No brush selected,未选择笔刷,未選擇筆刷,ブラシが選択されていません,브러시가 선택되지 않았습니다,Kein Pinsel ausgewählt,Aucun pinceau sélectionné
 Load research animation,Load research animation,加载研究动画,載入研究動畫,研究用アニメーションを読み込む,연구용 애니메이션 불러오기,Forschungsanimation laden,Charger l'animation de recherche

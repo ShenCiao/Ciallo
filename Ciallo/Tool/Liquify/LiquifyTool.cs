@@ -5,6 +5,7 @@ using Ciallo.Data;
 using Ciallo.Widget;
 using Frent;
 using Godot;
+using ObservableCollections;
 using R3;
 using Stateless;
 
@@ -28,6 +29,8 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     public readonly ReactiveProperty<float> ThicknessStrength = new(0.5f);
     [DataMember]
     public readonly ReactiveProperty<float> PressureStrength = new(0.5f);
+    [DataMember]
+    public readonly ReactiveProperty<bool> ShowSelectionWireframe = new(true);
 
     internal ReactiveProperty<float> StrengthFor(LiquifyMode mode) => mode switch
     {
@@ -118,6 +121,48 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
             Text = "[Pressure Adjustment Hint]",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         }.VisibleIf(Mode, LiquifyMode.Pressure));
+
+        DrawSelectionTarget(container);
+    }
+
+    // Names what the next stroke affects, because the whole-layer default has no canvas outline.
+    private void DrawSelectionTarget(PropertyContainer container)
+    {
+        var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
+        var box = container.CreateBox().AddToChildOf(container);
+        box.Name = "LiquifySelectionTarget";
+
+        // Composed with a count, so it is translated here and rebuilt when the language changes.
+        var target = new Label
+        {
+            AutoTranslateMode = Node.AutoTranslateModeEnum.Disabled,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        }.AddToChildOf(box);
+
+        var deselect = container.CreateButton("Deselect").AddToChildOf(box);
+        deselect.Pressed += selectedShapes.Clear;
+
+        container.CreatePropertyBox("Show selection wireframe",
+            new CheckButton
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                CustomMinimumSize = new(128, 0),
+            }.BindBool(ShowSelectionWireframe)).AddToChildOf(box);
+
+        void Refresh()
+        {
+            int count = selectedShapes.Count(LiquifyTargetScope.CanLiquify);
+            target.Text = selectedShapes.Count > 0
+                ? string.Format("Target: {0} selected shapes".Tr(), count)
+                : "Target: all shapes in selected layers".Tr();
+            deselect.Disabled = selectedShapes.Count == 0;
+        }
+
+        Refresh();
+        selectedShapes.ObserveChanged().Subscribe(_ => Refresh()).AddTo(target);
+        // Deferred so TranslationServer has switched locale before the text is rebuilt.
+        var deferredRefresh = Callable.From(Refresh);
+        AppPreference.Language.Skip(1).Subscribe(_ => deferredRefresh.CallDeferred()).AddTo(target);
     }
 
     private void DrawAdjustment(PropertyContainer container, LiquifyMode mode, string negative, string positive)

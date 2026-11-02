@@ -8,6 +8,8 @@ namespace Ciallo.GuiControl;
 
 internal static class BrushPreview
 {
+    public const int FillPreviewSize = 120;
+
     public static Control Stroke(Entity e)
     {
         var wrapper = new PanelContainer()
@@ -84,9 +86,9 @@ internal static class BrushPreview
             AnchorRight = 1,
             OffsetLeft = 4,
             OffsetRight = -4,
-            OffsetTop = 16,
-            OffsetBottom = 16,
-            GrowVertical = Control.GrowDirection.Both,
+            OffsetTop = 20,
+            OffsetBottom = 20,
+            GrowVertical = Control.GrowDirection.End,
         };
         nameLabel.AddThemeConstantOverride("outline_size", 8);
         nameLabel.AddThemeColorOverride("font_color", Colors.White);

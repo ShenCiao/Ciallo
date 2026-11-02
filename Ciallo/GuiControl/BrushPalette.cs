@@ -31,7 +31,8 @@ public partial class BrushPalette : ScrollContainer
         Grid = new DynamicGridItemList
         {
             Name = "Brushes",
-            MinRowHeight = kind == ShapeBrushKind.Stroke ? 80 : 60,
+            MinRowHeight = kind == ShapeBrushKind.Stroke ? 80 : BrushPreview.FillPreviewSize,
+            MaxRowHeightRatio = kind == ShapeBrushKind.Stroke ? 2f : 1f,
             AspectRatio = kind == ShapeBrushKind.Stroke ? 2.667f : 1f,
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             ReorderEnabled = false,

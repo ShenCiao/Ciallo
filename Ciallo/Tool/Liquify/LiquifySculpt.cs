@@ -23,7 +23,7 @@ public readonly record struct LiquifyDab(
 /// </remarks>
 public static class LiquifySculpt
 {
-    // Per-dab radial scaling for Expand/Pinch. With influence ≈ 1, peak per-dab
+    // Per-dab scaling for Radial mode. With |influence| ≈ 1, peak per-dab
     // displacement is (1/5)^2 = 4%, so a drag accumulates smoothly instead of
     // snapping the geometry on a single dab.
     private const float RadialEffectScale = 1f / 5f;
@@ -43,13 +43,13 @@ public static class LiquifySculpt
     public static Vector2 ApplyPosition(LiquifyMode mode, Vector2 position, LiquifyDab dab)
     {
         float influence = Influence(position, dab);
-        if (influence <= 0f)
+        if (influence == 0f)
             return position;
 
         return mode switch
         {
             LiquifyMode.Push => Push(position, dab, influence),
-            LiquifyMode.RadialAdjustment => RadialAdjustment(position, dab.Center, influence, StepScale(dab)),
+            LiquifyMode.Radial => Radial(position, dab.Center, influence, StepScale(dab)),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
     }
@@ -91,11 +91,11 @@ public static class LiquifySculpt
         return position + dab.Delta * influence;
     }
 
-    private static Vector2 RadialAdjustment(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
+    // Positive influence expands away from the brush center; negative influence pinches toward it.
+    private static Vector2 Radial(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
     {
         float scaled = influence * RadialEffectScale;
-        // Positive influence expands, negative pinches
-        float factor = Mathf.Pow(1f + scaled * scaled * Mathf.Sign(influence), stepScale);
+        float factor = Mathf.Pow(1f + scaled * Mathf.Abs(scaled), stepScale);
         return brushCenter + (position - brushCenter) * factor;
     }
 

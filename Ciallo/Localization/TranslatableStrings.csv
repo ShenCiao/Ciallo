@@ -185,8 +185,9 @@ Strength,Strength,强度,強度,強さ,강도,Stärke,Intensité
 Normal,Normal,正常,正常,通常,일반,Normal,Normal
 Erase,Erase,擦除,擦除,消去,지우기,Löschen,Effacer
 Push,Push,推移,推移,押し出し,밀기,Schieben,Pousser
-Expand,Expand,扩张,擴張,膨張,확장,Ausdehnen,Dilater
-Pinch,Pinch,收缩,收縮,つまむ,오므리기,Zusammenziehen,Pincer
+Pinch / Expand,Pinch / Expand,收缩 / 扩张,收縮 / 擴張,つまむ / 膨張,오므리기 / 확장,Zusammenziehen / Ausdehnen,Pincer / Dilater
+Pinch (−),Pinch (−),收缩（−）,收縮（−）,つまむ（−）,오므리기 (−),Zusammenziehen (−),Pincer (−)
+Expand (+),Expand (+),扩张（+）,擴張（+）,膨張（+）,확장 (+),Ausdehnen (+),Dilater (+)
 Liquify,Liquify,液化,液化,ゆがみ,픽셀 유동화,Verflüssigen,Fluidité
 No brush selected,No brush selected,未选择笔刷,未選擇筆刷,ブラシが選択されていません,브러시가 선택되지 않았습니다,Kein Pinsel ausgewählt,Aucun pinceau sélectionné
 Load research animation,Load research animation,加载研究动画,載入研究動畫,研究用アニメーションを読み込む,연구용 애니메이션 불러오기,Forschungsanimation laden,Charger l'animation de recherche

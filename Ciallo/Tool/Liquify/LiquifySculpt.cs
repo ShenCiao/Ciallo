@@ -49,8 +49,7 @@ public static class LiquifySculpt
         return mode switch
         {
             LiquifyMode.Push => Push(position, dab, influence),
-            LiquifyMode.Expand => Expand(position, dab.Center, influence, StepScale(dab)),
-            LiquifyMode.Pinch => Pinch(position, dab.Center, influence, StepScale(dab)),
+            LiquifyMode.RadialAdjustment => RadialAdjustment(position, dab.Center, influence, StepScale(dab)),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
     }
@@ -92,17 +91,11 @@ public static class LiquifySculpt
         return position + dab.Delta * influence;
     }
 
-    private static Vector2 Expand(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
+    private static Vector2 RadialAdjustment(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
     {
         float scaled = influence * RadialEffectScale;
-        float factor = Mathf.Pow(1f + scaled * scaled, stepScale);
-        return brushCenter + (position - brushCenter) * factor;
-    }
-
-    private static Vector2 Pinch(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
-    {
-        float scaled = influence * RadialEffectScale;
-        float factor = Mathf.Pow(1f - scaled * scaled, stepScale);
+        // Positive influence expands, negative pinches
+        float factor = Mathf.Pow(1f + scaled * scaled * Mathf.Sign(influence), stepScale);
         return brushCenter + (position - brushCenter) * factor;
     }
 

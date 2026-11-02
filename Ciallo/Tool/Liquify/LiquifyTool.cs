@@ -23,23 +23,40 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     [DataMember]
     public readonly ReactiveProperty<float> Strength = new(0.5f);
     [DataMember]
+    public readonly ReactiveProperty<float> RadialStrength = new(0.5f);
+    [DataMember]
     public readonly ReactiveProperty<float> ThicknessStrength = new(0.5f);
     [DataMember]
     public readonly ReactiveProperty<float> PressureStrength = new(0.5f);
 
     internal ReactiveProperty<float> StrengthFor(LiquifyMode mode) => mode switch
     {
+        LiquifyMode.RadialAdjustment => RadialStrength,
         LiquifyMode.Thickness => ThicknessStrength,
         LiquifyMode.Pressure => PressureStrength,
         _ => Strength,
     };
 
     [OnDeserialized]
-    private void RestoreFormerThinMode(StreamingContext context)
+    private void RestoreFormerModes(StreamingContext context)
     {
-        if ((int)Mode.Value != 4) return;
-        Mode.Value = LiquifyMode.Thickness;
-        ThicknessStrength.Value = -Strength.Value;
+        // Former Thin mode (value 4)
+        if ((int)Mode.Value == 4)
+        {
+            Mode.Value = LiquifyMode.Thickness;
+            ThicknessStrength.Value = -Strength.Value;
+        }
+        // Former Expand (value 1) and Pinch (value 2)
+        else if ((int)Mode.Value == 1)
+        {
+            Mode.Value = LiquifyMode.RadialAdjustment;
+            RadialStrength.Value = Strength.Value;
+        }
+        else if ((int)Mode.Value == 2)
+        {
+            Mode.Value = LiquifyMode.RadialAdjustment;
+            RadialStrength.Value = -Strength.Value;
+        }
     }
 
     [Substate]
@@ -72,6 +89,7 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
                 FitToLongestItem = false,
             }.BindEnum(Mode, mode => mode switch
             {
+                LiquifyMode.RadialAdjustment => "Radial adjustment",
                 LiquifyMode.Thickness => "Thickness adjustment",
                 LiquifyMode.Pressure => "Pressure adjustment",
                 _ => mode.ToString(),
@@ -94,8 +112,9 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
                 Step = 0.01f,
                 AllowGreater = true,
             }.BindNumber(Strength))
-            .VisibleIf(Mode, mode => mode is not (LiquifyMode.Thickness or LiquifyMode.Pressure));
+            .VisibleIf(Mode, LiquifyMode.Push);
 
+        DrawAdjustment(container, LiquifyMode.RadialAdjustment, "Pinch (−)", "Expand (+)");
         DrawAdjustment(container, LiquifyMode.Thickness, "Thin (−)", "Thicken (+)");
         DrawAdjustment(container, LiquifyMode.Pressure, "Decrease pressure (−)", "Increase pressure (+)");
 

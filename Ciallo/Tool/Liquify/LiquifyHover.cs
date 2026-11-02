@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+using Ciallo.Data;
 using Ciallo.Rendering;
 using Godot;
 
@@ -10,6 +13,7 @@ public class LiquifyHover : Interaction
     public LiquifyTool Tool { get; set; }
 
     private StrokeView _brushCircle;
+    private readonly List<StrokeView> _targetWireframes = [];
 
     public override void Start(CursorButtonData data)
     {
@@ -17,6 +21,8 @@ public class LiquifyHover : Interaction
         _brushCircle = new StrokeView { Material = AutoloadRendering.DashWireframeMaterial };
         Document.Get<WorldOverlay>().AddChild(_brushCircle);
         UpdateBrushCircle(data.WorldPosition);
+
+        ShowTargetWireframes();
     }
 
     public override void Moving(CursorMotionData data)
@@ -30,6 +36,10 @@ public class LiquifyHover : Interaction
     {
         _brushCircle?.QueueFree();
         _brushCircle = null;
+
+        _targetWireframes.ForEach(w => w.QueueFree());
+        _targetWireframes.Clear();
+
         Document.Get<WorldBody>().DefaultCursorShape = default;
     }
 
@@ -39,6 +49,22 @@ public class LiquifyHover : Interaction
     {
         var liquifyTool = Tool;
         _brushCircle.SetGeometry(CreateCircle(center, liquifyTool.Radius.Value, 64), AppPreference.StrokeWireframeRadius);
+    }
+
+    private void ShowTargetWireframes()
+    {
+        var targets = LiquifyTargetScope.Resolve(Document, SelectedLayers);
+        var worldOverlay = Document.Get<WorldOverlay>();
+
+        foreach (var e in targets)
+        {
+            var geom = e.Get<SampledPolyline>();
+            var wireframe = new StrokeView { Material = AutoloadRendering.WireframeMaterial };
+            wireframe.SetInstanceShaderParameter("overridingColor", AppPreference.StrokeWireframeColor);
+            wireframe.SetGeometry(geom.Positions.Value, AppPreference.StrokeWireframeRadius);
+            worldOverlay.AddChild(wireframe);
+            _targetWireframes.Add(wireframe);
+        }
     }
 
     private static Vector2[] CreateCircle(Vector2 center, float radius, int segmentCount)

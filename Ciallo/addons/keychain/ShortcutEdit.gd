@@ -1,5 +1,7 @@
 extends Control
 
+const ShortcutProfile = preload("res://addons/keychain/ShortcutProfile.gd")
+
 enum { KEYBOARD, MOUSE, JOY_BUTTON, JOY_AXIS }
 
 const MOUSE_BUTTON_NAMES: PackedStringArray = [

@@ -160,6 +160,7 @@ public partial class TrackTree : LayerTreeBase
             foreach (var m in members) { rep = m; break; }
             var repSetting = rep.Get<CommonLayerSetting>();
             repSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(bs);
+            repSetting.ClippingMask.Subscribe(value => block.ClippingMaskIndicator.Visible = value).AddTo(bs);
             repSetting.Name.Subscribe(block.LabelLineEdit.SetText).AddTo(bs);
 
             block.VisibleButton.OnToggledAsObservable()

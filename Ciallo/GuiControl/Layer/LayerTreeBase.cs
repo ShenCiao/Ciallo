@@ -115,6 +115,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
         commonSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(subs);
         block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetVisible(
             LayerSelectionActions.ContextLayers(e), value)).AddTo(subs);
+        commonSetting.ClippingMask.Subscribe(value => block.ClippingMaskIndicator.Visible = value).AddTo(subs);
         var labelStyle = new LayerLabelColorStyle(block);
         commonSetting.MarkColor.Subscribe(labelStyle.Update).AddTo(subs);
         // Blocks are bound before their wrappers are parented to the displayed layer tree.

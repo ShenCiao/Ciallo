@@ -17,6 +17,7 @@ public interface ILayerBlock
     CheckBox VisibleButton { get; }
     CheckButton WorkingButton { get; }
     CheckButton DropdownArrow { get; }
+    ColorRect ClippingMaskIndicator { get; }
     LabelLineEdit LabelLineEdit { get; }
     Indent Indent { get; }
 }

@@ -76,6 +76,24 @@ BarWidth = 1
 BarColor = Color(0.4337086, 0.433709, 0.43370876, 1)
 metadata/_custom_type_script = "uid://d1yjxfpa62cbe"
 
+[node name="ClippingMaskSlot" type="Control" parent="Layer/DeSeparationMarginContainer/HBoxContainer" unique_id=579082606]
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ClippingMaskIndicator" type="ColorRect" parent="Layer/DeSeparationMarginContainer/HBoxContainer/ClippingMaskSlot" unique_id=472342475]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 2.0
+offset_top = 6.0
+offset_right = -2.0
+offset_bottom = -6.0
+mouse_filter = 2
+color = Color(0.7529412, 0.5019608, 0.5019608, 1)
+
 [node name="DropdownArrow" type="CheckButton" parent="Layer/DeSeparationMarginContainer/HBoxContainer" unique_id=24815639]
 unique_name_in_owner = true
 layout_mode = 2

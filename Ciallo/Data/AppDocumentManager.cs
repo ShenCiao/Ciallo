@@ -50,13 +50,13 @@ public static partial class AppDocumentManager
         return document;
     }
 
-    public static void InitialEmptyAnimationDocumentForUser(Entity document)
+    public static void InitializeEmptyDocumentForUser(Entity document)
     {
         // Cel folder layer has one cel holding a shape layer
         var celFolder = document.World.Create();
         var cel = document.World.Create();
         var shapeLayer = document.World.Create();
-        var cmd = new CommandBuilder("Create Initial Animation Document", celFolder)
+        var cmd = new CommandBuilder("Create Initial Document", celFolder)
             .NewCelFolder()
             .AddToLayerTree(document)
             .SetTarget(cel)
@@ -72,8 +72,13 @@ public static partial class AppDocumentManager
             .SelectLayers(recordCelSelectionPreference: true);
 
         // Fill brush
-        Color[] colors = [Colors.PaleTurquoise, Colors.LightGreen, Colors.LemonChiffon, Colors.LightPink];
-        for (int i = 0; i < colors.Length; i++)
+        (string Name, Color Color)[] fills =
+        [
+            ("Black", Colors.Black),
+            ("White", Colors.White),
+            ("Gray", new Color(0.5f, 0.5f, 0.5f)),
+        ];
+        for (int i = 0; i < fills.Length; i++)
         {
             string path = $"res://Rendering/Image/Bullseye{i}_0.svg";
             var img = GD.Load<Image>(path);
@@ -81,8 +86,10 @@ public static partial class AppDocumentManager
             var brush = document.World.Create();
             cmd.SetTarget(brush)
                 .NewVectorFillBrush()
+                .SetProperty(e => e.Get<FillBrushSetting>().Name, fills[i].Name.Tr())
                 .SetProperty(e => e.Get<FillBrushSetting>().MarkerTexture, tex)
-                .SetProperty(e => e.Get<FillBrushSetting>().FillColor, colors[i]);
+                .SetProperty(e => e.Get<FillBrushSetting>().MarkerColor, i == 0 ? Colors.White : Colors.Black)
+                .SetProperty(e => e.Get<FillBrushSetting>().FillColor, fills[i].Color);
             if (i == 0)
                 cmd.SetProperty(e => e.Document.Get<SelectionManager>().WorkingVectorFillBrush, brush);
         }

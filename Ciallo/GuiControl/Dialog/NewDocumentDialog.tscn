@@ -12,7 +12,7 @@ use_hdr_2d = true
 oversampling_override = 1.0
 title = "New document - Ciallo"
 initial_position = 4
-size = Vector2i(568, 512)
+size = Vector2i(568, 400)
 visible = true
 ok_button_text = "Create"
 dialog_hide_on_ok = false
@@ -24,8 +24,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 560.0
-offset_bottom = 463.0
+offset_right = -8.0
+offset_bottom = -49.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 10
@@ -36,20 +36,28 @@ theme_override_constants/margin_right = 10
 layout_mode = 2
 theme = SubResource("Theme_kf6mc")
 
-[node name="Label" type="Label" parent="NewDocument/VBoxContainer" unique_id=2055407590]
-layout_mode = 2
-text = "Settings"
-
-[node name="VSeparator" type="HSeparator" parent="NewDocument/VBoxContainer" unique_id=19451471]
-layout_mode = 2
-theme_override_constants/separation = 15
-
 [node name="GridContainer" type="GridContainer" parent="NewDocument/VBoxContainer" unique_id=844695774]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 40
 theme_override_constants/v_separation = 10
 columns = 2
+
+[node name="PresetLabel" type="Label" parent="NewDocument/VBoxContainer/GridContainer" unique_id=580501883]
+layout_mode = 2
+text = "Preset"
+
+[node name="PresetControl" type="OptionButton" parent="NewDocument/VBoxContainer/GridContainer" unique_id=832230955]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "[New Document Preset Hint]"
+selected = 0
+item_count = 2
+popup/item_0/text = "Animation"
+popup/item_0/id = 0
+popup/item_1/text = "Illustration"
+popup/item_1/id = 1
 
 [node name="Label3" type="Label" parent="NewDocument/VBoxContainer/GridContainer" unique_id=964533941]
 custom_minimum_size = Vector2(0, 40)
@@ -94,6 +102,7 @@ vertical_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 script = ExtResource("1_kf6mc")
+MinValue = 1.0
 MaxValue = 16384.0
 Step = 1.0
 Rounded = true

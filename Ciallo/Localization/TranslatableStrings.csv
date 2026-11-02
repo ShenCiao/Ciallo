@@ -55,6 +55,12 @@ Export as image,Export as image,导出为图像,匯出為圖像,画像として�
 Language,Language,语言,語言,言語,언어,Sprache,Langue
 Layer,Layer,图层,圖層,レイヤー,레이어,Ebene,Calque
 New document,New document,新建文档,新增文檔,新しいドキュメント,새 문서,Neues Dokument,Nouveau document
+Preset,Preset,预设,預設,プリセット,프리셋,Voreinstellung,Préréglage
+Animation,Animation,动画,動畫,アニメーション,애니메이션,Animation,Animation
+Illustration,Illustration,插画,插畫,イラスト,일러스트,Illustration,Illustration
+Black,Black,黑色,黑色,黒,검정,Schwarz,Noir
+White,White,白色,白色,白,흰색,Weiß,Blanc
+Gray,Gray,灰色,灰色,グレー,회색,Grau,Gris
 Opacity,Opacity,不透明度,不透明度,不透明度,불투명도,Deckkraft,Opacité 
 Open,Open,打开,開啟,開く,열기,Öffnen,Ouvrir
 Open a File,Open a File,打开文件,開啟檔案,ファイルを開く,파일 열기,Datei öffnen,Ouvrir un fichier

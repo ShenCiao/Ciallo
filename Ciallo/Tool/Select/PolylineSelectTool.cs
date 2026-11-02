@@ -129,7 +129,6 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 layer.Get<OverlayHolder>().Visible = true;
             layer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
         }
-        Document.Get<SelectionManager>().RetainShapesInLayers(SelectedLayers);
     }
 
     protected override void OnDeactivated()

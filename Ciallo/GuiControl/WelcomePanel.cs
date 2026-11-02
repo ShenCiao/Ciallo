@@ -11,7 +11,7 @@ public partial class WelcomePanel : PanelContainer
     {
         var newDocumentButton = GetNode<Button>("%NewDocumentButton");
         var openDocumentButton = GetNode<Button>("%OpenDocumentButton");
-        var recentList = GetNode<Tree>("%RecentList");
+        var recentList = GetNode<RecentFilesTree>("%RecentList");
         var uiScaleSlider = GetNode<SpinSlider>("%SpinSlider");
 
         newDocumentButton.Pressed += AppGuiCommand.PopupNewDocumentDialog;
@@ -47,12 +47,14 @@ public partial class WelcomePanel : PanelContainer
             {
                 var item = recentList.CreateItem(root);
                 item.SetAutoTranslateMode(0, AutoTranslateModeEnum.Disabled);
-                item.SetText(0, path);
+                item.SetText(0, path.GetFile().GetBaseName());
                 item.SetMetadata(0, path);
                 item.SetTooltipText(0, path);
-                item.SetTextOverrunBehavior(0, TextServer.OverrunBehavior.TrimEllipsis);
+                item.SetTextOverrunBehavior(0, TextServer.OverrunBehavior.NoTrimming);
+                item.SetAutowrapMode(0, TextServer.AutowrapMode.Arbitrary);
                 item.AddButton(0, closeIcon, tooltipText: Tr("Remove from recent files"));
             }
+            recentList.RefreshPathLabels();
         }
 
         void OpenSelectedRecentFile()

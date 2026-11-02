@@ -1,5 +1,7 @@
 using Ciallo.Widget;
 using Godot;
+using ObservableCollections;
+using R3;
 
 namespace Ciallo.GuiControl;
 
@@ -9,25 +11,57 @@ public partial class WelcomePanel : PanelContainer
     {
         var newDocumentButton = GetNode<Button>("%NewDocumentButton");
         var openDocumentButton = GetNode<Button>("%OpenDocumentButton");
-        var recentList = GetNode<ItemList>("%RecentList");
+        var recentList = GetNode<Tree>("%RecentList");
         var uiScaleSlider = GetNode<SpinSlider>("%SpinSlider");
 
         newDocumentButton.Pressed += AppGuiCommand.PopupNewDocumentDialog;
         openDocumentButton.Pressed += AppGuiCommand.PopupOpenDocumentDialog;
 
-        recentList.ObserveObservableList(AppPreference.RecentFiles);
-        recentList.ItemActivated += idx =>
+        recentList.SetColumnClipContent(0, true);
+        var refreshRecentList = Callable.From(RefreshRecentList);
+        AppPreference.RecentFiles.ObserveChanged()
+            .Subscribe(_ => refreshRecentList.CallDeferred()).AddTo(this);
+        AppPreference.Language.Subscribe(_ => refreshRecentList.CallDeferred()).AddTo(this);
+
+        recentList.ItemMouseSelected += (_, buttonIndex) =>
         {
-            var path = AppPreference.RecentFiles[(int)idx];
-            var success = OpenDocumentDialog.LoadWorldFile(path);
-            if (!success) AppPreference.RecentFiles.Remove(path);
+            if ((MouseButton)buttonIndex == MouseButton.Left) OpenSelectedRecentFile();
         };
-        recentList.ItemClicked += (index, _, buttonIndex) =>
+        recentList.ItemActivated += OpenSelectedRecentFile;
+        recentList.ButtonClicked += (item, _, _, buttonIndex) =>
         {
-            if ((MouseButton)buttonIndex == MouseButton.Right)
-                AppPreference.RecentFiles.RemoveAt((int)index);
+            if ((MouseButton)buttonIndex == MouseButton.Left)
+                AppPreference.RecentFiles.Remove(item.GetMetadata(0).AsString());
         };
 
         uiScaleSlider.BindNumber(AppPreference.UIScale);
+
+        return;
+
+        void RefreshRecentList()
+        {
+            recentList.Clear();
+            var root = recentList.CreateItem();
+            var closeIcon = recentList.GetThemeIcon("close", "Window");
+            foreach (var path in AppPreference.RecentFiles)
+            {
+                var item = recentList.CreateItem(root);
+                item.SetAutoTranslateMode(0, AutoTranslateModeEnum.Disabled);
+                item.SetText(0, path);
+                item.SetMetadata(0, path);
+                item.SetTooltipText(0, path);
+                item.SetTextOverrunBehavior(0, TextServer.OverrunBehavior.TrimEllipsis);
+                item.AddButton(0, closeIcon, tooltipText: Tr("Remove from recent files"));
+            }
+        }
+
+        void OpenSelectedRecentFile()
+        {
+            var path = recentList.GetSelected().GetMetadata(0).AsString();
+            Callable.From(() =>
+            {
+                if (!OpenDocumentDialog.LoadWorldFile(path)) AppPreference.RecentFiles.Remove(path);
+            }).CallDeferred();
+        }
     }
 }

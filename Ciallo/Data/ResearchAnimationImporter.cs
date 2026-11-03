@@ -22,7 +22,7 @@ public static class ResearchAnimationImporter
         var frames = frameFiles.Select(ReadFrame).ToList();
         var allSamples = frames.SelectMany(frame => frame.Strokes).SelectMany(stroke => stroke.Samples).ToList();
         if (allSamples.Count == 0)
-            throw new InvalidOperationException("Selected animation contains no stroke samples.");
+            throw new InvalidOperationException("[Research Animation Samples Missing]");
 
         var selectionManager = document.Get<SelectionManager>();
         var brushE = selectionManager.WorkingStrokeBrush.Value;
@@ -82,7 +82,7 @@ public static class ResearchAnimationImporter
         if (File.Exists(selectedPath) && string.Equals(Path.GetExtension(selectedPath), ".csv", StringComparison.OrdinalIgnoreCase))
             return Path.GetDirectoryName(selectedPath);
 
-        throw new InvalidOperationException("Select a folder containing numeric frame CSV files.");
+        throw new InvalidOperationException("[Research Animation Folder Hint]");
     }
 
     private static List<FrameFile> GetFrameFiles(string directoryPath)
@@ -101,7 +101,7 @@ public static class ResearchAnimationImporter
             .ToList();
 
         if (frameFiles.Count == 0)
-            throw new InvalidOperationException("Selected folder contains no numeric frame CSV files.");
+            throw new InvalidOperationException("[Research Animation Frames Missing]");
 
         return frameFiles;
     }
@@ -175,11 +175,11 @@ public static class ResearchAnimationImporter
     {
         cmd.SetTarget(cel)
             .NewFolderLayer()
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, $"Frame {frame.Frame}")
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, string.Format("Frame {0}".Tr(), frame.Frame))
             .AddToLayerTree(celFolder)
             .SetTarget(shapeLayer)
             .NewShapeLayer()
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, "Shape layer")
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, "Shape layer".Tr())
             .AddToLayerTree(cel);
 
         foreach (var stroke in frame.Strokes)

@@ -223,6 +223,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             button,
             isLayerDependent,
             IsScope(type),
+            GetAttribute(type, "System.Runtime.Serialization.DataContractAttribute") is not null,
             isLayerDependent && IsScope(type) ? FindLayersTriggerConfiguration(type) : null,
             type.Locations.Length > 0 ? type.Locations[0] : Location.None);
     }
@@ -531,6 +532,18 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
 
         EmitResolver(builder, generatedGlobalSubstates, buttonOrder);
 
+        // Read-only properties let Json.NET populate the state graph's existing singletons.
+        builder.AppendLine("[System.Runtime.Serialization.DataContract]");
+        builder.AppendLine("public sealed class ToolPreferences");
+        builder.AppendLine("{");
+        foreach (var tool in valid.Where(static s => s.IsScope && s.HasDataContract))
+        {
+            string name = tool.Name.EndsWith("Tool") ? tool.Name.Substring(0, tool.Name.Length - 4) : tool.Name;
+            builder.AppendLine("    [System.Runtime.Serialization.DataMember]");
+            builder.AppendLine($"    public {tool.Fqn} {name} => InteractionStateGraph.{LocalName(tool)};");
+        }
+        builder.AppendLine("}");
+
         context.AddSource("InteractionStateGraph.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
     }
 
@@ -745,6 +758,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             string? button,
             bool isLayerDependent,
             bool isScope,
+            bool hasDataContract,
             Location? layersTriggerLocation,
             Location location)
         {
@@ -757,6 +771,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
             Button = button;
             IsLayerDependent = isLayerDependent;
             IsScope = isScope;
+            HasDataContract = hasDataContract;
             LayersTriggerLocation = layersTriggerLocation;
             Location = location;
         }
@@ -771,6 +786,7 @@ public sealed class RegisterStateGenerator : IIncrementalGenerator
         public string? Button { get; }
         public bool IsLayerDependent { get; }
         public bool IsScope { get; }
+        public bool HasDataContract { get; }
 
         // Where this type hand-configures SelectedLayersChanged, when it also gets one generated.
         public Location? LayersTriggerLocation { get; }

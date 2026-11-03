@@ -74,18 +74,18 @@ public partial class CelTrackRightClickMenu : PopupMenu
             _celListEntities.Add(celEntity);
         }
 
-        AddItem("New Animation Cel".Tr(), IdNewAnimationCel);
+        AddItem("New Animation Cel", IdNewAnimationCel);
 
         if (_onCel)
         {
             bool isBlank = _celFolderEntity.Get<FolderLayerSetting>().Exposures[_rightClickedFrame].IsCelFolder;
-            if (!isBlank) AddItem("Rename Cel".Tr(), IdRenameCel);
-            AddItem((isBlank ? "Delete Blank" : "Delete Cel").Tr(), IdDeleteCel);
+            if (!isBlank) AddItem("Rename Cel", IdRenameCel);
+            AddItem(isBlank ? "Delete Blank" : "Delete Cel", IdDeleteCel);
         }
 
         AddSeparator();
 
-        string celListLabel = _onCel ? "Replace Cel:".Tr() : "Insert Cel:".Tr();
+        string celListLabel = _onCel ? "Replace Cel:" : "Insert Cel:";
         AddItem(celListLabel, -1);
         SetItemDisabled(ItemCount - 1, true);
 

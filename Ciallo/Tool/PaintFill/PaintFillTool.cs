@@ -1,32 +1,46 @@
 using System.Collections.Immutable;
+using System.Runtime.Serialization;
 using Ciallo.Data;
 using Frent;
 using Godot;
+using R3;
 using Stateless;
 
 namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.PaintFill)]
 public class PaintFillTool : InteractionScope, ILayerDependent
 {
+    [DataMember]
+    public readonly ReactiveProperty<int> Mode = new(0); // 0 = Freehand, 1 = PolyCubicBezier
+
+    [DataMember]
+    public readonly ReactiveProperty<Geometry2D.PolyBooleanOperation?> BooleanOperation = new(null);
+
     [Substate]
     internal PaintFillHover Hover;
 
     [Substate]
-    internal PaintFillInteractor Left;
+    internal PaintFillInteractor Freehand;
+
+    [Substate]
+    internal PaintFillPolyCubicBezierInteractor PolyCubicBezier;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
         sm.Configure(this)
             .InitialTransition(Hover);
         sm.Configure(Hover)
-            .Permit(Trigger.Press(MouseButton.Left), Left)
+            .PermitDynamic(Trigger.Press(MouseButton.Left), () => Mode.Value == 1 ? PolyCubicBezier : Freehand)
             .PermitReentry(Trigger.Refresh);
-        sm.Configure(Left)
+        sm.Configure(Freehand)
             .Permit(Trigger.Release(MouseButton.Left), Hover)
+            .PermitStandardExits(Hover);
+        sm.Configure(PolyCubicBezier)
+            .Permit(PolyCubicBezierInteractor.Closed, Hover)
             .PermitStandardExits(Hover);
     }
 

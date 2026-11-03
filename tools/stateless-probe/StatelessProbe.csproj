@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <CialloProject>$(MSBuildThisFileDirectory)../../Ciallo/Ciallo.csproj</CialloProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Stateless" />
+  </ItemGroup>
+  <Target Name="ReadCialloStatelessVersion" BeforeTargets="CollectPackageReferences">
+    <XmlPeek XmlInputPath="$(CialloProject)" Query="/Project/ItemGroup/PackageReference[@Include='Stateless']/@Version">
+      <Output TaskParameter="Result" PropertyName="CialloStatelessVersion" />
+    </XmlPeek>
+    <Error Condition="'$(CialloStatelessVersion)' == ''" Text="Cannot read the Stateless package version from $(CialloProject)." />
+    <ItemGroup>
+      <PackageReference Update="Stateless" Version="[$(CialloStatelessVersion)]" />
+    </ItemGroup>
+  </Target>
+</Project>

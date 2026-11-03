@@ -3,13 +3,6 @@
 Ciallo's C# global regression suites live in `Ciallo/Tests`. The main project is also the
 GdUnit4 test project, and `Ciallo/.runsettings` is loaded automatically by `dotnet test`.
 
-## Test Scope
-
-Global suites cover complex, error-prone boundaries such as persistence graph integrity,
-durability snapshot packaging, native DuckDB composite vectors, resource retention, and external
-authorization state. Common entry points belong in a global suite only when they exercise one of
-these failure-prone contracts and are not already covered by a downstream scenario.
-
 Use `[RequireGodotRuntime]` only for tests that access Godot runtime objects. Logic-only tests run
 in the lightweight GdUnit4 host.
 

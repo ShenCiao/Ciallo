@@ -23,7 +23,7 @@ cd Ciallo
 dotnet build Ciallo/Ciallo.csproj
 ```
 
-Setup installs gdvm and uses it to download the C# editor selected by `global.json`, installs Git
+Setup installs gdvm and uses it to download the C# editor selected by `Ciallo/global.json`, installs Git
 hooks, and generates an `Open Ciallo` shortcut. Open that shortcut to run the project.
 Hooks prepare the required engine after branch changes and pulls.
 
@@ -32,6 +32,9 @@ Enable the "Embedded game size stretches..." option in the game run window.
 ![](/.github/EnableStretch.png)
 
 For local engine builds and cache management, see [Engine setup](../docs/engine-setup.md).
+FFmpeg is optional.
+Run `./engine.sh ffmpeg` when using PNG export or running its integration tests.
+See [Bundled FFmpeg](../Ciallo/ExternalData/ffmpeg/README.md) for setup and packaging details.
 
 ### How to export locally
 
@@ -39,6 +42,7 @@ Download and install matching export templates when needed, then use the presets
 
 ```sh
 ./engine.sh sync --templates
+./engine.sh ffmpeg
 ```
 
 Official Windows, Linux, and macOS packages are built by CI. Signing and notarization are only configured there, so local exports are development builds.
@@ -114,6 +118,17 @@ The mechanism is combined with the component system:
 - Binary media such as textures and images stays in `BLOB` columns.
 - An entity without `ToSerializeTag` but with `[ToSerialize]` components won't be persisted, including the entity itself and its components, unless it is the document entity.
 
+
+## Continuous integration
+
+The **Ciallo Build** workflow runs when a pull request targeting `dev` or `main` is
+opened, reopened, or updated with new commits. It builds GitHub's PR merge ref,
+exports Windows, Linux, and macOS packages, and retains the Actions artifacts for
+two days. The macOS package is unsigned.
+
+New commits to the same PR cancel its older queued or running builds. Branch pushes,
+including PR merges, do not start this workflow. To build a branch without a PR,
+run **Ciallo Build** manually from the Actions page and select the branch.
 
 ## Release
 

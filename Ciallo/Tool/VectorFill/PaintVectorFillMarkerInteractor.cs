@@ -10,11 +10,13 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintVectorFillMarkerInteractor : CapturingInteraction
 {
+    [StateAccess] internal VectorFillTool Tool;
+
     private VectorFillMarkerView _markerPreview;
-    private Polygon2D _fillPreview;
+    private PolygonFillView _fillPreview;
     private Entity _fillBrush;
 
-    private float MarkerRadius => AppPreference.VectorFillMarkerRadius.Value;
+    private float MarkerRadius => Tool.MarkerRadius.Value;
 
     public override void Start(CursorButtonData data)
     {
@@ -27,7 +29,7 @@ public class PaintVectorFillMarkerInteractor : CapturingInteraction
         PrimaryLayer.Get<OverlayHolder>().AddChild(_markerPreview);
         _markerPreview.SetGeometry([data.WorldPosition], [MarkerRadius]);
         var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
-        _fillPreview = new() { Antialiased = true };
+        _fillPreview = new();
         VectorFillMarkerView.ApplyBrush(_fillPreview, _markerPreview, _fillBrush);
         PrimaryLayer.Get<ShapeLayerView>().AddChild(_fillPreview);
         if (arr != null)

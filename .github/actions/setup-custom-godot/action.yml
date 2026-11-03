@@ -1,5 +1,5 @@
 name: Setup custom Godot
-description: Prepare the editor and bundled NuGet packages selected by global.json, with optional export templates.
+description: Prepare the editor and bundled NuGet packages selected by Ciallo/global.json, with optional export templates.
 
 inputs:
   templates:

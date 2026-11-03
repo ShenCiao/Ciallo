@@ -35,7 +35,7 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
         // Tool controls are hidden with their state branch, but this selector must remain reachable
         // when no Bucket Fill scope accepts the layer. TODO: Move it to a shared property section
         // when that infrastructure exists; its visibility must be independent of tool activation.
-        var mode = AppPreference.BucketFill.DrawModeProperty(container);
+        var mode = BucketFill.DrawModeProperty(container);
         void Refresh() => mode.Visible = InteractionManager.StateMachine.State == this &&
             ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill;
         InteractionManager.StateChanged += Refresh;
@@ -76,7 +76,7 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
     }
 
     // The one place context becomes a concrete tool. Liveness is settled here so CanHandleLayers only
-    // has to judge fit. Current tools use the first selected layer as their drawing target.
+    // has to judge fit.
     private InteractionState ResolveContext(
         ToolButton.Type? toolButton,
         ImmutableArray<Entity> layers)
@@ -85,14 +85,14 @@ public partial class GlobalInteractiveScope : InteractionScope, IPropertyProvide
 
         if (toolButton == ToolButton.Type.BucketFill)
         {
-            return AppPreference.BucketFill.Mode.Value switch
+            return BucketFill.Mode.Value switch
             {
                 BucketFillOutput.Marker when VectorFillTool.CanHandleLayers(layers) => VectorFill,
                 BucketFillOutput.Marker when VectorFillLayerCreationTool.CanHandleLayers(layers) =>
                     VectorFillLayerCreation,
                 BucketFillOutput.Marker => this,
                 BucketFillOutput.Polygon => BucketFillTool.CanHandleLayers(layers) ? BucketFill : this,
-                _ => throw new System.ArgumentOutOfRangeException(nameof(BucketFillOptions.Mode)),
+                _ => throw new System.ArgumentOutOfRangeException(nameof(BucketFillTool.Mode)),
             };
         }
 

@@ -59,6 +59,7 @@ internal static class ArchetypeContextActions
 
     public static void Rename(Entity folder, string name, string newName)
     {
+        if (name == newName) return;
         var setting = folder.Get<FolderLayerSetting>();
         var command = new CommandBuilder("Rename Cel Child Archetype", folder);
         foreach (var layer in setting.CelChildrenByName[name])
@@ -69,8 +70,7 @@ internal static class ArchetypeContextActions
     }
 
     public static void SetVisible(Entity folder, string name, bool visible) =>
-        LayerSelectionActions.SetProperty("Cel Child Archetype Visibility", Capture(folder, name).Layers,
-            setting => setting.IsVisible, visible);
+        LayerSelectionActions.SetVisible(Capture(folder, name).Layers, visible);
 
     public static bool CanSplit(ArchetypeContext context) =>
         !context.Units.IsEmpty && context.Layers.All(layer => layer.Has<ShapeLayerSetting>());
@@ -130,9 +130,9 @@ internal static class ArchetypeContextActions
         {
             var (stroke, fill) = LayerContextActions.SplitStrokeAndFill(command, layer);
             var name = layer.Get<CommonLayerSetting>().Name.Value;
-            results.Add(layer, [(fill, name + " fill"), (stroke, name + " stroke")]);
+            results.Add(layer, [(fill, string.Format("{0} fill".Tr(), name)), (stroke, string.Format("{0} stroke".Tr(), name))]);
         }
-        ImmutableArray<string> names = [.. context.Names.Select(name => name + " stroke")];
+        ImmutableArray<string> names = [.. context.Names.Select(name => string.Format("{0} stroke".Tr(), name))];
         // Include existing siblings with a result name, preserving the fill-below-stroke order.
         var selected = CelLayerSelection.Resolve([.. ExposedChildren(context.Folder).SelectMany(layer =>
             results.TryGetValue(layer, out var result) ? result : [(layer, layer.Get<CommonLayerSetting>().Name.Value)])], names);

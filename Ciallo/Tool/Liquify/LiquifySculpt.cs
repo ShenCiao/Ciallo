@@ -23,13 +23,15 @@ public readonly record struct LiquifyDab(
 /// </remarks>
 public static class LiquifySculpt
 {
-    // Per-dab radial scaling for Expand/Pinch. With influence ≈ 1, peak per-dab
+    // Per-dab scaling for Radial mode. With |influence| ≈ 1, peak per-dab
     // displacement is (1/5)^2 = 4%, so a drag accumulates smoothly instead of
     // snapping the geometry on a single dab.
     private const float RadialEffectScale = 1f / 5f;
-    // Thickness nudges stay small per dab so the stroke width changes feel
-    // continuous instead of jumping.
-    private const float ThicknessEffectScale = 1f / 10f;
+    // Log-radius change per unit of brush influence and pointer travel. Applying
+    // it in log space makes thickness changes proportional and reversible.
+    private const float ScalarEffectScale = 1f / 10f;
+    // A positive base lets recorded zero pressure rise without a discontinuous seed.
+    private const float PressureBase = 0.01f;
 
     // This is intentionally endpoint-dab sculpting, not true segment integration.
     // Delta.Length() scales non-push effects to approximate path-length invariance,
@@ -41,31 +43,34 @@ public static class LiquifySculpt
     public static Vector2 ApplyPosition(LiquifyMode mode, Vector2 position, LiquifyDab dab)
     {
         float influence = Influence(position, dab);
-        if (influence <= 0f)
+        if (influence == 0f)
             return position;
 
         return mode switch
         {
             LiquifyMode.Push => Push(position, dab, influence),
-            LiquifyMode.Expand => Expand(position, dab.Center, influence, StepScale(dab)),
-            LiquifyMode.Pinch => Pinch(position, dab.Center, influence, StepScale(dab)),
+            LiquifyMode.Radial => Radial(position, dab.Center, influence, StepScale(dab)),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
         };
     }
 
-    public static float ApplyThickness(LiquifyMode mode, Vector2 position, float radius, LiquifyDab dab)
+    public static float ApplyThickness(Vector2 position, float radius, LiquifyDab dab)
     {
         float influence = Influence(position, dab);
-        if (influence <= 0f)
+        if (influence == 0f)
             return radius;
 
-        float delta = influence * ThicknessEffectScale * StepScale(dab);
-        return mode switch
-        {
-            LiquifyMode.Thicken => Mathf.Max(1f, radius + delta),
-            LiquifyMode.Thin => Mathf.Max(1f, radius - delta),
-            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
-        };
+        return radius * Mathf.Exp(influence * ScalarEffectScale * StepScale(dab));
+    }
+
+    public static float ApplyPressure(Vector2 position, float pressure, LiquifyDab dab)
+    {
+        float logScale = Influence(position, dab) * ScalarEffectScale * StepScale(dab);
+        if (logScale == 0f)
+            return pressure;
+
+        float factor = Mathf.Exp(logScale);
+        return Mathf.Clamp((pressure + PressureBase) * factor - PressureBase, 0f, 1f);
     }
 
     public static float Influence(Vector2 position, LiquifyDab dab)
@@ -86,17 +91,11 @@ public static class LiquifySculpt
         return position + dab.Delta * influence;
     }
 
-    private static Vector2 Expand(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
+    // Positive influence expands away from the brush center; negative influence pinches toward it.
+    private static Vector2 Radial(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
     {
         float scaled = influence * RadialEffectScale;
-        float factor = Mathf.Pow(1f + scaled * scaled, stepScale);
-        return brushCenter + (position - brushCenter) * factor;
-    }
-
-    private static Vector2 Pinch(Vector2 position, Vector2 brushCenter, float influence, float stepScale)
-    {
-        float scaled = influence * RadialEffectScale;
-        float factor = Mathf.Pow(1f - scaled * scaled, stepScale);
+        float factor = Mathf.Pow(1f + scaled * Mathf.Abs(scaled), stepScale);
         return brushCenter + (position - brushCenter) * factor;
     }
 

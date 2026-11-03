@@ -1,3 +1,3 @@
 #!/bin/sh
 root=$(git rev-parse --show-toplevel) || exit $?
-[ ! -f "$root/global.json" ] || sh "$root/engine.sh" sync
+[ ! -f "$root/Ciallo/global.json" ] || sh "$root/engine.sh" sync

@@ -91,15 +91,15 @@ public sealed class PaintStrokeSnap
         }
     }
 
-    public static PaintStrokeGeometry BuildRepairedGeometry(
+    public static PolylineSamples BuildRepairedGeometry(
         Arrangement arr,
-        PolylineGeneratorGeometry geometry,
+        PolylineSamples geometry,
         PaintStrokeSnapTarget? startTarget,
         PaintStrokeSnapTarget? endTarget,
         float snapDistance)
     {
         if (geometry.Count == 0)
-            return new PaintStrokeGeometry([], [], [], []);
+            return new PolylineSamples([], [], []);
 
         if (geometry.Count == 1)
         {
@@ -176,23 +176,22 @@ public sealed class PaintStrokeSnap
         return CreateTrimmedGeometry(geometry, deformed, fromT, toT);
     }
 
-    private static PaintStrokeGeometry CreateTrimmedGeometry(
-        PolylineGeneratorGeometry geometry,
+    private static PolylineSamples CreateTrimmedGeometry(
+        PolylineSamples geometry,
         IReadOnlyList<Vector2> deformedPositions,
         float fromT,
         float toT)
     {
-        // All four arrays share one sampling sequence (index i is the same sample across them), so the
+        // All three arrays share one sampling sequence (index i is the same sample across them), so the
         // same [fromT, toT] slices them consistently. Only positions were deformed; the rest are original.
-        return new PaintStrokeGeometry(
+        return new PolylineSamples(
             deformedPositions.ToImmutableArray().Slice(fromT, toT),
-            geometry.Radii.ToImmutableArray().Slice(fromT, toT),
             geometry.Pressures.ToImmutableArray().Slice(fromT, toT),
             geometry.Tilts.ToImmutableArray().Slice(fromT, toT));
     }
 
-    private static PaintStrokeGeometry CreateGeometry(
-        PolylineGeneratorGeometry geometry,
+    private static PolylineSamples CreateGeometry(
+        PolylineSamples geometry,
         IReadOnlyList<Vector2> positions)
     {
         var repairedPositions = ImmutableArray.CreateBuilder<Vector2>(geometry.Count);
@@ -202,9 +201,8 @@ public sealed class PaintStrokeSnap
             repairedPositions.Add(positions[i]);
         }
 
-        return new PaintStrokeGeometry(
+        return new PolylineSamples(
             repairedPositions.MoveToImmutable(),
-            geometry.Radii.ToImmutableArray(),
             geometry.Pressures.ToImmutableArray(),
             geometry.Tilts.ToImmutableArray());
     }
@@ -215,7 +213,7 @@ public sealed class PaintStrokeSnap
     // Returns null for an endpoint that does not pierce.
     private static (float? StartEntryT, float? EndEntryT) QueryPierceEntries(
         Arrangement arr,
-        PolylineGeneratorGeometry geometry,
+        PolylineSamples geometry,
         PaintStrokeSnapTarget? startTarget,
         PaintStrokeSnapTarget? endTarget,
         float snapDistance)
@@ -285,9 +283,3 @@ public sealed class PaintStrokeSnap
         return hitPoint - bodyBulkSide * normal * BodyTargetOverrunDistanceWorld;
     }
 }
-
-public readonly record struct PaintStrokeGeometry(
-    ImmutableArray<Vector2> Positions,
-    ImmutableArray<float> Radii,
-    ImmutableArray<float> Pressures,
-    ImmutableArray<Vector2> Tilts);

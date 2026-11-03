@@ -45,16 +45,28 @@ public static class ToolButton
             ShortcutMember = nameof(AppHotkeys.Global.ToolPaintFill))]
         PaintFill = 3,
 
-        [Definition("res://Icon/bucket-fill-marker.svg", "Bucket Fill")]
+        [Definition(
+            "res://Icon/bucket-fill-marker.svg",
+            "Bucket Fill",
+            ShortcutMember = nameof(AppHotkeys.Global.ToolBucketFill))]
         BucketFill = 4,
 
-        [Definition("res://Icon/water-drop.svg", "Liquify")]
+        [Definition(
+            "res://Icon/water-drop.svg",
+            "Liquify",
+            ShortcutMember = nameof(AppHotkeys.Global.ToolLiquify))]
         Liquify = 5,
 
-        [Definition("res://Icon/scissor.svg", "Trim")]
+        [Definition(
+            "res://Icon/scissor.svg",
+            "Trim",
+            ShortcutMember = nameof(AppHotkeys.Global.ToolTrim))]
         Trim = 6,
 
-        [Definition("res://Icon/wrench.svg", "Gap Bridge")]
+        [Definition(
+            "res://Icon/wrench.svg",
+            "Gap Bridge",
+            ShortcutMember = nameof(AppHotkeys.Global.ToolGapBridge))]
         GapBridge = 7,
     }
 

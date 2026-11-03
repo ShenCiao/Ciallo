@@ -11,6 +11,8 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintFillHover : Interaction, IPropertyProvider
 {
+    [StateAccess] public PaintFillTool Tool { get; set; }
+
     public override void Start(CursorButtonData data)
     {
         Document.Get<WorldBody>().DefaultCursorShape = Control.CursorShape.Cross;
@@ -26,14 +28,36 @@ public class PaintFillHover : Interaction, IPropertyProvider
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
     {
+        var mode = new OptionButton
+        {
+            CustomMinimumSize = new(0, 32),
+            TooltipText = "[Poly Bezier Fill Tooltip]",
+        };
+        mode.AddItem("Freehand");
+        mode.AddItem("Poly Cubic Bézier");
+        container.AddProperty("Mode", mode.BindSelectionIndex(Tool.Mode));
+
+        var operation = new OptionButton
+        {
+            Name = "PaintFillBooleanOperation",
+            CustomMinimumSize = new(0, 32),
+            TooltipText = "[Paint Fill Operation Tooltip]",
+        };
+        operation.BindValue<Geometry2D.PolyBooleanOperation?>(
+            [null, Geometry2D.PolyBooleanOperation.Union, Geometry2D.PolyBooleanOperation.Difference,
+                Geometry2D.PolyBooleanOperation.Intersection, Geometry2D.PolyBooleanOperation.Xor],
+            Tool.BooleanOperation, value => PolygonBooleanActions.Label(value));
+        container.AddProperty("Operation", operation);
+
         container.AddChild(new Label
         {
-            Text = "Fill brush".Tr(),
+            Text = "Fill brush",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
         var brushPreview = VectorFillBrushPreviewList.New(Document);
         brushPreview.CustomMinimumSize = new(0, 256);
         container.AddChild(brushPreview);
+        brushPreview.DrawNameProperty(container);
 
         var sm = Document.Get<SelectionManager>();
 

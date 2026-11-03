@@ -5,6 +5,9 @@ on:
     paths:
       - engine.sh
       - tools/engine/**
+      - Ciallo/global.json
+      - Ciallo/Ciallo.csproj
+      - NuGet.Config
       - Ciallo/.githooks/**
       - .github/workflows/engine-setup-check.yml
   workflow_dispatch:

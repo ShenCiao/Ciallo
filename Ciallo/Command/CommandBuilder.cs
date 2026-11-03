@@ -49,14 +49,13 @@ public partial class CommandBuilder
         Commands.Clear();
     }
 
-    // Create one action on first commit, then keep appending later segments until
-    // another history-writing entrypoint starts a different action.
-    public void CommitOpenSequence(bool execute = true)
+    // Append segments of the same kind until another history entrypoint or kind intervenes.
+    public void CommitOpenSequence(HistorySequenceKind kind, bool execute = true)
     {
         if (Commands.Count == 0) return;
-        AppBugReport.Command("CommandBuilder.CommitOpenSequence", ActionName, Commands, execute);
+        AppBugReport.Command("CommandBuilder.CommitOpenSequence", kind.GetActionName(), Commands, execute);
         var cm = GetCommandManager();
-        cm.CommitOpenSequence(ActionName, Commands, execute);
+        cm.CommitOpenSequence(kind, Commands, execute);
         Commands.Clear();
     }
 

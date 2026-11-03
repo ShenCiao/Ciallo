@@ -2,17 +2,11 @@ shader_type canvas_item;
 
 render_mode unshaded, blend_mix;
 
+#define POLYGON_FILL_HINT
+#include "PolygonFillAA.gdshaderinc"
+
 uniform vec4 strip_color : source_color = vec4(1.0);
-const vec3 uv1_scale = vec3(1.0, 1.0, 1.0);
-const vec3 uv1_offset = vec3(0.0, 0.0, 0.0);
 uniform float variation = 0.0;
-varying float elapsed_time;
-void vertex() {
-	mat3 canvas_linear = mat3(CANVAS_MATRIX);  // discard translation
-    float camera_scale = length(canvas_linear * vec3(1.0, 0.0, 0.0));  // X-scale
-	elapsed_time = TIME;
-	UV = UV*uv1_scale.xy*camera_scale+uv1_offset.xy;
-}
 float dot2(vec2 x) {
 	return dot(x, x);
 }
@@ -190,7 +184,7 @@ void fragment() {
 
 // #code: tiler (o516855702874)
 vec3 o516855702874_0_instance_uv = vec3(0.0);
-vec4 o516855702874_0_rch = tiler_o516855702874(((uv)-vec2((-elapsed_time*0.1), (elapsed_time*0.1))), vec2(p_o516855702874_tx, p_o516855702874_ty), int(p_o516855702874_overlap), o516855702874_0_instance_uv, vec2(float((seed_o516855702874+fract(_seed_variation_)))), _seed_variation_);
+vec4 o516855702874_0_rch = tiler_o516855702874(((uv)-vec2((-TIME*0.1), (TIME*0.1))), vec2(p_o516855702874_tx, p_o516855702874_ty), int(p_o516855702874_overlap), o516855702874_0_instance_uv, vec2(float((seed_o516855702874+fract(_seed_variation_)))), _seed_variation_);
 // #output0: tiler (o516855702874)
 float o516855702874_0_1_f = o516855702874_0_rch.a;
 
@@ -199,5 +193,7 @@ vec4 o516956367345_0_1_rgba = vec4(strip_color.rgb, o516855702874_0_1_f * strip_
 
 	vec4 color_tex = o516956367345_0_1_rgba;
 	color_tex = mix(pow((color_tex + vec4(0.055)) * (1.0 / (1.0 + 0.055)),vec4(2.4)),color_tex * (1.0 / 12.92),lessThan(color_tex,vec4(0.04045)));
+	color_tex.a *= COLOR.a;
+	color_tex.a = polygon_aa_alpha(color_tex.a, FRAGCOORD.xy);
 	COLOR = color_tex;
 }

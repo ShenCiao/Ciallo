@@ -91,6 +91,17 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="OutputFormatLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=1789018913]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Output format"
+vertical_alignment = 1
+
+[node name="OutputFormatValue" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=1044213534]
+layout_mode = 2
+text = "PNG · 16 bits/channel · sRGB"
+vertical_alignment = 1
+
 [node name="Label7" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/GridContainer" unique_id=499533133]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2

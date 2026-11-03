@@ -20,7 +20,7 @@ public static class BindOptionButton
         /// <typeparam name="T">Must be enum type.</typeparam>
         public OptionButton BindEnum<T>(ReactiveProperty<T> property, Func<T, string> toName = null) where T : Enum
         {
-            toName ??= value => value.ToString().Tr();
+            toName ??= value => value.ToString();
             var values = (T[])Enum.GetValues(typeof(T));
             button.BindValue(values, property, toName);
             return button;

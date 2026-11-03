@@ -64,48 +64,48 @@ public partial class LayerRightClickMenu : PopupMenu
 
         if (_archetypes != null)
         {
-            AddSeparator("All Cels".Tr());
-            AddItem("New Shape Layer".Tr(), (int)MenuItem.NewShapeLayer);
-            AddItem("New Folder Layer".Tr(), (int)MenuItem.NewFolderLayer);
+            AddSeparator("All Cels");
+            AddItem("New Shape Layer", (int)MenuItem.NewShapeLayer);
+            AddItem("New Folder Layer", (int)MenuItem.NewFolderLayer);
             AddSeparator();
-            AddItem("Delete Layers".Tr(), (int)MenuItem.DeleteLayer);
-            AddItem("Group Layers".Tr(), (int)MenuItem.WrapSelfInFolder);
+            AddItem("Delete Layers", (int)MenuItem.DeleteLayer);
+            AddItem("Group Layers", (int)MenuItem.WrapSelfInFolder);
             SetItemDisabled(GetItemIndex((int)MenuItem.WrapSelfInFolder), !ArchetypeContextActions.CanGroup(_archetypes));
-            AddItem("Split Stroke and Fill".Tr(), (int)MenuItem.SplitStrokeAndFill);
+            AddItem("Split Stroke and Fill", (int)MenuItem.SplitStrokeAndFill);
             SetItemDisabled(GetItemIndex((int)MenuItem.SplitStrokeAndFill), !ArchetypeContextActions.CanSplit(_archetypes));
-            AddItem("Merge Layers".Tr(), (int)MenuItem.MergeLayers);
+            AddItem("Merge Layers", (int)MenuItem.MergeLayers);
             SetItemDisabled(GetItemIndex((int)MenuItem.MergeLayers), !ArchetypeContextActions.CanMerge(_archetypes));
             if (ArchetypeContextActions.AreFolders(_archetypes))
             {
-                AddItem("Wrap Children in Folders".Tr(), (int)MenuItem.WrapChildrenInFolders);
-                AddItem("Ungroup Folder".Tr(), (int)MenuItem.UngroupFolder);
+                AddItem("Wrap Children in Folders", (int)MenuItem.WrapChildrenInFolders);
+                AddItem("Ungroup Folder", (int)MenuItem.UngroupFolder);
             }
             return;
         }
 
         bool targetIsCelFolder = _targetLayer.TryGet<FolderLayerSetting>() is { IsCelFolder: true };
-        AddItem((targetIsCelFolder ? "Add Shape Layer to All Cels" : "New Shape Layer").Tr(), (int)MenuItem.NewShapeLayer);
-        AddItem("New Folder Layer".Tr(), (int)MenuItem.NewFolderLayer);
+        AddItem(targetIsCelFolder ? "Add Shape Layer to All Cels" : "New Shape Layer", (int)MenuItem.NewShapeLayer);
+        AddItem("New Folder Layer", (int)MenuItem.NewFolderLayer);
         if (_showTimelineLayerActions)
-            AddItem("New Cel Folder Layer".Tr(), (int)MenuItem.NewCelFolderLayer);
+            AddItem("New Cel Folder Layer", (int)MenuItem.NewCelFolderLayer);
 
         AddSeparator();
-        AddItem((_targetLayers.Length > 1 ? "Delete Layers" : "Delete Layer").Tr(), (int)MenuItem.DeleteLayer);
-        AddItem((_targetLayers.Length > 1 ? "Group Layers" : "Wrap Self into Folder").Tr(), (int)MenuItem.WrapSelfInFolder);
+        AddItem(_targetLayers.Length > 1 ? "Delete Layers" : "Delete Layer", (int)MenuItem.DeleteLayer);
+        AddItem(_targetLayers.Length > 1 ? "Group Layers" : "Wrap Self into Folder", (int)MenuItem.WrapSelfInFolder);
         SetItemDisabled(GetItemIndex((int)MenuItem.WrapSelfInFolder), !LayerContextActions.CanGroupLayers(_targetLayers));
         if (_targetLayers.All(e => e.Has<ShapeLayerSetting>()))
-            AddItem("Split Stroke and Fill".Tr(), (int)MenuItem.SplitStrokeAndFill);
+            AddItem("Split Stroke and Fill", (int)MenuItem.SplitStrokeAndFill);
         if (_targetLayers.Length > 1)
         {
-            AddItem("Merge Layers".Tr(), (int)MenuItem.MergeLayers);
+            AddItem("Merge Layers", (int)MenuItem.MergeLayers);
             SetItemDisabled(GetItemIndex((int)MenuItem.MergeLayers), !LayerConversionActions.CanMerge(_targetLayers));
         }
         if (_targetLayers.All(e => e.Has<FolderLayerSetting>()))
         {
             if (_targetLayers.All(e => e.Get<FolderLayerSetting>().IsCelFolder))
-                AddItem("Rename Cels by Exposure".Tr(), (int)MenuItem.RenameCelsByExposure);
-            AddItem("Wrap Children in Folders".Tr(), (int)MenuItem.WrapChildrenInFolders);
-            AddItem("Ungroup Folder".Tr(), (int)MenuItem.UngroupFolder);
+                AddItem("Rename Cels by Exposure", (int)MenuItem.RenameCelsByExposure);
+            AddItem("Wrap Children in Folders", (int)MenuItem.WrapChildrenInFolders);
+            AddItem("Ungroup Folder", (int)MenuItem.UngroupFolder);
         }
     }
 

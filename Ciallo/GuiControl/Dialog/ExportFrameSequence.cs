@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Ciallo.Data;
@@ -73,6 +74,12 @@ public partial class ExportFrameSequence : ConfirmationDialog
             await ExportFrames();
             Hide();
         }
+        catch (Exception exception)
+        {
+            GD.PrintErr(exception);
+            AppDialogHost.WarnUser.DialogText = "Cannot export image.".Tr() + " " + exception.Message;
+            AppDialogHost.WarnUser.Popup();
+        }
         finally
         {
             progressBarPopup.Hide();
@@ -89,6 +96,7 @@ public partial class ExportFrameSequence : ConfirmationDialog
 
         var oldFrame = selectionManager.CurrentFrame.Value;
         var oldPaintViewportCullMask = paintViewport.CanvasCullMask;
+        var oldExportWorld = ExportViewport.World2D;
 
         Directory.CreateDirectory(ExportPath.Value);
 
@@ -110,27 +118,27 @@ public partial class ExportFrameSequence : ConfirmationDialog
 
         try
         {
-            for (var frame = startFrame; frame < endFrameExclusive; frame++)
+            // image2 interprets percent signs in the complete path as patterns.
+            var escapedDirectory = ExportPath.Value.Replace("%", "%%");
+            var outputPattern = escapedDirectory.PathJoin(FormatFrameFileName(
+                NameSetting.Prefix.Value.Replace("%", "%%"),
+                NameSetting.Suffix.Value.Replace("%", "%%"),
+                NameSetting.Separator.Value.Replace("%", "%%"),
+                $"%0{NameSetting.NumberDigits}d"));
+            await ExportPngWriter.SaveFramesAsync(ExportViewport.Size.X, ExportViewport.Size.Y,
+                outputPattern, frameCount, NameSetting.StartNumber.Value, async index =>
             {
-                selectionManager.CurrentFrame.Value = frame;
+                selectionManager.CurrentFrame.Value = startFrame + index;
                 await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
                 ExportViewport.RenderTargetClearMode = SubViewport.ClearMode.Once;
                 ExportViewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
                 await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
 
-                var outputNumber = NameSetting.StartNumber.Value + frame - startFrame;
-                var outputPath = ExportPath.Value.PathJoin(FormatFrameFileName(
-                    NameSetting.Prefix.Value,
-                    NameSetting.Suffix.Value,
-                    NameSetting.Separator.Value,
-                    outputNumber,
-                    NameSetting.NumberDigits));
-                ExportPngWriter.SaveHdr2DViewportAsPng(ExportViewport, outputPath);
-
-                progressBar.Value = frame - startFrame + 1;
-                await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-            }
+                var pixels = ExportPngWriter.ReadHdrPixels(ExportViewport);
+                progressBar.Value = index + 1;
+                return pixels;
+            }, ExportPngWriter.GetBinaryDirectory());
         }
         finally
         {
@@ -138,7 +146,7 @@ public partial class ExportFrameSequence : ConfirmationDialog
             paintViewport.CanvasCullMask = oldPaintViewportCullMask;
             _background.Visible = false;
             ExportViewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
-            ExportViewport.World2D = null;
+            ExportViewport.World2D = oldExportWorld;
             timelineSetting.IsRollingFrame.Value = false;
         }
     }
@@ -203,9 +211,11 @@ public partial class ExportFrameSequence : ConfirmationDialog
     }
 
     private static string FormatFrameFileName(string prefix, string suffix, string separator, int frameNumber, int digits)
+        => FormatFrameFileName(prefix, suffix, separator, frameNumber.ToString($"D{digits}"));
+
+    private static string FormatFrameFileName(string prefix, string suffix, string separator, string number)
     {
         // If prefix/suffix is not empty, add separator between prefix/suffix and number. If empty, not add separator.
-        var number = frameNumber.ToString($"D{digits}");
         var prefixPart = string.IsNullOrEmpty(prefix) ? "" : $"{prefix}{separator}";
         var suffixPart = string.IsNullOrEmpty(suffix) ? "" : $"{separator}{suffix}";
         return $"{prefixPart}{number}{suffixPart}.png";

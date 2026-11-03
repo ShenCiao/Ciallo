@@ -87,30 +87,49 @@ public partial class AutoloadData : Node
             // twice, disposing the cloud twice).
             if (_closing) return;
             _closing = true;
-
-            var result = await AppDocumentManager.UserCloseWorkingDocument();
-            if (!result)
+            bool closeConfirmed = false;
+            try
             {
-                // Close was cancelled (e.g. the unsaved-changes dialog was dismissed), so allow a
-                // later close request to run the teardown.
-                _closing = false;
-                return;
-            }
+                if (!await AppDocumentManager.UserCloseWorkingDocument()) return;
+                closeConfirmed = true;
 
-            // Order matters: local shutdown writes the session close marker into the outbox, the
-            // flush pushes it to Steam Cloud, and only then may the upload loop be torn down.
-            // Everything is awaited on the main thread — no sync-over-async anywhere, so the
-            // captured SynchronizationContext can always run these continuations.
-            await AppDocumentDurability.ShutdownAsync();
-            if (SteamManager.IsRecoveryCloudAvailable)
-                await SteamManager.FlushRecoverySessionAsync(TimeSpan.FromSeconds(5));
-            await SteamManager.ShutdownRecoveryCloudAsync();
-            AppStrokeBrushLibrary.Save();
-            AppMarkerTextureLibrary.Save();
-            AppPreference.Save();
-            AppDocumentManager.Clear();
-            GetTree().Quit();
-            // Prevent default handler
+                try
+                {
+                    // Publish the session close marker before flushing and shutting down cloud sync.
+                    await AppDocumentDurability.ShutdownAsync();
+                    if (SteamManager.IsRecoveryCloudAvailable)
+                        await SteamManager.FlushRecoverySessionAsync(TimeSpan.FromSeconds(5));
+                }
+                finally
+                {
+                    await SteamManager.ShutdownRecoveryCloudAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                GD.PrintErr($"Cannot complete application shutdown: {exception}");
+            }
+            finally
+            {
+                if (closeConfirmed)
+                {
+                    try
+                    {
+                        SaveUserData(AppStrokeBrushLibrary.Save, "brush library");
+                        SaveUserData(AppMarkerTextureLibrary.Save, "marker library");
+                        SaveUserData(AppPreference.Save, "preferences");
+                        AppDocumentManager.Clear();
+                    }
+                    finally
+                    {
+                        GetTree().Quit();
+                    }
+                }
+                else
+                {
+                    _closing = false;
+                }
+            }
             return;
         }
 
@@ -118,5 +137,17 @@ public partial class AutoloadData : Node
         if (what != NotificationPredelete) return;
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced);
         GC.WaitForPendingFinalizers();
+    }
+
+    private static void SaveUserData(Action save, string description)
+    {
+        try
+        {
+            save();
+        }
+        catch (Exception exception)
+        {
+            GD.PrintErr($"Cannot save {description} during shutdown: {exception}");
+        }
     }
 }

@@ -113,28 +113,22 @@ public abstract partial class LayerTreeBase : ScrollContainer
             SyncSelection();
         };
         commonSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(subs);
-        block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetProperty(
-            "Layer Visibility", LayerSelectionActions.ContextLayers(e), s => s.IsVisible, value)).AddTo(subs);
-        StyleBoxFlat markColorStyleBox = null;
-        commonSetting.MarkColor.Subscribe(markColor =>
+        block.VisibleButton.OnToggledAsObservable().Subscribe(value => LayerSelectionActions.SetVisible(
+            LayerSelectionActions.ContextLayers(e), value)).AddTo(subs);
+        commonSetting.ClippingMask.Subscribe(value => block.ClippingMaskIndicator.Visible = value).AddTo(subs);
+        var labelStyle = new LayerLabelColorStyle(block);
+        commonSetting.MarkColor.Subscribe(labelStyle.Update).AddTo(subs);
+        // Blocks are bound before their wrappers are parented to the displayed layer tree.
+        block.Node.TreeEntered += () => labelStyle.Update(commonSetting.MarkColor.Value);
+        block.Node.ThemeChanged += () => labelStyle.Update(commonSetting.MarkColor.Value);
+        var lineEdit = block.LabelLineEdit;
+        commonSetting.Name.Subscribe(value =>
         {
-            if (markColor == null)
-            {
-                block.VisibleButton.RemoveThemeStyleboxOverride("normal");
-                block.VisibleButton.RemoveThemeStyleboxOverride("pressed");
-                block.WorkingButton.RemoveThemeStyleboxOverride("normal");
-                block.WorkingButton.RemoveThemeStyleboxOverride("pressed");
-                return;
-            }
-
-            markColorStyleBox ??= new StyleBoxFlat();
-            markColorStyleBox.BgColor = markColor.Value;
-            block.VisibleButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
-            block.VisibleButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
-            block.WorkingButton.AddThemeStyleboxOverride("normal", markColorStyleBox);
-            block.WorkingButton.AddThemeStyleboxOverride("pressed", markColorStyleBox);
+            if (lineEdit.Text != value) lineEdit.Text = value;
         }).AddTo(subs);
-        var lineEdit = block.LabelLineEdit.BindString(commonSetting.Name, subs);
+        lineEdit.OnTextSubmittedAsObservable()
+            .Subscribe(value => LayerSelectionActions.Rename(e, value)).AddTo(subs);
+        lineEdit.SubmitOnFocusExit();
 
         if (ShouldShowDropdownArrow(e))
         {
@@ -359,7 +353,7 @@ public abstract partial class LayerTreeBase : ScrollContainer
             if (insertIndex < parentChildren.Count)
             {
                 refBlock = GetBlock(parentChildren[insertIndex]);
-                lineGlobalY = refBlock.Node.GlobalPosition.Y + refBlock.Node.Size.Y;
+                lineGlobalY = refBlock.Wrapper.GetGlobalRect().End.Y;
             }
             else
             {

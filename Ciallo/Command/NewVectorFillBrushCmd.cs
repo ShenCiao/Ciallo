@@ -35,6 +35,10 @@ public class NewVectorFillBrushCmd : CommandBase
         targetE.Add(setting);
 
         // View
+        var fillMaterial = new FillBrushMaterial();
+        targetE.Add(fillMaterial);
+        setting.FillColor.Subscribe(color => fillMaterial.Color = color).AddTo(targetE);
+
         var strokeMaterial = new StrokeBrushMaterial();
         targetE.Add(strokeMaterial);
 

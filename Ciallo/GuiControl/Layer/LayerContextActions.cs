@@ -42,7 +42,7 @@ internal static partial class LayerContextActions
         // Layer children are ordered bottom to top: insert fill just before the source.
         cmd.SetTarget(fillLayer)
             .NewShapeLayer(targetLayer)
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " fill")
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, string.Format("{0} fill".Tr(), name))
             .AddToLayerTree(parent, index);
 
         cmd.SetTarget(targetLayer.Document)
@@ -56,7 +56,7 @@ internal static partial class LayerContextActions
             cmd.SetTarget(targetLayer.Document).MoveLayer(fills[i], fillLayer, i);
 
         cmd.SetTarget(targetLayer)
-            .SetProperty(e => e.Get<CommonLayerSetting>().Name, name + " stroke");
+            .SetProperty(e => e.Get<CommonLayerSetting>().Name, string.Format("{0} stroke".Tr(), name));
         return (targetLayer, fillLayer);
     }
 

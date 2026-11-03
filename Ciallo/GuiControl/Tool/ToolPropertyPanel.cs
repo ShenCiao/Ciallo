@@ -45,7 +45,7 @@ public partial class ToolPropertyPanel : Container
 
             var cannotToolLabel = new Label
             {
-                Text = "[Cannot Tool Layer]".Tr(),
+                Text = "[Cannot Tool Layer]",
                 AutowrapMode = TextServer.AutowrapMode.WordSmart,
             };
             holderPerDocument.AddChild(cannotToolLabel);

@@ -194,8 +194,8 @@ public class StrokeBrushSetting
         var baseRadius = BaseRadius.Value;
         if (!ActiveBrushFlags.Value.HasFlag(BrushFlags.Pressure2Radius))
             return _ => baseRadius; // disabled: constant radius, pressure does not affect thickness
-        var points = Pressure2RadiusCurve.Value; // capture snapshot at sampler creation time
-        return pressure => baseRadius * points.SampleX(pressure);
+        var (polyline, _) = Pressure2RadiusCurve.Value.TessellateWithCache();
+        return pressure => baseRadius * polyline.SampleX(pressure);
     }
 }
 

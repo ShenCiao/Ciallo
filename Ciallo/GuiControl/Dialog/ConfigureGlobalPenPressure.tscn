@@ -8,7 +8,7 @@
 
 [node name="ConfigureGlobalPenPressure" type="AcceptDialog" unique_id=44268714]
 oversampling_override = 1.0
-title = "Configure Global Pen Pressure"
+title = "Global Pen Pressure"
 initial_position = 4
 size = Vector2i(1780, 800)
 visible = true
@@ -114,8 +114,8 @@ horizontal_alignment = 1
 
 [node name="RawChart" type="Control" parent="VBoxContainer/MainArea/Charts/RawPanel" unique_id=1000000010]
 unique_name_in_owner = true
-clip_contents = true
 custom_minimum_size = Vector2(300, 300)
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -138,8 +138,8 @@ horizontal_alignment = 1
 
 [node name="CurveEdit" type="Control" parent="VBoxContainer/MainArea/Charts/GlobalPanel" unique_id=1000000013]
 unique_name_in_owner = true
-clip_contents = true
 custom_minimum_size = Vector2(300, 300)
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -164,8 +164,8 @@ horizontal_alignment = 1
 
 [node name="MappedChart" type="Control" parent="VBoxContainer/MainArea/Charts/MappedPanel" unique_id=1000000016]
 unique_name_in_owner = true
-clip_contents = true
 custom_minimum_size = Vector2(300, 300)
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

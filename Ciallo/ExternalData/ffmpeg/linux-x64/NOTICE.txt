@@ -1,0 +1,12 @@
+FFmpeg n8.1.3-9-g29e619e767 (BtbN monthly build, 2026-09-30)
+Copyright (c) the FFmpeg developers and contributors.
+
+This executable is a separate program distributed with Ciallo.
+License: LGPL-3.0-or-later; see LICENSE.txt.
+Binary supplier: https://github.com/BtbN/FFmpeg-Builds
+Binary archive: https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-8.1.tar.xz
+Archive SHA-256: dfa863a00ca81f1bdf58a372b18cff4820f0017e55de32778de8ecd8ed92a02e
+Executable SHA-256: d107dfbdf23395f8d15e7033bc2457c36af45d742a34df0f359cc21e3727ce87
+FFmpeg source: https://github.com/FFmpeg/FFmpeg/tree/29e619e767
+Build scripts: https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-09-30-13-08
+Build configuration and enabled libraries: run ffmpeg -version.

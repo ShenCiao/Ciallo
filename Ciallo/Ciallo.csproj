@@ -1,4 +1,7 @@
-<Project Sdk="Godot.NET.Sdk">
+<Project>
+    <Import Project="../.ciallo/local-engine.props" Condition="Exists('../.ciallo/local-engine.props')" />
+    <Import Project="Sdk.props" Sdk="Godot.NET.Sdk" Condition="'$(GodotLocalSdkDir)' == ''" />
+    <Import Project="$(GodotLocalSdkDir)/Sdk.props" Condition="'$(GodotLocalSdkDir)' != ''" />
     <PropertyGroup>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <LangVersion>default</LangVersion>
@@ -14,6 +17,7 @@
         <TargetFramework>net10.0</TargetFramework>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="FFMpegCore" Version="5.5.0" />
         <PackageReference Include="Frent" Version="0.7.1-beta" />
         <PackageReference Include="GodotSharp.SourceGenerators" Version="2.7.0-260308-1543.Release" />
         <PackageReference Include="Humanizer" Version="3.0.10" />
@@ -77,5 +81,7 @@
         <DefineConstants>OS_MAC</DefineConstants>
     </PropertyGroup>
 
-    <Import Project="$(GodotProjectDir).godot/mono/local_sdk.props" Condition="Exists('$(GodotProjectDir).godot/mono/local_sdk.props')" />
+    <Import Project="$(GodotLocalSdkDir)/../Godot.LocalDevelopment.props" Condition="'$(GodotLocalSdkDir)' != ''" />
+    <Import Project="Sdk.targets" Sdk="Godot.NET.Sdk" Condition="'$(GodotLocalSdkDir)' == ''" />
+    <Import Project="$(GodotLocalSdkDir)/Sdk.targets" Condition="'$(GodotLocalSdkDir)' != ''" />
 </Project>

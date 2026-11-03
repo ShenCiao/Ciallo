@@ -16,7 +16,7 @@ public partial class ShortcutSettings : AcceptDialog
         keychain.Call(ClearActionMetadataMethod);
 
         foreach (string group in GeneratedShortcutMetadata.Groups)
-            keychain.Call(RegisterGroupMethod, group, "", false);
+            keychain.Call(RegisterGroupMethod, GroupLabel(group), "", false);
 
         foreach (var action in GeneratedShortcutMetadata.Actions)
         {
@@ -24,24 +24,18 @@ public partial class ShortcutSettings : AcceptDialog
                 RegisterActionMethod,
                 action.ActionName,
                 action.ActionSegment.Humanize(LetterCasing.Title),
-                action.GroupName,
+                GroupLabel(action.GroupName),
                 action.Global);
         }
 
         keychain.Call(ConfigureRemappingMethod, true, false, true, true, false);
     }
 
-    public override void _Ready() => UpdateTranslation();
+    private static string GroupLabel(string group) => group.Split('.')[1].Humanize(LetterCasing.Title);
 
-    public override void _Notification(int what)
+    public override void _Ready()
     {
-        base._Notification(what);
-        if (what == NotificationTranslationChanged && IsNodeReady()) UpdateTranslation();
-    }
-
-    private void UpdateTranslation()
-    {
-        Title = Tr("Shortcuts");
-        OkButtonText = Tr("Close");
+        Title = "Shortcuts";
+        OkButtonText = "Close";
     }
 }

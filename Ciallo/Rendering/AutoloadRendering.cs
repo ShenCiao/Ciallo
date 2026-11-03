@@ -23,13 +23,6 @@ public partial class AutoloadRendering : Node
     public static StrokeBrushMaterial DashWireframeMaterial;
     public static StrokeBrushMaterial MissingStrokeBrushMaterial;
 
-    public static readonly ShaderMaterial MissingFillBrushMaterial = GD.Load<ShaderMaterial>("res://Rendering/FillHint.tres");
-    public static readonly NoiseTexture2D DummyTextureForUV = new()
-    {
-        // Texture for Polygon2D creating UV coordinate, Polygon2D cannot get correct UV coordinate without a texture
-        Width = 256,
-        Height = 256,
-    };
     public static readonly ShaderMaterial CheckerboardMaterial = GD.Load<ShaderMaterial>("res://Rendering/Checkerboard.tres");
 
     private static Shader CreateStrokeShaderVariant(string variantDefines)

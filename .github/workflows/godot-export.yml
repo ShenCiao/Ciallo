@@ -107,9 +107,9 @@ jobs:
             throw "project.godot config/version must be plain semver X.Y.Z. Actual: $projectVersion"
           }
 
-          $sdkVersion = (Get-Content -LiteralPath global.json -Raw | ConvertFrom-Json).'msbuild-sdks'.'Godot.NET.Sdk'
+          $sdkVersion = (Get-Content -LiteralPath "$env:PROJECT_PATH/global.json" -Raw | ConvertFrom-Json).'msbuild-sdks'.'Godot.NET.Sdk'
           if ($sdkVersion -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+-ciallo\.g[0-9a-f]{9,40}$') {
-            throw "global.json Godot.NET.Sdk must identify a Ciallo engine release. Actual: $sdkVersion"
+            throw "Ciallo/global.json Godot.NET.Sdk must identify a Ciallo engine release. Actual: $sdkVersion"
           }
           $engineStatus = $sdkVersion.Substring($sdkVersion.IndexOf('-') + 1)
           $engineReleaseTag = "v$sdkVersion"
@@ -346,6 +346,10 @@ jobs:
         shell: pwsh
         run: dotnet restore "$env:CSPROJ" --configfile NuGet.Config
 
+      - name: Prepare bundled FFmpeg
+        shell: bash
+        run: ./engine.sh ffmpeg
+
       - name: Import resources
         shell: pwsh
         run: |
@@ -383,6 +387,28 @@ jobs:
           }
           if (-not (Test-Path -LiteralPath $outFile)) {
             throw "Export did not create expected output: $outFile"
+          }
+
+          $ffmpeg = switch ("${{ matrix.name }}") {
+            "Windows" { Join-Path $outDir "ffmpeg/ffmpeg.exe" }
+            "Linux" { Join-Path $outDir "ffmpeg/ffmpeg" }
+            "macOS" { Join-Path $outFile "Contents/Helpers/ffmpeg/ffmpeg" }
+          }
+          if ($IsLinux) {
+            # Godot copies shared objects without preserving their executable bits.
+            # Set the exported helper's permissions before running it and creating the ZIP.
+            & chmod 755 -- $ffmpeg
+            if ($LASTEXITCODE -ne 0) {
+              throw "Could not make the exported FFmpeg executable: $ffmpeg"
+            }
+          }
+          & $ffmpeg -hide_banner -loglevel error -f lavfi -i "color=size=2x2:rate=1" -frames:v 1 -c:v png -pix_fmt rgba64be -vf "setparams=color_primaries=bt709:color_trc=iec61966-2-1:colorspace=gbr:range=full" -f image2 -update 1 -y "$env:RUNNER_TEMP/ffmpeg-png16.png"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Bundled FFmpeg could not encode PNG16 from its exported location."
+          }
+          $png = [System.IO.File]::ReadAllBytes("$env:RUNNER_TEMP/ffmpeg-png16.png")
+          if ($png[24] -ne 16 -or $png[25] -ne 6 -or -not [System.Text.Encoding]::Latin1.GetString($png).Contains("sRGB")) {
+            throw "Bundled FFmpeg did not write tagged RGBA16 PNG."
           }
 
           $expectedAssets = switch ("${{ matrix.name }}") {

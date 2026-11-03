@@ -160,6 +160,7 @@ public partial class TrackTree : LayerTreeBase
             foreach (var m in members) { rep = m; break; }
             var repSetting = rep.Get<CommonLayerSetting>();
             repSetting.IsVisible.Subscribe(block.VisibleButton.SetPressedNoSignal).AddTo(bs);
+            repSetting.ClippingMask.Subscribe(value => block.ClippingMaskIndicator.Visible = value).AddTo(bs);
             repSetting.Name.Subscribe(block.LabelLineEdit.SetText).AddTo(bs);
 
             block.VisibleButton.OnToggledAsObservable()
@@ -178,8 +179,8 @@ public partial class TrackTree : LayerTreeBase
                 LayerSelectionActions.ShowSelection(block.WorkingButton, primary, active && names.Contains(name));
                 block.WorkingButton.Modulate = available ? Colors.White : new Color(1, 1, 1, 0.45f);
                 block.WorkingButton.TooltipText = (available
-                    ? "Select matching layers across cels"
-                    : "Archetype unavailable in current cel; selection applies to other cels").Tr();
+                    ? "[Select Matching Cel Layers Tooltip]"
+                    : "[Unavailable Cel Layer Tooltip]");
             }
 
             sm.SelectedLayers.CombineLatest(folderSetting.CurrentExposedCel,

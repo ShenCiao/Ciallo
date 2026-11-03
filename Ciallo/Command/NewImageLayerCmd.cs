@@ -17,6 +17,7 @@ public class NewImageLayerCmd : CommandBase
 
     public NewImageLayerCmd(Image image)
     {
+        image.GenerateMipmaps();
         _imageLayerSetting = new ImageLayerSetting
         {
             Texture = ImageTexture.CreateFromImage(image)
@@ -48,6 +49,7 @@ public class NewImageLayerCmd : CommandBase
         var sprite = new Sprite2D
         {
             Texture = setting.Texture,
+            TextureFilter = CanvasItem.TextureFilterEnum.LinearWithMipmaps,
         };
         targetE.AddNode(sprite);
 
@@ -70,6 +72,10 @@ public class NewImageLayerCmd : CommandBase
             layerOverlay.LocalTransform = t;
             layerOverlay.UpdateGeometry();
         }).AddTo(targetE);
+
+        // Body; Adding it only for keeping Godot nodes complete during moving with index
+        var bodyHolder = new BodyHolder();
+        targetE.AddNode(bodyHolder);
 
         // Layer panel
         targetE.Document.Get<LayerTree>().Create(targetE);
@@ -94,6 +100,9 @@ public class NewImageLayerCmd : CommandBase
 
             // Overlay
             et.Parent.Get<OverlayHolder>().InsertNodeAt(layerOverlay, et.Index);
+
+            // Body
+            et.Parent.Get<BodyHolder>().InsertNodeAt(bodyHolder, et.Index);
         }).AddTo(targetE);
 
         events.Removed.Subscribe(_ =>
@@ -103,6 +112,9 @@ public class NewImageLayerCmd : CommandBase
 
             // Timeline track
             targetE.Get<TrackRowWrapper>().RemoveFromParent();
+
+            // Body
+            bodyHolder.RemoveFromParent();
 
             // Overlay
             layerOverlay.RemoveFromParent();

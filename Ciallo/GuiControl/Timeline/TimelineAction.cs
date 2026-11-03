@@ -95,14 +95,14 @@ public partial class TimelineAction : Container
         int newFrame = ClampPlaybackFrame(targetFrame);
         if (oldFrame == newFrame) return;
 
-        var cmd = new CommandBuilder("Navigate Timeline")
+        var cmd = new CommandBuilder()
             .SetProperty(_selectionManager.CurrentFrame, oldFrame, newFrame);
 
         var newLayers = _selectionManager.ResolveLayersForTimelineFrameSelection(newFrame);
         if (_selectionManager.NeedsTimelineSelectionCommit(newLayers))
             cmd.SetTarget(newLayers[0]).SelectLayers(layers: newLayers);
 
-        cmd.CommitOpenSequence();
+        cmd.CommitOpenSequence(HistorySequenceKind.TimelineInteraction);
     }
 
     private void TogglePlayback()
@@ -177,7 +177,7 @@ public partial class TimelineAction : Container
         _isPlaying.Value = playing;
         _playbackAccumulator = 0.0;
         PlayStop.Icon = playing ? _stopIcon : _playIcon;
-        PlayStop.TooltipText = playing ? "Stop playback".Tr() : "Play".Tr();
+        PlayStop.TooltipText = playing ? "Stop playback" : "Play";
         SetProcess(playing);
     }
 

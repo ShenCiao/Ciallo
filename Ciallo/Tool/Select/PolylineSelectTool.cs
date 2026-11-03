@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Serialization;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -18,14 +19,18 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 [RequestedByToolButton(ToolButton.Type.Select)]
 public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum EditMode { RectTransform, BezierDeform, }
 
-    public ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
-    public readonly ReactiveProperty<float> SimplificationRatio = new(0.25f);
+    [DataMember]
+    public readonly ReactiveProperty<EditMode> Mode = new(EditMode.RectTransform);
+    [DataMember]
+    public readonly ReactiveProperty<float> SimplificationTolerance = new(0.5f);
+    [DataMember]
+    public readonly ReactiveProperty<float> StrokeRadiusMultiplier = new(1f);
 
     [Substate]
     internal PolylineNoSelectionHover HoverWithoutSelection;
@@ -47,10 +52,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     public Trigger EditModeChanged = new("EditModeChanged");
 
-    public PolylineSelectTool()
-    {
-        Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
-    }
+    private IDisposable _modeChangedSubscription;
 
     public override void ConfigureStateMachine(StateMachine sm)
     {
@@ -116,26 +118,28 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
     }
 
     public static bool CanHandleLayers(ImmutableArray<Entity> layers) =>
-        (layers[0].Has<ShapeLayerSetting>() || layers[0].Has<VectorFillLayerSetting>());
+        layers.All(layer => layer.Has<ShapeLayerSetting>() || layer.Has<VectorFillLayerSetting>());
 
     protected override void OnActivated()
     {
-        if (PrimaryLayer.Has<VectorFillLayerSetting>())
-            PrimaryLayer.Get<OverlayHolder>().Visible = true;
-        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
-        // Guard selection
-        var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
-        var deselect = selectedShapes
-            .Where(e => e.Get<LayerTreeNode>().ParentValue != PrimaryLayer).Reverse().ToArray();
-        foreach (var e in deselect)
-            selectedShapes.Remove(e);
+        _modeChangedSubscription = Mode.Skip(1).Subscribe(_ => Fire(EditModeChanged));
+        foreach (var layer in SelectedLayers)
+        {
+            if (layer.Has<VectorFillLayerSetting>())
+                layer.Get<OverlayHolder>().Visible = true;
+            layer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Inherit;
+        }
     }
 
     protected override void OnDeactivated()
     {
-        if (PrimaryLayer.Has<VectorFillLayerSetting>())
-            PrimaryLayer.Get<OverlayHolder>().Visible = false;
-        PrimaryLayer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        _modeChangedSubscription.Dispose();
+        foreach (var layer in SelectedLayers)
+        {
+            if (layer.Has<VectorFillLayerSetting>())
+                layer.Get<OverlayHolder>().Visible = false;
+            layer.Get<BodyHolder>().ProcessMode = Node.ProcessModeEnum.Disabled;
+        }
     }
 
     public void DrawPropertyBeforeSubstates(PropertyContainer container)
@@ -146,10 +150,8 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectAllButton = container.CreateButton("Select all").AddToChildOf(selectionButtonGroup);
         selectAllButton.Pressed += () =>
         {
-            var layerE = selectionManager.PrimaryLayer.CurrentValue;
-            if (layerE.IsDyingOrDead) return;
             selectionManager.SelectedShapes.Clear();
-            selectionManager.SelectedShapes.AddRange(layerE.Get<LayerTreeNode>().Children);
+            selectionManager.SelectedShapes.AddRange(SelectedLayers.SelectMany(layer => layer.Get<LayerTreeNode>().Children));
             Fire(Trigger.Refresh);
         };
         var deselectAllButton = container.CreateButton("Deselect").AddToChildOf(selectionButtonGroup);
@@ -167,79 +169,98 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var selectionChanged = selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default);
 
-        // --- Stroke brush switcher
-        var strokeBrushSwitcher = StrokeBrushPreviewList.New().AddToChildOf(container);
-        strokeBrushSwitcher.CustomMinimumSize = new(0, 256);
-        strokeBrushSwitcher.Document = Document;
-        strokeBrushSwitcher.BindBrushes(Document.Get<BrushManager>().StrokeBrushes);
-        strokeBrushSwitcher.VisibleIf(
-            selectionChanged.CombineLatest(selectionManager.PrimaryLayer, (_, layer) => layer),
-            layer => selectedShapes.Count > 0
-                ? selectedShapes.All(e => e.Has<StrokeSetting>())
-                : !layer.IsNull && layer.Has<ShapeLayerSetting>());
-
-        selectionChanged.Subscribe(_ =>
+        var stackingButtons = container.CreateHContainer().AddToChildOf(container)
+            .VisibleIf(selectionChanged, _ => selectedShapes.Count > 0);
+        stackingButtons.Name = "ShapeStacking";
+        var sendToBack = container.CreateButton("Send to back").AddToChildOf(stackingButtons);
+        sendToBack.Name = "SendToBack";
+        sendToBack.Pressed += () =>
         {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<StrokeSetting>()))
+            if (ShapeStackingActions.MoveSelection(Document, toTop: false)) Fire(Trigger.Refresh);
+        };
+        var bringToFront = container.CreateButton("Bring to front").AddToChildOf(stackingButtons);
+        bringToFront.Name = "BringToFront";
+        bringToFront.Pressed += () =>
+        {
+            if (ShapeStackingActions.MoveSelection(Document, toTop: true)) Fire(Trigger.Refresh);
+        };
+
+        foreach (bool toStroke in new[] { false, true })
+        {
+            var convertButton = container.CreateButton(toStroke ? "Convert to strokes" : "Convert to filled polygons")
+                .AddToChildOf(container);
+            convertButton.Name = toStroke ? "ConvertToStrokes" : "ConvertToFilledPolygons";
+            convertButton.TooltipText = toStroke
+                ? "[Convert To Strokes Tooltip]"
+                : "[Convert To Filled Polygons Tooltip]";
+            var workingBrush = toStroke ? selectionManager.WorkingStrokeBrush : selectionManager.WorkingVectorFillBrush;
+            selectionChanged.CombineLatest(workingBrush, (_, brush) => brush).Subscribe(brush =>
             {
-                strokeBrushSwitcher.Select(Entity.Null);
-                return;
-            }
-            var firstE = selectedShapes.First().Get<StrokeSetting>().Brush.Value;
-            bool allSame = selectedShapes.All(e => e.Get<StrokeSetting>().Brush.Value == firstE);
-            strokeBrushSwitcher.Select(allSame ? firstE : Entity.Null);
-        }).AddTo(strokeBrushSwitcher);
-
-        strokeBrushSwitcher.BrushClicked.Subscribe(brushE =>
-        {
-            if (selectedShapes.Count == 0)
+                convertButton.Visible = ShapeConversionActions.CanConvert(selectedShapes, toStroke);
+                convertButton.Disabled = brush.IsNull;
+            }).AddTo(convertButton);
+            convertButton.Pressed += () =>
             {
-                var strokes = selectionManager.PrimaryLayer.CurrentValue.Get<LayerTreeNode>().Children
-                    .Where(e => e.Has<StrokeSetting>() && e.Get<StrokeSetting>().Brush.Value == brushE)
-                    .ToArray();
-                if (strokes.Length == 0) return;
-
-                selectedShapes.AddRange(strokes);
-                Fire(Trigger.Refresh);
-                return;
-            }
-
-            var cmd = new CommandBuilder("Set Selected Stroke Brush");
-            foreach (var shapeE in selectedShapes)
-                cmd.SetTarget(shapeE).SetProperty(e => e.Get<StrokeSetting>().Brush, brushE);
-            cmd.Commit();
-            strokeBrushSwitcher.Select(brushE);
-        }).AddTo(strokeBrushSwitcher);
-
-        // --- Vector fill brush switcher
-        var vectorFillBrushSwitcher = VectorFillBrushPreviewList.New().AddToChildOf(container);
-        vectorFillBrushSwitcher.CustomMinimumSize = new(0, 256);
-        vectorFillBrushSwitcher.Document = Document;
-        vectorFillBrushSwitcher.BindBrushes(Document.Get<BrushManager>().VectorFillBrushes);
-        vectorFillBrushSwitcher.VisibleIf(selectionChanged,
-            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>()));
-
-        selectionChanged.Subscribe(_ =>
+                if (ShapeConversionActions.Apply(Document, toStroke)) Fire(Trigger.Refresh);
+            };
+        }
+        var booleanBox = container.CreateBox().AddToChildOf(container)
+            .VisibleIf(selectionChanged, _ => selectedShapes.Count(shape => shape.Has<FilledPolygonSetting>()) >= 2);
+        booleanBox.Name = "PolygonBooleanOperations";
+        var booleanButtons = new GridContainer { Columns = 2, Name = "Buttons" }.AddToChildOf(booleanBox);
+        foreach (var operation in Enum.GetValues<Geometry2D.PolyBooleanOperation>())
         {
-            if (selectedShapes.Count <= 0 || !selectedShapes.All(e => e.Has<VectorFillMarkerSetting>() || e.Has<FilledPolygonSetting>())) return;
-            var firstE = GetVectorFillBrushE(selectedShapes.First()).Value;
-            bool allSame = selectedShapes.All(e => GetVectorFillBrushE(e).Value == firstE);
-            vectorFillBrushSwitcher.Select(allSame ? firstE : Entity.Null);
-        }).AddTo(vectorFillBrushSwitcher);
-
-        vectorFillBrushSwitcher.BrushClicked.Subscribe(brushE =>
-        {
-            var cmd = new CommandBuilder("Set Selected Vector Fill Brush");
-            foreach (var shapeE in selectedShapes)
+            var button = container.CreateButton(PolygonBooleanActions.Label(operation)).AddToChildOf(booleanButtons);
+            button.Name = operation.ToString();
+            button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+            button.TooltipText = operation == Geometry2D.PolyBooleanOperation.Difference
+                ? "[Subtract Selected Polygons Tooltip]"
+                : "[Combine Selected Polygons Tooltip]";
+            selectionChanged.Subscribe(_ => button.Disabled =
+                !PolygonBooleanActions.CanApplySelection(selectedShapes)).AddTo(button);
+            button.Pressed += () =>
             {
-                if (shapeE.Has<VectorFillMarkerSetting>())
-                    cmd.SetTarget(shapeE).SetProperty(e => e.Get<VectorFillMarkerSetting>().BrushE, brushE);
-                else
-                    cmd.SetTarget(shapeE).SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brushE);
+                if (PolygonBooleanActions.ApplySelection(Document, operation)) Fire(Trigger.Refresh);
+            };
+        }
+
+        container.AddChild(new SelectionBrushPanel(Document, ShapeBrushKind.Stroke, () => Fire(Trigger.Refresh)));
+        container.AddChild(new SelectionBrushPanel(Document, ShapeBrushKind.Fill, () => Fire(Trigger.Refresh)));
+
+        var strokeRadiusEditBox = container.CreateBox().AddToChildOf(container);
+        strokeRadiusEditBox.Name = "StrokeRadiusMultiplier";
+        strokeRadiusEditBox.VisibleIf(selectionChanged,
+            _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<StrokeSetting>()));
+
+        var strokeRadiusMultiplierEdit = new SpinSlider
+        {
+            MinValue = 0.25f,
+            MaxValue = 4f,
+            Step = 0.01f,
+            ExpEdit = true,
+            AllowGreater = true,
+            TooltipText = "[Stroke Radius Multiplier Tooltip]",
+        }.BindNumber(StrokeRadiusMultiplier);
+        container.CreatePropertyBox("Radius multiplier", strokeRadiusMultiplierEdit)
+            .AddToChildOf(strokeRadiusEditBox);
+
+        var applyStrokeRadiusMultiplier = container.CreateButton("Apply to selected strokes")
+            .AddToChildOf(strokeRadiusEditBox);
+        applyStrokeRadiusMultiplier.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+        applyStrokeRadiusMultiplier.Pressed += () =>
+        {
+            float multiplier = StrokeRadiusMultiplier.Value;
+            if (multiplier == 1f) return;
+
+            var command = new CommandBuilder("Scale Selected Stroke Radii");
+            foreach (var strokeE in selectedShapes)
+            {
+                var radii = strokeE.Get<SampledPolyline>().Radii.Value;
+                command.SetTarget(strokeE).SetSampledPolyline(
+                    radii: radii.Select(radius => radius * multiplier).ToImmutableArray());
             }
-            cmd.Commit();
-            vectorFillBrushSwitcher.Select(brushE);
-        }).AddTo(vectorFillBrushSwitcher);
+            command.Commit();
+        };
 
         var polylineEditBox = container.CreateBox()
             .AddToChildOf(container)
@@ -251,13 +272,17 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 return e.Get<SampledPolyline>().Count > 1; // naively ignore single point.
             });
 
-        var simplificationRatioEdit = new SpinSlider()
+        var simplificationToleranceEdit = new SpinSlider()
         {
-            MinValue = 0.1,
-            MaxValue = 0.5,
+            MinValue = 0.001,
+            MaxValue = 2,
+            Step = 0.001,
+            AllowGreater = true,
+            ExpEdit = true,
+            TooltipText = "[Simplification Tolerance Tooltip]",
         };
-        simplificationRatioEdit.BindNumber(SimplificationRatio);
-        container.CreatePropertyBox("Simplification ratio", simplificationRatioEdit).AddToChildOf(polylineEditBox);
+        simplificationToleranceEdit.BindNumber(SimplificationTolerance);
+        container.CreatePropertyBox("Simplification tolerance", simplificationToleranceEdit).AddToChildOf(polylineEditBox);
 
         var simplifyButton = container.CreateButton("Simplify").AddToChildOf(polylineEditBox);
         simplifyButton.Pressed += () =>
@@ -266,8 +291,10 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             foreach (var polylineE in selectionManager.SelectedShapes)
             {
                 var geom = polylineE.Get<SampledPolyline>();
-                if (geom.Length < 4) continue;
-                geom.Positions.Value.SimplifyCurvatureDistance(SimplificationRatio.Value, out var indices);
+                geom.Positions.Value.SimplifyRdp(
+                    SimplificationTolerance.Value, out var indices,
+                    radii: geom.Radii.Value, pressures: geom.Pressures.Value);
+                if (indices.Count == geom.Count) continue;
 
                 var positions = ImmutableArray.CreateBuilder<Vector2>(indices.Count);
                 var radii = ImmutableArray.CreateBuilder<float>(indices.Count);
@@ -395,7 +422,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
                 if (geom.Length < 3) continue;
 
                 // Apply Laplacian smoothing only to positions.
-                const int iterations = 1;
+                const int iterations = 8;
                 const float lambda = 0.5f;
                 var smoothedPositions = geom.Positions.Value.SmoothLaplacian(iterations, lambda);
                 builder.SetTarget(polylineE).SetSampledPolyline([.. smoothedPositions]); // copy but fine
@@ -405,9 +432,4 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
     }
 
-    private static ReactiveProperty<Entity> GetVectorFillBrushE(Entity e)
-    {
-        if (e.Has<VectorFillMarkerSetting>()) return e.Get<VectorFillMarkerSetting>().BrushE;
-        return e.Get<FilledPolygonSetting>().BrushE;
-    }
 }

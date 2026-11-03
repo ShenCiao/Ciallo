@@ -23,6 +23,14 @@ function Write-Json($Path, $Value) {
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($Path)) | Out-Null
     [IO.File]::WriteAllText($Path, ($Value | ConvertTo-Json -Depth 20))
 }
+function Check-Sdk([string]$Expected, [switch]$Build) {
+    $selected = & dotnet msbuild "$checkout/Ciallo/Probe.csproj" -nologo -getProperty:ProbeSdkSource
+    if ($LASTEXITCODE -ne 0 -or $selected -ne $Expected) { throw "Expected SDK '$Expected'; got '$selected'." }
+    if ($Build) {
+        & dotnet build "$checkout/Ciallo/Probe.csproj" --nologo -v:q
+        if ($LASTEXITCODE -ne 0) { throw "Build failed for SDK '$Expected'." }
+    }
+}
 try {
     if ($IsWindows) {
         $git = (Get-Command git.exe).Source
@@ -35,6 +43,14 @@ try {
     Copy-Item "$sourceRoot/tools/engine" "$checkout/tools/engine" -Recurse
     Copy-Item "$sourceRoot/engine.sh" "$checkout/engine.sh"
     Copy-Item "$sourceRoot/NuGet.Config" "$checkout/NuGet.Config"
+    # Exercise the product's exact SDK import order with a minimal C# payload.
+    [xml]$product = Get-Content "$sourceRoot/Ciallo/Ciallo.csproj"
+    $imports = @($product.Project.Import)
+    $probe = '<Project>' + (($imports | Select-Object -First 3 | ForEach-Object OuterXml) -join "`n") +
+        '<PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>' +
+        (($imports | Select-Object -Skip 3 | ForEach-Object OuterXml) -join "`n") + '</Project>'
+    [IO.File]::WriteAllText("$checkout/Ciallo/Probe.csproj", $probe)
+    [IO.File]::WriteAllText("$checkout/Ciallo/Probe.cs", 'public class Probe {}')
     # Reuse only verified tool binaries; all installs and SDK packages below are fresh.
     if (Test-Path "$sourceRoot/.ciallo/tools") {
         [IO.Directory]::CreateDirectory("$checkout/.ciallo") | Out-Null
@@ -61,11 +77,15 @@ try {
             [IO.File]::WriteAllText("$packagePath/$package.nuspec", "<package><metadata><id>$package</id><version>$version</version><authors>Test</authors><description>Test</description></metadata></package>")
             if ($package -eq 'Godot.NET.Sdk') {
                 [IO.Directory]::CreateDirectory("$packagePath/Sdk") | Out-Null
-                [IO.File]::WriteAllText("$packagePath/Sdk/Sdk.props", '<Project><Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/></Project>')
+                [IO.File]::WriteAllText("$packagePath/Sdk/Sdk.props", "<Project><Import Project=`"Sdk.props`" Sdk=`"Microsoft.NET.Sdk`"/><PropertyGroup><ProbeSdkSource>$version</ProbeSdkSource></PropertyGroup></Project>")
                 [IO.File]::WriteAllText("$packagePath/Sdk/Sdk.targets", '<Project><Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk"/></Project>')
             }
             [IO.Compression.ZipFile]::CreateFromDirectory($packagePath, "$feed/$package.$version.nupkg")
         }
+        $localTools = "$content/GodotSharp/Tools/LocalDevelopment"
+        [IO.Directory]::CreateDirectory($localTools) | Out-Null
+        Copy-Item "$content/package-Godot.NET.Sdk/Sdk" "$localTools/Sdk" -Recurse
+        [IO.File]::WriteAllText("$localTools/Godot.LocalDevelopment.props", '<Project><PropertyGroup><GodotLocalDevelopment>true</GodotLocalDevelopment></PropertyGroup></Project>')
         $release = "$registry/$version"
         [IO.Directory]::CreateDirectory($release) | Out-Null
         $templateName = "templates-$platform.zip"
@@ -114,7 +134,7 @@ try {
         } finally { $listener.Close() }
     }
     foreach ($version in $versions) {
-        Write-Json "$checkout/global.json" @{'msbuild-sdks'=@{'Godot.NET.Sdk'=$version}}
+        Write-Json "$checkout/Ciallo/global.json" @{'msbuild-sdks'=@{'Godot.NET.Sdk'=$version}}
         $env:CIALLO_GDVM_REGISTRY = "$base$version/"
         $registries += $env:CIALLO_GDVM_REGISTRY.TrimEnd('/')
         Run -Arguments @('setup','--no-shortcut')
@@ -144,19 +164,41 @@ try {
         if ([IO.File]::ReadAllText("$templateTarget/.ciallo-sha512").Trim() -ne $checksum) { throw 'Failed verification changed installed templates.' }
         $manifest.sha512 = $checksum
         Write-Json $manifestPath $manifest
-        [IO.File]::WriteAllText("$checkout/Ciallo/Probe.csproj", '<Project Sdk="Godot.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>')
-        & dotnet build "$checkout/Ciallo/Probe.csproj" --nologo -v:q
-        if ($LASTEXITCODE -ne 0) { throw 'Standard SDK resolution failed.' }
+        Check-Sdk $version -Build
     }
-    Run -Arguments @('local',"$fixture/$($versions[0])/$binary",'--no-shortcut')
+    $teamConfig = [IO.File]::ReadAllText("$checkout/Ciallo/global.json")
+    $localEditor = "$fixture/$($versions[0])/$binary"
+    # A stored path alone must leave published mode selected.
+    & git config --file "$checkout/.ciallo/config" engine.editor $localEditor
+    Run -Arguments @('sync','--no-shortcut')
+    Check-Sdk $versions[1]
+    Run -Arguments @('local','on','--no-shortcut')
     Run -Arguments @('sync','--templates','--no-shortcut') -Fails
-    $local = Get-Content "$checkout/Ciallo/global.json" -Raw | ConvertFrom-Json
-    if ($local.'msbuild-sdks'.'Godot.NET.Sdk' -ne $versions[0]) { throw 'Local override failed.' }
-    Run -Arguments @('published','--no-shortcut')
-    if (Test-Path "$checkout/Ciallo/global.json") { throw 'Local override was not removed.' }
+    $env:NUGET_PACKAGES = "$fixture/local-nuget-cache"
+    # No local NuGet package feed or SDK version metadata is needed to build.
+    Move-Item "$fixture/$($versions[0])/GodotSharp/Tools/nupkgs" "$fixture/local-packages-unused"
+    Check-Sdk $versions[0] -Build
+    $localSdkProps = "$fixture/$($versions[0])/GodotSharp/Tools/LocalDevelopment/Sdk/Sdk.props"
+    [IO.File]::WriteAllText($localSdkProps, [IO.File]::ReadAllText($localSdkProps).Replace($versions[0], 'rebuilt-local-sdk'))
+    Check-Sdk 'rebuilt-local-sdk' -Build
+    if (Test-Path "$env:NUGET_PACKAGES/godot.net.sdk") { throw 'Local mode resolved a cached NuGet SDK.' }
+    $env:NUGET_PACKAGES = "$fixture/nuget-cache"
+    Run -Arguments @('sync','--ci')
+    Check-Sdk $versions[1]
+    if ((& git config --file "$checkout/.ciallo/config" --get engine.local) -ne 'true') { throw 'CI changed the local preference.' }
+    Run -Arguments @('sync','--no-shortcut')
+    Check-Sdk 'rebuilt-local-sdk'
+    Run -Arguments @('local','off','--no-shortcut')
+    if (Test-Path "$checkout/.ciallo/local-engine.props") { throw 'Local imports remain enabled.' }
+    Check-Sdk $versions[1] -Build
+    Run -Arguments @('local','on',$localEditor,'--no-shortcut')
+    Check-Sdk 'rebuilt-local-sdk'
+    Run -Arguments @('local','off','--no-shortcut')
+    if ([IO.File]::ReadAllText("$checkout/Ciallo/global.json") -cne $teamConfig) { throw 'Engine switching modified the team version.' }
+    if ([IO.File]::ReadAllText("$checkout/Ciallo/Probe.csproj") -cne $probe) { throw 'Engine switching modified the project.' }
     Run -Arguments @('sync') # Exercise native shortcut creation.
     Run -Arguments @('status')
-    'gdvm installation, optional template downloads and verification, version switching, C# restore, and local override passed.'
+    'gdvm installation, templates, published restore, direct local SDK builds, rebuilds, CI selection, and mode switching passed.'
     $succeeded = $true
 } finally {
     if ($server) { Stop-Job $server; Remove-Job $server }

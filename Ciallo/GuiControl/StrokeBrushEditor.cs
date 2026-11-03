@@ -14,8 +14,7 @@ public partial class StrokeBrushEditor : AcceptDialog
     {
         Document = document;
         var sm = Document.Get<SelectionManager>();
-        var bm = Document.Get<BrushManager>();
-        BrushPreviewList.Bind(bm.StrokeBrushes, sm.WorkingStrokeBrush);
+        BrushPreviewList.Init(document);
         BindProperty(sm.WorkingStrokeBrush.Select(e => e.TryGet<StrokeBrushSetting>())).AddTo(document);
         BrushPreviewList.EditButton.Visible = false;
     }

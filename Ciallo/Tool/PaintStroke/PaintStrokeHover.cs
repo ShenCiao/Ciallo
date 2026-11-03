@@ -49,7 +49,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         modeButton.AddItem("Freehand");
         modeButton.AddItem("Bezier");
         modeButton.AddItem("Poly Cubic Bézier");
-        modeButton.BindSelectionIndex(AppPreference.PaintStrokeMode);
+        modeButton.BindSelectionIndex(Tool.Mode);
         container.AddProperty("Mode", modeButton);
 
         // ---- App brush library
@@ -90,7 +90,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
 
         var useBrushButton = new Button()
         {
-            Text = "Use brush".Tr(),
+            Text = "Use brush",
             Alignment = HorizontalAlignment.Left,
             CustomMinimumSize = new(0, 32),
             SizeFlagsHorizontal = Control.SizeFlags.Fill
@@ -99,7 +99,7 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         useBrushButton.Pressed += OnUseBrushPressed;
         var manageButton = new Button()
         {
-            Text = "Manage brush library".Tr(),
+            Text = "Manage brush library",
             Alignment = HorizontalAlignment.Left,
             CustomMinimumSize = new(0, 32),
             SizeFlagsHorizontal = Control.SizeFlags.Fill
@@ -131,9 +131,9 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
             .Flatten();
         var radiusControl = new SpinSlider
         {
-            MinValue = 0.5f,
+            MinValue = 0.01f,
             MaxValue = 256f,
-            Step = 0.03333333f,
+            Step = 0.01f,
             AllowGreater = true,
             ExpEdit = true,
         }.BindNumber(radius);
@@ -153,6 +153,8 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
             .Commit();
         AppStrokeBrushLibrary.SelectedIndex.Value = -1;
     }
+
+    internal void RefreshSnapping() => RefreshSnap(LatestCursor.WorldPosition);
 
     private void RefreshSnap(Vector2 worldPosition)
     {

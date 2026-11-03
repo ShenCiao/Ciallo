@@ -12,22 +12,20 @@ namespace Ciallo.Tool;
 internal sealed class BucketFillPreview : IDisposable
 {
     private readonly ShapeLayerView _parent;
-    private readonly Polygon2D _view;
+    private readonly PolygonFillView _view;
     private BucketFillRegion _cachedRegion;
 
     public BucketFillPreview(Entity layer)
     {
         _parent = layer.Get<ShapeLayerView>();
-        _view = new Polygon2D { Antialiased = true };
+        _view = new PolygonFillView();
         _parent.AddChild(_view);
     }
 
     public void Show(BucketFillRegion region, Entity brush, bool atBottom)
     {
         _parent.MoveChild(_view, atBottom ? 0 : -1);
-        _view.Color = brush.IsNull ? Colors.White : brush.Get<FillBrushSetting>().FillColor.Value;
-        _view.Material = brush.IsNull ? AutoloadRendering.MissingFillBrushMaterial : null;
-        _view.Texture = brush.IsNull ? AutoloadRendering.DummyTextureForUV : null;
+        _view.Material = brush.IsNull ? PolygonFillRendering.HintMaterial : brush.Get<FillBrushMaterial>();
         if (ReferenceEquals(_cachedRegion, region)) return;
         _cachedRegion = region;
 

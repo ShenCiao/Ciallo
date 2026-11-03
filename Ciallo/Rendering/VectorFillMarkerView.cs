@@ -48,7 +48,7 @@ public partial class VectorFillMarkerView : Node2D
         ColorDot.Visible = false;
     }
 
-    public static void ApplyBrush(Polygon2D polygon, VectorFillMarkerView marker, Entity brushE)
+    public static void ApplyBrush(PolygonFillView polygon, VectorFillMarkerView marker, Entity brushE)
     {
         if (brushE.IsNull)
         {
@@ -56,24 +56,16 @@ public partial class VectorFillMarkerView : Node2D
             return;
         }
 
-        ApplyBrush(polygon, marker, brushE.Get<FillBrushSetting>());
-    }
-
-    public static void ApplyBrush(Polygon2D polygon, VectorFillMarkerView marker, FillBrushSetting setting)
-    {
-        polygon.Color = setting.FillColor.Value;
-        polygon.Material = null;
-        polygon.Texture = null;
+        var setting = brushE.Get<FillBrushSetting>();
+        polygon.Material = brushE.Get<FillBrushMaterial>();
         marker.Sprite.Texture = setting.MarkerTexture.Value ?? ImageTexture.Dummy;
         marker.Sprite.Modulate = setting.MarkerColor.Value;
         marker.ColorDot.Color = setting.FillColor.Value;
     }
 
-    public static void ApplyMissingBrush(Polygon2D polygon, VectorFillMarkerView marker)
+    public static void ApplyMissingBrush(PolygonFillView polygon, VectorFillMarkerView marker)
     {
-        polygon.Color = Colors.Black;
-        polygon.Material = AutoloadRendering.MissingFillBrushMaterial;
-        polygon.Texture = AutoloadRendering.DummyTextureForUV;
+        polygon.Material = PolygonFillRendering.HintMaterial;
         marker.Sprite.Texture = ImageTexture.Dummy;
         marker.Sprite.Modulate = Colors.Black;
         marker.ColorDot.Color = Colors.Black;

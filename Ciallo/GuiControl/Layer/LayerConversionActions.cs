@@ -48,7 +48,7 @@ internal static class LayerConversionActions
             .AddToLayerTree(layerNode.ParentValue, layerNode.Index)
             .SetProperty(
                 e => e.Get<CommonLayerSetting>().Name,
-                imageLayer.Get<CommonLayerSetting>().Name.Value + " Converted");
+                string.Format("{0} Converted".Tr(), imageLayer.Get<CommonLayerSetting>().Name.Value));
 
         foreach (var stroke in strokes)
         {
@@ -89,7 +89,7 @@ internal static class LayerConversionActions
             .AddToLayerTree(layerNode.ParentValue, layerNode.Index)
             .SetProperty(
                 e => e.Get<CommonLayerSetting>().Name,
-                vectorFillLayer.Get<CommonLayerSetting>().Name.Value + " Converted");
+                string.Format("{0} Converted".Tr(), vectorFillLayer.Get<CommonLayerSetting>().Name.Value));
 
         AppendVectorFillPolygons(command, vectorFillLayer, shapeLayer, 0);
         ReplaceSourceLayer(command, vectorFillLayer, shapeLayer);

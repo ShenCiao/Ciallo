@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.Serialization;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Rendering;
@@ -15,7 +16,7 @@ namespace Ciallo.Tool;
 
 using StateMachine = StateMachine<InteractionState, Trigger>;
 
-[RegisterState]
+[DataContract, RegisterState]
 public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, ILayerDependent
 {
     public enum CreationStrategy
@@ -27,6 +28,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         NewCelFolder, // Create a cel folder and put new vector fill layers into it
     }
 
+    [DataMember]
     public readonly ReactiveProperty<CreationStrategy> Strategy = new(CreationStrategy.WithinAllCels);
     [Substate]
     internal VectorFillLayerCreationHover Hover;
@@ -47,7 +49,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     {
         container.AddChild(new Label
         {
-            Text = "[Vector Fill On Shape Layer Hint]".Tr(),
+            Text = "[Vector Fill On Shape Layer Hint]",
             AutowrapMode = TextServer.AutowrapMode.WordSmart,
         });
 
@@ -55,7 +57,13 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
         {
             AutoHeight = true,
             AutoWidth = true,
-        }.BindEnum(Strategy);
+        }.BindEnum(Strategy, strategy => strategy switch
+        {
+            CreationStrategy.WithinCurrentCel => "Within current cel",
+            CreationStrategy.WithinAllCels => "Within all cels",
+            CreationStrategy.NewCelFolder => "New cel folder",
+            _ => throw new System.ArgumentOutOfRangeException(nameof(strategy)),
+        });
         container.AddProperty("Cel creation method", list)
             .VisibleIf(Document.Get<SelectionManager>().WorkingCelFolder, e => !e.IsNull);
     }
@@ -343,7 +351,7 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
     private static string GetVectorFillCelFolderName(Entity sourceCelFolder)
     {
         string sourceName = sourceCelFolder.Get<CommonLayerSetting>().Name.Value;
-        return string.IsNullOrWhiteSpace(sourceName) ? "Vector fill" : $"{sourceName} Fill";
+        return string.IsNullOrWhiteSpace(sourceName) ? "Vector fill layer".Tr() : string.Format("{0} fill".Tr(), sourceName);
     }
 
     private readonly record struct CelVectorFillPlan(Entity SourceCel, List<Entity> ReferenceLayers);
@@ -352,8 +360,10 @@ public class VectorFillLayerCreationTool : InteractionScope, IPropertyProvider, 
 [RegisterState]
 public class VectorFillLayerCreationHover : Interaction, IPropertyProvider
 {
+    [StateAccess] internal BucketFillTool BucketFill;
+
     public void DrawPropertyBeforeSubstates(PropertyContainer container) =>
-        AppPreference.BucketFill.DrawModeProperty(container);
+        BucketFill.DrawModeProperty(container);
 
     public override void Start(CursorButtonData data)
     {

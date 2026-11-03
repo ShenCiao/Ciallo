@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
+using Ciallo.Data;
 using Frent;
 using Godot;
 using R3;
@@ -17,10 +19,7 @@ public static partial class InteractionManager
     private static readonly Trigger TimelineRollingChangedTrigger = new("TimelineRollingChanged");
     private static readonly Trigger ToolButtonSwitchTrigger = new("ToolButtonSwitch");
 
-    // Tool-button hotkeys route to RequestTool before raw interaction hotkeys. This index contains
-    // hotkeys used directly as state-machine triggers: Cancel and Confirm.
-    private static readonly ImmutableArray<Hotkey> RoutedInteractionHotkeys =
-        [AppHotkeys.Global.InteractionCancel, AppHotkeys.Global.InteractionConfirm];
+    private static readonly Dictionary<InteractionState, Trigger[]> InputRoutes;
 
     private static Entity _document = Entity.Null;
     private static ImmutableArray<Entity> _selectedLayers = ImmutableArray<Entity>.Empty;
@@ -30,6 +29,7 @@ public static partial class InteractionManager
     private static TimeSpan _accumulatedMotionInterval;
 
     public static readonly GlobalInteractiveScope Global;
+    public static ToolPreferences Tools { get; } = new();
     public static readonly StateMachine StateMachine;
     public static readonly StateMachine.TriggerWithParameters<Entity, ImmutableArray<Entity>>
         DocumentOpened;
@@ -109,7 +109,12 @@ public static partial class InteractionManager
             }
             else if (transition.Trigger == SelectedLayersChanged.Trigger)
             {
-                _selectedLayers = (ImmutableArray<Entity>)transition.Parameters[0];
+                var nextLayers = (ImmutableArray<Entity>)transition.Parameters[0];
+                bool changed = !_selectedLayers.SequenceEqual(nextLayers);
+                _selectedLayers = nextLayers;
+                // Cancel may restore the old selection. Reconcile after exit so added layers
+                // and a new primary layer keep selected objects in the remaining scope.
+                if (changed) _document.Get<SelectionManager>().RetainShapesInLayers(nextLayers);
             }
             else if (transition.Trigger == TimelineRollingChanged.Trigger)
             {
@@ -126,9 +131,10 @@ public static partial class InteractionManager
         StateMachine.OnTransitionCompleted(_ => StateChanged?.Invoke());
 
         InteractionStateGraph.Configure(StateMachine);
+        InputRoutes = StateMachine.BuildInputRoutes();
 
         // One process-lifetime subscription. Property panels only bind the shared selection.
-        AppPreference.BucketFill.Mode.Skip(1).Subscribe(_ =>
+        Tools.BucketFill.Mode.Skip(1).Subscribe(_ =>
         {
             if (ToolButton.ActiveToolButton.Value == ToolButton.Type.BucketFill)
             {
@@ -204,21 +210,14 @@ public static partial class InteractionManager
         _lastDeliveredCursor = data;
         _accumulatedMotionInterval = TimeSpan.Zero;
 
-        if (TryFire(Trigger.Get(button.ButtonIndex, button.Pressed))) return true;
+        if (StateMachine.TryHandleInput(button, InputRoutes)) return true;
 
         return StateMachine.State is Interaction session && session.OnMouseButton(button, data);
     }
 
     public static bool DispatchKey(InputEventKey key)
     {
-        // Interaction hotkeys used directly as triggers. Godot action matching has priority.
-        foreach (var hotkey in RoutedInteractionHotkeys)
-        {
-            if (hotkey.IsPressedBy(key) && TryFire(Trigger.Press(hotkey))) return true;
-            if (hotkey.IsReleasedBy(key) && TryFire(Trigger.Release(hotkey))) return true;
-        }
-
-        if (TryFire(Trigger.Get(key.Keycode, key.Pressed))) return true;
+        if (StateMachine.TryHandleInput(key, InputRoutes)) return true;
 
         return StateMachine.State is Interaction session && session.OnKey(key, _latestCursor);
         // Tool button shortcut handled by Godot gui system has lowest priority

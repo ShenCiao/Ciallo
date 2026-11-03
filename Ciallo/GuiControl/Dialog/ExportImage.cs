@@ -1,3 +1,4 @@
+using System;
 using Ciallo.Data;
 using Ciallo.Rendering;
 using Frent;
@@ -43,18 +44,26 @@ public partial class ExportImage : ConfirmationDialog
 
         try
         {
+            GetOkButton().Disabled = true;
+            Message.Hide();
             ImageSubViewport.RenderTargetClearMode = SubViewport.ClearMode.Once;
             ImageSubViewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
             await ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
 
-            ExportPngWriter.SaveHdr2DViewportAsPng(ImageSubViewport, filePath);
+            await ExportPngWriter.SaveAsync(ImageSubViewport, filePath);
 
             Message.Show();
         }
+        catch (Exception exception)
+        {
+            GD.PrintErr(exception);
+            AppDialogHost.WarnUser.DialogText = "Cannot export image.".Tr() + " " + exception.Message;
+            AppDialogHost.WarnUser.Popup();
+        }
         finally
         {
+            GetOkButton().Disabled = false;
             ImageSubViewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Disabled;
-            ImageSubViewport.World2D = null;
         }
     }
 

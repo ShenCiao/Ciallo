@@ -11,9 +11,9 @@ public partial class SaveChangeDialog : ConfirmationDialog
 
     public SaveChangeDialog()
     {
-        DialogText = "Save changes?".Tr();
-        NoButton = AddButton("No".Tr());
-        YesButton = AddButton("Yes".Tr());
+        DialogText = "Save changes?";
+        NoButton = AddButton("No");
+        YesButton = AddButton("Yes");
         GetOkButton().Visible = false;
 
         YesButton.Pressed += OnYes;

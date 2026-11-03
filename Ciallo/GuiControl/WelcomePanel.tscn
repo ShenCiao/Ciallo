@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://gt4adx4emf1t" path="res://GuiControl/LanguageItemList.cs" id="2_ad8c8"]
 [ext_resource type="Texture2D" uid="uid://43k5wfcj0bkj" path="res://Icon/ciallo.svg" id="3_xhgsw"]
 [ext_resource type="Script" uid="uid://b1dclx7d0dgng" path="res://Widget/SpinSlider.cs" id="4_mkktu"]
+[ext_resource type="Script" uid="uid://cta03w1epldjr" path="res://GuiControl/RecentFilesTree.cs" id="5_mkktu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xhgsw"]
 draw_center = false
@@ -20,6 +21,7 @@ action = &"Global.File.NewDocument"
 events = [SubResource("InputEventAction_8on0h")]
 
 [node name="WelcomePanel" type="PanelContainer" unique_id=593651183]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -141,14 +143,18 @@ theme_override_constants/separation = 20
 
 [node name="Label" type="Label" parent="RootMargin/RootVBox/ContentMargin/ContentHBox/ActionsVBox/Recent" unique_id=116779306]
 layout_mode = 2
+size_flags_horizontal = 0
 theme_override_font_sizes/font_size = 32
 text = "Recent document"
 
-[node name="RecentList" type="ItemList" parent="RootMargin/RootVBox/ContentMargin/ContentHBox/ActionsVBox/Recent" unique_id=718356672]
+[node name="RecentList" type="Tree" parent="RootMargin/RootVBox/ContentMargin/ContentHBox/ActionsVBox/Recent" unique_id=1137935072]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(512, 200)
 layout_mode = 2
 tooltip_text = "[Recent Document List Tooltip]"
+allow_reselect = true
 allow_search = false
-auto_width = true
-auto_height = true
+hide_folding = true
+hide_root = true
+scroll_horizontal_enabled = false
+script = ExtResource("5_mkktu")

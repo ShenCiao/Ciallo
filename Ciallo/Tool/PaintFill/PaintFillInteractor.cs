@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.Geometry;
@@ -11,57 +12,87 @@ namespace Ciallo.Tool;
 [RegisterState]
 public class PaintFillInteractor : CapturingInteraction
 {
-    private readonly PolylineInteractiveGenerator _generator = new()
-    {
-        Mode = PolylineInteractiveGenerator.RadiusMode.Fixed,
-        FixedRadius = AppPreference.StrokeWireframeRadius,
-    };
+    [StateAccess] public PaintFillTool Tool { get; set; }
+
+    private readonly PolylineInteractiveGenerator _generator = new();
     private StrokeView _dashPreview;
     private Entity _fillBrush;
+    private Geometry2D.PolyBooleanOperation? _operation;
 
     public override void BeforeSourceExit(Interaction session)
     {
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
+        _operation = Tool.BooleanOperation.Value;
     }
 
     public override void Start(CursorButtonData data)
     {
         _generator.Start(data);
 
-        _dashPreview = new StrokeView();
-        _dashPreview.Material = AutoloadRendering.DashWireframeMaterial;
-        var layerView = PrimaryLayer.Get<ShapeLayerView>();
-        layerView.AddChild(_dashPreview);
+        _dashPreview = CreatePreview(Document);
+    }
+
+    internal static StrokeView CreatePreview(Entity document)
+    {
+        var preview = new StrokeView { Material = AutoloadRendering.DashWireframeMaterial };
+        document.Get<WorldOverlay>().AddChild(preview);
+        return preview;
     }
 
     public override void Moving(CursorMotionData data)
     {
         _generator.Update(data);
-        var geometry = _generator.CurrentGeometry;
-        ImmutableArray<Vector2> points = [.. geometry.Positions, geometry.Positions[0]];
-        _dashPreview.SetGeometry(points, AppPreference.StrokeWireframeRadius);
+        var geometry = _generator.CurrentSamples;
+        _dashPreview.SetGeometry(geometry.Positions, AppPreference.StrokeWireframeRadius);
     }
 
     public override void End(CursorButtonData data)
     {
         _generator.End(data);
-        var geometry = _generator.CurrentGeometry;
-        if (geometry.Count < 3)
+        var geometry = _generator.CurrentSamples;
+        if (geometry.Count >= 3)
+            CommitPolygon(PrimaryLayer, _fillBrush, new PolylineSamples(
+                [.. geometry.Positions, geometry.Positions[0]],
+                [.. geometry.Pressures, geometry.Pressures[0]],
+                [.. geometry.Tilts, geometry.Tilts[0]]), _operation);
+        Clear();
+    }
+
+    internal static void CommitPolygon(Entity layer, Entity brush, PolylineSamples geometry,
+        Geometry2D.PolyBooleanOperation? operation = null)
+    {
+        // Signed area would also reject valid self-intersecting rings (e.g. a figure eight).
+        if (!HasNonCollinearPoints(geometry)) return;
+        if (operation.HasValue)
         {
-            Clear();
+            PolygonBooleanActions.Paint(layer, brush, [.. geometry.Positions], operation.Value);
             return;
         }
-        new CommandBuilder("Paint Fill", PrimaryLayer.World.Create())
+        new CommandBuilder("Paint Fill", layer.World.Create())
             .NewFilledPolygon()
-            .AddToLayerTree(PrimaryLayer)
+            .AddToLayerTree(layer)
             .SetSampledPolyline(
-                [.. geometry.Positions, geometry.Positions[0]],
-                [.. geometry.Radii, geometry.Radii[0]],
-                [.. geometry.Pressures, geometry.Pressures[0]],
-                [.. geometry.Tilts, geometry.Tilts[0]])
-            .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, _fillBrush)
+                geometry.Positions.ToImmutableArray(),
+                Enumerable.Repeat(AppPreference.StrokeWireframeRadius, geometry.Count).ToImmutableArray(),
+                geometry.Pressures.ToImmutableArray(),
+                geometry.Tilts.ToImmutableArray())
+            .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush)
             .Commit();
-        Clear();
+    }
+
+    private static bool HasNonCollinearPoints(PolylineSamples geometry)
+    {
+        Vector2 origin = geometry.Positions[0];
+        Vector2 direction = Vector2.Zero;
+        foreach (var point in geometry.Positions)
+        {
+            Vector2 offset = point - origin;
+            if (offset.LengthSquared() > direction.LengthSquared())
+                direction = offset;
+        }
+        // Cubic sampling introduces float roundoff even along an exactly straight line.
+        float tolerance = 1e-6f * direction.LengthSquared();
+        return geometry.Positions.Any(point => Mathf.Abs(direction.Cross(point - origin)) > tolerance);
     }
 
     public override void Cancel()

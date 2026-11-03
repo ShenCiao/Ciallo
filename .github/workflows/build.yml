@@ -5,10 +5,6 @@ name: Ciallo Build
     branches:
       - dev
       - main
-  push:
-    branches:
-      - dev
-      - main
   workflow_dispatch:
 
 permissions:

@@ -25,6 +25,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
     public Entity BrushE;
     public StrokeView StrokePreview;
+    private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
+    private Func<float, float> _radiusSampler;
 
     private PaintStrokeSnapTarget? _startSnapTarget;
     private PaintStrokeSnapTarget? _endSnapTarget;
@@ -49,6 +51,9 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         AdjustingWeights // Phase 3: dragging to adjust weights
     }
     private Phase _phase = Phase.DraggingP2;
+    private Vector2 _startScreenPosition;
+    private bool _canConfirmP2OnRelease;
+    private const float EndpointDragThresholdPixels = 4f;
 
     // Wireframe visualization
     private Node2D _wireframe;
@@ -80,6 +85,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             AppStrokeBrushLibrary.SelectedIndex.Value = -1;
         }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
+        _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
         StrokePreview = new StrokeView { Material = brushMaterial };
@@ -97,12 +103,14 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         _w2 = 1f;
         _phase3ControlPointConvergence = 0f;
         _phase = Phase.DraggingP2;
+        _startScreenPosition = data.ScreenPosition;
+        _canConfirmP2OnRelease = false;
 
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
         _endSnapTarget = null;
 
         BuildWireframe();
-        UpdatePreview();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
@@ -111,6 +119,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         switch (_phase)
         {
             case Phase.DraggingP2:
+                _canConfirmP2OnRelease |= HasReachedEndpointDragThreshold(data.ScreenPosition);
                 UpdateP2Preview(data.WorldPosition);
                 break;
 
@@ -148,7 +157,20 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         {
             if (_phase == Phase.DraggingP2)
             {
-                ConfirmP2(data.WorldPosition);
+                // Include the release position in case no motion event delivered it.
+                _canConfirmP2OnRelease |= HasReachedEndpointDragThreshold(data.ScreenPosition);
+                if (_canConfirmP2OnRelease)
+                {
+                    ConfirmP2(data.WorldPosition);
+                }
+                else
+                {
+                    // A first click within the threshold keeps P2 following the cursor.
+                    // The next release confirms even a segment shorter than the threshold.
+                    _canConfirmP2OnRelease = true;
+                    UpdateP2Preview(data.WorldPosition);
+                }
+
                 RefreshVisuals();
                 return true;
             }
@@ -162,6 +184,10 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
 
         return base.OnMouseButton(button, data);
     }
+
+    private bool HasReachedEndpointDragThreshold(Vector2 screenPosition) =>
+        screenPosition.DistanceSquaredTo(_startScreenPosition) >=
+        EndpointDragThresholdPixels * EndpointDragThresholdPixels;
 
     private void UpdateP2Preview(Vector2 cursor)
     {
@@ -198,43 +224,48 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     private void RefreshVisuals()
     {
         UpdateWireframe();
-        UpdatePreview();
+        RefreshPressurePreview();
         UpdateSnapHint();
     }
 
     /// <summary>
     /// Adjust the elevated cubic's internal weights from drag components.
-    /// The normal is midpoint-to-P1; its positive direction increases bulge.
+    /// The normal follows P1's internal angle bisector, pointing away from the anchors.
+    /// Its positive direction increases bulge.
     /// The orthogonal tangent is oriented to agree with P0-to-P2.
     /// </summary>
     private void AdjustWeightsFromDrag(Vector2 dragWorldPos)
     {
-        // No meaningful direction if the anchors or the control offset collapse.
+        // A coincident point pair cannot define the P1 angle and baseline.
         if (_p0.DistanceSquaredTo(_p2) < 1e-4f)
             return;
 
-        Vector2 baselineDir = (_p2 - _p0).Normalized();
-        Vector2 midpointToControl = _p1 - (_p0 + _p2) * 0.5f;
-        if (midpointToControl.LengthSquared() < 1e-4f)
+        Vector2 startToControl = _p1 - _p0;
+        Vector2 endToControl = _p1 - _p2;
+        if (startToControl.LengthSquared() < 1e-4f || endToControl.LengthSquared() < 1e-4f)
             return;
 
-        Vector2 normalDir = midpointToControl.Normalized();
+        Vector2 bisector = startToControl.Normalized() + endToControl.Normalized();
+        // Opposing rays (a straight segment through P1) have no outward direction.
+        if (bisector.LengthSquared() < 1e-10f)
+            return;
+
+        Vector2 normalDir = bisector.Normalized();
         Vector2 tangentDir = new Vector2(-normalDir.Y, normalDir.X);
-        if (tangentDir.Dot(baselineDir) < 0f)
+        if (tangentDir.Dot(_p2 - _p0) < 0f)
             tangentDir = -tangentDir;
 
         // Decompose drag
         Vector2 dragDelta = dragWorldPos - _p1;
         float normalComponent = dragDelta.Dot(normalDir);
         float tangentComponent = dragDelta.Dot(tangentDir);
-        float towardP1Component = normalComponent;
 
         // The product controls overall bulge; the ratio controls which elevated
         // handle is followed more closely.
-        float normalLog = towardP1Component * NormalWeightSensitivity;
+        float normalLog = normalComponent * NormalWeightSensitivity;
         float tangentLog = tangentComponent * TangentWeightSensitivity;
         _phase3ControlPointConvergence = 1f - Mathf.Exp(
-            -Mathf.Max(0f, towardP1Component) * NormalControlPointConvergence);
+            -Mathf.Max(0f, normalComponent) * NormalControlPointConvergence);
         float baseLogMean = 0.5f * (Mathf.Log(_phase3BaseW1) + Mathf.Log(_phase3BaseW2));
         float baseLogRatio = 0.5f * (Mathf.Log(_phase3BaseW1) - Mathf.Log(_phase3BaseW2));
         // C1 is the P0-P1 handle and C2 is the P1-P2 handle. Therefore a
@@ -261,69 +292,32 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         // controls the weights and must never become the stroke's endpoint snap.
         RefreshEndSnapTarget(_p2);
 
-        // Tessellate the rational quadratic Bézier curve
-        var curvePoints = TessellateCurve();
-
-        // Create empty arrays for the generator geometry
-        var emptyRadii = new float[curvePoints.Length];
-        var emptyPressures = new float[curvePoints.Length];
-        var emptyTilts = new Vector2[curvePoints.Length];
-
-        // Apply snapping to endpoints
-        var geometry = PaintStrokeSnap.BuildRepairedGeometry(
+        var samples = PaintStrokeSnap.BuildRepairedGeometry(
             Tool.Arrangement.ArrReady.CurrentValue,
-            new PolylineGeneratorGeometry(curvePoints, emptyRadii, emptyPressures, emptyTilts),
+            PolylineSamples.Uniform(TessellateCurve(), Tool.CurvePressure.Value),
             _startSnapTarget,
             _endSnapTarget,
-            AppPreference.PaintStrokeSnapDistance.Value);
+            Tool.SnapDistance.Value);
 
-        // Sample radius and pressure
-        var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        var radiusSampler = brushSetting.ToRadiusSampler();
-        var radii = new float[geometry.Positions.Length];
-        var pressures = new float[geometry.Positions.Length];
-        var tilts = new Vector2[geometry.Positions.Length];
-
-        for (int i = 0; i < geometry.Positions.Length; i++)
-        {
-            float t = (float)i / (geometry.Positions.Length - 1);
-            pressures[i] = 1f; // Uniform pressure for bezier mode
-            radii[i] = radiusSampler(pressures[i]);
-            tilts[i] = Vector2.Zero;
-        }
-
-        var positions = new Vector2[geometry.Positions.Length];
-        for (int i = 0; i < geometry.Positions.Length; i++)
-            positions[i] = geometry.Positions[i];
+        var geometry = _geometryBuilder.Build(samples, Tool.PressureTaper, _radiusSampler);
 
         new CommandBuilder("Paint Stroke (Bezier)", PrimaryLayer.World.Create())
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
             .SetSampledPolyline(
-                positions.ToImmutableArray(),
-                radii.ToImmutableArray(),
-                pressures.ToImmutableArray(),
-                tilts.ToImmutableArray())
+                geometry.Positions.ToImmutableArray(),
+                geometry.Radii.ToImmutableArray(),
+                geometry.Pressures.ToImmutableArray(),
+                geometry.Tilts.ToImmutableArray())
             .Commit();
     }
 
-    private void UpdatePreview()
+    internal void RefreshPressurePreview()
     {
-        var curvePoints = TessellateCurve();
-
-        var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        var radiusSampler = brushSetting.ToRadiusSampler();
-        var radii = new float[curvePoints.Length];
-        var pressures = new float[curvePoints.Length];
-
-        for (int i = 0; i < curvePoints.Length; i++)
-        {
-            pressures[i] = 1f;
-            radii[i] = radiusSampler(pressures[i]);
-        }
-
-        StrokePreview.SetGeometry(curvePoints, radii, pressures);
+        var geometry = _geometryBuilder.Build(
+            PolylineSamples.Uniform(TessellateCurve(), Tool.CurvePressure.Value), Tool.PressureTaper, _radiusSampler);
+        StrokePreview.SetGeometry(geometry.Positions, geometry.Radii, geometry.Pressures);
     }
 
     private Vector2[] TessellateCurve()
@@ -346,7 +340,8 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         // Handle line (p0 -> p1 -> p2)
         _wireframeHandleLine = new StrokeView
         {
-            Material = AutoloadRendering.WireframeMaterial
+            Material = AutoloadRendering.WireframeMaterial,
+            Visible = false
         };
         _wireframe.AddChild(_wireframeHandleLine);
 
@@ -367,6 +362,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         if (_wireframe == null) return;
 
         // Update handle line (p0 -> p1 -> p2)
+        _wireframeHandleLine.Visible = _phase != Phase.DraggingP2;
         Vector2[] handlePoints = [_p0, _p1, _p2];
         float[] handleRadii = [1f, 1f, 1f];
         float[] handlePressures = [1f, 1f, 1f];
@@ -387,6 +383,12 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         float[] dragHintRadii = [1f, 1f];
         float[] dragHintPressures = [1f, 1f];
         _wireframeDragHint.SetGeometry(dragHintPoints, dragHintRadii, dragHintPressures);
+    }
+
+    internal void RefreshSnapping()
+    {
+        RefreshEndSnapTarget(_p2);
+        UpdateSnapHint();
     }
 
     private void RefreshEndSnapTarget(Vector2 worldPosition)

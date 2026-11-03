@@ -41,6 +41,14 @@ public partial class WorldEventDispatcher : Container
         GuiInput += OnGuiInput;
     }
 
+    public override void _ShortcutInput(InputEvent @event)
+    {
+        // GUI controls handle text entry first. Route remaining keys to the
+        // active interaction regardless of the pointer position.
+        if (@event is InputEventKey key && Document.IsAlive)
+            DispatchKey(key);
+    }
+
     public void OnGuiInput(InputEvent e)
     {
         if (!Document.IsAlive) return; // This check prevents errors when the document is closed.

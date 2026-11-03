@@ -2,6 +2,7 @@ using System.Linq;
 using Ciallo.Data;
 using Ciallo.Geometry;
 using Ciallo.Rendering;
+using Ciallo.Tool;
 using Frent;
 using Godot;
 using ObservableCollections;
@@ -60,15 +61,16 @@ public class NewVectorFillLayerCmd : CommandBase
         NewShapeLayerCmd.CreateNonDataComponents(targetE);
 
         // Bounded area
-        var boundedAreaPreview = new Polygon2D
+        var boundedAreaMaterial = new FillBrushMaterial();
+        var boundedAreaPreview = new PolygonFillView
         {
             Name = "BoundedArea",
-            Antialiased = true,
+            Material = boundedAreaMaterial,
         };
         targetE.AddNode(boundedAreaPreview);
         targetE.Get<ShapeLayerView>().AddChild(boundedAreaPreview, false, Node.InternalMode.Front);
         // Color & visibility — independent of arrangement state.
-        AppPreference.VectorFillLayerBoundedAreaColor.Subscribe(color =>
+        InteractionManager.Tools.VectorFill.LayerBoundedAreaColor.Subscribe(color =>
         {
             if (!color.HasValue)
             {
@@ -76,7 +78,7 @@ public class NewVectorFillLayerCmd : CommandBase
                 return;
             }
             boundedAreaPreview.Visible = true;
-            boundedAreaPreview.Color = color.Value;
+            boundedAreaMaterial.Color = color.Value;
         }).AddTo(targetE);
 
         // Shape — ArrReady emits whenever the arrangement is settled and safe to query.

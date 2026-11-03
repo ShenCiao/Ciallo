@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
+using System.Text;
 using Ciallo.Geometry;
 using Ciallo.Tool;
 using Godot;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using ObservableCollections;
 using R3;
-using FileAccess = Godot.FileAccess;
 
 namespace Ciallo.Data;
 
@@ -39,7 +42,7 @@ public class Preference
     public ReactiveProperty<string> Language = new("en");
     [DataMember]
     public ReactiveProperty<float> UIScale = new(1.0f);
-    [DataMember]
+    [DataMember, JsonProperty(ObjectCreationHandling = ObjectCreationHandling.Replace)]
     public ObservableList<string> RecentFiles = [];
     [DataMember]
     public ReactiveProperty<ToolButton.Type?> PressedToolButton = new(ToolButton.Type.PaintStroke);
@@ -66,11 +69,7 @@ public class Preference
     public ReactiveProperty<ImmutableArray<BezierPoint>> PenPressureRemapCurve = new(BezierCurveFactory.Linear());
 
     [DataMember]
-    public ReactiveProperty<bool> PaintStrokeSnapEnabled = new(false);
-    [DataMember]
-    public ReactiveProperty<float> PaintStrokeSnapDistance = new(24f);
-    [DataMember]
-    public ReactiveProperty<int> PaintStrokeMode = new(0); // 0 = Freehand, 1 = Bezier, 2 = PolyCubicBezier
+    public ToolPreferences Tools => InteractionManager.Tools;
 
     #region Save Load Json
 
@@ -85,25 +84,47 @@ public class Preference
         Converters =
         {
             ReactivePropertyConverter.Instance,
+            new PreferenceColorConverter(),
         }
     };
 
     public bool TryLoad()
     {
         if (AppCommandLineOptions.FactoryStartup) return false;
-        if (!FileAccess.FileExists(Path))
+        string path = ProjectSettings.GlobalizePath(Path);
+        if (!File.Exists(path))
             return false;
         try
         {
-            using var file = FileAccess.Open(Path, FileAccess.ModeFlags.Read);
-            string content = file.GetAsText();
-            JsonConvert.PopulateObject(content, this, JsonOptions);
+            PopulateFromJson(File.ReadAllText(path));
             return true;
         }
         catch (Exception e)
         {
-            GD.PrintRaw($"Failed to load preference: {e}");
+            GD.PrintErr($"Cannot load preferences '{path}': {e.Message}");
+            if (e is JsonException or InvalidDataException)
+                UserDataFiles.TryDelete(path);
             return false;
+        }
+    }
+
+    internal void PopulateFromJson(string content)
+    {
+        // Tool preferences populate shared state instances, so snapshot them along with the root.
+        string previous = JsonConvert.SerializeObject(this, JsonOptions);
+        try
+        {
+            JsonConvert.PopulateObject(content, this, JsonOptions);
+            if (Language.Value == null || RecentFiles == null || RecentFiles.Any(path => path == null) ||
+                !float.IsFinite(UIScale.Value) || UIScale.Value < 0.1f || UIScale.Value > 2.0f ||
+                PenPressureRemapCurve.Value.IsDefaultOrEmpty || PenPressureRemapCurve.Value.Length < 2 ||
+                PenPressureRemapCurve.Value.Any(point => !point.P.IsFinite() || !point.In.IsFinite() || !point.Out.IsFinite()))
+                throw new InvalidDataException("Preferences contain invalid UI or pen pressure settings.");
+        }
+        catch
+        {
+            JsonConvert.PopulateObject(previous, this, JsonOptions);
+            throw;
         }
     }
 
@@ -111,29 +132,30 @@ public class Preference
     {
         if (AppCommandLineOptions.FactoryStartup) return;
         var content = JsonConvert.SerializeObject(this, JsonOptions);
-        using var file = FileAccess.Open(Path, FileAccess.ModeFlags.Write);
-        file.StoreString(content);
+        UserDataFiles.WriteAtomic(ProjectSettings.GlobalizePath(Path), Encoding.UTF8.GetBytes(content));
     }
 
-    #endregion
+    // Godot's HSV/8-bit setters are derived views; replaying them would alter the saved RGBA channels.
+    private sealed class PreferenceColorConverter : JsonConverter<Color>
+    {
+        public override void WriteJson(JsonWriter writer, Color value, JsonSerializer serializer) =>
+            serializer.Serialize(writer, new { value.R, value.G, value.B, value.A });
 
-    #region Tool
-
-    [DataMember]
-    public BucketFillOptions BucketFill = new();
-
-    [DataMember]
-    public ReactiveProperty<float> VectorFillMarkerRadius = new(15.0f);
-
-    [DataMember]
-    public ReactiveProperty<Color?> VectorFillLayerBoundedAreaColor = new(new(0.62f, 0.62f, 0.62f, 1.0f));
-
-    [DataMember]
-    public ReactiveProperty<bool> ShowVectorFillReferenceLayerWireframe = new(false);
-    [DataMember]
-    public ReactiveProperty<float> GapBridgeDetectMaxGapLength = new(24f);
-    [DataMember]
-    public ReactiveProperty<float> GapBridgeHitRadius = new(6f);
+        public override Color ReadJson(JsonReader reader, Type objectType, Color existingValue,
+            bool hasExistingValue, JsonSerializer serializer)
+        {
+            var data = JObject.Load(reader);
+            float Channel(string name)
+            {
+                if (data[name]?.Type is not (JTokenType.Integer or JTokenType.Float))
+                    throw new JsonSerializationException($"Invalid color channel '{name}'.");
+                float value = data[name]!.Value<float>();
+                if (!float.IsFinite(value)) throw new JsonSerializationException($"Invalid color channel '{name}'.");
+                return value;
+            }
+            return new Color(Channel("R"), Channel("G"), Channel("B"), Channel("A"));
+        }
+    }
 
     #endregion
 

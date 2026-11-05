@@ -21,7 +21,7 @@
         <PackageReference Include="Frent" Version="0.7.1-beta" />
         <PackageReference Include="GodotSharp.SourceGenerators" Version="2.7.0-260308-1543.Release" />
         <PackageReference Include="Humanizer" Version="3.0.10" />
-        <PackageReference Include="MessagePack" Version="3.1.7" />
+        <PackageReference Include="MessagePack" Version="3.1.9" />
         <PackageReference Include="MessagePackGodot" Version="1.0.2" />
         <PackageReference Include="DuckDB.NET.Data.Full" Version="1.5.3" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.8" />

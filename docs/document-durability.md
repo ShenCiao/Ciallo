@@ -70,7 +70,7 @@ Configure the issued OAuth Client ID through either:
 - Godot project setting `steam/cloud/oauth_client_id`.
 
 `Ciallo/Steamworks/WebApi` provides the documented `ICloudService` and OAuth
-protocol implementation, alongside the [Facepunch.Steamworks submodule](../.github/CONTRIBUTING.md#facepunchsteamworks-dependency).
+protocol implementation, alongside the [Facepunch.Steamworks submodule](../thirdparty/Facepunch.Steamworks).
 Ciallo owns token
 persistence, account and scope validation, snapshot packaging, and retention.
 

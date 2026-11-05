@@ -1,9 +1,11 @@
 # Generate local desktop entry files. Git ignores these outputs.
 create_shortcut() {
-    local destination command
+    local destination command powershell
     case "$os" in
         windows)
-            powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+            powershell=powershell.exe
+            if command -v pwsh.exe >/dev/null 2>&1; then powershell=pwsh.exe; fi
+            "$powershell" -NoProfile -NonInteractive -ExecutionPolicy Bypass \
                 -File "$(native_path "$script_dir/shortcut.ps1")" \
                 -Editor "$(native_path "$editor")" -Project "$(native_path "$project")" \
                 -Destination "$(native_path "$root/Open Ciallo.lnk")" \

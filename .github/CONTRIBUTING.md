@@ -24,8 +24,10 @@ dotnet build Ciallo/Ciallo.csproj
 ```
 
 Setup installs gdvm and uses it to download the C# editor selected by `Ciallo/global.json`, installs Git
-hooks, and generates an `Open Ciallo` shortcut. Open that shortcut to run the project.
-Hooks prepare the required engine after branch changes and pulls.
+hooks, restores the locked Fennara addon and local runtime, and generates an `Open Ciallo`
+shortcut. Open that shortcut to run the project. Hooks prepare the required dependencies
+after branch changes and pulls. Fennara installation, upgrades, and MCP connection setup
+are documented in [Engine setup](../docs/engine-setup.md#fennara).
 
 Enable the "Embedded game size stretches..." option in the game run window.
 

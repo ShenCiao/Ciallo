@@ -33,9 +33,10 @@ downloads before September 2028; they are not permanent archives. OSXExperts use
 a versioned URL but does not publish a retention guarantee. Linux requires
 glibc 2.28 and kernel 4.18 or newer.
 
-`manifest.json` records the download URLs, versions, licenses, archive formats and
+The `ffmpeg` sections of [`tools/engine/dependencies.lock`](../../../tools/engine/dependencies.lock)
+record the download URLs, versions, licenses, archive formats and
 entries, executable sizes, and SHA-256 hashes of both archives and executables.
-Only the manifest, license notices, and setup code are committed; executables are
+Only the dependency lock, license notices, and setup code are committed; executables are
 ignored by Git.
 
 The command verifies the installed executable and reuses it when it matches.
@@ -51,7 +52,7 @@ GPL-2.0-or-later. Each platform's `NOTICE.txt` identifies its supplier, source,
 and build information; `LICENSE.txt` contains the corresponding license text.
 
 Run the command before using PNG export, running its integration tests, or
-packaging Ciallo, and rerun it when the manifest changes. `engine.sh setup`,
+packaging Ciallo, and rerun it when the FFmpeg lock entries change. `engine.sh setup`,
 `sync`, `open`, and Git hooks do not prepare FFmpeg. The release workflow prepares
 its host platform automatically before exporting. A developer without the native
 executable can still start Ciallo; attempting PNG export reports an export error.
@@ -76,7 +77,7 @@ in the Linux ZIP package.
 To update the binaries, select a retained BtbN month-end release for Windows and
 Linux and a versioned OSXExperts release for macOS. Verify the archives against
 upstream checksums where provided, calculate each executable's hash, update
-`manifest.json` and the platform's notices, run `./engine.sh ffmpeg <target>`, and run
+the `ffmpeg` lock sections and the platform's notices, run `./engine.sh ffmpeg <target>`, and run
 `dotnet test Ciallo/Ciallo.csproj --filter FullyQualifiedName~ExportPngTests`.
 The release workflow also runs the executable from its exported location and
 verifies tagged RGBA16 PNG output on every supported platform. The build must

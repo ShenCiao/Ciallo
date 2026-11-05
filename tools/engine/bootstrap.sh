@@ -5,18 +5,20 @@ case "$(uname -s)" in
     Linux) os=linux; [ "$(uname -m)" = x86_64 ] || fail 'Linux requires x86_64.' ;;
     *) fail 'Supported platforms: Windows x64, Linux x64, macOS arm64.' ;;
 esac
+case "$os" in windows) rid=win-x64 ;; linux) rid=linux-x64 ;; macos) rid=osx-arm64 ;; esac
+dependencies="$script_dir/dependencies.lock"
+dependency() { git config --file "$dependencies" --get "$1"; }
 mkdir -p "$state/tools"
-while read -r tool version platform asset checksum; do
-    [ "$platform" = "$os" ] || continue
+for tool in gdvm jq; do
+    version=$(dependency "$tool.version")
+    url=$(dependency "$tool.$rid.url")
+    checksum=$(dependency "$tool.$rid.sha256")
+    asset=${url##*/}
     executable="$state/tools/$tool-$version-$asset"
     if [ ! -f "$executable" ]; then
-        case "$tool" in
-            gdvm) url="https://github.com/adalinesimonian/gdvm/releases/download/v$version/$asset" ;;
-            jq) url="https://github.com/jqlang/jq/releases/download/jq-$version/$asset" ;;
-        esac
         printf 'Installing %s %s\n' "$tool" "$version" >&2
         if ! curl --fail --location --show-error --retry 2 --connect-timeout 15 --max-time 300 \
-            --output "$executable.tmp-$$" "$url"; then
+            --proto '=https' --proto-redir '=https' --output "$executable.tmp-$$" "$url"; then
             rm -f "$executable.tmp-$$"; fail "Could not download $tool."
         fi
         if command -v sha256sum >/dev/null 2>&1; then actual=$(sha256sum "$executable.tmp-$$");
@@ -28,7 +30,7 @@ while read -r tool version platform asset checksum; do
         mv -f "$executable.tmp-$$" "$executable"
     fi
     case "$tool" in gdvm) gdvm_bin=$executable ;; jq) jq_bin=$executable ;; esac
-done < "$script_dir/tools.lock"
+done
 gdvm() { "$gdvm_bin" "$@"; }
 jq() { "$jq_bin" "$@"; }
 native_path() { if [ "$os" = windows ]; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }

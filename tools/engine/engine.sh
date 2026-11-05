@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Project integration only: gdvm owns engine downloads, installation, and cleanup.
+# Project dependencies; gdvm owns Godot downloads, installation, and cleanup.
 set -euo pipefail
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
 root=${CIALLO_ENGINE_ROOT:-$(CDPATH= cd "$script_dir/../.." && pwd -P)}
@@ -31,6 +31,7 @@ source "$script_dir/csharp.sh"
 source "$script_dir/shortcuts.sh"
 source "$script_dir/templates.sh"
 source "$script_dir/ffmpeg.sh"
+source "$script_dir/fennara.sh"
 required_version() {
     jq -er '."msbuild-sdks"."Godot.NET.Sdk" | select(test("^[0-9]+\\.[0-9]+\\.[0-9]+-ciallo\\.g[0-9a-f]{9,40}$"))' "$project/global.json"
 }
@@ -38,7 +39,7 @@ required_version() {
 # gdvm installs the release selected by Ciallo/global.json.
 prepare_registry() {
     local repository registry
-    repository=$(jq -er '.repository | select(test("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))' "$script_dir/distribution.json")
+    repository=$(dependency godot.repository)
     registry=${CIALLO_GDVM_REGISTRY:-https://github.com/$repository/releases/download/v$required/}
     selection="ciallo/csharp:$required"
     mkdir -p "$state/gdvm"
@@ -69,6 +70,7 @@ sync_engine() {
     select_editor
     [ "$required" = "$(required_version)" ] || fail 'Version changed during installation; rerun setup.'
     configure_csharp
+    fennara sync
     if $templates; then install_templates; fi
     if $shortcut; then create_shortcut; fi
     jq -n --arg required "$required" --arg sdk "$sdk" --arg editor "$(native_path "$editor")" \
@@ -78,6 +80,8 @@ sync_engine() {
     gdvm prune
 }
 case "$command_name" in
+    fennara)
+        fennara "${arguments[@]}" ;;
     ffmpeg)
         [ "${#arguments[@]}" -le 1 ] || fail 'Usage: ./engine.sh ffmpeg [win-x64|linux-x64|osx-arm64|all]'
         ffmpeg_rid=${arguments[0]:-}
@@ -128,6 +132,6 @@ case "$command_name" in
         jq . "$state/ready.json" ;;
     clean) gdvm prune ;;
     version) required_version ;;
-    help) printf 'Usage: ./engine.sh setup|sync|local on [editor]|local off|open|status|clean [--templates] [--no-shortcut]\n       ./engine.sh ffmpeg [win-x64|linux-x64|osx-arm64|all]\n' ;;
+    help) printf 'Usage: ./engine.sh setup|sync|local on [editor]|local off|open|status|clean [--templates] [--no-shortcut]\n       ./engine.sh ffmpeg [win-x64|linux-x64|osx-arm64|all]\n       ./engine.sh fennara sync|status|update [version] [--ci]\n' ;;
     *) fail "Unknown command: $command_name" ;;
 esac

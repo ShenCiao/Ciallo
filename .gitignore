@@ -362,6 +362,10 @@ MigrationBackup/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-# Local agent instructions and Fennara tooling
-/AGENTS.md
+# Downloaded Fennara tooling
 /Ciallo/addons/fennara/
+/Ciallo/addons/.fennara.ciallo-*/
+/Ciallo/*.fennara.bak
+/.codex/config.toml
+/.codex/.config.toml.ciallo-*
+/tools/engine/.dependencies.lock.ciallo-*

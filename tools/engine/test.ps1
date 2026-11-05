@@ -11,6 +11,9 @@ $previousRoot = $env:CIALLO_ENGINE_ROOT
 $previousRegistry = $env:CIALLO_GDVM_REGISTRY
 $previousInsecure = $env:GDVM_ALLOW_INSECURE_URLS
 $previousPackages = $env:NUGET_PACKAGES
+$previousFennara = $env:CIALLO_FENNARA_HOME
+$previousDaemon = $env:CIALLO_FENNARA_DAEMON_URL
+. "$PSScriptRoot/fennara-fixture.ps1"
 $registries = @()
 $templateTargets = @()
 $succeeded = $false
@@ -51,6 +54,8 @@ try {
         (($imports | Select-Object -Skip 3 | ForEach-Object OuterXml) -join "`n") + '</Project>'
     [IO.File]::WriteAllText("$checkout/Ciallo/Probe.csproj", $probe)
     [IO.File]::WriteAllText("$checkout/Ciallo/Probe.cs", 'public class Probe {}')
+    [IO.File]::WriteAllText("$checkout/Ciallo/project.godot", 'config_version=5')
+    $env:CIALLO_FENNARA_HOME = "$fixture/fennara-user"
     # Reuse only verified tool binaries; all installs and SDK packages below are fresh.
     if (Test-Path "$sourceRoot/.ciallo/tools") {
         [IO.Directory]::CreateDirectory("$checkout/.ciallo") | Out-Null
@@ -64,6 +69,10 @@ try {
     $portProbe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
     $portProbe.Start(); $port = $portProbe.LocalEndpoint.Port; $portProbe.Stop()
     $base = "http://localhost:$port/"
+    $daemonProbe = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
+    $daemonProbe.Start(); $env:CIALLO_FENNARA_DAEMON_URL = "http://127.0.0.1:$($daemonProbe.LocalEndpoint.Port)"; $daemonProbe.Stop()
+    $fennaraRelease = New-FennaraFixture $registry $base '0.4.3'
+    Set-FennaraFixtureLock $checkout $fennaraRelease
     $versions = @(('4.6.2-ciallo.g' + [guid]::NewGuid().ToString('N').Substring(0,9)), ('4.6.2-ciallo.g' + [guid]::NewGuid().ToString('N').Substring(0,9)))
     foreach ($version in $versions) {
         $content = Join-Path $fixture $version
@@ -232,6 +241,8 @@ try {
     }
     $env:CIALLO_ENGINE_ROOT=$previousRoot; $env:CIALLO_GDVM_REGISTRY=$previousRegistry
     $env:GDVM_ALLOW_INSECURE_URLS=$previousInsecure; $env:NUGET_PACKAGES=$previousPackages
+    $env:CIALLO_FENNARA_HOME=$previousFennara
+    $env:CIALLO_FENNARA_DAEMON_URL=$previousDaemon
     if ($succeeded) {
         $expectedParent = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar)
         if ([IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($fixture)) -ne $expectedParent -or

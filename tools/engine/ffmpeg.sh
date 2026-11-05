@@ -7,16 +7,19 @@ ffmpeg_sha256() {
 }
 
 prepare_ffmpeg() (
-    local rid=$1 metadata version url archive_hash format entry executable binary_hash
+    local rid=$1 version url archive_hash format entry executable binary_hash
     local target cache archive download='' staged=''
     case "$rid" in
         win-x64|linux-x64|osx-arm64) ;;
         *) fail "Unsupported FFmpeg platform: $rid. Use win-x64, linux-x64, or osx-arm64." ;;
     esac
-    metadata=$(jq -er --arg rid "$rid" \
-        '.[$rid] | [.version, .url, .archive_sha256, .archive_format, .archive_entry, .executable, .sha256] | @tsv' \
-        "$project/ExternalData/ffmpeg/manifest.json")
-    IFS=$'\t' read -r version url archive_hash format entry executable binary_hash <<< "$metadata"
+    version=$(dependency "ffmpeg.$rid.version")
+    url=$(dependency "ffmpeg.$rid.url")
+    archive_hash=$(dependency "ffmpeg.$rid.archive-sha256")
+    format=$(dependency "ffmpeg.$rid.archive-format")
+    entry=$(dependency "ffmpeg.$rid.archive-entry")
+    executable=$(dependency "ffmpeg.$rid.executable")
+    binary_hash=$(dependency "ffmpeg.$rid.executable-sha256")
     target="$project/ExternalData/ffmpeg/$rid/$executable"
     if [ -f "$target" ] && [ "$(ffmpeg_sha256 "$target")" = "$binary_hash" ]; then
         chmod +x "$target"

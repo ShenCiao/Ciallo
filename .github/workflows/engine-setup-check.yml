@@ -29,3 +29,11 @@ jobs:
       - name: Check provisioning and cleanup
         shell: pwsh
         run: ./tools/engine/test.ps1
+      - name: Check Fennara installation and rollback
+        shell: pwsh
+        run: ./tools/engine/test-fennara.ps1
+      - name: Verify the locked upstream Fennara addon
+        shell: bash
+        run: |
+          ./engine.sh fennara sync --ci
+          ./engine.sh fennara status --ci

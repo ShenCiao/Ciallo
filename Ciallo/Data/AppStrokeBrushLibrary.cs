@@ -147,6 +147,9 @@ public static partial class AppStrokeBrushLibrary
         // Create stroke preview
         var preview = new StrokeView();
         panel.BrushPreviewViewport.AddChild(preview);
+        AppDocumentManager.WorkingDocument.Select(document => document.IsNull
+                ? Observable.Return(Colors.Black) : document.Get<ColorManager>().CurrentColor.AsObservable())
+            .Switch().Subscribe(color => preview.SetInstanceShaderParameter("ShapeColor", color)).AddTo(preview);
         // Note: Lazy on clearing these caches on destruction. I don't believe user will view 1e5 brushes in one session.
         Dictionary<StrokeBrushSetting, StrokeBrushMaterial> materialCache = new();
         SerialDisposable curveChangeSub = new();

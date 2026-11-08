@@ -57,6 +57,8 @@ public class NewStrokeBrushCmd : CommandBase
         {
             Material = material,
         };
+        Document.Get<ColorManager>().CurrentColor.Subscribe(color =>
+            previewStroke.SetInstanceShaderParameter("ShapeColor", color)).AddTo(targetE);
         float gv = 16;
         var previewRect = new Rect2(Vector2.Zero, size).GrowIndividual(-gv, -1.5f * gv, -gv, -1.5f * gv);
         _setting.BaseRadius.CombineLatest(_setting.Pressure2RadiusCurve, _setting.ActiveBrushFlags, ValueTuple.Create)

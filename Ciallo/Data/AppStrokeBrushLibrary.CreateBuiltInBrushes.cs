@@ -35,7 +35,6 @@ public static partial class AppStrokeBrushLibrary
             Name = { Value = "Pencil".Tr() },
             RenderingType = { Value = BrushRenderingType.Stamp },
             Labels = { BrushLabel.BuiltIn },
-            Color = { Value = Colors.Black },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
             ActiveStampFlags = { Value = StampFlags.StampTexture | StampFlags.MaskTexture | StampFlags.RotationNoise },
             StampTexture = { Value = ImageTexture.CreateFromImage(images[0]) },
@@ -92,7 +91,6 @@ public static partial class AppStrokeBrushLibrary
             RenderingType = { Value = BrushRenderingType.Airbrush },
             BaseRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
-            Color = { Value = new(0, 0, 0, 0.4f) },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             BlendMode = { Value = BlendMode.Erase },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
@@ -108,7 +106,6 @@ public static partial class AppStrokeBrushLibrary
             RenderingType = { Value = BrushRenderingType.Airbrush },
             BaseRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
-            Color = { Value = new(0, 0, 0, 0.4f) },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
             FalloffCurve = new([
@@ -123,7 +120,6 @@ public static partial class AppStrokeBrushLibrary
             RenderingType = { Value = BrushRenderingType.Airbrush },
             BaseRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
-            Color = { Value = new(0, 0, 0, 0.9f) },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
             FalloffCurve = new([

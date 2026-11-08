@@ -69,6 +69,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     private const float MinimumPositiveWeight = 1e-6f;
     private const float MaximumSafeLogWeight = 80f;
     private const int TessellationSubdivisions = 32;
+    private Color _color;
 
     public override TimeSpan MovingMinInterval => TimeSpan.Zero;
 
@@ -85,10 +86,12 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             AppStrokeBrushLibrary.SelectedIndex.Value = -1;
         }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
+        _color = Document.Get<ColorManager>().CurrentColor.Value;
         _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
         StrokePreview = new StrokeView { Material = brushMaterial };
+        StrokePreview.SetInstanceShaderParameter("ShapeColor", _color);
         var layerView = PrimaryLayer.Get<ShapeLayerView>();
         layerView.AddChild(StrokePreview);
 
@@ -305,6 +308,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, _color)
             .SetSampledPolyline(
                 geometry.Positions.ToImmutableArray(),
                 geometry.Radii.ToImmutableArray(),

@@ -168,6 +168,11 @@ A reference layer is a shape layer whose strokes provide boundary artwork for a 
 
 A shape is a selectable drawable object inside a shape-editable layer. The Select tool can select shapes independently of layer selection.
 
+### Shape Color
+
+Each stroke, filled polygon, and vector fill marker retains its own RGBA color.
+A non-null brush color overrides the whole RGBA value without changing that stored color.
+
 ### Shape Clipboard
 
 A shape clipboard is temporary copied or cut shape content that can later be pasted into a compatible primary layer. It is distinct from layer-level copy and paste.

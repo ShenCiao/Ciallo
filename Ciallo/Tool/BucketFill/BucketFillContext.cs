@@ -71,7 +71,7 @@ public sealed class BucketFillContext : IDisposable
         return _solver.Query(point, options.GapAware.Value, options.GapFactor.Value, options.IgnoreHoles.Value);
     }
 
-    public bool Commit(Vector2 point, BucketFillTool options, Entity brush, bool placeAtBottom)
+    public bool Commit(Vector2 point, BucketFillTool options, Entity brush, Color color, bool placeAtBottom)
     {
         // Release queries the current geometry synchronously; source changes cancel capture.
         var region = Query(point, options);
@@ -96,7 +96,8 @@ public sealed class BucketFillContext : IDisposable
                 .NewFilledPolygon()
                 .AddToLayerTree(_layer, placeAtBottom ? i : -1)
                 .SetSampledPolyline(ring, ones, ones, zeros)
-                .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush);
+                .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush)
+                .SetProperty(e => e.Get<ShapeSetting>().Color, color);
         }
         command.Commit();
         return true;

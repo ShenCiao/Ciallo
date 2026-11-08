@@ -11,6 +11,7 @@ public partial class MenuWindow : PopupMenu
         ToolPropertyPanel = 101,
         LayerPanel = 102,
         TimelinePanel = 103,
+        ColorPanel = 104,
         ResetLayout = 200,
     }
 
@@ -23,6 +24,7 @@ public partial class MenuWindow : PopupMenu
         AddCheckItem("Tool", (int)Command.ToolPanel);
         AddCheckItem("Tool Properties", (int)Command.ToolPropertyPanel);
         AddCheckItem("Layers", (int)Command.LayerPanel);
+        AddCheckItem("Color", (int)Command.ColorPanel);
         AddCheckItem("Timeline", (int)Command.TimelinePanel);
         AddSeparator();
         AddItem("Reset Layout", (int)Command.ResetLayout);
@@ -47,6 +49,9 @@ public partial class MenuWindow : PopupMenu
             case Command.TimelinePanel:
                 TogglePanel(Command.TimelinePanel, MainDockableContainer.TimelinePanelName);
                 break;
+            case Command.ColorPanel:
+                TogglePanel(Command.ColorPanel, MainDockableContainer.ColorPanelName);
+                break;
             case Command.ResetLayout:
                 _dockableContainer.ResetLayout();
                 SynchronizePanelChecks();
@@ -68,6 +73,7 @@ public partial class MenuWindow : PopupMenu
         SetPanelChecked(Command.ToolPanel, MainDockableContainer.ToolPanelName);
         SetPanelChecked(Command.ToolPropertyPanel, MainDockableContainer.ToolPropertyPanelName);
         SetPanelChecked(Command.LayerPanel, MainDockableContainer.LayerPanelName);
+        SetPanelChecked(Command.ColorPanel, MainDockableContainer.ColorPanelName);
         SetPanelChecked(Command.TimelinePanel, MainDockableContainer.TimelinePanelName);
     }
 

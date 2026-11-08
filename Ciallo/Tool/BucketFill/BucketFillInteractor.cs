@@ -13,6 +13,7 @@ public class BucketFillInteractor : CapturingInteraction
     private BucketFillContext _context;
     private BucketFillPreview _preview;
     private Entity _brush;
+    private Color _color;
     private bool _atBottom;
     public override TimeSpan MovingMinInterval => TimeSpan.FromMilliseconds(30);
 
@@ -21,6 +22,7 @@ public class BucketFillInteractor : CapturingInteraction
         _context = Tool.Context;
         _context.SourceChanged += CancelForSourceChange;
         _brush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
+        _color = Document.Get<ColorManager>().CurrentColor.Value;
         _atBottom = Tool.PlaceAtBottom.Value;
         _preview = new BucketFillPreview(PrimaryLayer);
         Query(data.WorldPosition);
@@ -31,7 +33,7 @@ public class BucketFillInteractor : CapturingInteraction
     private void Query(Vector2 point)
     {
         var region = _context.Query(point, Tool);
-        _preview.Show(region, _brush, _atBottom);
+        _preview.Show(region, _brush, _color, _atBottom);
         Document.Get<WorldBody>().DefaultCursorShape = region.IsEmpty ? Control.CursorShape.Forbidden : Control.CursorShape.Cross;
     }
 
@@ -40,7 +42,7 @@ public class BucketFillInteractor : CapturingInteraction
     public override void End(CursorButtonData data)
     {
         Clear();
-        _context.Commit(data.WorldPosition, Tool, _brush, _atBottom);
+        _context.Commit(data.WorldPosition, Tool, _brush, _color, _atBottom);
     }
 
     public override void Cancel() => Clear();

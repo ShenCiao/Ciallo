@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://ddgqnm1dvnk6w" path="res://Icon/content-copy.svg" id="3_4ist4"]
 
 [node name="VectorFillBrushPreviewList" type="PanelContainer" unique_id=907877715]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2

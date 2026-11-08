@@ -141,11 +141,9 @@ public class VectorFillHover : Interaction, IPropertyProvider
         //     }.BindNumber(Tool.MarkerRadius)
         // ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
 
-        var fillColor = sm.WorkingVectorFillBrush
-            .Select(e => e.TryGet<FillBrushSetting>()?.FillColor)
-            .Flatten();
-        container.AddProperty("Fill color",
-            new ColorPickerButton().BindColor(fillColor)
+        container.AddProperty("Fill color override",
+            DocumentColorControls.BindOverride(new NullableColorPickerButton(), Document,
+                sm.WorkingVectorFillBrush, e => e.Get<FillBrushSetting>().FillColor)
         ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
 
         container.AddProperty("Bounded area color",

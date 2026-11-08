@@ -22,14 +22,14 @@ supply every argument; use `DrawingGetState("", false)` for a compact full-state
 query and `false` for undo.
 
 A state response contains `session`, `version`, `name`, `path`, `size`, `modified`,
-`canUndo`, `canRedo`, `selection` (layer IDs and working brush IDs), and `objects`.
+`canUndo`, `canRedo`, `currentColor`, `selection` (layer IDs and working brush IDs), and `objects`.
 With no document, state returns
 `{"ok":true,"document":null}`. New documents have no layers or brushes until a batch
 creates them. `path` is the configured destination, not proof that a file exists.
 
 Each object has an `id` and `kind`. Tree objects also expose `parent`, `index`, and
 ordered `children`; layers expose `name`, `visible`, and `opacity`; brushes expose
-`color`; shapes expose `brush` and `pointCount`. Geometry queries include `points`
+nullable override `color`; shapes expose their own `color`, `brush`, and `pointCount`. Geometry queries include `points`
 and `radii`. Unsupported object kinds are listed as `other` and cannot be edited.
 
 Object IDs are stable for one loaded document session, including undo/redo. Caller
@@ -57,11 +57,11 @@ batch. All input is validated before allocating entities or executing commands.
 | `layer` | `name`, `index` | Create a root shape layer; name defaults to ID. |
 | `stroke_brush` | `color`, `name` | Create a solid Vanilla stroke brush. |
 | `fill_brush` | `color` | Create a flat fill brush. |
-| `stroke` | `parent`, `brush`, `points`, `radius` or `radii`, `index` | Create a native stroke in a shape layer. |
-| `polygon` | `parent`, `brush`, `points`, `index` | Create a native filled polygon in a shape layer. |
+| `stroke` | `parent`, `brush`, `color`, `points`, `radius` or `radii`, `index` | Create a native stroke in a shape layer. |
+| `polygon` | `parent`, `brush`, `color`, `points`, `index` | Create a native filled polygon in a shape layer. |
 | `geometry` | `points`, `radius` or `radii` | Replace a shape's complete sampled geometry. |
 | `brush` | `brush` | Assign a compatible brush to a shape. |
-| `color` | `color` | Change a brush's color, affecting all shapes that use it. |
+| `color` | `color` | Change a shape's own color or a brush's color override; `null` disables a brush override. |
 | `layer_settings` | `name`, `visible`, `opacity` | Change supplied properties of a shape layer. |
 | `move` | `parent`, `index` | Move/reorder a shape; index is measured after removal. |
 | `delete` | — | Remove a shape. |
@@ -82,6 +82,9 @@ The adapter accepts sampled polylines; sample Bézier curves before submission.
 `radius` defaults to 1 document unit (a diameter of 2). `radii`, when supplied for
 a stroke, must contain one positive radius per point. Geometry writes use pressure
 1 and tilt zero. Colors are HTML hex strings such as `#302832` or `#f59d8aff`.
+New shapes without `color` capture the document's current color. A brush's omitted
+or null color means no override; a non-null brush color replaces the shape's full
+RGBA color, including alpha. Shape color edits require a non-null color.
 
 ## Fennara example
 

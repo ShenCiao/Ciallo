@@ -24,7 +24,6 @@ public class NewVectorFillBrushCmd : CommandBase
         var setting = CopyE.IsNull
             ? new FillBrushSetting()
             {
-                FillColor = { Value = Colors.LemonChiffon },
                 MarkerColor = { Value = Colors.Black },
                 MarkerTexture =
                 {

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Immutable;
 using System.Runtime.Serialization;
 using Ciallo.Geometry;
+using Ciallo.GuiControl;
 using Ciallo.Widget;
+using Frent;
 using Godot;
 using MessagePack;
 using ObservableCollections;
@@ -15,7 +17,7 @@ public class StrokeBrushSetting
 {
     [DataMember, ProjectField] public ReactiveProperty<string> Name = new("");
     [DataMember, ProjectField] public ObservableList<BrushLabel> Labels = [];
-    [DataMember, ProjectField] public ReactiveProperty<Color> Color = new(Colors.Black); // RGB+Flow
+    [DataMember, ProjectField] public ReactiveProperty<Color?> Color = new(); // Optional RGB+Flow override.
     [DataMember, ProjectField] public ReactiveProperty<BrushFlags> ActiveBrushFlags = new();
     [DataMember, ProjectField] public ReactiveProperty<BlendMode> BlendMode = new();
     [DataMember, ProjectField] public ReactiveProperty<float> BaseRadius = new(1.5f);
@@ -42,7 +44,7 @@ public class StrokeBrushSetting
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> FalloffCurve = new(BezierCurveFactory.Linear(1.0f, 0.0f));
     [DataMember, ProjectField] public ReactiveProperty<float> AlphaDensity = new(1.0f);
 
-    public void DrawProperty(PropertyContainer container)
+    public void DrawProperty(PropertyContainer container, Entity document = default)
     {
         var nameEdit = new LineEdit
         {
@@ -60,13 +62,20 @@ public class StrokeBrushSetting
         }.BindNumber(BaseRadius);
         container.AddProperty("Base radius", baseRadiusControl);
 
-        var colorPickerButton = new ColorPickerButton()
+        var colorPickerButton = new NullableColorPickerButton()
         {
             CustomMinimumSize = new(0, 32),
         };
         var picker = colorPickerButton.GetPicker();
         picker.ColorMode = ColorPicker.ColorModeType.Rgb;
-        container.AddProperty("RGB+Flow", colorPickerButton.BindColor(Color));
+        if (document.IsNull)
+        {
+            colorPickerButton.BindColor(Color);
+            DocumentColorControls.BindSwatches(colorPickerButton);
+        }
+        else DocumentColorControls.BindOverride(colorPickerButton, document,
+            document.Get<SelectionManager>().WorkingStrokeBrush, e => e.Get<StrokeBrushSetting>().Color);
+        container.AddProperty("Stroke color override", colorPickerButton);
 
         var blendModeButton = new OptionButton().BindEnum(BlendMode);
         container.AddProperty("Blend mode", blendModeButton);

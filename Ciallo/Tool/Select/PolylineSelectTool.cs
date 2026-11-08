@@ -168,6 +168,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var selectionChanged = selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default);
+        container.AddChild(new SelectionColorPanel(Document));
 
         var stackingButtons = container.CreateHContainer().AddToChildOf(container)
             .VisibleIf(selectionChanged, _ => selectedShapes.Count > 0);

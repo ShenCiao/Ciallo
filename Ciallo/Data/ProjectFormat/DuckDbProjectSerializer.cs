@@ -358,7 +358,16 @@ public static class DuckDbProjectSerializer
         foreach (var component in registry.Components)
             ReadComponentTable(connection, component, idToEntity, stringPool);
 
-        return idToEntity[0];
+        var document = idToEntity[0];
+        if (!document.Has<ColorManager>()) document.Add(new ColorManager());
+        foreach (var entity in idToEntity.Values)
+        {
+            if (!entity.Has<ShapeSetting>() && (entity.Has<StrokeSetting>()
+                || entity.Has<FilledPolygonSetting>() || entity.Has<VectorFillMarkerSetting>()))
+                entity.Add(new ShapeSetting());
+        }
+
+        return document;
     }
 
     private static List<int> ReadEntityIds(DuckDBConnection connection)

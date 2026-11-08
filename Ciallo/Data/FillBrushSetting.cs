@@ -16,7 +16,7 @@ public class FillBrushSetting
     public ReactiveProperty<Color> MarkerColor = new(Colors.Black);
 
     [DataMember, ProjectField]
-    public ReactiveProperty<Color> FillColor = new(Colors.Black);
+    public ReactiveProperty<Color?> FillColor = new();
 
     public FillBrushSetting Clone()
     {

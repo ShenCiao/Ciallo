@@ -108,11 +108,16 @@ public partial class AutoloadData
                     Insert(edit, "root");
                     counts.Add(edit.Id, 0);
                     break;
-                case "stroke_brush": case "fill_brush": case "color":
-                    RequireDrawing(kind is "stroke_brush" or "fill_brush", "color targets a brush.");
-                    RequireDrawing(edit.Color != null && Color.HtmlIsValid(edit.Color), "color must be an HTML hex color.");
+                case "stroke_brush": case "fill_brush":
+                    RequireDrawing(edit.Color == null || Color.HtmlIsValid(edit.Color), "color must be an HTML hex color or null.");
+                    break;
+                case "color":
+                    RequireDrawing(kind is "stroke_brush" or "fill_brush" or "stroke" or "polygon", "color targets a brush or shape.");
+                    RequireDrawing(edit.Color == null ? kind is "stroke_brush" or "fill_brush" : Color.HtmlIsValid(edit.Color),
+                        "Shapes require an HTML hex color; null disables a brush color override.");
                     break;
                 case "stroke": case "polygon":
+                    RequireDrawing(edit.Color == null || Color.HtmlIsValid(edit.Color), "color must be an HTML hex color.");
                     Insert(edit, "layer");
                     CheckBrush(edit, kind);
                     PrepareGeometry(edit, kind);
@@ -164,7 +169,7 @@ public partial class AutoloadData
                     if (firstStrokeBrush.IsNull) firstStrokeBrush = target;
                     command.NewStrokeBrush(new StrokeBrushSetting
                     {
-                        Name = { Value = edit.Name ?? edit.Id }, Color = { Value = Color.FromHtml(edit.Color) },
+                        Name = { Value = edit.Name ?? edit.Id }, Color = { Value = ParseDrawingColor(edit.Color) },
                         RenderingType = { Value = BrushRenderingType.Vanilla },
                     });
                     break;
@@ -172,20 +177,24 @@ public partial class AutoloadData
                     if (firstFillBrush.IsNull) firstFillBrush = target;
                     command.NewVectorFillBrush()
                         .SetProperty(e => e.Get<FillBrushSetting>().Name, edit.Name ?? edit.Id)
-                        .SetProperty(e => e.Get<FillBrushSetting>().FillColor, Color.FromHtml(edit.Color));
+                        .SetProperty(e => e.Get<FillBrushSetting>().FillColor, ParseDrawingColor(edit.Color));
                     break;
                 case "stroke": case "polygon":
                     if (edit.Op == "stroke") command.NewStroke(); else command.NewFilledPolygon();
                     command.AddToLayerTree(_drawingObjects[edit.Parent], (int)edit.Index);
                     SetDrawingBrush(command, edit.Op, _drawingObjects[edit.Brush]);
+                    command.SetProperty(e => e.Get<ShapeSetting>().Color,
+                        ParseDrawingColor(edit.Color) ?? _drawingDocument.Get<ColorManager>().CurrentColor.Value);
                     SetDrawingGeometry(command, edit);
                     break;
                 case "geometry": SetDrawingGeometry(command, edit); break;
                 case "brush": SetDrawingBrush(command, DrawingKind(target), _drawingObjects[edit.Brush]); break;
                 case "color":
                     if (target.Has<StrokeBrushSetting>())
-                        command.SetProperty(e => e.Get<StrokeBrushSetting>().Color, Color.FromHtml(edit.Color));
-                    else command.SetProperty(e => e.Get<FillBrushSetting>().FillColor, Color.FromHtml(edit.Color));
+                        command.SetProperty(e => e.Get<StrokeBrushSetting>().Color, ParseDrawingColor(edit.Color));
+                    else if (target.Has<FillBrushSetting>())
+                        command.SetProperty(e => e.Get<FillBrushSetting>().FillColor, ParseDrawingColor(edit.Color));
+                    else command.SetProperty(e => e.Get<ShapeSetting>().Color, Color.FromHtml(edit.Color));
                     break;
                 case "layer_settings":
                     if (edit.Name != null) command.SetProperty(e => e.Get<CommonLayerSetting>().Name, edit.Name);
@@ -240,6 +249,7 @@ public partial class AutoloadData
             name = settings.Name.Value, path = settings.FilePath.Value,
             size = new[] { settings.ReferenceSize.Value.X, settings.ReferenceSize.Value.Y },
             modified = history.DocumentModified.CurrentValue, canUndo = history.HasUndo, canRedo = history.HasRedo,
+            currentColor = DrawingColor(_drawingDocument.Get<ColorManager>().CurrentColor.Value),
             selection = new
             {
                 layers = selection.SelectedLayers.Value.Select(DrawingId).ToArray(),
@@ -267,15 +277,16 @@ public partial class AutoloadData
             if (entity.Has<StrokeBrushSetting>())
             {
                 row["name"] = entity.Get<StrokeBrushSetting>().Name.Value;
-                row["color"] = "#" + entity.Get<StrokeBrushSetting>().Color.Value.ToHtml();
+                row["color"] = DrawingColor(entity.Get<StrokeBrushSetting>().Color.Value);
             }
             if (entity.Has<FillBrushSetting>())
             {
                 row["name"] = entity.Get<FillBrushSetting>().Name.Value;
-                row["color"] = "#" + entity.Get<FillBrushSetting>().FillColor.Value.ToHtml();
+                row["color"] = DrawingColor(entity.Get<FillBrushSetting>().FillColor.Value);
             }
             if (entity.Has<StrokeSetting>()) row["brush"] = DrawingId(entity.Get<StrokeSetting>().Brush.Value);
             if (entity.Has<FilledPolygonSetting>()) row["brush"] = DrawingId(entity.Get<FilledPolygonSetting>().BrushE.Value);
+            if (entity.Has<ShapeSetting>()) row["color"] = DrawingColor(entity.Get<ShapeSetting>().Color.Value);
             if (entity.Has<SampledPolyline>())
             {
                 var line = entity.Get<SampledPolyline>();
@@ -334,6 +345,9 @@ public partial class AutoloadData
         _drawingIds.Add(entity, id); _drawingObjects.Add(id, entity);
         return id;
     }
+
+    private static Color? ParseDrawingColor(string color) => color == null ? null : Color.FromHtml(color);
+    private static string DrawingColor(Color? color) => color.HasValue ? "#" + color.Value.ToHtml() : null;
 
     private static string DrawingKind(Entity entity) => entity.IsDocument ? "root"
         : entity.Has<StrokeSetting>() ? "stroke" : entity.Has<FilledPolygonSetting>() ? "polygon"

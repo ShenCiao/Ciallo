@@ -47,6 +47,8 @@ public class NewVectorFillMarkerCmd : NewShapeCmdBase
         // View
         var polygonView = new PolygonFillView();
         targetE.AddNode(polygonView);
+        var shapeColor = targetE.Get<ShapeSetting>().Color;
+        shapeColor.Subscribe(color => polygonView.SetInstanceShaderParameter("ShapeColor", color)).AddTo(targetE);
 
         // Polygon view — ArrReady emits whenever the arrangement is settled and safe to query.
         layerNode.Parent
@@ -104,9 +106,10 @@ public class NewVectorFillMarkerCmd : NewShapeCmdBase
         // Dot hints at the polygon's fill color.
         setting.BrushE
             .Select(e => e.IsNull
-                ? Observable.Return(Colors.Black)
+                ? Observable.Return<Color?>(Colors.Black)
                 : e.Get<FillBrushSetting>().FillColor.AsObservable())
             .Switch()
+            .CombineLatest(shapeColor, (overriding, color) => overriding ?? color)
             .Subscribe(c => marker.ColorDot.Color = c)
             .AddTo(targetE);
 

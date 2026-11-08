@@ -20,6 +20,7 @@ public class PaintStrokeInteractor : CapturingInteraction
     public readonly PolylineInteractiveGenerator Generator = new();
     private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
     private Func<float, float> _radiusSampler;
+    private Color _color;
     private PaintStrokeSnapTarget? _startSnapTarget;
     private PaintStrokeSnapTarget? _endSnapTarget;
     private readonly List<Vector2> _snapHintPoints = new(2);
@@ -40,6 +41,7 @@ public class PaintStrokeInteractor : CapturingInteraction
             AppStrokeBrushLibrary.SelectedIndex.Value = -1;
         }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
+        _color = Document.Get<ColorManager>().CurrentColor.Value;
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
 
@@ -48,6 +50,7 @@ public class PaintStrokeInteractor : CapturingInteraction
             Material = brushMaterial
         };
         var layerView = PrimaryLayer.Get<ShapeLayerView>();
+        StrokePreview.SetInstanceShaderParameter("ShapeColor", _color);
         layerView.AddChild(StrokePreview);
 
         _snapDots = AutoloadRendering.CreateDots();
@@ -86,6 +89,7 @@ public class PaintStrokeInteractor : CapturingInteraction
             .NewStroke()
             .AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, BrushE)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, _color)
             .SetSampledPolyline(geometry.Positions.ToImmutableArray(), geometry.Radii.ToImmutableArray(),
                 geometry.Pressures.ToImmutableArray(), geometry.Tilts.ToImmutableArray())
             .Commit();

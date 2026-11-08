@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://bnhhwk1a3yv70" path="res://GuiControl/Layer/LayerPanel.tscn" id="16_kjvhd"]
 [ext_resource type="Script" uid="uid://b8vseqiegyqlw" path="res://GuiControl/CanvasPanel.cs" id="17_2gh4u"]
 [ext_resource type="Script" uid="uid://bc538pxjigcuv" path="res://GuiControl/Layer/LayerPanelContainer.cs" id="19_3b0ty"]
+[ext_resource type="Script" uid="uid://d2aywrnva4wk8" path="res://GuiControl/ColorPanel.cs" id="21_devvj"]
 [ext_resource type="Script" uid="uid://b4x3guxbl2wmb" path="res://GuiControl/Timeline/TimelinePanelContainer.cs" id="23_hhcpw"]
 [ext_resource type="PackedScene" uid="uid://cetiftxidiijh" path="res://GuiControl/Timeline/TimelinePanel.tscn" id="24_hhcpw"]
 
@@ -44,7 +45,7 @@ Second = SubResource("Resource_devvj")
 [sub_resource type="Resource" id="Resource_bg4s2"]
 resource_name = "Tabs"
 script = ExtResource("9_2gh4u")
-Names = PackedStringArray("LayerPanel")
+Names = PackedStringArray("LayerPanel", "ColorPanel")
 
 [sub_resource type="Resource" id="Resource_hhcpw"]
 resource_name = "Split"
@@ -85,7 +86,6 @@ Root = SubResource("Resource_hri7i")
 
 [node name="Main" type="Panel" unique_id=1926960144]
 texture_filter = 1
-anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -228,3 +228,13 @@ metadata/dockable_title = "Timeline"
 
 [node name="TimelinePanelPreview" parent="MainGui/MarginContainer/DockableContainer/TimelinePanel" unique_id=2020419585 instance=ExtResource("24_hhcpw")]
 layout_mode = 2
+
+[node name="ColorPanel" type="ScrollContainer" parent="MainGui/MarginContainer/DockableContainer" unique_id=1176302474]
+layout_mode = 2
+horizontal_scroll_mode = 0
+script = ExtResource("21_devvj")
+metadata/dockable_title = "Color"
+
+[node name="ColorPickerPreview" type="ColorPicker" parent="MainGui/MarginContainer/DockableContainer/ColorPanel" unique_id=479795445]
+layout_mode = 2
+size_flags_horizontal = 3

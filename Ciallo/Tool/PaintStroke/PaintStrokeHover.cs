@@ -80,12 +80,13 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         var colorView = AppStrokeBrushLibrary.SelectedIndex
             .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.Color)
             .Flatten();
-        var appBrushColorControl = new ColorPickerButton()
+        var appBrushColorControl = new NullableColorPickerButton()
         {
             CustomMinimumSize = new(0, 32),
         }.BindColor(colorView);
+        DocumentColorControls.BindSwatches(appBrushColorControl, Document);
         colorView.AddTo(appBrushColorControl);
-        container.AddProperty("Color", appBrushColorControl)
+        container.AddProperty("Stroke color override", appBrushColorControl)
             .VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
 
         var useBrushButton = new Button()

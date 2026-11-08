@@ -37,14 +37,14 @@ public static class PolygonBooleanActions
         {
             var sources = group.OrderBy(shape => shape.Get<LayerTreeNode>().Index).ToArray();
             var result = PolygonBoolean.Apply(sources.Select(Positions), operation);
-            replacements.Add(new(group.Key, sources, result, Brush(sources[0])));
+            replacements.Add(new(group.Key, sources, result, Brush(sources[0]), sources[0].Get<ShapeSetting>().Color.Value));
         }
         if (replacements.Count == 0) return false;
         Commit(document, Label(operation), replacements, selectResults: true);
         return true;
     }
 
-    public static void Paint(Entity layer, Entity brush, ImmutableArray<Vector2> ring, Operation operation)
+    public static void Paint(Entity layer, Entity brush, Color color, ImmutableArray<Vector2> ring, Operation operation)
     {
         var selection = layer.Document.Get<SelectionManager>().SelectedShapes;
         var selectedPolygons = selection.Where(shape => shape.Has<FilledPolygonSetting>()
@@ -60,7 +60,7 @@ public static class PolygonBooleanActions
         if (operation is Operation.Difference or Operation.Intersection)
         {
             foreach (var target in targets)
-                replacements.Add(new(layer, [target], PolygonBoolean.Apply([Positions(target), ring], operation), brush));
+                replacements.Add(new(layer, [target], PolygonBoolean.Apply([Positions(target), ring], operation), brush, color));
         }
         else
         {
@@ -69,12 +69,12 @@ public static class PolygonBooleanActions
             var existing = PolygonBoolean.Apply(targets.Select(Positions), Operation.Union);
             var result = PolygonBoolean.Apply(existing.Append(ring), operation);
             if (targets.Length == 0 && result.IsEmpty) return;
-            replacements.Add(new(layer, targets, result, brush));
+            replacements.Add(new(layer, targets, result, brush, color));
         }
         Commit(layer.Document, $"Paint Fill {Label(operation)}", replacements, selectedPolygons.Count > 0);
     }
 
-    private sealed record Replacement(Entity Layer, Entity[] Sources, ImmutableArray<ImmutableArray<Vector2>> Polygons, Entity Brush);
+    private sealed record Replacement(Entity Layer, Entity[] Sources, ImmutableArray<ImmutableArray<Vector2>> Polygons, Entity Brush, Color Color);
 
     private static ImmutableArray<Vector2> Positions(Entity shape) => shape.Get<SampledPolyline>().Positions.Value;
     private static Entity Brush(Entity shape) => shape.Get<FilledPolygonSetting>().BrushE.Value;
@@ -103,7 +103,8 @@ public static class PolygonBooleanActions
                 ImmutableArray<Vector2> tilts = [.. Enumerable.Repeat(Vector2.Zero, polygon.Length)];
                 command.SetTarget(result).NewFilledPolygon().AddToLayerTree(layer, index++)
                     .SetSampledPolyline(polygon, radii, pressures, tilts)
-                    .SetProperty(shape => shape.Get<FilledPolygonSetting>().BrushE, replacement.Brush);
+                    .SetProperty(shape => shape.Get<FilledPolygonSetting>().BrushE, replacement.Brush)
+                    .SetProperty(shape => shape.Get<ShapeSetting>().Color, replacement.Color);
                 if (selectResults) after.Add(result);
             }
         }

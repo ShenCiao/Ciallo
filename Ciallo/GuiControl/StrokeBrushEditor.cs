@@ -49,7 +49,7 @@ public partial class StrokeBrushEditor : AcceptDialog
             AlphaDensity = workingBrush.Select(s => s?.AlphaDensity).Flatten().AddTo(subs),
         };
 
-        setting.DrawProperty(PropertiesHolder);
+        setting.DrawProperty(PropertiesHolder, Document);
 
         PropertiesHolder.VisibleIf(workingBrush, s => s != null);
         return subs;

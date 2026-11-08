@@ -24,7 +24,9 @@ public partial class StrokeBrushMaterial : ShaderMaterial
         Subs?.Dispose();
         Subs = new();
         setting.RenderingType.Subscribe(type => SetShaderParameter("StrokeType", (int)type)).AddTo(Subs);
-        setting.Color.Subscribe(color => SetShaderParameter("MaterialColor", color)).AddTo(Subs);
+        // Negative alpha encodes no override at the shader boundary.
+        setting.Color.Subscribe(color =>
+            SetShaderParameter("MaterialColor", color ?? new Color(0, 0, 0, -1))).AddTo(Subs);
         setting.DashLength.Subscribe(length => SetShaderParameter("DashLength", length)).AddTo(Subs);
         setting.GapLength.Subscribe(length => SetShaderParameter("GapLength", length)).AddTo(Subs);
         setting.DashForwardSpeed.Subscribe(speed => SetShaderParameter("DashForwardSpeed", speed)).AddTo(Subs);

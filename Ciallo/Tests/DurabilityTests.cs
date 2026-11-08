@@ -455,6 +455,7 @@ public class DurabilityTests
         var polygon = document.World.Create();
         polygon.Tag<ToSerializeTag>();
         polygon.Add(new FilledPolygonSetting { BrushE = { Value = brush } });
+        polygon.Add(new ShapeSetting());
 
         try
         {

@@ -206,6 +206,7 @@ public static class ResearchAnimationImporter
             .NewStroke()
             .AddToLayerTree(cel)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, brushE)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, cel.Document.Get<ColorManager>().CurrentColor.Value)
             .SetSampledPolyline(positions, radii, pressures, tilts);
     }
 

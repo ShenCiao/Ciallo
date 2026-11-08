@@ -70,6 +70,7 @@ internal static class LayerConversionActions
                 .NewStroke()
                 .AddToLayerTree(shapeLayer)
                 .SetProperty(e => e.Get<StrokeSetting>().Brush, brush)
+                .SetProperty(e => e.Get<ShapeSetting>().Color, imageLayer.Document.Get<ColorManager>().CurrentColor.Value)
                 .SetSampledPolyline(
                     positions.ToImmutableArray(),
                     radii.ToImmutableArray(),
@@ -164,6 +165,7 @@ internal static class LayerConversionActions
                 shapeLayer,
                 polygon,
                 marker.Get<VectorFillMarkerSetting>().BrushE.Value,
+                marker.Get<ShapeSetting>().Color.Value,
                 index++);
         }
         return index;
@@ -174,6 +176,7 @@ internal static class LayerConversionActions
         Entity shapeLayer,
         IReadOnlyList<Vector2> polygon,
         Entity brush,
+        Color color,
         int index)
     {
         ImmutableArray<Vector2> positions = [.. polygon, polygon[0]];
@@ -184,7 +187,8 @@ internal static class LayerConversionActions
             .NewFilledPolygon()
             .AddToLayerTree(shapeLayer, index)
             .SetSampledPolyline(positions, ones, ones, zeros)
-            .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush);
+            .SetProperty(e => e.Get<FilledPolygonSetting>().BrushE, brush)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, color);
     }
 
     private static void ReplaceSourceLayer(

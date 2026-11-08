@@ -397,3 +397,10 @@ PS4/5 Touchpad,PS4/5 Touchpad,PS4/5 触摸板,PS4/5 觸控板,PS4/5 タッチパ
 (Right Stick Right),(Right Stick Right),（右摇杆向右）,（右搖桿向右）,（右スティック右）,(오른쪽 스틱 오른쪽),(Rechter Stick rechts),(Stick droit vers la droite)
 (Right Stick Up),(Right Stick Up),（右摇杆向上）,（右搖桿向上）,（右スティック上）,(오른쪽 스틱 위),(Rechter Stick oben),(Stick droit vers le haut)
 (Right Stick Down),(Right Stick Down),（右摇杆向下）,（右搖桿向下）,（右スティック下）,(오른쪽 스틱 아래),(Rechter Stick unten),(Stick droit vers le bas)
+Selected color,Selected color,选中对象颜色,所選物件顏色,選択した図形の色,선택한 도형 색상,Farbe der Auswahl,Couleur de la sélection
+Mixed colors,Mixed colors,多种颜色,多種顏色,複数の色,여러 색상,Mehrere Farben,Plusieurs couleurs
+Stroke color override,Stroke color override,线条颜色覆盖,線條顏色覆寫,線の色の上書き,선 색상 덮어쓰기,Strichfarbe überschreiben,Remplacement de couleur du trait
+Fill color override,Fill color override,填充颜色覆盖,填滿顏色覆寫,塗りつぶし色の上書き,채우기 색상 덮어쓰기,Füllfarbe überschreiben,Remplacement de couleur du remplissage
+Swatches,Swatches,色样,色票,カラースウォッチ,색상 견본,Farbfelder,Nuancier
+Recent Colors,Recent Colors,最近颜色,最近使用的顏色,最近使った色,최근 색상,Zuletzt verwendete Farben,Couleurs récentes
+Colorized Sliders,Colorized Sliders,彩色滑条,彩色滑桿,カラースライダー,컬러 슬라이더,Farbige Schieberegler,Curseurs colorés

@@ -77,7 +77,7 @@ public static class RenderExchangeExporter
         public int Frame { get; } = frame;
         public MemoryStream Data { get; } = new();
         public List<object> Brushes { get; } = [];
-        private readonly Dictionary<Entity, int> _brushIndices = [];
+        private readonly Dictionary<(Entity Brush, Color Color), int> _brushIndices = [];
 
         private object Floats(IEnumerable<float> values)
         {
@@ -110,20 +110,21 @@ public static class RenderExchangeExporter
             return [linear.R, linear.G, linear.B, linear.A];
         }
 
-        private int Brush(Entity entity)
+        private int Brush(Entity entity, Color shapeColor)
         {
-            if (_brushIndices.TryGetValue(entity, out int index)) return index;
             if (entity.IsNull) throw new NotSupportedException("A stroke has no brush. Assign a brush before exporting.");
             var brush = entity.Get<StrokeBrushSetting>();
+            var color = brush.Color.Value ?? shapeColor;
+            if (_brushIndices.TryGetValue((entity, color), out int index)) return index;
             if (brush.RenderingType.Value != BrushRenderingType.Airbrush || brush.ActiveBrushFlags.Value.HasFlag(BrushFlags.Dash))
                 throw new NotSupportedException($"Brush '{brush.Name.Value}' is not supported by the current web profile. It supports Airbrush without dashes.");
             index = Brushes.Count;
-            _brushIndices.Add(entity, index);
+            _brushIndices.Add((entity, color), index);
             using var pressure = StrokeBrushMaterial.BakeCurve(brush.Pressure2FlowCurve.Value);
             using var falloff = StrokeBrushMaterial.BakeCurve(brush.FalloffCurve.Value);
             Brushes.Add(new
             {
-                color = ColorValues(brush.Color.Value),
+                color = ColorValues(color),
                 density = brush.AlphaDensity.Value,
                 pressureFlow = brush.ActiveBrushFlags.Value.HasFlag(BrushFlags.Pressure2Flow),
                 erase = brush.BlendMode.Value == BlendMode.Erase,
@@ -208,7 +209,7 @@ public static class RenderExchangeExporter
                 return new
                 {
                     kind = "stroke",
-                    brush = Brush(setting.Brush.Value),
+                    brush = Brush(setting.Brush.Value, entity.Get<ShapeSetting>().Color.Value),
                     positions = Points(polyline.Positions.Value),
                     radii = Floats(polyline.Radii.Value),
                     pressures = Floats(polyline.Pressures.Value),
@@ -223,7 +224,7 @@ public static class RenderExchangeExporter
                 return new
                 {
                     kind = "fill",
-                    color = ColorValues(brush.Get<FillBrushSetting>().FillColor.Value),
+                    color = ColorValues(brush.Get<FillBrushSetting>().FillColor.Value ?? entity.Get<ShapeSetting>().Color.Value),
                     positions = Points((Vector2[])triangles["vertices"]),
                     indices = Indices((int[])triangles["indices"]),
                 };

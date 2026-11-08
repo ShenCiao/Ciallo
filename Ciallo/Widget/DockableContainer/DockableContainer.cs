@@ -376,8 +376,13 @@ public partial class DockableContainer : Container, ISerializationListener
     private static bool IsExclusive(Node node) =>
         node.HasMeta(ExclusiveMetadata) && node.GetMeta(ExclusiveMetadata).AsBool();
 
-    private static Node NormalizeDragSource(Node node) =>
-        node is TabBar ? node.GetParent() : node;
+    private static Node NormalizeDragSource(Node node)
+    {
+        // Godot 4.7 nests the TabBar inside an internal container.
+        while (node != null && node is not TabContainer)
+            node = node.GetParent();
+        return node;
+    }
 
     private void EnsureInternalNodes()
     {

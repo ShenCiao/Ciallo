@@ -17,7 +17,6 @@ public partial class ColorPanel : ScrollContainer
             {
                 Name = "CurrentColorPicker",
                 SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                TooltipText = "[Current Color Tooltip]",
             };
             DocumentColorControls.BindCurrentColor(picker, document);
             AddChild(picker);

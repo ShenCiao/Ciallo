@@ -28,7 +28,7 @@ public class ShapeConversionActionsTests
         _layer = AddLayer();
         _strokeBrush = _document.World.Create();
         _strokeBrush.Add(new StrokeBrushSetting());
-        _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 7f;
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = 7f;
         _strokeBrush.Get<StrokeBrushSetting>().ActiveBrushFlags.Value = BrushFlags.Pressure2Radius;
         _fillBrush = _document.World.Create();
         _fillBrush.Add(new FillBrushSetting());
@@ -47,9 +47,12 @@ public class ShapeConversionActionsTests
         await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
     }
 
-    [TestCase]
-    public void HoledPolygonsAcrossLayersRestoreStackingSelectionAndBrushSnapshotTogether()
+    [TestCase(true)]
+    [TestCase(false)]
+    public void HoledPolygonsAcrossLayersRestoreStackingSelectionAndBrushSnapshotTogether(bool independentRadius)
     {
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = independentRadius ? 7f : null;
+        _document.Get<BrushManager>().CurrentStrokeRadius.Value = 11f;
         var outer = Rectangle(0, 0, 20, 20);
         var hole = Rectangle(5, 5, 15, 15);
         var ring = new System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<Vector2>>
@@ -72,7 +75,7 @@ public class ShapeConversionActionsTests
         AssertThat(after.Skip(1).Take(2).All(shape => shape.Get<ShapeSetting>().Color.Value == bottom.Get<ShapeSetting>().Color.Value)).IsTrue();
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched);
         AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[0], selectedStroke);
-        float expectedRadius = _strokeBrush.Get<StrokeBrushSetting>().ToRadiusSampler()(1f);
+        float expectedRadius = independentRadius ? 7f : 11f;
         foreach (var shape in after.Take(3))
         {
             var geometry = shape.Get<SampledPolyline>();
@@ -95,7 +98,8 @@ public class ShapeConversionActionsTests
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(top, bottom, selectedStroke);
         AssertThat(history.HasUndo).IsFalse();
         manager.WorkingStrokeBrush.Value = Entity.Null;
-        _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 20f;
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = 20f;
+        _document.Get<BrushManager>().CurrentStrokeRadius.Value = 30f;
         _document.Get<ColorManager>().CurrentColor.Value = Colors.Blue;
         history.Redo();
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(after);

@@ -13,8 +13,8 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Default brush".Tr() },
             RenderingType = { Value = BrushRenderingType.Vanilla },
-            ActiveBrushFlags = { },
-            Pressure2RadiusCurve = { Value = BezierCurveFactory.GPenCurve(0.8f, 1.0f) },
+            ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
+            Pressure2RadiusCurve = { Value = BezierCurveFactory.Linear() },
             Labels = { BrushLabel.BuiltIn },
         });
 
@@ -78,7 +78,7 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Eraser".Tr() },
             RenderingType = { Value = BrushRenderingType.Vanilla },
-            BaseRadius = { Value = 12f },
+            IndependentRadius = { Value = 12f },
             BlendMode = { Value = BlendMode.Erase },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
             Pressure2RadiusCurve = { Value = BezierCurveFactory.EaseInOut(0.8f, 1.0f) },
@@ -89,7 +89,7 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Soft eraser".Tr() },
             RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
+            IndependentRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             BlendMode = { Value = BlendMode.Erase },
@@ -104,7 +104,6 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Soft airbrush".Tr() },
             RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
@@ -118,7 +117,6 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Hard airbrush".Tr() },
             RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),

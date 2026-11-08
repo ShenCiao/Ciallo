@@ -52,6 +52,8 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         modeButton.BindSelectionIndex(Tool.Mode);
         container.AddProperty("Mode", modeButton);
 
+        container.AddProperty("Global radius", BrushRadiusControls.CreateGlobalRadius(Document));
+
         // ---- App brush library
         var brushSelector = new OptionButton()
         {
@@ -63,19 +65,12 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         container.AddProperty("Library brush", brushSelector);
 
         var radiusView = AppStrokeBrushLibrary.SelectedIndex
-            .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.BaseRadius)
+            .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.IndependentRadius)
             .Flatten();
-        var appBrushRadiusControl = new SpinSlider()
-        {
-            MinValue = 0.1f,
-            MaxValue = 256f,
-            Step = 0.03333333f,
-            ExpEdit = true
-        }.BindNumber(radiusView);
+        var appBrushRadiusControl = BrushRadiusControls.CreateIndependentRadius(container, radiusView);
         radiusView.AddTo(appBrushRadiusControl);
-
-        container.AddProperty("Radius", appBrushRadiusControl)
-            .VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
+        appBrushRadiusControl.VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
+        container.AddChild(appBrushRadiusControl);
 
         var colorView = AppStrokeBrushLibrary.SelectedIndex
             .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.Color)
@@ -128,19 +123,12 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
 
         var selectionM = Document.Get<SelectionManager>();
         var radius = selectionM.WorkingStrokeBrush
-            .Select(e => e.IsDyingOrDead ? null : e.Get<StrokeBrushSetting>().BaseRadius)
+            .Select(e => e.IsDyingOrDead ? null : e.Get<StrokeBrushSetting>().IndependentRadius)
             .Flatten();
-        var radiusControl = new SpinSlider
-        {
-            MinValue = 0.01f,
-            MaxValue = 256f,
-            Step = 0.01f,
-            AllowGreater = true,
-            ExpEdit = true,
-        }.BindNumber(radius);
+        var radiusControl = BrushRadiusControls.CreateIndependentRadius(container, radius, Document);
         radius.AddTo(radiusControl);
-        container.AddProperty("Radius", radiusControl)
-            .VisibleIf(selectionM.WorkingStrokeBrush, Entity.IsNotNull);
+        radiusControl.VisibleIf(selectionM.WorkingStrokeBrush, Entity.IsNotNull);
+        container.AddChild(radiusControl);
 
     }
 

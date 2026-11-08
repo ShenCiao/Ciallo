@@ -87,7 +87,7 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
         }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
         _color = Document.Get<ColorManager>().CurrentColor.Value;
-        _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler();
+        _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler(Document.Get<BrushManager>().CurrentStrokeRadius.Value);
 
         var brushMaterial = BrushE.Get<StrokeBrushMaterial>();
         StrokePreview = new StrokeView { Material = brushMaterial };

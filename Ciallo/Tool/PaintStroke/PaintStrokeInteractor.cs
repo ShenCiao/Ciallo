@@ -57,7 +57,7 @@ public class PaintStrokeInteractor : CapturingInteraction
         Document.Get<WorldOverlay>().AddChild(_snapDots);
 
         var brushSetting = BrushE.Get<StrokeBrushSetting>();
-        _radiusSampler = brushSetting.ToRadiusSampler();
+        _radiusSampler = brushSetting.ToRadiusSampler(Document.Get<BrushManager>().CurrentStrokeRadius.Value);
 
         _startSnapTarget = Tool.TryFindSnapTarget(data.WorldPosition);
         _endSnapTarget = null;

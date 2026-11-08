@@ -172,7 +172,8 @@ public static partial class AppStrokeBrushLibrary
             preview.Material = material;
 
             // ponytail: resubscribe per selection so the initial value re-fires for this brush; preview geometry is shared
-            curveChangeSub.Disposable = setting.BaseRadius
+            curveChangeSub.Disposable = setting.IndependentRadius
+                .CombineLatest(BrushRadiusControls.ObserveCurrentRadius(), (own, global) => own ?? global)
                 .CombineLatest(setting.Pressure2RadiusCurve, setting.ActiveBrushFlags, ValueTuple.Create)
                 .Subscribe(t => UpdateStrokePreview(preview, t.Item2, t.Item1, t.Item3.HasFlag(BrushFlags.Pressure2Radius)));
         }).AddTo(panel);

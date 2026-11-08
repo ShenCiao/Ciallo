@@ -20,7 +20,9 @@ public class StrokeBrushSetting
     [DataMember, ProjectField] public ReactiveProperty<Color?> Color = new(); // Optional RGB+Flow override.
     [DataMember, ProjectField] public ReactiveProperty<BrushFlags> ActiveBrushFlags = new();
     [DataMember, ProjectField] public ReactiveProperty<BlendMode> BlendMode = new();
-    [DataMember, ProjectField] public ReactiveProperty<float> BaseRadius = new(1.5f);
+    // Keep the stored key shared by document files and the brush library.
+    [DataMember(Name = "BaseRadius"), ProjectField("BaseRadius")]
+    public ReactiveProperty<float?> IndependentRadius = new();
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2RadiusCurve = new(BezierCurveFactory.Linear(0.2f, 1.0f)); // radius = baseRadius * curve(pressure)
     [DataMember, ProjectField] public ReactiveProperty<BrushRenderingType> RenderingType = new(BrushRenderingType.Stamp);
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2FlowCurve = new(BezierCurveFactory.Constant(1.0f)); // finalFlow = curve(pressure) * Color.a
@@ -53,14 +55,7 @@ public class StrokeBrushSetting
         }.BindString(Name);
         container.AddProperty("Name", nameEdit);
 
-        var baseRadiusControl = new SpinSlider
-        {
-            MinValue = 0.1,
-            MaxValue = 128,
-            Step = 0.03333333,
-            ExpEdit = true,
-        }.BindNumber(BaseRadius);
-        container.AddProperty("Base radius", baseRadiusControl);
+        container.AddChild(BrushRadiusControls.CreateIndependentRadius(container, IndependentRadius, document));
 
         var colorPickerButton = new NullableColorPickerButton()
         {
@@ -198,9 +193,9 @@ public class StrokeBrushSetting
         return setting;
     }
 
-    public Func<float, float> ToRadiusSampler()
+    public Func<float, float> ToRadiusSampler(float globalRadius)
     {
-        var baseRadius = BaseRadius.Value;
+        var baseRadius = IndependentRadius.Value ?? globalRadius;
         if (!ActiveBrushFlags.Value.HasFlag(BrushFlags.Pressure2Radius))
             return _ => baseRadius; // disabled: constant radius, pressure does not affect thickness
         var (polyline, _) = Pressure2RadiusCurve.Value.TessellateWithCache();

@@ -34,7 +34,7 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
     {
         _brush = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
         _color = Document.Get<ColorManager>().CurrentColor.Value;
-        _radiusSampler = _brush.Get<StrokeBrushSetting>().ToRadiusSampler();
+        _radiusSampler = _brush.Get<StrokeBrushSetting>().ToRadiusSampler(Document.Get<BrushManager>().CurrentStrokeRadius.Value);
         _preview = new StrokeView { Material = _brush.Get<StrokeBrushMaterial>() };
         _preview.SetInstanceShaderParameter("ShapeColor", _color);
         PrimaryLayer.Get<ShapeLayerView>().AddChild(_preview);

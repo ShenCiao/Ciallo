@@ -132,7 +132,8 @@ Rotation noise amplitude,Rotation noise amplitude,旋转噪音振幅,旋轉噪�
 Rotation noise frequency,Rotation noise frequency,旋转噪音频率,旋轉噪音頻率,回転ノイズ周波数,회전 노이즈 주파수,Rotationsrauschen-Frequenz,Fréquence du bruit de rotation
 Save changes?,Save changes?,保存更改？,儲存變更？,変更を保存しますか？,변경 사항을 저장하시겠습니까?,Änderungen speichern?,Enregistrer les modifications ?
 Global pen pressure remap,Global pen pressure remap,全局笔压重映射,全域筆壓重映射,グローバル筆圧リマップ,글로벌 펜 압력 리매핑,Globale Stiftdruck-Neuzuordnung,Remappage global de la pression du stylet
-Base radius,Base radius,基础半径,基礎半徑,基本半径,기본 반지름,Grundradius,Rayon de base
+Independent radius,Independent radius,独立半径,獨立半徑,個別の半径,개별 반지름,Eigener Radius,Rayon indépendant
+Global radius,Global radius,全局半径,全域半徑,全体の半径,전역 반지름,Globaler Radius,Rayon global
 Pressure to radius,Pressure to radius,压力到半径,壓力到半徑,圧力から半径へ,압력→반지름,Druck zu Radius,Pression vers rayon
 Pressure to flow,Pressure to flow,压力到流量,壓力到流量,圧力から流量へ,압력→흐름,Druck zu Fluss,Pression vers flux
 Radius,Radius,半径,半徑,半径,반지름,Radius,Rayon

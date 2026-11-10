@@ -8,7 +8,7 @@ namespace Ciallo.Data;
 [DataContract, ToSerialize]
 public class BrushManager
 {
-    public const float DefaultStrokeRadius = 1.5f;
+    public const float DefaultStrokeRadius = 5.5f;
 
     [DataMember, ProjectField]
     public ReactiveProperty<float> CurrentStrokeRadius = new(DefaultStrokeRadius);

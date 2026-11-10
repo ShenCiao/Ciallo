@@ -1,5 +1,3 @@
-using System.Linq;
-using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.GuiControl;
 using Ciallo.Rendering;
@@ -54,68 +52,6 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
 
         container.AddProperty("Global radius", BrushRadiusControls.CreateGlobalRadius(Document));
 
-        // ---- App brush library
-        var brushSelector = new OptionButton()
-        {
-            CustomMinimumSize = new(256, 32),
-            FitToLongestItem = false,
-        }
-            .ObserveObservableList(AppStrokeBrushLibrary.BrushSettings, s => s.Name)
-            .BindSelectionIndex(AppStrokeBrushLibrary.SelectedIndex);
-        container.AddProperty("Library brush", brushSelector);
-
-        var radiusView = AppStrokeBrushLibrary.SelectedIndex
-            .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.IndependentRadius)
-            .Flatten();
-        var appBrushRadiusControl = BrushRadiusControls.CreateIndependentRadius(container, radiusView);
-        radiusView.AddTo(appBrushRadiusControl);
-        appBrushRadiusControl.VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
-        container.AddChild(appBrushRadiusControl);
-
-        var colorView = AppStrokeBrushLibrary.SelectedIndex
-            .Select(idx => AppStrokeBrushLibrary.BrushSettings.ElementAtOrDefault(idx)?.Color)
-            .Flatten();
-        var appBrushColorControl = new NullableColorPickerButton()
-        {
-            CustomMinimumSize = new(0, 32),
-        }.BindColor(colorView);
-        DocumentColorControls.BindSwatches(appBrushColorControl, Document);
-        colorView.AddTo(appBrushColorControl);
-        container.AddProperty("Stroke color override", appBrushColorControl)
-            .VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
-
-        var useBrushButton = new Button()
-        {
-            Text = "Use brush",
-            Alignment = HorizontalAlignment.Left,
-            CustomMinimumSize = new(0, 32),
-            SizeFlagsHorizontal = Control.SizeFlags.Fill
-        };
-        useBrushButton.VisibleIf(AppStrokeBrushLibrary.SelectedIndex, v => v >= 0);
-        useBrushButton.Pressed += OnUseBrushPressed;
-        var manageButton = new Button()
-        {
-            Text = "Manage brush library",
-            Alignment = HorizontalAlignment.Left,
-            CustomMinimumSize = new(0, 32),
-            SizeFlagsHorizontal = Control.SizeFlags.Fill
-        };
-
-        manageButton.Pressed += () =>
-        {
-            AppDialogHost.BrushLibrary.Popup();
-        };
-
-        var box = new VBoxContainer()
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.Fill
-        };
-        box.AddChild(manageButton);
-        box.AddChild(useBrushButton);
-        container.AddChild(box);
-        // ---------------------------------------------
-        container.AddChild(new HSeparator());
-        // ---------------------------------------------
         // ---- Document brush library
         var brushPreview = StrokeBrushPreviewList.New(Document);
         brushPreview.CustomMinimumSize = new(0, 256);
@@ -130,17 +66,6 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         radiusControl.VisibleIf(selectionM.WorkingStrokeBrush, Entity.IsNotNull);
         container.AddChild(radiusControl);
 
-    }
-
-    private void OnUseBrushPressed()
-    {
-        if (!AppStrokeBrushLibrary.HasSelection) return;
-        var setting = AppStrokeBrushLibrary.SelectedBrushSetting.CurrentValue;
-        new CommandBuilder("Use Library Stroke Brush", Document.World.Create())
-            .NewStrokeBrush(setting)
-            .SetWorkingStrokeBrush()
-            .Commit();
-        AppStrokeBrushLibrary.SelectedIndex.Value = -1;
     }
 
     internal void RefreshSnapping() => RefreshSnap(LatestCursor.WorldPosition);

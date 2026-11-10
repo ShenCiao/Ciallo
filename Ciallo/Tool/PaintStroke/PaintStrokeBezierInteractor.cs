@@ -77,14 +77,6 @@ public class PaintStrokeBezierInteractor : CapturingInteraction
     {
         Input.MouseMode = Input.MouseModeEnum.Hidden;
 
-        // Selection in brush library has higher priority
-        if (AppStrokeBrushLibrary.HasSelection)
-        {
-            var setting = AppStrokeBrushLibrary.SelectedBrushSetting.CurrentValue;
-            new CommandBuilder("Use Library Stroke Brush", Document.World.Create())
-                .NewStrokeBrush(setting).SetWorkingStrokeBrush().Commit();
-            AppStrokeBrushLibrary.SelectedIndex.Value = -1;
-        }
         BrushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
         _color = Document.Get<ColorManager>().CurrentColor.Value;
         _radiusSampler = BrushE.Get<StrokeBrushSetting>().ToRadiusSampler(Document.Get<BrushManager>().CurrentStrokeRadius.Value);

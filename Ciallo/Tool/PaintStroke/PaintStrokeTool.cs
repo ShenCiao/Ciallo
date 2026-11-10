@@ -83,7 +83,7 @@ public class PaintStrokeTool : InteractionScope, IPropertyProvider, ILayerDepend
             }, () =>
             {
                 var brushE = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
-                return !brushE.IsDyingOrDead || AppStrokeBrushLibrary.HasSelection;
+                return !brushE.IsDyingOrDead;
             })
             .PermitReentry(Trigger.Refresh);
 

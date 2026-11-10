@@ -14,7 +14,7 @@ public partial class MenuSettings : PopupMenu
 
     public override void _Ready()
     {
-        AddItem($"{Tr("Brush Library")}...", (int)Command.BrushLibrary);
+        AddItem($"{Tr("Manage brushes")}...", (int)Command.BrushLibrary);
         AddItem($"{Tr("Global Pen Pressure")}...", (int)Command.GlobalPenPressure);
         AddItem($"{Tr("Shortcuts")}...", (int)Command.Shortcuts);
 
@@ -26,7 +26,7 @@ public partial class MenuSettings : PopupMenu
         base._Notification(what);
         if (what != NotificationTranslationChanged || !IsNodeReady()) return;
 
-        SetCommandText(Command.BrushLibrary, "Brush Library");
+        SetCommandText(Command.BrushLibrary, "Manage brushes");
         SetCommandText(Command.GlobalPenPressure, "Global Pen Pressure");
         SetCommandText(Command.Shortcuts, "Shortcuts");
     }
@@ -36,7 +36,7 @@ public partial class MenuSettings : PopupMenu
         switch (command)
         {
             case Command.BrushLibrary:
-                AppDialogHost.BrushLibrary.Popup();
+                AppDialogHost.BrushLibrary.PopupCenteredClamped();
                 break;
             case Command.GlobalPenPressure:
                 AppDialogHost.ConfigureGlobalPenPressure.Popup();

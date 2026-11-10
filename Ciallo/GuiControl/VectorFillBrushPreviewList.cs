@@ -105,8 +105,8 @@ public partial class VectorFillBrushPreviewList : Container
 
     public override void _Ready()
     {
-        PreviewList.MinRowHeight = BrushPreview.FillPreviewSize;
-        PreviewList.MaxRowHeightRatio = 1f;
+        PreviewList.MinRowHeight = 80;
+        PreviewList.MaxRowHeightRatio = 1.5f;
         Select(_selectedBrush);
         AddButton.Pressed += () => OnAddOrCopyButtonPressed();
 

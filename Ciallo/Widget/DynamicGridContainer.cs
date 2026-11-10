@@ -144,6 +144,21 @@ public partial class DynamicGridContainer : Container
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────
+    protected int ComputeDropSlot(Vector2 localPos)
+    {
+        if (LayoutChildCount == 0) return 0;
+        if (Cols == 1)
+            return Mathf.Clamp(Mathf.RoundToInt(localPos.Y / (ItemSize.Y + VSep)), 0, LayoutChildCount);
+
+        int rows = Mathf.CeilToInt((float)LayoutChildCount / Cols);
+        if (localPos.Y >= rows * (ItemSize.Y + VSep)) return LayoutChildCount;
+        int row = Mathf.Clamp(Mathf.FloorToInt(localPos.Y / (ItemSize.Y + VSep)), 0, rows - 1);
+        int rowStart = row * Cols;
+        int rowItemCount = Mathf.Min(Cols, LayoutChildCount - rowStart);
+        int gapInRow = Mathf.Clamp(Mathf.RoundToInt(localPos.X / (ItemSize.X + HSep)), 0, rowItemCount);
+        return rowStart + gapInRow;
+    }
+
     protected Rect2 ItemRect(int slotIdx)
     {
         var cell = SlotToRowCol(slotIdx);

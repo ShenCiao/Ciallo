@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://c7gswky107s26"]
 
 [ext_resource type="Script" path="res://GuiControl/StrokeBrushPreviewList.cs" id="1_4m1ok"]
+[ext_resource type="Texture2D" uid="uid://dm6dr88emw3ta" path="res://Icon/plus.svg" id="2_7nalv"]
 [ext_resource type="Texture2D" uid="uid://dvgbavcaytc4e" path="res://Icon/minus.svg" id="3_1q6u5"]
 [ext_resource type="Texture2D" uid="uid://ddgqnm1dvnk6w" path="res://Icon/content-copy.svg" id="4_r82g4"]
-[ext_resource type="Texture2D" uid="uid://bgxr2a6lqjqvy" path="res://Icon/wrench.svg" id="5_7nalv"]
+[ext_resource type="Texture2D" uid="uid://6niq55nj5t0u" path="res://Icon/cog.svg" id="5_7nalv"]
 [ext_resource type="Script" uid="uid://b2pgo2j4ka41x" path="res://Widget/DynamicGridItemList.cs" id="5_k4hjg"]
 
 [node name="StrokeBrushPreviewList" type="MarginContainer" unique_id=431973182]
@@ -21,6 +22,15 @@ layout_mode = 2
 [node name="ButtonContainer" type="VBoxContainer" parent="HBoxContainer" unique_id=1413447937]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="AddButton" type="Button" parent="HBoxContainer/ButtonContainer" unique_id=1725879413]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+tooltip_text = "Manage brushes"
+theme_type_variation = &"IconToggleButton"
+icon = ExtResource("2_7nalv")
+expand_icon = true
 
 [node name="CopyButton" type="Button" parent="HBoxContainer/ButtonContainer" unique_id=1629376618]
 unique_name_in_owner = true
@@ -42,6 +52,7 @@ expand_icon = true
 unique_name_in_owner = true
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
+tooltip_text = "Brush settings"
 theme_type_variation = &"IconToggleButton"
 icon = ExtResource("5_7nalv")
 expand_icon = true
@@ -49,7 +60,7 @@ expand_icon = true
 [node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer" unique_id=826455056]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_scroll_mode = 4
+horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
 [node name="PreviewList" type="Container" parent="HBoxContainer/ScrollContainer" unique_id=198333902]
@@ -59,5 +70,5 @@ size_flags_horizontal = 3
 mouse_filter = 0
 script = ExtResource("5_k4hjg")
 MinRowHeight = 80
-AspectRatio = 2.667
+AspectRatio = 2.6666667
 metadata/_custom_type_script = "uid://b2pgo2j4ka41x"

@@ -119,6 +119,7 @@ public partial class StrokeBrushEditor : AcceptDialog
     private void Bind<T>(ReactiveProperty<T> property, ReactiveProperty<T> proxy, string name)
     {
         bool updating = false;
+        long lastEditEpoch = -1;
         property.Subscribe(value =>
         {
             updating = true;
@@ -129,7 +130,12 @@ public partial class StrokeBrushEditor : AcceptDialog
         {
             if (updating) return;
             var command = new CommandBuilder("Edit Brush " + name).SetProperty(property, value);
-            _history.Commit(command.ActionName, command.Commands);
+            // Only compress this binding's consecutive edits, never another brush or a navigated history.
+            if (lastEditEpoch == _history.PersistenceEpoch)
+                _history.CommitSequence(command.ActionName, command.Commands);
+            else
+                _history.Commit(command.ActionName, command.Commands);
+            lastEditEpoch = _history.PersistenceEpoch;
         }).AddTo(_bindings);
     }
 

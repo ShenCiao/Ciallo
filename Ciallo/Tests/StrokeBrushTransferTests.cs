@@ -2,6 +2,7 @@ using System.Linq;
 using Ciallo.Command;
 using Ciallo.Data;
 using Ciallo.GuiControl;
+using Ciallo.Widget;
 using Frent;
 using GdUnit4;
 using Godot;
@@ -12,6 +13,78 @@ namespace Ciallo.Tests;
 [TestSuite, RequireGodotRuntime]
 public class StrokeBrushTransferTests
 {
+    [TestCase]
+    public void ContinuousEditsKeepEarlierHistoryAndSeparateBrushesReopeningAndNavigation()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        var first = new StrokeBrushSetting { Name = { Value = "First" }, IndependentRadius = { Value = 1f } };
+        var second = new StrokeBrushSetting { IndependentRadius = { Value = 10f } };
+        var history = new CommandManager();
+        int previousLimit = AppPreference.CommandHistoryLimit.Value;
+        AppPreference.CommandHistoryLimit.Value = 8;
+        var editor = AutoFree(StrokeBrushEditor.New(Entity.Null));
+        tree.Root.AddChild(editor);
+        AppStrokeBrushLibrary.BrushSettings.Add(first);
+        AppStrokeBrushLibrary.BrushSettings.Add(second);
+        try
+        {
+            history.Commit("Earlier edit", new SetPropertyCmd<string>(first.Name, "Renamed"));
+            var radius = Open(first);
+            for (int value = 2; value <= 101; value++) radius.Value = value;
+
+            // Another writer with the same action name/type must not be absorbed into this binding.
+            history.Commit("Edit Brush IndependentRadius", new SetPropertyCmd<float?>(second.IndependentRadius, 11f));
+            radius.Value = 102;
+            history.Undo();
+            AssertThat(first.IndependentRadius.Value).IsEqual(101f);
+            AssertThat(second.IndependentRadius.Value).IsEqual(11f);
+            history.Undo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(10f);
+
+            radius = Open(second);
+            radius.Value = 11;
+            radius.Value = 12;
+            radius = Open(second);
+            radius.Value = 13;
+            history.Undo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(12f);
+            history.Redo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(13f);
+            radius.Value = 14;
+            history.Undo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(13f);
+            history.Undo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(12f);
+            history.Undo();
+            AssertThat(second.IndependentRadius.Value).IsEqual(10f);
+            AssertThat(first.IndependentRadius.Value).IsEqual(101f);
+            history.Undo();
+            AssertThat(first.IndependentRadius.Value).IsEqual(1f);
+            history.Undo();
+            AssertThat(first.Name.Value).IsEqual("First");
+            AssertThat(history.HasUndo).IsFalse();
+            while (history.HasRedo) history.Redo();
+            AssertThat(first.Name.Value).IsEqual("Renamed");
+            AssertThat(first.IndependentRadius.Value).IsEqual(101f);
+            AssertThat(second.IndependentRadius.Value).IsEqual(14f);
+        }
+        finally
+        {
+            editor.Hide();
+            AppStrokeBrushLibrary.BrushSettings.Remove(first);
+            AppStrokeBrushLibrary.BrushSettings.Remove(second);
+            AppPreference.CommandHistoryLimit.Value = previousLimit;
+        }
+
+        SpinSlider Open(StrokeBrushSetting setting)
+        {
+            editor.Hide();
+            editor.InitSetting(setting, Entity.Null, history, library: true);
+            editor.PopupCenteredClamped();
+            return (SpinSlider)editor.FindChild("IndependentRadiusValue", owned: false);
+        }
+    }
+
     [TestCase]
     public void SwitchingEditedBrushDisconnectsOldBindingsAndUsesCurrentHistory()
     {

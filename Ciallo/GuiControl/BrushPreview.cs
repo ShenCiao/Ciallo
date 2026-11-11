@@ -42,14 +42,12 @@ internal static class BrushPreview
             RenderTargetUpdateMode = SubViewport.UpdateMode.WhenVisible,
             RenderTargetClearMode = SubViewport.ClearMode.Always,
         };
-        var backgroundLayer = new CanvasLayer { Layer = -1 };
-        viewport.AddChild(backgroundLayer);
-        var background = new HBoxContainer();
+        // Share the stroke's canvas so detail-preview pan/zoom exposes transparency beyond the sample.
+        var background = new HBoxContainer { Size = StrokeBufferSize };
         background.AddThemeConstantOverride("separation", 0);
         background.AddChild(new ColorRect { Color = Colors.White, SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
         background.AddChild(new ColorRect { Color = new(0.5f, 0.5f, 0.5f), SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-        backgroundLayer.AddChild(background);
-        background.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
+        viewport.AddChild(background);
         var stroke = new StrokeView { Material = material };
         viewport.AddChild(stroke);
         color.Subscribe(value => stroke.SetInstanceShaderParameter("ShapeColor", value)).AddTo(viewport);

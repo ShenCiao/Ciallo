@@ -21,6 +21,7 @@ internal partial class StrokeBrushDetailPreview : PanelContainer
         AddChild(new ColorRect
         {
             Material = AutoloadRendering.CheckerboardMaterial,
+            Color = Colors.Transparent,
             MouseFilter = MouseFilterEnum.Ignore,
         });
         var display = new SubViewportContainer

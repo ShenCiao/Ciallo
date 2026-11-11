@@ -114,7 +114,7 @@ public static class RenderExchangeExporter
         {
             if (entity.IsNull) throw new NotSupportedException("A stroke has no brush. Assign a brush before exporting.");
             var brush = entity.Get<StrokeBrushSetting>();
-            var color = brush.Color.Value ?? shapeColor;
+            var color = brush.ResolveColor(shapeColor);
             if (_brushIndices.TryGetValue((entity, color), out int index)) return index;
             if (brush.RenderingType.Value != BrushRenderingType.Airbrush || brush.ActiveBrushFlags.Value.HasFlag(BrushFlags.Dash))
                 throw new NotSupportedException($"Brush '{brush.Name.Value}' is not supported by the current web profile. It supports Airbrush without dashes.");
@@ -224,7 +224,7 @@ public static class RenderExchangeExporter
                 return new
                 {
                     kind = "fill",
-                    color = ColorValues(brush.Get<FillBrushSetting>().FillColor.Value ?? entity.Get<ShapeSetting>().Color.Value),
+                    color = ColorValues(brush.Get<FillBrushSetting>().ResolveColor(entity.Get<ShapeSetting>().Color.Value)),
                     positions = Points((Vector2[])triangles["vertices"]),
                     indices = Indices((int[])triangles["indices"]),
                 };

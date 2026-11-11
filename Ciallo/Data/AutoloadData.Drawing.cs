@@ -113,8 +113,10 @@ public partial class AutoloadData
                     break;
                 case "color":
                     RequireDrawing(kind is "stroke_brush" or "fill_brush" or "stroke" or "polygon", "color targets a brush or shape.");
-                    RequireDrawing(edit.Color == null ? kind is "stroke_brush" or "fill_brush" : Color.HtmlIsValid(edit.Color),
-                        "Shapes require an HTML hex color; null disables a brush color override.");
+                    RequireDrawing(edit.Color == null
+                            ? kind is "stroke_brush" or "fill_brush" && (edit.UseShapeRgb.HasValue || edit.UseShapeAlpha.HasValue)
+                            : Color.HtmlIsValid(edit.Color),
+                        "Supply an HTML hex color, or brush useShapeRgb/useShapeAlpha settings.");
                     break;
                 case "stroke": case "polygon":
                     RequireDrawing(edit.Color == null || Color.HtmlIsValid(edit.Color), "color must be an HTML hex color.");
@@ -169,7 +171,8 @@ public partial class AutoloadData
                     if (firstStrokeBrush.IsNull) firstStrokeBrush = target;
                     command.NewStrokeBrush(new StrokeBrushSetting
                     {
-                        Name = { Value = edit.Name ?? edit.Id }, Color = { Value = ParseDrawingColor(edit.Color) },
+                        Name = { Value = edit.Name ?? edit.Id }, Color = { Value = ParseDrawingColor(edit.Color) ?? Colors.Black },
+                        ActiveBrushFlags = { Value = DrawingStrokeSources(0, edit.UseShapeRgb ?? edit.Color == null, edit.UseShapeAlpha ?? false) },
                         RenderingType = { Value = BrushRenderingType.Vanilla },
                     });
                     break;
@@ -177,7 +180,9 @@ public partial class AutoloadData
                     if (firstFillBrush.IsNull) firstFillBrush = target;
                     command.NewVectorFillBrush()
                         .SetProperty(e => e.Get<FillBrushSetting>().Name, edit.Name ?? edit.Id)
-                        .SetProperty(e => e.Get<FillBrushSetting>().FillColor, ParseDrawingColor(edit.Color));
+                        .SetProperty(e => e.Get<FillBrushSetting>().FillColor, ParseDrawingColor(edit.Color) ?? Colors.Black)
+                        .SetProperty(e => e.Get<FillBrushSetting>().ActiveBrushFlags,
+                            DrawingFillSources(0, edit.UseShapeRgb ?? edit.Color == null, edit.UseShapeAlpha ?? false));
                     break;
                 case "stroke": case "polygon":
                     if (edit.Op == "stroke") command.NewStroke(); else command.NewFilledPolygon();
@@ -191,9 +196,19 @@ public partial class AutoloadData
                 case "brush": SetDrawingBrush(command, DrawingKind(target), _drawingObjects[edit.Brush]); break;
                 case "color":
                     if (target.Has<StrokeBrushSetting>())
-                        command.SetProperty(e => e.Get<StrokeBrushSetting>().Color, ParseDrawingColor(edit.Color));
+                    {
+                        var setting = target.Get<StrokeBrushSetting>();
+                        if (edit.Color != null) command.SetProperty(setting.Color, Color.FromHtml(edit.Color));
+                        command.SetProperty(setting.ActiveBrushFlags,
+                            DrawingStrokeSources(setting.ActiveBrushFlags.Value, edit.UseShapeRgb, edit.UseShapeAlpha));
+                    }
                     else if (target.Has<FillBrushSetting>())
-                        command.SetProperty(e => e.Get<FillBrushSetting>().FillColor, ParseDrawingColor(edit.Color));
+                    {
+                        var setting = target.Get<FillBrushSetting>();
+                        if (edit.Color != null) command.SetProperty(setting.FillColor, Color.FromHtml(edit.Color));
+                        command.SetProperty(setting.ActiveBrushFlags,
+                            DrawingFillSources(setting.ActiveBrushFlags.Value, edit.UseShapeRgb, edit.UseShapeAlpha));
+                    }
                     else command.SetProperty(e => e.Get<ShapeSetting>().Color, Color.FromHtml(edit.Color));
                     break;
                 case "layer_settings":
@@ -278,11 +293,15 @@ public partial class AutoloadData
             {
                 row["name"] = entity.Get<StrokeBrushSetting>().Name.Value;
                 row["color"] = DrawingColor(entity.Get<StrokeBrushSetting>().Color.Value);
+                row["useShapeRgb"] = entity.Get<StrokeBrushSetting>().ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeRgb);
+                row["useShapeAlpha"] = entity.Get<StrokeBrushSetting>().ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeAlpha);
             }
             if (entity.Has<FillBrushSetting>())
             {
                 row["name"] = entity.Get<FillBrushSetting>().Name.Value;
                 row["color"] = DrawingColor(entity.Get<FillBrushSetting>().FillColor.Value);
+                row["useShapeRgb"] = entity.Get<FillBrushSetting>().ActiveBrushFlags.Value.HasFlag(FillBrushFlags.UseShapeRgb);
+                row["useShapeAlpha"] = entity.Get<FillBrushSetting>().ActiveBrushFlags.Value.HasFlag(FillBrushFlags.UseShapeAlpha);
             }
             if (entity.Has<StrokeSetting>()) row["brush"] = DrawingId(entity.Get<StrokeSetting>().Brush.Value);
             if (entity.Has<FilledPolygonSetting>()) row["brush"] = DrawingId(entity.Get<FilledPolygonSetting>().BrushE.Value);
@@ -348,6 +367,20 @@ public partial class AutoloadData
 
     private static Color? ParseDrawingColor(string color) => color == null ? null : Color.FromHtml(color);
     private static string DrawingColor(Color? color) => color.HasValue ? "#" + color.Value.ToHtml() : null;
+
+    private static BrushFlags DrawingStrokeSources(BrushFlags flags, bool? rgb, bool? alpha)
+    {
+        if (rgb.HasValue) flags = rgb.Value ? flags | BrushFlags.UseShapeRgb : flags & ~BrushFlags.UseShapeRgb;
+        if (alpha.HasValue) flags = alpha.Value ? flags | BrushFlags.UseShapeAlpha : flags & ~BrushFlags.UseShapeAlpha;
+        return flags;
+    }
+
+    private static FillBrushFlags DrawingFillSources(FillBrushFlags flags, bool? rgb, bool? alpha)
+    {
+        if (rgb.HasValue) flags = rgb.Value ? flags | FillBrushFlags.UseShapeRgb : flags & ~FillBrushFlags.UseShapeRgb;
+        if (alpha.HasValue) flags = alpha.Value ? flags | FillBrushFlags.UseShapeAlpha : flags & ~FillBrushFlags.UseShapeAlpha;
+        return flags;
+    }
 
     private static string DrawingKind(Entity entity) => entity.IsDocument ? "root"
         : entity.Has<StrokeSetting>() ? "stroke" : entity.Has<FilledPolygonSetting>() ? "polygon"
@@ -416,6 +449,8 @@ public partial class AutoloadData
         public string Name { get; set; }
         public string Brush { get; set; }
         public string Color { get; set; }
+        public bool? UseShapeRgb { get; set; }
+        public bool? UseShapeAlpha { get; set; }
         public float[][] Points { get; set; }
         public float Radius { get; set; } = 1f;
         public float[] Radii { get; set; }

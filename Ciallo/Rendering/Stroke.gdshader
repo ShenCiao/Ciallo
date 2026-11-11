@@ -21,8 +21,10 @@ const StampFlag StampFlags = StampFlag(1 << 0, 1 << 1, 1 << 2, 1 << 3);
 struct BrushFlag {
 	int Pressure2FlowCurve;
 	int Dash;
+	int UseShapeRgb;
+	int UseShapeAlpha;
 };
-const BrushFlag BrushFlags = BrushFlag(1 << 0, 1 << 1);
+const BrushFlag BrushFlags = BrushFlag(1 << 0, 1 << 1, 1 << 3, 1 << 4);
 
 const int Vanilla = 0, Stamp = 1, Airbrush = 2;
 const int MaxStampsPerFragment = 128;
@@ -414,7 +416,9 @@ vec4 evaluateAirbrush(vec2 pixelLocal, vec2 localDx, vec2 localDy) {
 
 // Shader entry points.
 void vertex() {
-	brushColor = MaterialColor.a < 0.0 ? ShapeColor : MaterialColor;
+	brushColor = vec4(
+		hasFlag(ActiveBrushFlags, BrushFlags.UseShapeRgb) ? ShapeColor.rgb : MaterialColor.rgb,
+		hasFlag(ActiveBrushFlags, BrushFlags.UseShapeAlpha) ? ShapeColor.a : MaterialColor.a);
 	float canvasScale = length(mat3(CANVAS_MATRIX) * vec3(1.0, 0.0, 0.0));
 	segmentStart = INSTANCE_TRANSFORM[0].xy;
 	vec2 segmentEnd = INSTANCE_TRANSFORM[1].xy;

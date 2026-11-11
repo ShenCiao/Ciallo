@@ -76,10 +76,7 @@ public class BucketFillTool : InteractionScope, ILayerDependent
         brushes.CustomMinimumSize = new(0, 256);
         container.AddChild(brushes);
         brushes.DrawNameProperty(container);
-        var selection = document.Get<SelectionManager>();
-        container.AddProperty("Fill color override", DocumentColorControls.BindOverride(new NullableColorPickerButton(), document,
-                selection.WorkingVectorFillBrush, e => e.Get<FillBrushSetting>().FillColor))
-            .VisibleIf(selection.WorkingVectorFillBrush, Entity.IsNotNull);
+        container.AddChild(DocumentColorControls.CreateFillBrushControls(container, document));
     }
 
     public Container DrawModeProperty(PropertyContainer container)

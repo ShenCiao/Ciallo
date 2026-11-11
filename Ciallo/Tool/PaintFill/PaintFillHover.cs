@@ -59,11 +59,6 @@ public class PaintFillHover : Interaction, IPropertyProvider
         container.AddChild(brushPreview);
         brushPreview.DrawNameProperty(container);
 
-        var sm = Document.Get<SelectionManager>();
-
-        container.AddProperty("Fill color override",
-            DocumentColorControls.BindOverride(new NullableColorPickerButton(), Document,
-                sm.WorkingVectorFillBrush, e => e.Get<FillBrushSetting>().FillColor)
-        ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
+        container.AddChild(DocumentColorControls.CreateFillBrushControls(container, Document));
     }
 }

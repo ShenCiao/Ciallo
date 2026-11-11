@@ -9,7 +9,7 @@ namespace Ciallo.GuiControl;
 
 internal static class BrushRadiusControls
 {
-    private static SpinSlider CreateSlider() => new()
+    internal static SpinSlider CreateSlider() => new()
     {
         MinValue = 0.01,
         MaxValue = 256,
@@ -23,21 +23,6 @@ internal static class BrushRadiusControls
             ? Observable.Return(BrushManager.DefaultStrokeRadius)
             : current.Get<BrushManager>().CurrentStrokeRadius.AsObservable()).Switch()
         : document.Get<BrushManager>().CurrentStrokeRadius.AsObservable();
-
-    public static SpinSlider CreateGlobalRadius(Entity document)
-    {
-        var slider = CreateSlider();
-        slider.Name = "GlobalStrokeRadius";
-        var radius = document.Get<BrushManager>().CurrentStrokeRadius;
-        radius.Subscribe(value => slider.SetValueNoSignal(value)).AddTo(slider);
-        slider.ValueChanged += (_, value) =>
-        {
-            if (radius.Value == (float)value) return;
-            new CommandBuilder("Set Global Stroke Radius", document)
-                .SetProperty(radius, (float)value).CommitToLatest();
-        };
-        return slider;
-    }
 
     public static Container CreateIndependentRadius(PropertyContainer container,
         ReactiveProperty<float?> radius, Entity document = default)

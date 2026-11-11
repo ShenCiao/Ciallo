@@ -52,7 +52,7 @@ public partial class BrushPanel : AcceptDialog
         add.Name = "NewBrush";
         libraryButtons.MoveChild(add, 0);
         add.Pressed += () => _right.Select(new(StrokeBrushActions.AddToLibrary(
-            new StrokeBrushSetting { Name = { Value = "New brush".Tr() } }, _right.Count, _history)));
+            StrokeBrushSetting.CreateDefault("New brush".Tr()), _right.Count, _history)));
         var restore = IconButton(libraryButtons, "restore", "Restore built-in brushes");
         restore.Name = "RestoreBuiltIns";
         restore.Pressed += () => StrokeBrushActions.RestoreBuiltIns(_history);

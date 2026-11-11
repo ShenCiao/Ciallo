@@ -26,7 +26,7 @@ public class NewStrokeBrushCmd : CommandBase
     public override void BeforeFirstDo(Entity targetE)
     {
         _setting ??= CopyE.IsNull
-            ? new StrokeBrushSetting()
+            ? StrokeBrushSetting.CreateDefault()
             : CopyE.Get<StrokeBrushSetting>().Clone();
         targetE.Add(_setting);
 

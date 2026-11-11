@@ -183,8 +183,8 @@ internal static class BrushPreview
         setting.Name.Subscribe(name => nameLabel.Text = name).AddTo(box);
         setting.MarkerTexture.Subscribe(markerPreview.SetTexture).AddTo(box);
         setting.MarkerColor.Subscribe(markerPreview.SetSelfModulate).AddTo(box);
-        setting.FillColor.CombineLatest(e.Document.Get<ColorManager>().CurrentColor,
-            (overriding, color) => overriding ?? color).Subscribe(background.SetColor).AddTo(box);
+        setting.FillColor.CombineLatest(setting.ActiveBrushFlags, e.Document.Get<ColorManager>().CurrentColor,
+            (_, _, color) => setting.ResolveColor(color)).Subscribe(background.SetColor).AddTo(box);
         return box;
     }
 

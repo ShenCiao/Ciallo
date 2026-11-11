@@ -88,6 +88,7 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Soft eraser".Tr() },
+            Color = { Value = new(0, 0, 0, 0.4f) },
             RenderingType = { Value = BrushRenderingType.Airbrush },
             IndependentRadius = { Value = 12f },
             Labels = { BrushLabel.BuiltIn },
@@ -103,6 +104,7 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Soft airbrush".Tr() },
+            Color = { Value = new(0, 0, 0, 0.4f) },
             RenderingType = { Value = BrushRenderingType.Airbrush },
             Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
@@ -116,6 +118,7 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Hard airbrush".Tr() },
+            Color = { Value = new(0, 0, 0, 0.9f) },
             RenderingType = { Value = BrushRenderingType.Airbrush },
             Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
@@ -137,6 +140,7 @@ public static partial class AppStrokeBrushLibrary
             RotationNoiseAmplitude = { Value = Mathf.Pi },
         });
 
+        foreach (var brush in brushes) brush.ActiveBrushFlags.Value |= BrushFlags.UseShapeRgb;
         return brushes;
     }
 }

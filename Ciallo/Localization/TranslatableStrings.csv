@@ -130,7 +130,6 @@ Rotation noise frequency,Rotation noise frequency,旋转噪音频率,旋轉噪�
 Save changes?,Save changes?,保存更改？,儲存變更？,変更を保存しますか？,변경 사항을 저장하시겠습니까?,Änderungen speichern?,Enregistrer les modifications ?
 Global pen pressure remap,Global pen pressure remap,全局笔压重映射,全域筆壓重映射,グローバル筆圧リマップ,글로벌 펜 압력 리매핑,Globale Stiftdruck-Neuzuordnung,Remappage global de la pression du stylet
 Independent radius,Independent radius,独立半径,獨立半徑,個別の半径,개별 반지름,Eigener Radius,Rayon indépendant
-Global radius,Global radius,全局半径,全域半徑,全体の半径,전역 반지름,Globaler Radius,Rayon global
 Pressure to radius,Pressure to radius,压力到半径,壓力到半徑,圧力から半径へ,압력→반지름,Druck zu Radius,Pression vers rayon
 Pressure to flow,Pressure to flow,压力到流量,壓力到流量,圧力から流量へ,압력→흐름,Druck zu Fluss,Pression vers flux
 Radius,Radius,半径,半徑,半径,반지름,Radius,Rayon
@@ -396,8 +395,9 @@ PS4/5 Touchpad,PS4/5 Touchpad,PS4/5 触摸板,PS4/5 觸控板,PS4/5 タッチパ
 (Right Stick Down),(Right Stick Down),（右摇杆向下）,（右搖桿向下）,（右スティック下）,(오른쪽 스틱 아래),(Rechter Stick unten),(Stick droit vers le bas)
 Selected color,Selected color,选中对象颜色,所選物件顏色,選択した図形の色,선택한 도형 색상,Farbe der Auswahl,Couleur de la sélection
 Mixed colors,Mixed colors,多种颜色,多種顏色,複数の色,여러 색상,Mehrere Farben,Plusieurs couleurs
-Stroke color override,Stroke color override,线条颜色覆盖,線條顏色覆寫,線の色の上書き,선 색상 덮어쓰기,Strichfarbe überschreiben,Remplacement de couleur du trait
-Fill color override,Fill color override,填充颜色覆盖,填滿顏色覆寫,塗りつぶし色の上書き,채우기 색상 덮어쓰기,Füllfarbe überschreiben,Remplacement de couleur du remplissage
+Independent color,Independent color,独立颜色,獨立顏色,個別の色,개별 색상,Eigene Farbe,Couleur indépendante
+Independent flow,Independent flow,独立流量,獨立流量,個別の流量,개별 흐름,Eigener Farbfluss,Débit indépendant
+Independent opacity,Independent opacity,独立不透明度,獨立不透明度,個別の不透明度,개별 불투명도,Eigene Deckkraft,Opacité indépendante
 Swatches,Swatches,色样,色票,カラースウォッチ,색상 견본,Farbfelder,Nuancier
 Recent Colors,Recent Colors,最近颜色,最近使用的顏色,最近使った色,최근 색상,Zuletzt verwendete Farben,Couleurs récentes
 Colorized Sliders,Colorized Sliders,彩色滑条,彩色滑桿,カラースライダー,컬러 슬라이더,Farbige Schieberegler,Curseurs colorés

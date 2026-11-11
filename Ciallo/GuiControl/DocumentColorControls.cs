@@ -12,6 +12,90 @@ namespace Ciallo.GuiControl;
 
 internal static class DocumentColorControls
 {
+    public static Container CreateIndependentChannels<TFlags>(PropertyContainer container,
+        ReactiveProperty<Color> color, ReactiveProperty<TFlags> flags,
+        TFlags useShapeRgb, TFlags useShapeAlpha, string alphaLabel, Entity document = default)
+        where TFlags : Enum
+    {
+        var rows = container.CreateBox();
+        rows.Name = "IndependentChannels";
+        var button = new ColorPickerButton
+        {
+            Name = "IndependentColorValue",
+            CustomMinimumSize = new(32, 32),
+        };
+        button.GetPicker().ColorMode = ColorPicker.ColorModeType.Rgb;
+        button.GetPicker().EditAlpha = false;
+        button.GetPicker().DeferredMode = true;
+        BindSwatches(button, document);
+        color.Subscribe(value => button.Color = new(value) { A = 1 }).AddTo(button);
+        // Swatches and pasted RGBA values must not change the independently edited alpha.
+        button.ColorChanged += value => color.Value = new(value) { A = color.Value.A };
+        AddChannel("Independent color", "IndependentColor", useShapeRgb, button);
+
+        var alpha = new SpinSlider
+        {
+            Name = "IndependentAlphaValue", MinValue = 0, MaxValue = 1, Step = 0.01,
+        };
+        alpha.BindNumber(color.Project(value => value.A, value => new Color(color.Value) { A = value }).AddTo(alpha));
+        AddChannel(alphaLabel, "IndependentAlpha", useShapeAlpha, alpha);
+        return rows;
+
+        void AddChannel(string label, string name, TFlags mask, Control value)
+        {
+            var independent = flags.Project(current => !current.HasFlag(mask), enabled => enabled
+                ? (TFlags)((dynamic)flags.Value & ~(dynamic)mask)
+                : (TFlags)((dynamic)flags.Value | (dynamic)mask)).AddTo(rows);
+            var check = new CheckBox { Name = name + "Enabled" }.BindBool(independent);
+            var row = container.CreateCheckBoxCombo(label, check, value);
+            row.Name = name;
+            value.VisibleIf(independent, enabled => enabled);
+            rows.AddChild(row);
+        }
+    }
+
+    public static Container CreateFillBrushControls(PropertyContainer container, Entity document)
+    {
+        var selected = document.Get<SelectionManager>().WorkingVectorFillBrush;
+        var lifetime = container.CreateBox();
+        var color = BindBrushProperty(lifetime, document, selected, e => e.Get<FillBrushSetting>().FillColor, "Color");
+        var flags = BindBrushProperty(lifetime, document, selected, e => e.Get<FillBrushSetting>().ActiveBrushFlags, "Color Sources");
+        lifetime.AddChild(CreateIndependentChannels(container, color, flags,
+            FillBrushFlags.UseShapeRgb, FillBrushFlags.UseShapeAlpha, "Independent opacity", document));
+        return lifetime.VisibleIf(selected, Entity.IsNotNull);
+    }
+
+    private static ReactiveProperty<T> BindBrushProperty<T>(Control lifetime, Entity document,
+        ReactiveProperty<Entity> selected, Func<Entity, ReactiveProperty<T>> getProperty, string name)
+    {
+        var property = selected.Select(brush => brush.IsNull ? null : getProperty(brush))
+            .ToReadOnlyReactiveProperty().AddTo(lifetime);
+        var proxy = new ReactiveProperty<T>().AddTo(lifetime);
+        bool updating = false;
+        property.Select(current => current is null ? Observable.Return(default(T)) : current.AsObservable()).Switch()
+            .Subscribe(value =>
+            {
+                updating = true;
+                proxy.Value = value;
+                updating = false;
+            }).AddTo(lifetime);
+        var history = document.Get<CommandManager>();
+        ReactiveProperty<T> lastEditedProperty = null;
+        long lastEditEpoch = -1;
+        proxy.Skip(1).Subscribe(value =>
+        {
+            if (updating) return;
+            var current = property.CurrentValue;
+            var command = new CommandBuilder("Edit Fill Brush " + name, document).SetProperty(current, value);
+            if (ReferenceEquals(lastEditedProperty, current) && lastEditEpoch == history.PersistenceEpoch)
+                command.CommitSequence();
+            else command.Commit();
+            lastEditedProperty = current;
+            lastEditEpoch = history.PersistenceEpoch;
+        }).AddTo(lifetime);
+        return proxy;
+    }
+
     public static void BindCurrentColor(ColorPicker picker, Entity document)
     {
         var colors = document.Get<ColorManager>();
@@ -24,23 +108,6 @@ internal static class DocumentColorControls
             new CommandBuilder("Set Current Color", document)
                 .SetProperty(colors.CurrentColor, color).CommitToLatest();
         };
-    }
-
-    public static NullableColorPickerButton BindOverride(NullableColorPickerButton button, Entity document,
-        ReactiveProperty<Entity> selectedBrush, Func<Entity, ReactiveProperty<Color?>> property)
-    {
-        selectedBrush.Select(brush => brush.IsNull
-                ? Observable.Return<Color?>(null) : property(brush).AsObservable())
-            .Switch().Subscribe(button.SetColorOrNullNoSignal).AddTo(button);
-        button.ColorOrNullChanged.Subscribe(color =>
-        {
-            var brush = selectedBrush.Value;
-            if (brush.IsNull || property(brush).Value == color) return;
-            new CommandBuilder("Set Brush Color Override", brush)
-                .SetProperty(property, color).CommitSequence();
-        }).AddTo(button);
-        BindSwatches(button, document);
-        return button;
     }
 
     public static void BindSwatches(ColorPickerButton button, Entity document = default)

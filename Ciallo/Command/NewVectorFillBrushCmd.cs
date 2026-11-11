@@ -24,6 +24,7 @@ public class NewVectorFillBrushCmd : CommandBase
         var setting = CopyE.IsNull
             ? new FillBrushSetting()
             {
+                ActiveBrushFlags = { Value = FillBrushFlags.UseShapeRgb },
                 MarkerColor = { Value = Colors.Black },
                 MarkerTexture =
                 {
@@ -37,6 +38,7 @@ public class NewVectorFillBrushCmd : CommandBase
         var fillMaterial = new FillBrushMaterial();
         targetE.Add(fillMaterial);
         setting.FillColor.Subscribe(color => fillMaterial.Color = color).AddTo(targetE);
+        setting.ActiveBrushFlags.Subscribe(flags => fillMaterial.ActiveBrushFlags = flags).AddTo(targetE);
 
         var strokeMaterial = new StrokeBrushMaterial();
         targetE.Add(strokeMaterial);

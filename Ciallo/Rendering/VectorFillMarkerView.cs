@@ -61,7 +61,7 @@ public partial class VectorFillMarkerView : Node2D
         polygon.SetInstanceShaderParameter("ShapeColor", color);
         marker.Sprite.Texture = setting.MarkerTexture.Value ?? ImageTexture.Dummy;
         marker.Sprite.Modulate = setting.MarkerColor.Value;
-        marker.ColorDot.Color = setting.FillColor.Value ?? color;
+        marker.ColorDot.Color = setting.ResolveColor(color);
     }
 
     public static void ApplyMissingBrush(PolygonFillView polygon, VectorFillMarkerView marker)

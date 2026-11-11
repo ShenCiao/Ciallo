@@ -2,9 +2,7 @@ using Ciallo.Data;
 using Ciallo.GuiControl;
 using Ciallo.Rendering;
 using Ciallo.Widget;
-using Frent;
 using Godot;
-using R3;
 
 namespace Ciallo.Tool;
 
@@ -50,22 +48,13 @@ public class PaintStrokeHover : Interaction, IPropertyProvider
         modeButton.BindSelectionIndex(Tool.Mode);
         container.AddProperty("Mode", modeButton);
 
-        container.AddProperty("Global radius", BrushRadiusControls.CreateGlobalRadius(Document));
-
         // ---- Document brush library
         var brushPreview = StrokeBrushPreviewList.New(Document);
         brushPreview.CustomMinimumSize = new(0, 256);
         container.AddChild(brushPreview);
 
-        var selectionM = Document.Get<SelectionManager>();
-        var radius = selectionM.WorkingStrokeBrush
-            .Select(e => e.IsDyingOrDead ? null : e.Get<StrokeBrushSetting>().IndependentRadius)
-            .Flatten();
-        var radiusControl = BrushRadiusControls.CreateIndependentRadius(container, radius, Document);
-        radius.AddTo(radiusControl);
-        radiusControl.VisibleIf(selectionM.WorkingStrokeBrush, Entity.IsNotNull);
-        container.AddChild(radiusControl);
-
+        container.AddProperty("Radius", StrokeBrushToolControls.CreateRadius(Document));
+        container.AddProperty("Color", StrokeBrushToolControls.CreateColor(Document));
     }
 
     internal void RefreshSnapping() => RefreshSnap(LatestCursor.WorldPosition);

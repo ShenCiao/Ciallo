@@ -17,7 +17,7 @@ public class StrokeBrushSetting
 {
     [DataMember, ProjectField] public ReactiveProperty<string> Name = new("");
     [DataMember, ProjectField] public ObservableList<BrushLabel> Labels = [];
-    [DataMember, ProjectField] public ReactiveProperty<Color?> Color = new(); // Optional RGB+Flow override.
+    [DataMember, ProjectField] public ReactiveProperty<Color> Color = new(Colors.Black); // RGB + base Flow.
     [DataMember, ProjectField] public ReactiveProperty<BrushFlags> ActiveBrushFlags = new();
     [DataMember, ProjectField] public ReactiveProperty<BlendMode> BlendMode = new();
     // Keep the stored key shared by document files and the brush library.
@@ -25,7 +25,7 @@ public class StrokeBrushSetting
     public ReactiveProperty<float?> IndependentRadius = new();
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2RadiusCurve = new(BezierCurveFactory.Linear(0.2f, 1.0f)); // radius = baseRadius * curve(pressure)
     [DataMember, ProjectField] public ReactiveProperty<BrushRenderingType> RenderingType = new(BrushRenderingType.Stamp);
-    [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2FlowCurve = new(BezierCurveFactory.Constant(1.0f)); // finalFlow = curve(pressure) * Color.a
+    [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2FlowCurve = new(BezierCurveFactory.Constant(1.0f)); // Modulates the resolved base Flow.
 
     // Vanilla
     [DataMember, ProjectField] public ReactiveProperty<float> DashLength = new(2.0f);
@@ -57,20 +57,8 @@ public class StrokeBrushSetting
 
         container.AddChild(BrushRadiusControls.CreateIndependentRadius(container, IndependentRadius, document));
 
-        var colorPickerButton = new NullableColorPickerButton()
-        {
-            CustomMinimumSize = new(0, 32),
-        };
-        var picker = colorPickerButton.GetPicker();
-        picker.ColorMode = ColorPicker.ColorModeType.Rgb;
-        if (document.IsNull)
-        {
-            colorPickerButton.BindColor(Color);
-            DocumentColorControls.BindSwatches(colorPickerButton);
-        }
-        else DocumentColorControls.BindOverride(colorPickerButton, document,
-            document.Get<SelectionManager>().WorkingStrokeBrush, e => e.Get<StrokeBrushSetting>().Color);
-        container.AddProperty("Stroke color override", colorPickerButton);
+        container.AddChild(DocumentColorControls.CreateIndependentChannels(container, Color, ActiveBrushFlags,
+            BrushFlags.UseShapeRgb, BrushFlags.UseShapeAlpha, "Independent flow", document));
 
         var blendModeButton = new OptionButton().BindEnum(BlendMode);
         container.AddProperty("Blend mode", blendModeButton);
@@ -193,6 +181,18 @@ public class StrokeBrushSetting
         return setting;
     }
 
+    public static StrokeBrushSetting CreateDefault(string name = "") => new()
+    {
+        Name = { Value = name },
+        ActiveBrushFlags = { Value = BrushFlags.UseShapeRgb },
+    };
+
+    public Color ResolveColor(Color shapeColor) => new(
+        ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeRgb) ? shapeColor : Color.Value)
+    {
+        A = ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeAlpha) ? shapeColor.A : Color.Value.A,
+    };
+
     public Func<float, float> ToRadiusSampler(float globalRadius)
     {
         var baseRadius = IndependentRadius.Value ?? globalRadius;
@@ -219,6 +219,8 @@ public enum BrushFlags
     Pressure2Flow = 1 << 0,
     Dash = 1 << 1,
     Pressure2Radius = 1 << 2,
+    UseShapeRgb = 1 << 3,
+    UseShapeAlpha = 1 << 4,
 }
 
 [Flags]

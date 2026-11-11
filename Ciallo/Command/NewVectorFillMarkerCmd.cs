@@ -105,11 +105,14 @@ public class NewVectorFillMarkerCmd : NewShapeCmdBase
             .AddTo(targetE);
         // Dot hints at the polygon's fill color.
         setting.BrushE
-            .Select(e => e.IsNull
-                ? Observable.Return<Color?>(Colors.Black)
-                : e.Get<FillBrushSetting>().FillColor.AsObservable())
+            .Select(e =>
+            {
+                if (e.IsNull) return Observable.Return(Colors.Black);
+                var brush = e.Get<FillBrushSetting>();
+                return brush.FillColor.CombineLatest(brush.ActiveBrushFlags, shapeColor,
+                    (_, _, color) => brush.ResolveColor(color));
+            })
             .Switch()
-            .CombineLatest(shapeColor, (overriding, color) => overriding ?? color)
             .Subscribe(c => marker.ColorDot.Color = c)
             .AddTo(targetE);
 

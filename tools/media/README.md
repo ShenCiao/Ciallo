@@ -1,8 +1,9 @@
 # Media tools
 
 Reusable media helpers and Ciallo capture workflows, executed through Fennara
-0.4.3 `runtime_script`. Currently supports Windows desktop screenshots and box
-annotations; `settings_pen_pressure.gd` is the first concrete capture workflow.
+0.4.3 `runtime_script`. Supports Windows desktop screenshots, box annotations,
+image sequences, and animated WebP export. `settings_pen_pressure.gd` captures
+the Settings menu entry.
 Requires a connected Ciallo editor and a visible desktop. These scripts are tool
 infrastructure, not application scripts or autoloads.
 
@@ -50,5 +51,34 @@ The capture helper accounts for a difference between requested region size and
 returned pixel dimensions, but mixed-DPI displays have not been validated.
 
 Annotations are applied to a copy of the captured image. They do not alter the UI.
-System cursor pixels are not added. This tool currently produces static PNGs;
-continuous recording and animated WebP export are not part of this worker.
+System cursor pixels are not captured. The sequence helper can add a coral pointer
+marker at supplied desktop coordinates after capture.
+
+## Animated WebP
+
+Stage with `prepare.ps1`, then load `image_sequence.gd` using
+`ResourceLoader.CACHE_MODE_IGNORE`. After each real UI change and render wait, call
+`save_frame(region, directory, index, highlights, pointer)`; the last two arguments
+are optional. Coordinates use desktop pixels, as in `desktop_capture.gd`.
+Use a fresh sequence directory and zero-based consecutive indices. Repeated
+unchanged frames provide pauses at the beginning and end.
+
+Encode with FFmpeg (requires the `libwebp_anim` encoder):
+
+```powershell
+./tools/media/encode-webp.ps1 -Frames .ciallo/media/output/example-frames -Output .ciallo/media/output/example.webp -FrameRate 15 -Ffmpeg C:/ffmpeg/bin/ffmpeg.exe
+```
+
+The output loops, uses lossless compression, and refuses to overwrite an existing
+file. The frame rate controls playback timing; this is a sequence of rendered
+states, not a real-time performance recording. Keep web assets in the site's
+public directory so its image pipeline preserves animation. Inspect the encoded
+animation, its first and last frames, and the page at its actual display size.
+
+Native dialog dragging requires events addressed to that window's `window_id`.
+Warp its mouse position along with each `InputEventMouseMotion` so Godot's native
+hit testing and drag/drop share the same coordinates. Set the held button mask,
+release it at the target, and verify the resulting list change. `push_input()`
+alone does not update all native-window mouse state. Allow a render wait after
+raising the main window before opening its transient dialog; never pin a transient
+dialog itself.

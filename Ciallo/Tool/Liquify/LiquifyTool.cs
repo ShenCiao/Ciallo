@@ -32,6 +32,9 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
     [DataMember]
     public readonly ReactiveProperty<bool> ShowSelectionWireframe = new(true);
 
+    [DataMember]
+    public readonly ReactiveProperty<bool> SyncPressureToThickness = new(true);
+
     internal ReactiveProperty<float> StrengthFor(LiquifyMode mode) => mode switch
     {
         LiquifyMode.Radial => RadialStrength,
@@ -115,6 +118,14 @@ public class LiquifyTool : InteractionScope, IPropertyProvider, ILayerDependent
         DrawAdjustment(container, LiquifyMode.Radial, "Pinch (−)", "Expand (+)");
         DrawAdjustment(container, LiquifyMode.Thickness, "Thin (−)", "Thicken (+)");
         DrawAdjustment(container, LiquifyMode.Pressure, "Decrease pressure (−)", "Increase pressure (+)");
+
+        var pressureBox = container.CreateBox().AddToChildOf(container);
+        pressureBox.VisibleIf(Mode, LiquifyMode.Pressure);
+        new CheckBox
+        {
+            Text = "Adjust thickness too",
+            TooltipText = "[Pressure Thickness Coupling Hint]",
+        }.BindBool(SyncPressureToThickness).AddToChildOf(pressureBox);
 
         container.AddChild(new Label
         {

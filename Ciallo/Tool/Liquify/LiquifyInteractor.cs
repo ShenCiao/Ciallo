@@ -23,6 +23,7 @@ public class LiquifyInteractor : CapturingInteraction
     private float[][] _currRadii;
     private float[][] _origPressures;
     private float[][] _currPressures;
+    private Vector2[][] _radiusResponses;
     private LiquifyMode _mode;
     private Rect2[] _aabbs;
     private bool[] _dirty;
@@ -37,8 +38,10 @@ public class LiquifyInteractor : CapturingInteraction
         _currRadii = new float[_processingEs.Length][];
         _origPressures = new float[_processingEs.Length][];
         _currPressures = new float[_processingEs.Length][];
+        _radiusResponses = new Vector2[_processingEs.Length][];
         _aabbs = new Rect2[_processingEs.Length];
         _dirty = new bool[_processingEs.Length];
+        bool syncThickness = _mode == LiquifyMode.Pressure && Tool.SyncPressureToThickness.Value;
 
         for (int i = 0; i < _processingEs.Length; i++)
         {
@@ -54,6 +57,14 @@ public class LiquifyInteractor : CapturingInteraction
                 _currRadii[i] = [.. radii];
                 _origPressures[i] = [.. geom.Pressures.Value];
                 _currPressures[i] = [.. geom.Pressures.Value];
+
+                var brush = _processingEs[i].Get<StrokeSetting>().Brush.Value;
+                if (syncThickness && !brush.IsNull)
+                {
+                    var setting = brush.Get<StrokeBrushSetting>();
+                    if (setting.ActiveBrushFlags.Value.HasFlag(BrushFlags.Pressure2Radius))
+                        _radiusResponses[i] = setting.Pressure2RadiusCurve.Value.TessellateWithCache().polyline;
+                }
             }
             else
             {
@@ -85,7 +96,9 @@ public class LiquifyInteractor : CapturingInteraction
             if (_mode == LiquifyMode.Thickness)
                 cmd.SetSampledPolyline(radii: _currRadii[i].ToImmutableArray());
             else if (_mode == LiquifyMode.Pressure)
-                cmd.SetSampledPolyline(pressures: _currPressures[i].ToImmutableArray());
+                cmd.SetSampledPolyline(
+                    radii: _radiusResponses[i] != null ? _currRadii[i].ToImmutableArray() : null,
+                    pressures: _currPressures[i].ToImmutableArray());
             else
                 cmd.SetSampledPolyline(_currPolylines[i].ToImmutableArray());
         }
@@ -126,6 +139,7 @@ public class LiquifyInteractor : CapturingInteraction
                 var points = _currPolylines[i];
                 var values = _mode == LiquifyMode.Thickness ? _currRadii[i] : _currPressures[i];
                 bool changed = false;
+
                 for (int j = 0; j < points.Length; j++)
                 {
                     var oldValue = values[j];
@@ -136,6 +150,14 @@ public class LiquifyInteractor : CapturingInteraction
                         continue;
 
                     values[j] = newValue;
+
+                    if (_radiusResponses[i] is { } response)
+                    {
+                        // Anchor to the start of this gesture so repeated dabs do not compound rounding drift.
+                        _currRadii[i][j] = LiquifySculpt.ApplyPressureToThickness(
+                            _origRadii[i][j], _origPressures[i][j], newValue, response);
+                    }
+
                     changed = true;
                 }
 
@@ -192,6 +214,7 @@ public class LiquifyInteractor : CapturingInteraction
         _currRadii = null;
         _origPressures = null;
         _currPressures = null;
+        _radiusResponses = null;
         _aabbs = null;
         _dirty = null;
     }

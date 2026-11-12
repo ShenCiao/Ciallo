@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Ciallo.Geometry;
 using Godot;
 
 namespace Ciallo.Tool;
@@ -32,6 +34,9 @@ public static class LiquifySculpt
     private const float ScalarEffectScale = 1f / 10f;
     // A positive base lets recorded zero pressure rise without a discontinuous seed.
     private const float PressureBase = 0.01f;
+    // Match the radius curve editor's minimum response. Built-in curves can reach zero;
+    // keeping their relative response positive lets pressure leave zero without division by zero.
+    private const float MinimumRadiusResponse = 0.01f;
 
     // This is intentionally endpoint-dab sculpting, not true segment integration.
     // Delta.Length() scales non-push effects to approximate path-length invariance,
@@ -71,6 +76,14 @@ public static class LiquifySculpt
 
         float factor = Mathf.Exp(logScale);
         return Mathf.Clamp((pressure + PressureBase) * factor - PressureBase, 0f, 1f);
+    }
+
+    public static float ApplyPressureToThickness(float radius, float pressure, float newPressure,
+        IReadOnlyList<Vector2> pressureToRadiusCurve)
+    {
+        float oldResponse = Mathf.Max(MinimumRadiusResponse, pressureToRadiusCurve.SampleX(pressure));
+        float newResponse = Mathf.Max(MinimumRadiusResponse, pressureToRadiusCurve.SampleX(newPressure));
+        return radius * (newResponse / oldResponse);
     }
 
     public static float Influence(Vector2 position, LiquifyDab dab)

@@ -41,6 +41,8 @@ public class NewFilledPolygonCmd : NewShapeCmdBase
         // View
         var polygonView = new PolygonFillView();
         targetE.AddNode(polygonView);
+        targetE.Get<ShapeSetting>().Color.Subscribe(color =>
+            polygonView.SetInstanceShaderParameter("ShapeColor", color)).AddTo(targetE);
         setting.BrushE.Subscribe(brushE =>
         {
             polygonView.Material = brushE.IsNull

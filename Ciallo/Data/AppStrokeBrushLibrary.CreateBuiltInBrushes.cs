@@ -13,8 +13,8 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Default brush".Tr() },
             RenderingType = { Value = BrushRenderingType.Vanilla },
-            ActiveBrushFlags = { },
-            Pressure2RadiusCurve = { Value = BezierCurveFactory.GPenCurve(0.8f, 1.0f) },
+            ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
+            Pressure2RadiusCurve = { Value = BezierCurveFactory.Linear() },
             Labels = { BrushLabel.BuiltIn },
         });
 
@@ -35,7 +35,6 @@ public static partial class AppStrokeBrushLibrary
             Name = { Value = "Pencil".Tr() },
             RenderingType = { Value = BrushRenderingType.Stamp },
             Labels = { BrushLabel.BuiltIn },
-            Color = { Value = Colors.Black },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
             ActiveStampFlags = { Value = StampFlags.StampTexture | StampFlags.MaskTexture | StampFlags.RotationNoise },
             StampTexture = { Value = ImageTexture.CreateFromImage(images[0]) },
@@ -79,7 +78,7 @@ public static partial class AppStrokeBrushLibrary
         {
             Name = { Value = "Eraser".Tr() },
             RenderingType = { Value = BrushRenderingType.Vanilla },
-            BaseRadius = { Value = 12f },
+            IndependentRadius = { Value = 12f },
             BlendMode = { Value = BlendMode.Erase },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Radius },
             Pressure2RadiusCurve = { Value = BezierCurveFactory.EaseInOut(0.8f, 1.0f) },
@@ -89,10 +88,10 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Soft eraser".Tr() },
-            RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
-            Labels = { BrushLabel.BuiltIn },
             Color = { Value = new(0, 0, 0, 0.4f) },
+            RenderingType = { Value = BrushRenderingType.Airbrush },
+            IndependentRadius = { Value = 12f },
+            Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             BlendMode = { Value = BlendMode.Erase },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
@@ -105,10 +104,9 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Soft airbrush".Tr() },
-            RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
-            Labels = { BrushLabel.BuiltIn },
             Color = { Value = new(0, 0, 0, 0.4f) },
+            RenderingType = { Value = BrushRenderingType.Airbrush },
+            Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
             FalloffCurve = new([
@@ -120,10 +118,9 @@ public static partial class AppStrokeBrushLibrary
         brushes.Add(new()
         {
             Name = { Value = "Hard airbrush".Tr() },
-            RenderingType = { Value = BrushRenderingType.Airbrush },
-            BaseRadius = { Value = 12f },
-            Labels = { BrushLabel.BuiltIn },
             Color = { Value = new(0, 0, 0, 0.9f) },
+            RenderingType = { Value = BrushRenderingType.Airbrush },
+            Labels = { BrushLabel.BuiltIn },
             ActiveBrushFlags = { Value = BrushFlags.Pressure2Flow | BrushFlags.Pressure2Radius },
             Pressure2FlowCurve = new(BezierCurveFactory.EaseInOut()),
             FalloffCurve = new([
@@ -143,6 +140,7 @@ public static partial class AppStrokeBrushLibrary
             RotationNoiseAmplitude = { Value = Mathf.Pi },
         });
 
+        foreach (var brush in brushes) brush.ActiveBrushFlags.Value |= BrushFlags.UseShapeRgb;
         return brushes;
     }
 }

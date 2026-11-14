@@ -31,7 +31,8 @@ public static class ResearchAnimationImporter
 
         var transform = CalculateFitTransform(allSamples, document.Get<DocumentSetting>().ReferenceSize.Value);
         var maxPressure = allSamples.Max(sample => sample.Pressure);
-        var radiusSampler = ResolveRadiusSampler(brushE);
+        var radiusSampler = brushE.Get<StrokeBrushSetting>()
+            .ToRadiusSampler(document.Get<BrushManager>().CurrentStrokeRadius.Value);
 
         var celFolder = document.World.Create();
         var firstFrame = frames[0];
@@ -154,14 +155,6 @@ public static class ResearchAnimationImporter
         return new((min + max) * 0.5f, scale * FitScale);
     }
 
-    private static Func<float, float> ResolveRadiusSampler(Entity brushE)
-    {
-        if (brushE.TryGet<StrokeBrushSetting>() is { } setting)
-            return setting.ToRadiusSampler();
-
-        return _ => 1.0f;
-    }
-
     private static void AddFrame(
         CommandBuilder cmd,
         Entity cel,
@@ -206,6 +199,7 @@ public static class ResearchAnimationImporter
             .NewStroke()
             .AddToLayerTree(cel)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, brushE)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, cel.Document.Get<ColorManager>().CurrentColor.Value)
             .SetSampledPolyline(positions, radii, pressures, tilts);
     }
 

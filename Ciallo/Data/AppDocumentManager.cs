@@ -44,6 +44,7 @@ public static partial class AppDocumentManager
         document.Get<SelectionManager>().InitWorkingCelFolder(root);
         document.Add(new CommandManager());
         document.Add(new BrushManager());
+        document.Add(new ColorManager());
 
         WorldToDocument.Add(world, document);
 
@@ -72,27 +73,12 @@ public static partial class AppDocumentManager
             .SelectLayers(recordCelSelectionPreference: true);
 
         // Fill brush
-        (string Name, Color Color)[] fills =
-        [
-            ("Black", Colors.Black),
-            ("White", Colors.White),
-            ("Gray", new Color(0.5f, 0.5f, 0.5f)),
-        ];
-        for (int i = 0; i < fills.Length; i++)
-        {
-            string path = $"res://Rendering/Image/Bullseye{i}_0.svg";
-            var img = GD.Load<Image>(path);
-            var tex = ImageTexture.CreateFromImage(img);
-            var brush = document.World.Create();
-            cmd.SetTarget(brush)
-                .NewVectorFillBrush()
-                .SetProperty(e => e.Get<FillBrushSetting>().Name, fills[i].Name.Tr())
-                .SetProperty(e => e.Get<FillBrushSetting>().MarkerTexture, tex)
-                .SetProperty(e => e.Get<FillBrushSetting>().MarkerColor, i == 0 ? Colors.White : Colors.Black)
-                .SetProperty(e => e.Get<FillBrushSetting>().FillColor, fills[i].Color);
-            if (i == 0)
-                cmd.SetProperty(e => e.Document.Get<SelectionManager>().WorkingVectorFillBrush, brush);
-        }
+        var fillBrush = document.World.Create();
+        cmd.SetTarget(fillBrush)
+            .NewVectorFillBrush()
+            .SetProperty(e => e.Get<FillBrushSetting>().Name, "Default brush".Tr())
+            .SetProperty(e => e.Get<FillBrushSetting>().MarkerColor, Colors.White)
+            .SetProperty(e => e.Document.Get<SelectionManager>().WorkingVectorFillBrush, fillBrush);
 
         // Stroke brush
         // Guard when users delete all built-in brushes for whatever reason.

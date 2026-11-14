@@ -48,7 +48,7 @@ public partial class VectorFillMarkerView : Node2D
         ColorDot.Visible = false;
     }
 
-    public static void ApplyBrush(PolygonFillView polygon, VectorFillMarkerView marker, Entity brushE)
+    public static void ApplyBrush(PolygonFillView polygon, VectorFillMarkerView marker, Entity brushE, Color color)
     {
         if (brushE.IsNull)
         {
@@ -58,9 +58,10 @@ public partial class VectorFillMarkerView : Node2D
 
         var setting = brushE.Get<FillBrushSetting>();
         polygon.Material = brushE.Get<FillBrushMaterial>();
+        polygon.SetInstanceShaderParameter("ShapeColor", color);
         marker.Sprite.Texture = setting.MarkerTexture.Value ?? ImageTexture.Dummy;
         marker.Sprite.Modulate = setting.MarkerColor.Value;
-        marker.ColorDot.Color = setting.FillColor.Value;
+        marker.ColorDot.Color = setting.ResolveColor(color);
     }
 
     public static void ApplyMissingBrush(PolygonFillView polygon, VectorFillMarkerView marker)

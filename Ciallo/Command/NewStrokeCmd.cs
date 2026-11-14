@@ -43,6 +43,8 @@ public class NewStrokeCmd : NewShapeCmdBase
             Material = AutoloadRendering.MissingStrokeBrushMaterial,
         };
         targetE.AddNode(strokeView);
+        targetE.Get<ShapeSetting>().Color.Subscribe(color =>
+            strokeView.SetInstanceShaderParameter("ShapeColor", color)).AddTo(targetE);
 
         strokeSetting.Brush.Subscribe(brushE =>
         {

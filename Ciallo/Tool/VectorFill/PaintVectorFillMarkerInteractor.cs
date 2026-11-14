@@ -15,6 +15,7 @@ public class PaintVectorFillMarkerInteractor : CapturingInteraction
     private VectorFillMarkerView _markerPreview;
     private PolygonFillView _fillPreview;
     private Entity _fillBrush;
+    private Color _color;
 
     private float MarkerRadius => Tool.MarkerRadius.Value;
 
@@ -23,6 +24,7 @@ public class PaintVectorFillMarkerInteractor : CapturingInteraction
         Input.MouseMode = Input.MouseModeEnum.Hidden;
 
         _fillBrush = Document.Get<SelectionManager>().WorkingVectorFillBrush.Value;
+        _color = Document.Get<ColorManager>().CurrentColor.Value;
 
         // To preview marker
         _markerPreview = new();
@@ -30,7 +32,7 @@ public class PaintVectorFillMarkerInteractor : CapturingInteraction
         _markerPreview.SetGeometry([data.WorldPosition], [MarkerRadius]);
         var arr = PrimaryLayer.Get<ArrangementManager>().ArrReady.CurrentValue;
         _fillPreview = new();
-        VectorFillMarkerView.ApplyBrush(_fillPreview, _markerPreview, _fillBrush);
+        VectorFillMarkerView.ApplyBrush(_fillPreview, _markerPreview, _fillBrush, _color);
         PrimaryLayer.Get<ShapeLayerView>().AddChild(_fillPreview);
         if (arr != null)
         {
@@ -55,6 +57,7 @@ public class PaintVectorFillMarkerInteractor : CapturingInteraction
             .AddToLayerTree(PrimaryLayer)
             .SetSampledPolyline([data.WorldPosition], [MarkerRadius], [1.0f], [Vector2.Zero])
             .SetProperty(e => e.Get<VectorFillMarkerSetting>().BrushE, _fillBrush)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, _color)
             .Commit();
 
         Clear();

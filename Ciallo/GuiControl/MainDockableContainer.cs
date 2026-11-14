@@ -10,6 +10,7 @@ public partial class MainDockableContainer : DockableContainer
     public const string ToolPanelName = "ToolPanel";
     public const string ToolPropertyPanelName = "ToolPropertyPanel";
     public const string LayerPanelName = "LayerPanel";
+    public const string ColorPanelName = "ColorPanel";
     public const string TimelinePanelName = "TimelinePanel";
 
     private const string UserLayoutPath = "user://DockableLayout.tres";
@@ -87,6 +88,11 @@ public partial class MainDockableContainer : DockableContainer
             SetLayout(_defaultLayout.Clone());
             return;
         }
+
+        // Existing saved layouts gain the new color tab beside their Layers panel.
+        if (layout.GetLeafForNode(GetNode<Control>(ColorPanelName)) == null
+            && layout.GetLeafForNode(GetNode<Control>(LayerPanelName)) is { } layerTabs)
+            layerTabs.PushName(ColorPanelName);
 
         if (!IsLayoutValid(layout))
         {

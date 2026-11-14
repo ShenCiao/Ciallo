@@ -44,6 +44,7 @@ public abstract class NewShapeCmdBase : CommandBase
 
     public void CreateDataOnly(Entity targetE)
     {
+        targetE.Add(CopyE.IsNull ? new ShapeSetting() : CopyE.Get<ShapeSetting>().Clone());
         AddDataComponents(targetE);
     }
 

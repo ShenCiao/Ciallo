@@ -55,6 +55,8 @@ public class PolygonBooleanActionsTests
         var bottom = AddPolygon(Rectangle(0, 0, 10, 10), _brush);
         var untouched = AddPolygon(Rectangle(30, 0, 40, 10), _otherBrush);
         var cutter = AddPolygon(Rectangle(4, -1, 6, 11), _otherBrush);
+        bottom.Get<ShapeSetting>().Color.Value = Colors.Orange;
+        cutter.Get<ShapeSetting>().Color.Value = Colors.Blue;
         var selection = _document.Get<SelectionManager>().SelectedShapes;
         // Opposite to stacking order: operand direction must not depend on click order.
         selection.AddRange([cutter, bottom]);
@@ -62,6 +64,7 @@ public class PolygonBooleanActionsTests
         AssertThat(PolygonBooleanActions.ApplySelection(_document, Operation.Difference)).IsTrue();
         var split = selection.ToArray();
         AssertThat(split.Length).IsEqual(2);
+        AssertThat(split.All(shape => shape.Get<ShapeSetting>().Color.Value == Colors.Orange)).IsTrue();
         CheckRenderedArea([.. split.Select(Positions)], 80);
         AssertThat(split.All(shape => shape.Get<FilledPolygonSetting>().BrushE.Value == _brush)).IsTrue();
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(split[0], split[1], untouched);
@@ -124,21 +127,26 @@ public class PolygonBooleanActionsTests
         var left = AddPolygon(Rectangle(0, 0, 10, 10), _brush);
         var other = AddPolygon(Rectangle(0, 0, 15, 10), _otherBrush);
         var right = AddPolygon(Rectangle(5, 0, 15, 10), _brush);
+        left.Get<ShapeSetting>().Color.Value = Colors.Red;
+        right.Get<ShapeSetting>().Color.Value = Colors.Blue;
         var history = _document.Get<CommandManager>();
         var selection = _document.Get<SelectionManager>().SelectedShapes;
-        PolygonBooleanActions.Paint(_layer, _brush, Rectangle(7, -1, 8, 11), Operation.Xor);
+        PolygonBooleanActions.Paint(_layer, _brush, Colors.Green, Rectangle(7, -1, 8, 11), Operation.Xor);
         var results = _layer.Get<LayerTreeNode>().Children.Where(shape => shape != other).ToArray();
         CheckRenderedArea([.. results.Select(Positions)], 142);
         AssertThat(results.Length).IsEqual(4);
+        AssertThat(results.All(shape => shape.Get<ShapeSetting>().Color.Value == Colors.Green)).IsTrue();
         AssertThat(selection.Count).IsEqual(0);
         AssertThat(_layer.Get<LayerTreeNode>().Children.Last()).IsEqual(other);
         AssertThat(results.All(shape => shape.Get<FilledPolygonSetting>().BrushE.Value == _brush)).IsTrue();
         history.Undo();
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(left, other, right);
+        AssertThat(left.Get<ShapeSetting>().Color.Value).IsEqual(Colors.Red);
+        AssertThat(right.Get<ShapeSetting>().Color.Value).IsEqual(Colors.Blue);
 
         // An explicit polygon selection restricts the gesture, without changing an unselected sibling.
         selection.Add(right);
-        PolygonBooleanActions.Paint(_layer, _brush, Rectangle(6, -1, 9, 11), Operation.Difference);
+        PolygonBooleanActions.Paint(_layer, _brush, Colors.Black, Rectangle(6, -1, 9, 11), Operation.Difference);
         AssertThat(selection.Count).IsEqual(2);
         CheckRenderedArea([.. selection.Select(Positions)], 70);
         AssertThat(_layer.Get<LayerTreeNode>().Children.Take(2).ToArray()).ContainsExactly(left, other);

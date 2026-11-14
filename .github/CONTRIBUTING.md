@@ -1,205 +1,122 @@
-# Roadmap
-
 # Ciallo Contributing Guide
-
-## Introduction
-
-This guide is not yet complete.
-The current version is a note for AI to read, but it aims to be a comprehensive guide for humans interested in developing Ciallo.
-
-After getting a basic idea on Ciallo's code architecture here, you can check AI wiki [deepwiki](https://deepwiki.com/ShenCiao/Ciallo) to get in-depth details on how each system is implemented.
 
 ## Basic setup
 
 ### How to build
 
 Use the .NET 10 SDK and Git with LFS already configured. The custom editor supports
-Windows/Linux x86_64 and macOS arm64. Run these commands in **Git Bash on Windows** or in a terminal on macOS/Linux:
+Windows/Linux x86_64 and macOS arm64. Run these commands in **standalone Git Bash on Windows** or in a terminal on macOS/Linux.
+Clone the `dev` branch; use your fork's URL if contributing through a fork:
 
 ```sh
-git clone --recurse-submodules <Ciallo-repository-url> Ciallo
+git clone --branch dev --recurse-submodules https://github.com/ShenCiao/Ciallo.git Ciallo
 cd Ciallo
 ./engine.sh setup
 dotnet build Ciallo/Ciallo.csproj
 ```
 
-Setup installs gdvm and uses it to download the C# editor selected by `Ciallo/global.json`, installs Git
-hooks, restores the locked Fennara addon and local runtime, and generates an `Open Ciallo`
-shortcut. Open that shortcut to run the project. Hooks prepare the required dependencies
-after branch changes and pulls. Fennara installation, upgrades, and MCP connection setup
-are documented in [Engine setup](../docs/engine-setup.md#fennara).
+Setup installs the required editor and dependencies and creates an `Open Ciallo` shortcut.
+Open that shortcut (or run `./engine.sh open`) to launch the editor, then press **F5** to run Ciallo.
 
 Enable the "Embedded game size stretches..." option in the game run window.
 
-![](/.github/EnableStretch.png)
+![Enable stretching in the embedded game window](EnableStretch.png)
 
-For local engine builds and cache management, see [Engine setup](../docs/engine-setup.md).
-FFmpeg is optional.
-Run `./engine.sh ffmpeg` when using PNG export or running its integration tests.
-See [Bundled FFmpeg](../Ciallo/ExternalData/ffmpeg/README.md) for setup and packaging details.
+FFmpeg is optional for development. Run `./engine.sh ffmpeg` when using PNG export or running its integration tests.
+See [Bundled FFmpeg](../Ciallo/ExternalData/ffmpeg/README.md) for details.
+
+For setup issues, local engine builds, or Fennara configuration, see [Engine setup](../docs/engine-setup.md).
 
 ### How to export locally
 
-Download and install matching export templates when needed, then use the presets in `Ciallo/export_presets.cfg`:
+See [Local exports](../docs/releases.md#local-exports) to build an application package.
 
-```sh
-./engine.sh sync --templates
-./engine.sh ffmpeg
-```
+## Making a contribution
 
-Official Windows, Linux, and macOS packages are built by CI. Signing and notarization are only configured there, so local exports are development builds.
+Ciallo uses `dev` for daily integration and `main` for formal releases.
+
+1. Create a feature branch from `dev` using `<your-name>/<feature-topic>`, for example `alice/brush-preview`.
+2. Try the changed behavior in Ciallo and run the relevant [tests](#testing).
+3. Open a PR targeting `dev`. Describe what changed and how you checked it.
+
+Urgent fixes to the latest stable release follow the [hotfix procedure](../docs/releases.md#hotfix-releases).
 
 ## Code architecture and third-party libraries
 
-Designing professional-level software architectures often takes decades of experience, so my implementations may seem noob trying hard.
 Please contact me if you have suggestions for improvement.
 
 ### Godot 2D
 
 Ciallo uses many Godot 2D features, especially GUI control nodes.
-So every piece of experience you have in 2D game development is helpful, and skills you learn from Ciallo can also be applied to your future game development.
+Experience with 2D game development is helpful, and skills you learn from Ciallo can also be applied to your future game development.
 
-You can find all the ui scenes and custom gui nodes in the `GuiControl` or `Widget` folders.
+You can find UI scenes and custom GUI nodes in the `Ciallo/GuiControl` or `Ciallo/Widget` folders.
 
 ### Component pattern and Frent library
 
-Ciallo heavily uses the [frent](https://github.com/itsBuggingMe/Frent) library for realizing component pattern in almost every piece of code.
-Make sure you understand the component pattern theory [(tutorial)](https://gameprogrammingpatterns.com/component.html),
-and the first page of the frent library [documentation](https://itsbuggingme.github.io/Frent/docs/ecf.html).
+Ciallo heavily uses the [Frent](https://github.com/itsBuggingMe/Frent) library to implement the component pattern.
+The [component pattern tutorial](https://gameprogrammingpatterns.com/component.html)
+and the first page of the [Frent documentation](https://itsbuggingme.github.io/Frent/docs/ecf.html) are useful starting points.
 
-I assume you already know about Entity and Component. In Ciallo, for those editable objects like strokes, layers, we create an entity for each object and add necessary components to the entity.
-e.g. add `PolylineGeometry` compoent and `StrokeSetting` compoent to a stroke entity, `PolylineLayerSetting` component to a Polyline layer entity. You can find examples in `Ciallo/Command/New*Cmd.cs` files.
+For editable objects like strokes and layers, we create an entity for each object and add the necessary components.
+For example, a stroke has `SampledPolyline` and `StrokeSetting` components, and a shape layer has a `ShapeLayerSetting` component.
+See [NewStrokeCmd](../Ciallo/Command/NewStrokeCmd.cs) and [NewShapeLayerCmd](../Ciallo/Command/NewShapeLayerCmd.cs).
 
 Also see the `AppDocumentManager` class. Each user document is stored and managed by a `World` object.
-Each `World` object creates an entity that stores "document-level singletons" data.
-e.g. `DocumentSetting` for canvas settings, `LayerTreeNode` for layer node, `CommandManager` for undo redo stack, etc.
+Each `World` has an entity that stores "document-level singletons":
+`DocumentSetting` for canvas settings, `LayerTreeNode` for the layer tree root, and `CommandManager` for the undo/redo stack.
 
-These data should be one per document, so I call them "document-level singletons" and name the entity as `Document`.
-You can find code like `Document.Get<LayerTreeNode>()` to visit the document's layer tree root.
+These should exist once per document, so I call them "document-level singletons" and name the entity `Document`.
+You can find code like `Document.Get<LayerTreeNode>()` to access the document's layer tree root.
 
 <details>
-<summary>Why using an ECS library?</summary>
+<summary>Why use an ECS library?</summary>
 
-When I developed my research project, I found Inkscape and Krita both use an integer id value to manage editable objects.
-So to imitate them, I tried to find a 3rd party library can do the two things:
+We need a library that can do two things:
 
 - Generate unique ids.
-- Manage objects lifecycle with these id values.
+- Manage object lifetimes through those ids.
 
-An ECS library is a very nice fit after ignoring the "s" part (cache-friendly system coding).
-In fact, if you search C# libraries supporting component pattern, those ECS libraries value too much in cache-friendly performance, which is unnecessary to Ciallo.
-Frent is the only C# ECS library that values more about code architecture design rather than performance.
-
-I started using EnTT for my C++ project (undoubtedly overdesigned in that project).
-Later I have learned more about software architecture and realised probably I happened to make a nice choice.
-Check [this](https://youtu.be/wo84LFzx5nI?si=YPJa9tF5mult5ulA&t=3987) lecture OOP programming history which mentions Sketchpad.
-Ciallo as a descendant of Sketchpad may has the same sense of good code design.
+An ECS library fits these needs. Ciallo mainly uses Frent's entities and components to organize editable objects.
 
 </details>
 
 ### Two-way binding and R3 library
 
-Ciallo heavily uses [R3](https://github.com/Cysharp/R3) library's `ReactiveProperty` to replace traditional reflection and implement two-way binding between data and UI.
-You can find code like `colorButton.BindColor(ReactiveProperty<Color> color)` in UI code to intimate WPF's xaml binding behavior.
+Ciallo uses [R3](https://github.com/Cysharp/R3)'s `ReactiveProperty` to implement two-way binding between data and UI.
+For example, `colorButton.BindColor(color)` binds a `ReactiveProperty<Color>` to a color picker, similar to WPF's XAML binding.
+See [BindColorPicker](../Ciallo/GuiBinding/BindColorPicker.cs).
 
-R3's document is not written for beginners. I put a lot of effort only to take a very basic grasp. Luckily, you don't have to learn too much about R3/ReactiveProgramming to start.
-Just google for what is ReactiveProperty, two-way binding, or MVVM pattern.
-Then you understand most of the R3 usage in Ciallo.
-
-If you have to understand how I handle dragging mouse input with R3 (reactive programming) in the Layers panel, here is my learning path:
+You don't have to learn much reactive programming to start. Understanding `ReactiveProperty` and two-way binding covers most of the R3 usage in Ciallo.
 
 ### Data serialization and DuckDB
 
 Project data is stored in a DuckDB-backed `.ciallo` file.
 The mechanism is combined with the component system:
 
-- When an entity is tagged with `ToSerializeTag`, it will be persisted to `.ciallo` files, indexed by an id.
-- The document entity is always persisted as id `0`.
+- Entities tagged with `ToSerializeTag` are persisted. The document entity is always persisted as id `0`, even without the tag.
 - Component classes attributed with `[ToSerialize]` are mapped to DuckDB tables. Members marked with `[ProjectField]` are mapped to table columns.
-- Scalar values use DuckDB scalar types, and creative value types such as `Color`, `Vector2`, `Transform2D`, and Bezier data use DuckDB `STRUCT` columns. Structured and scalar arrays use DuckDB array columns, and entity maps use `MAP(INTEGER, INTEGER)`.
-- Binary media such as textures and images stays in `BLOB` columns.
-- An entity without `ToSerializeTag` but with `[ToSerialize]` components won't be persisted, including the entity itself and its components, unless it is the document entity.
 
+See `Ciallo/Data/ProjectFormat` for the storage implementation and [Document durability](../docs/document-durability.md) for recovery and cloud behavior.
 
-## Continuous integration
+For more detail on individual systems, see and ask the AI-generated [DeepWiki](https://deepwiki.com/ShenCiao/Ciallo).
 
-The **Ciallo Build** workflow runs when a pull request targeting `dev` or `main` is
-opened, reopened, or updated with new commits. It builds GitHub's PR merge ref,
-exports Windows, Linux, and macOS packages, and retains the Actions artifacts for
-two days. The macOS package is unsigned.
+## Testing
 
-New commits to the same PR cancel its older queued or running builds. Branch pushes,
-including PR merges, do not start this workflow. To build a branch without a PR,
-run **Ciallo Build** manually from the Actions page and select the branch.
+After building and opening the project in the editor once, run the regression suites from the repository root:
 
-## Release
-
-Ciallo uses `dev` for daily integration and `main` for formal releases.
-Create feature branches from `dev` using `<your-name>/<feature-topic>`, for example `alice/brush-preview`.
-
-Publishing is done by running a workflow from the Actions page.
-
-### Feature test builds
-
-Use a feature test build when a branch needs downloadable builds for testers before
-merging to `dev`. It produces short-lived GitHub Actions artifacts only — no GitHub
-Release, no Steam upload.
-
-Run the **Ciallo Feature Test** workflow from the Actions page and pick the branch in
-the "Run workflow" ref dropdown. The workflow locks that branch's current commit SHA,
-exports all three platforms, and retains the Actions artifacts for two days.
-
-### Development builds
-
-Run the **Ciallo Development Build** workflow from the Actions page. It locks the current
-tip of `origin/dev`, exports all three platforms, and sets the build live on Steam's
-**development** branch. Development builds do not create tags or GitHub Releases.
-
-### Final releases (managed by owner)
-
-Run the **Ciallo Publish Release** workflow from the Actions page. It locks the current
-tip of `origin/main`, exports and verifies all three platforms, then pauses for a required
-reviewer in the `production` environment. Approval creates the immutable
-`v<config/version>` tag on the verified commit and publishes the artifacts already built
-in that run.
-
-Final builds create normal GitHub Releases and are uploaded to Steam's **default** branch,
-but are NOT set live automatically — a project owner must promote the build by hand in
-Steamworks App Admin > Builds. A failed publish may reuse a tag only when it still points
-to the same verified commit. If the source changes, increase `config/version`; release
-tags are never moved.
-
-### Hotfix releases
-
-Hotfix releases aim to publish bug fix within 5-10min. 
-Use a hotfix when the latest stable release needs an urgent public fix. 
-Hotfixes are temporary prereleases under the already published stable version:
-
-```text
-v0.1.0
-v0.1.0-hotfix.1
-v0.1.0-hotfix.2
-v0.1.1
+```sh
+dotnet test Ciallo/Ciallo.csproj --no-build
 ```
 
-Hotfixes are allowed only for the latest stable GitHub Release.
+For selecting a suite or configuring the test editor, see [Testing](../docs/testing.md).
 
-Create hotfix branches from `main` using the `hotfix/` prefix:
+## Sharing builds
 
-```bash
-git checkout main
-git pull --ff-only
-git checkout -b hotfix/fix-export-crash
-```
+If you've modified Ciallo and want to share a runnable version with others, use GitHub Actions (CI) to build packages.
 
-Open a PR from `hotfix/fix-export-crash` to `main`.
-Hotfix PRs must be squash merged.
-After the PR is merged, the Ciallo Hotfix Release workflow automatically:
+1. Push your changes to a branch on GitHub and open a PR targeting `dev`; a draft PR is fine. This starts the build automatically.
+2. From the PR's **Checks** tab, open the **Ciallo Build** workflow run and wait for it to succeed.
+3. On the run's **Summary** page, download the package from **Artifacts** or send the pr to the people who will try your changes. Download it within two days, before it expires.
 
-- exports and verifies the merged `main` commit;
-- creates the next immutable `vX.Y.Z-hotfix.N` tag after the export succeeds;
-- publishes the tag as a GitHub Prerelease with exported Windows, Linux, and macOS artifacts;
-- creates a backport PR from `backport/hotfix-<PR>-to-dev` into `dev`.
-
-If the automatic cherry-pick to `dev` conflicts, the workflow fails and the fix must be backported manually.
-Do not manually bump `project.godot` for hotfixes; bump it for the next stable release.
+For official publishing, see the maintainer [Release guide](../docs/releases.md).

@@ -1,58 +1,13 @@
 [gd_scene format=3 uid="uid://bha8a61cr0rl5"]
 
-[ext_resource type="PackedScene" uid="uid://c7gswky107s26" path="res://GuiControl/StrokeBrushPreviewList.tscn" id="1_hhbqh"]
 [ext_resource type="Script" uid="uid://waf1n1copkwb" path="res://GuiControl/StrokeBrushEditor.cs" id="1_uakwg"]
-[ext_resource type="Script" uid="uid://c3mxvlh0hephd" path="res://Widget/PropertyContainer.cs" id="3_c6bu1"]
 
 [node name="StrokeBrushLibrary" type="AcceptDialog" unique_id=1348164898]
 auto_translate_mode = 1
 use_hdr_2d = true
 oversampling_override = 1.0
-title = "Stroke Brush Library"
+title = "Document brush settings"
 initial_position = 4
-size = Vector2i(720, 960)
-visible = true
+size = Vector2i(640, 760)
+min_size = Vector2i(520, 480)
 script = ExtResource("1_uakwg")
-
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=598424851]
-offset_left = 8.0
-offset_top = 8.0
-offset_right = 712.0
-offset_bottom = 911.0
-size_flags_vertical = 3
-theme_override_constants/margin_top = 5
-
-[node name="Splitter" type="HSplitContainer" parent="MarginContainer" unique_id=1038259579]
-layout_mode = 2
-split_offsets = PackedInt32Array(256)
-split_offset = 256
-
-[node name="BrushPreviewList" parent="MarginContainer/Splitter" unique_id=883336611 instance=ExtResource("1_hhbqh")]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 1
-
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/Splitter" unique_id=847969561]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/Splitter/VBoxContainer" unique_id=1535067533]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 4
-vertical_scroll_mode = 4
-
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer/Splitter/VBoxContainer/ScrollContainer" unique_id=1146998978]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 10
-
-[node name="PropertiesHolder" type="VBoxContainer" parent="MarginContainer/Splitter/VBoxContainer/ScrollContainer/MarginContainer" unique_id=452606093]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-script = ExtResource("3_c6bu1")
-metadata/_custom_type_script = "uid://c3mxvlh0hephd"

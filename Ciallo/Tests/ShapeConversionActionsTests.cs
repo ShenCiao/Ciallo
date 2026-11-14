@@ -28,7 +28,7 @@ public class ShapeConversionActionsTests
         _layer = AddLayer();
         _strokeBrush = _document.World.Create();
         _strokeBrush.Add(new StrokeBrushSetting());
-        _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 7f;
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = 7f;
         _strokeBrush.Get<StrokeBrushSetting>().ActiveBrushFlags.Value = BrushFlags.Pressure2Radius;
         _fillBrush = _document.World.Create();
         _fillBrush.Add(new FillBrushSetting());
@@ -47,9 +47,12 @@ public class ShapeConversionActionsTests
         await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
     }
 
-    [TestCase]
-    public void HoledPolygonsAcrossLayersRestoreStackingSelectionAndBrushSnapshotTogether()
+    [TestCase(true)]
+    [TestCase(false)]
+    public void HoledPolygonsAcrossLayersRestoreStackingSelectionAndBrushSnapshotTogether(bool independentRadius)
     {
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = independentRadius ? 7f : null;
+        _document.Get<BrushManager>().CurrentStrokeRadius.Value = 11f;
         var outer = Rectangle(0, 0, 20, 20);
         var hole = Rectangle(5, 5, 15, 15);
         var ring = new System.Collections.Generic.List<System.Collections.Generic.IReadOnlyList<Vector2>>
@@ -58,6 +61,8 @@ public class ShapeConversionActionsTests
         var untouched = AddShape(Rectangle(30, 0, 40, 10), false);
         var otherLayer = AddLayer();
         var top = AddShape(Rectangle(50, 0, 60, 10), false, otherLayer);
+        bottom.Get<ShapeSetting>().Color.Value = new Color(0.2f, 0.4f, 0.6f, 0.3f);
+        top.Get<ShapeSetting>().Color.Value = Colors.Orange;
         var selectedStroke = AddShape(Rectangle(70, 0, 80, 10), true, otherLayer);
         var manager = _document.Get<SelectionManager>();
         manager.SelectedShapes.AddRange([top, bottom, selectedStroke]);
@@ -66,9 +71,11 @@ public class ShapeConversionActionsTests
         AssertThat(ShapeConversionActions.Apply(_document, toStroke: true)).IsTrue();
         var after = manager.SelectedShapes.ToArray();
         AssertThat(after.Length).IsEqual(4);
+        AssertThat(after[0].Get<ShapeSetting>().Color.Value).IsEqual(Colors.Orange);
+        AssertThat(after.Skip(1).Take(2).All(shape => shape.Get<ShapeSetting>().Color.Value == bottom.Get<ShapeSetting>().Color.Value)).IsTrue();
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched);
         AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[0], selectedStroke);
-        float expectedRadius = _strokeBrush.Get<StrokeBrushSetting>().ToRadiusSampler()(1f);
+        float expectedRadius = independentRadius ? 7f : 11f;
         foreach (var shape in after.Take(3))
         {
             var geometry = shape.Get<SampledPolyline>();
@@ -91,13 +98,16 @@ public class ShapeConversionActionsTests
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(top, bottom, selectedStroke);
         AssertThat(history.HasUndo).IsFalse();
         manager.WorkingStrokeBrush.Value = Entity.Null;
-        _strokeBrush.Get<StrokeBrushSetting>().BaseRadius.Value = 20f;
+        _strokeBrush.Get<StrokeBrushSetting>().IndependentRadius.Value = 20f;
+        _document.Get<BrushManager>().CurrentStrokeRadius.Value = 30f;
+        _document.Get<ColorManager>().CurrentColor.Value = Colors.Blue;
         history.Redo();
         AssertThat(manager.SelectedShapes.ToArray()).ContainsExactly(after);
         AssertThat(_layer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[1], after[2], untouched);
         AssertThat(otherLayer.Get<LayerTreeNode>().Children.ToArray()).ContainsExactly(after[0], selectedStroke);
         AssertThat(after.Take(3).All(shape => shape.Get<SampledPolyline>().Radii.Value.All(r => r == expectedRadius))).IsTrue();
         AssertThat(selectedStroke.Get<SampledPolyline>().Radii.Value.All(r => r == 2f)).IsTrue();
+        AssertThat(after[0].Get<ShapeSetting>().Color.Value).IsEqual(Colors.Orange);
         RegisterHistoryNodesForCleanup();
     }
 

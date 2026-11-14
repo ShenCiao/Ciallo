@@ -39,7 +39,7 @@ public static class ShapeConversionActions
         if (replacements.Count == 0) return false;
 
         float radius = toStroke
-            ? brush.Get<StrokeBrushSetting>().ToRadiusSampler()(1f)
+            ? brush.Get<StrokeBrushSetting>().ToRadiusSampler(document.Get<BrushManager>().CurrentStrokeRadius.Value)(1f)
             : AppPreference.StrokeWireframeRadius;
         var results = new Dictionary<Entity, List<Entity>>();
         var command = new CommandBuilder(toStroke ? "Convert to strokes" : "Convert to filled polygons", document);
@@ -61,7 +61,8 @@ public static class ShapeConversionActions
                     command.NewStroke().SetProperty(shape => shape.Get<StrokeSetting>().Brush, brush);
                 else
                     command.NewFilledPolygon().SetProperty(shape => shape.Get<FilledPolygonSetting>().BrushE, brush);
-                command.AddToLayerTree(layer, index++).SetSampledPolyline(ring,
+                command.SetProperty(shape => shape.Get<ShapeSetting>().Color, source.Get<ShapeSetting>().Color.Value)
+                    .AddToLayerTree(layer, index++).SetSampledPolyline(ring,
                     [.. Enumerable.Repeat(radius, ring.Length)],
                     [.. Enumerable.Repeat(1f, ring.Length)],
                     [.. Enumerable.Repeat(Vector2.Zero, ring.Length)]);

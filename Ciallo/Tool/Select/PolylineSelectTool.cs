@@ -168,6 +168,7 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
 
         var selectedShapes = Document.Get<SelectionManager>().SelectedShapes;
         var selectionChanged = selectedShapes.ObserveChanged().Select(_ => Unit.Default).Prepend(Unit.Default);
+        container.AddChild(new SelectionColorPanel(Document));
 
         var stackingButtons = container.CreateHContainer().AddToChildOf(container)
             .VisibleIf(selectionChanged, _ => selectedShapes.Count > 0);
@@ -232,8 +233,10 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
         strokeRadiusEditBox.VisibleIf(selectionChanged,
             _ => selectedShapes.Count > 0 && selectedShapes.All(e => e.Has<StrokeSetting>()));
 
+        var strokeRadiusAdjustment = new VBoxContainer();
         var strokeRadiusMultiplierEdit = new SpinSlider
         {
+            Name = "StrokeRadiusMultiplierValue",
             MinValue = 0.25f,
             MaxValue = 4f,
             Step = 0.01f,
@@ -241,11 +244,22 @@ public class PolylineSelectTool : InteractionScope, IPropertyProvider, ILayerDep
             AllowGreater = true,
             TooltipText = "[Stroke Radius Multiplier Tooltip]",
         }.BindNumber(StrokeRadiusMultiplier);
-        container.CreatePropertyBox("Radius multiplier", strokeRadiusMultiplierEdit)
-            .AddToChildOf(strokeRadiusEditBox);
+        strokeRadiusMultiplierEdit.Ready += () =>
+        {
+            strokeRadiusMultiplierEdit.Slider.TickCount = 3;
+            strokeRadiusMultiplierEdit.Slider.TicksOnBorders = true;
+        };
+        strokeRadiusAdjustment.AddChild(strokeRadiusMultiplierEdit);
+
+        var radiusDirections = new HBoxContainer();
+        radiusDirections.AddChild(new Label { Text = "Thin (−)", SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        radiusDirections.AddChild(new Label { Text = "Thicken (+)" });
+        strokeRadiusAdjustment.AddChild(radiusDirections);
+        strokeRadiusEditBox.AddChild(new Label { Text = "Radius multiplier" });
+        strokeRadiusEditBox.AddChild(strokeRadiusAdjustment);
 
         var applyStrokeRadiusMultiplier = container.CreateButton("Apply to selected strokes")
-            .AddToChildOf(strokeRadiusEditBox);
+            .AddToChildOf(strokeRadiusAdjustment);
         applyStrokeRadiusMultiplier.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         applyStrokeRadiusMultiplier.Pressed += () =>
         {

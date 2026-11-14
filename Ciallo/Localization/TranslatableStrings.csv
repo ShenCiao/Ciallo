@@ -110,10 +110,7 @@ Brush library,Brush library,笔刷库,筆刷庫,ブラシライブラリ,브러�
 Rendering type,Rendering type,渲染类型,渲染類型,レンダリングタイプ,렌더링 유형,Rendering-Typ,Type de rendu
 Reset all built-in brushes,Reset all built-in brushes,重置所有内置笔刷,重置所有內建筆刷,すべての組み込みブラシをリセット,모든 내장 브러시 재설정,Alle integrierten Pinsel zurücksetzen,Réinitialiser tous les pinceaux intégrés
 Brush,Brush,笔刷,筆刷,ブラシ,브러시,Pinsel,Pinceau
-Library brush,Library brush,库笔刷,庫筆刷,ライブラリブラシ,라이브러리 브러시,Bibliothekspinsel,Pinceau de bibliothèque
-Manage brush library,Manage brush library,管理笔刷库,管理筆刷庫,ブラシライブラリを管理,브러시 라이브러리 관리,Pinselbibliothek verwalten,Gérer la bibliothèque de pinceaux
 Brush in document,Brush in document,文档中的笔刷,文檔中的筆刷,ドキュメント内のブラシ,문서의 브러시,Pinsel im Dokument,Pinceau dans le document
-Use brush,Use brush,使用笔刷,使用筆刷,ブラシを使用,브러시 사용,Pinsel verwenden,Utiliser le pinceau
 Cancel,Cancel,取消,取消,キャンセル,취소,Abbrechen,Annuler
 Manage brush in document,Manage brush in document,管理文档中的笔刷,管理文檔中的筆刷,ドキュメント内のブラシを管理,문서의 브러시 관리,Pinsel im Dokument verwalten,Gérer le pinceau dans le document
 New brush,New brush,新笔刷,新筆刷,新しいブラシ,새 브러시,Neuer Pinsel,Nouveau pinceau
@@ -132,7 +129,7 @@ Rotation noise amplitude,Rotation noise amplitude,旋转噪音振幅,旋轉噪�
 Rotation noise frequency,Rotation noise frequency,旋转噪音频率,旋轉噪音頻率,回転ノイズ周波数,회전 노이즈 주파수,Rotationsrauschen-Frequenz,Fréquence du bruit de rotation
 Save changes?,Save changes?,保存更改？,儲存變更？,変更を保存しますか？,변경 사항을 저장하시겠습니까?,Änderungen speichern?,Enregistrer les modifications ?
 Global pen pressure remap,Global pen pressure remap,全局笔压重映射,全域筆壓重映射,グローバル筆圧リマップ,글로벌 펜 압력 리매핑,Globale Stiftdruck-Neuzuordnung,Remappage global de la pression du stylet
-Base radius,Base radius,基础半径,基礎半徑,基本半径,기본 반지름,Grundradius,Rayon de base
+Independent radius,Independent radius,独立半径,獨立半徑,個別の半径,개별 반지름,Eigener Radius,Rayon indépendant
 Pressure to radius,Pressure to radius,压力到半径,壓力到半徑,圧力から半径へ,압력→반지름,Druck zu Radius,Pression vers rayon
 Pressure to flow,Pressure to flow,压力到流量,壓力到流量,圧力から流量へ,압력→흐름,Druck zu Fluss,Pression vers flux
 Radius,Radius,半径,半徑,半径,반지름,Radius,Rayon
@@ -285,7 +282,7 @@ Data measured by,Data measured by,测量数据来源,測量資料來源,測定�
 Seven Pens,Seven Pens,Seven Pens,Seven Pens,Seven Pens,Seven Pens,Seven Pens,Seven Pens
 Device response,Device response,设备响应,裝置響應,デバイス応答,기기 응답,Gerätekennlinie,Réponse du périphérique
 Physical force (gf),Physical force (gf),物理作用力 (gf),物理作用力 (gf),物理的な力 (gf),물리적 힘 (gf),Physische Kraft (gf),Force physique (gf)
-Global remap,Global remap,全局重映射,全域重映射,グローバルリマップ,전역 리매핑,Globale Neuzuordnung,Remappage global
+Pen pressure curve,Pen pressure curve,笔压曲线,筆壓曲線,筆圧カーブ,펜 압력 곡선,Stiftdruckkurve,Courbe de pression du stylet
 Mapped response,Mapped response,重映射后的响应,重映射後的響應,リマップ後の応答,리매핑된 응답,Neu zugeordnete Kennlinie,Réponse remappée
 Scribble test,Scribble test,涂鸦测试,塗鴉測試,試し描き,낙서 테스트,Kritzeltest,Test de gribouillage
 Min radius,Min radius,最小半径,最小半徑,最小半径,최소 반지름,Minimaler Radius,Rayon min.
@@ -293,7 +290,6 @@ Max radius,Max radius,最大半径,最大半徑,最大半径,최대 반지름,Ma
 Clear,Clear,清除,清除,クリア,지우기,Leeren,Effacer
 raw,raw,原始,原始,元,원본,roh,brute
 mapped,mapped,映射后,映射後,マッピング後,매핑됨,zugeordnet,remappée
-Brush Library,Brush Library,笔刷库,筆刷庫,ブラシライブラリ,브러시 라이브러리,Pinselbibliothek,Bibliothèque de pinceaux
 Pen Pressure,Pen Pressure,笔压,筆壓,筆圧,펜 압력,Stiftdruck,Pression du stylet
 Shortcuts,Shortcuts,快捷键,快速鍵,ショートカット,단축키,Tastenkürzel,Raccourcis
 Close,Close,关闭,關閉,閉じる,닫기,Schließen,Fermer
@@ -397,3 +393,26 @@ PS4/5 Touchpad,PS4/5 Touchpad,PS4/5 触摸板,PS4/5 觸控板,PS4/5 タッチパ
 (Right Stick Right),(Right Stick Right),（右摇杆向右）,（右搖桿向右）,（右スティック右）,(오른쪽 스틱 오른쪽),(Rechter Stick rechts),(Stick droit vers la droite)
 (Right Stick Up),(Right Stick Up),（右摇杆向上）,（右搖桿向上）,（右スティック上）,(오른쪽 스틱 위),(Rechter Stick oben),(Stick droit vers le haut)
 (Right Stick Down),(Right Stick Down),（右摇杆向下）,（右搖桿向下）,（右スティック下）,(오른쪽 스틱 아래),(Rechter Stick unten),(Stick droit vers le bas)
+Selected color,Selected color,选中对象颜色,所選物件顏色,選択した図形の色,선택한 도형 색상,Farbe der Auswahl,Couleur de la sélection
+Mixed colors,Mixed colors,多种颜色,多種顏色,複数の色,여러 색상,Mehrere Farben,Plusieurs couleurs
+Independent color,Independent color,独立颜色,獨立顏色,個別の色,개별 색상,Eigene Farbe,Couleur indépendante
+Independent flow,Independent flow,独立流量,獨立流量,個別の流量,개별 흐름,Eigener Farbfluss,Débit indépendant
+Independent opacity,Independent opacity,独立不透明度,獨立不透明度,個別の不透明度,개별 불투명도,Eigene Deckkraft,Opacité indépendante
+Swatches,Swatches,色样,色票,カラースウォッチ,색상 견본,Farbfelder,Nuancier
+Recent Colors,Recent Colors,最近颜色,最近使用的顏色,最近使った色,최근 색상,Zuletzt verwendete Farben,Couleurs récentes
+Colorized Sliders,Colorized Sliders,彩色滑条,彩色滑桿,カラースライダー,컬러 슬라이더,Farbige Schieberegler,Curseurs colorés
+Document brushes,Document brushes,文档笔刷,文件筆刷,ドキュメントのブラシ,문서 브러시,Dokumentpinsel,Pinceaux du document
+Application brush library,Application brush library,程序笔刷库,程式筆刷庫,アプリのブラシライブラリ,앱 브러시 라이브러리,Anwendungspinsel,Bibliothèque de pinceaux
+Add to document,Add to document,添加到文档,加入文件,ドキュメントに追加,문서에 추가,Zum Dokument hinzufügen,Ajouter au document
+Save to library,Save to library,保存到笔刷库,儲存到筆刷庫,ライブラリに保存,라이브러리에 저장,In Bibliothek speichern,Enregistrer en bibliothèque
+More,More,更多,更多,その他,더 보기,Mehr,Plus
+Duplicate brush,Duplicate brush,复制笔刷,複製筆刷,ブラシを複製,브러시 복제,Pinsel duplizieren,Dupliquer le pinceau
+Delete brush,Delete brush,删除笔刷,刪除筆刷,ブラシを削除,브러시 삭제,Pinsel löschen,Supprimer le pinceau
+Brush settings,Brush settings,笔刷设置,筆刷設定,ブラシ設定,브러시 설정,Pinseleinstellungen,Réglages du pinceau
+Replace brush,Replace brush,替换笔刷,取代筆刷,ブラシを置換,브러시 바꾸기,Pinsel ersetzen,Remplacer le pinceau
+Reorder brushes,Reorder brushes,调整笔刷顺序,調整筆刷順序,ブラシを並べ替え,브러시 순서 변경,Pinsel umordnen,Réorganiser les pinceaux
+Copy brush here,Copy brush here,复制笔刷到此处,複製筆刷到此處,ここにブラシをコピー,여기에 브러시 복사,Pinsel hierher kopieren,Copier le pinceau ici
+Document brush settings,Document brush settings,文档笔刷设置,文件筆刷設定,ドキュメントのブラシ設定,문서 브러시 설정,Dokumentpinsel bearbeiten,Réglages du pinceau du document
+Library brush settings,Library brush settings,程序笔刷设置,程式筆刷設定,ライブラリのブラシ設定,라이브러리 브러시 설정,Bibliothekspinsel bearbeiten,Réglages du pinceau de bibliothèque
+Restore built-in brushes,Restore built-in brushes,恢复内置笔刷,還原內建筆刷,内蔵ブラシを復元,내장 브러시 복원,Integrierte Pinsel wiederherstellen,Restaurer les pinceaux intégrés
+Adjust thickness too,Adjust thickness too,同时调整粗细,同時調整粗細,太さも調整,굵기도 조정,Stärke mit anpassen,Ajuster aussi l’épaisseur

@@ -16,6 +16,7 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
 {
     [StateAccess] public PaintStrokeTool Tool { get; set; }
     private Entity _brush;
+    private Color _color;
     private StrokeView _preview;
     private readonly PaintStrokeGeometryBuilder _geometryBuilder = new();
     private Func<float, float> _radiusSampler;
@@ -32,8 +33,10 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
     protected override void CreatePreview()
     {
         _brush = Document.Get<SelectionManager>().WorkingStrokeBrush.Value;
-        _radiusSampler = _brush.Get<StrokeBrushSetting>().ToRadiusSampler();
+        _color = Document.Get<ColorManager>().CurrentColor.Value;
+        _radiusSampler = _brush.Get<StrokeBrushSetting>().ToRadiusSampler(Document.Get<BrushManager>().CurrentStrokeRadius.Value);
         _preview = new StrokeView { Material = _brush.Get<StrokeBrushMaterial>() };
+        _preview.SetInstanceShaderParameter("ShapeColor", _color);
         PrimaryLayer.Get<ShapeLayerView>().AddChild(_preview);
         _snapDots = AutoloadRendering.CreateDots();
         Document.Get<WorldOverlay>().AddChild(_snapDots);
@@ -88,6 +91,7 @@ public class PaintStrokePolyCubicBezierInteractor : PolyCubicBezierInteractor
         new CommandBuilder("Paint Stroke (Poly Cubic Bézier)", PrimaryLayer.World.Create())
             .NewStroke().AddToLayerTree(targetLayer)
             .SetProperty(e => e.Get<StrokeSetting>().Brush, _brush)
+            .SetProperty(e => e.Get<ShapeSetting>().Color, _color)
             .SetSampledPolyline(geometry.Positions.ToImmutableArray(), geometry.Radii.ToImmutableArray(),
                 geometry.Pressures.ToImmutableArray(), geometry.Tilts.ToImmutableArray())
             .Commit();

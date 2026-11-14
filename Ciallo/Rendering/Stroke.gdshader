@@ -21,14 +21,18 @@ const StampFlag StampFlags = StampFlag(1 << 0, 1 << 1, 1 << 2, 1 << 3);
 struct BrushFlag {
 	int Pressure2FlowCurve;
 	int Dash;
+	int UseShapeRgb;
+	int UseShapeAlpha;
 };
-const BrushFlag BrushFlags = BrushFlag(1 << 0, 1 << 1);
+const BrushFlag BrushFlags = BrushFlag(1 << 0, 1 << 1, 1 << 3, 1 << 4);
 
 const int Vanilla = 0, Stamp = 1, Airbrush = 2;
 const int MaxStampsPerFragment = 128;
 uniform int StrokeType : hint_enum("Vanilla", "Stamp", "Airbrush") = 0;
 uniform int ActiveBrushFlags = 0;
 uniform vec4 MaterialColor : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+instance uniform vec4 ShapeColor : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+varying flat vec4 brushColor;
 // Canvas radii are fixed in screen space (e.g. wireframes).
 uniform int RadiusMode : hint_enum("World", "Canvas") = 0;
 // Diameters and padding are measured in render-target pixels.
@@ -274,7 +278,7 @@ vec4 canvasColor(vec4 contribution) {
 
 // Brush evaluation.
 vec4 evaluateVanilla(vec2 pixelLocal, vec2 localDx, vec2 localDy, float geometricCoverage, float flowRatio) {
-	vec4 brush = MaterialColor;
+	vec4 brush = brushColor;
 	float targetFlow = brush.a * flowRatio;
 	float coverage = targetFlow * geometricCoverage;
 	// Adjacent segments share endpoint disks. Split their transmittance
@@ -338,13 +342,13 @@ vec4 evaluateStamp(vec2 brushLocal, vec2 localDx, vec2 localDy, float geometricC
 #else
 	float accumulatedAlpha = 0.0;
 #endif
-	float flow = MaterialColor.a * flowRatio;
+	float flow = brushColor.a * flowRatio;
 	while (stampCount < MaxStampsPerFragment && stampIndex < endStampIdx) {
 		float sampledAlpha = sampleStamp(brushLocal, localDx, localDy, stampIndex, flow);
 #if defined(BLEND_ADD)
 		accumulatedAlpha += sampledAlpha;
 #elif defined(BLEND_MUL)
-		accumulatedMultiplier *= mix(vec3(1.0), MaterialColor.rgb, sampledAlpha);
+		accumulatedMultiplier *= mix(vec3(1.0), brushColor.rgb, sampledAlpha);
 #else
 		accumulatedAlpha = sampledAlpha + accumulatedAlpha * (1.0 - sampledAlpha);
 #endif
@@ -354,9 +358,9 @@ vec4 evaluateStamp(vec2 brushLocal, vec2 localDx, vec2 localDy, float geometricC
 #if defined(BLEND_MUL)
 	return vec4(mix(vec3(1.0), accumulatedMultiplier, geometricCoverage), 1.0);
 #elif defined(BLEND_ADD)
-	return opacityContribution(MaterialColor.rgb, max(accumulatedAlpha, 0.0) * geometricCoverage);
+	return opacityContribution(brushColor.rgb, max(accumulatedAlpha, 0.0) * geometricCoverage);
 #else
-	return opacityContribution(MaterialColor.rgb, clamp(accumulatedAlpha, 0.0, 1.0) * geometricCoverage);
+	return opacityContribution(brushColor.rgb, clamp(accumulatedAlpha, 0.0, 1.0) * geometricCoverage);
 #endif
 }
 
@@ -368,7 +372,7 @@ vec4 evaluateAirbrush(vec2 pixelLocal, vec2 localDx, vec2 localDy) {
 	// The covering-disk quadratic is centered on pixelLocal.x, including beyond
 	// the segment ends. Clamping this radius moves its roots and exposes cap seams.
 	float radiusAtPixelX = max(r0 - cosTheta * pixelLocal.x, 1e-7);
-	float flow = MaterialColor.a * pressureFlowRatio(sampleX);
+	float flow = brushColor.a * pressureFlowRatio(sampleX);
 	float a = sinTheta * sinTheta;
 	float halfWidth = radiusAtPixelX / sinTheta;
 	float normalFootprint = length(vec2(localDx.y, localDy.y));
@@ -394,9 +398,9 @@ vec4 evaluateAirbrush(vec2 pixelLocal, vec2 localDx, vec2 localDy) {
 	float depth = fullN * AlphaDensity * flow * sampleCurve(FalloffCurve, abs(y) / halfWidth);
 #if defined(BLEND_ADD)
 	float additive = coveredWeight * depth * segmentFraction;
-	return vec4(MaterialColor.rgb * additive, additive);
+	return vec4(brushColor.rgb * additive, additive);
 #elif defined(BLEND_MUL)
-	vec3 colorDepth = depth * (vec3(1.0) - MaterialColor.rgb);
+	vec3 colorDepth = depth * (vec3(1.0) - brushColor.rgb);
 	vec3 keep = filteredColorKeep(colorDepth, coveredWeight, vec3(segmentFraction));
 	return vec4(keep, 1.0);
 #else
@@ -405,13 +409,16 @@ vec4 evaluateAirbrush(vec2 pixelLocal, vec2 localDx, vec2 localDy) {
 	return vec4(vec3(keep), keep);
 #else
 	float alpha = 1.0 - keep;
-	return vec4(MaterialColor.rgb * alpha, alpha);
+	return vec4(brushColor.rgb * alpha, alpha);
 #endif
 #endif
 }
 
 // Shader entry points.
 void vertex() {
+	brushColor = vec4(
+		hasFlag(ActiveBrushFlags, BrushFlags.UseShapeRgb) ? ShapeColor.rgb : MaterialColor.rgb,
+		hasFlag(ActiveBrushFlags, BrushFlags.UseShapeAlpha) ? ShapeColor.a : MaterialColor.a);
 	float canvasScale = length(mat3(CANVAS_MATRIX) * vec3(1.0, 0.0, 0.0));
 	segmentStart = INSTANCE_TRANSFORM[0].xy;
 	vec2 segmentEnd = INSTANCE_TRANSFORM[1].xy;

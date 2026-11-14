@@ -2,7 +2,9 @@ using System;
 using System.Collections.Immutable;
 using System.Runtime.Serialization;
 using Ciallo.Geometry;
+using Ciallo.GuiControl;
 using Ciallo.Widget;
+using Frent;
 using Godot;
 using MessagePack;
 using ObservableCollections;
@@ -15,13 +17,15 @@ public class StrokeBrushSetting
 {
     [DataMember, ProjectField] public ReactiveProperty<string> Name = new("");
     [DataMember, ProjectField] public ObservableList<BrushLabel> Labels = [];
-    [DataMember, ProjectField] public ReactiveProperty<Color> Color = new(Colors.Black); // RGB+Flow
+    [DataMember, ProjectField] public ReactiveProperty<Color> Color = new(Colors.Black); // RGB + base Flow.
     [DataMember, ProjectField] public ReactiveProperty<BrushFlags> ActiveBrushFlags = new();
     [DataMember, ProjectField] public ReactiveProperty<BlendMode> BlendMode = new();
-    [DataMember, ProjectField] public ReactiveProperty<float> BaseRadius = new(1.5f);
+    // Keep the stored key shared by document files and the brush library.
+    [DataMember(Name = "BaseRadius"), ProjectField("BaseRadius")]
+    public ReactiveProperty<float?> IndependentRadius = new();
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2RadiusCurve = new(BezierCurveFactory.Linear(0.2f, 1.0f)); // radius = baseRadius * curve(pressure)
     [DataMember, ProjectField] public ReactiveProperty<BrushRenderingType> RenderingType = new(BrushRenderingType.Stamp);
-    [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2FlowCurve = new(BezierCurveFactory.Constant(1.0f)); // finalFlow = curve(pressure) * Color.a
+    [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> Pressure2FlowCurve = new(BezierCurveFactory.Constant(1.0f)); // Modulates the resolved base Flow.
 
     // Vanilla
     [DataMember, ProjectField] public ReactiveProperty<float> DashLength = new(2.0f);
@@ -42,7 +46,7 @@ public class StrokeBrushSetting
     [DataMember, ProjectField] public ReactiveProperty<ImmutableArray<BezierPoint>> FalloffCurve = new(BezierCurveFactory.Linear(1.0f, 0.0f));
     [DataMember, ProjectField] public ReactiveProperty<float> AlphaDensity = new(1.0f);
 
-    public void DrawProperty(PropertyContainer container)
+    public void DrawProperty(PropertyContainer container, Entity document = default)
     {
         var nameEdit = new LineEdit
         {
@@ -51,22 +55,10 @@ public class StrokeBrushSetting
         }.BindString(Name);
         container.AddProperty("Name", nameEdit);
 
-        var baseRadiusControl = new SpinSlider
-        {
-            MinValue = 0.1,
-            MaxValue = 128,
-            Step = 0.03333333,
-            ExpEdit = true,
-        }.BindNumber(BaseRadius);
-        container.AddProperty("Base radius", baseRadiusControl);
+        container.AddChild(BrushRadiusControls.CreateIndependentRadius(container, IndependentRadius, document));
 
-        var colorPickerButton = new ColorPickerButton()
-        {
-            CustomMinimumSize = new(0, 32),
-        };
-        var picker = colorPickerButton.GetPicker();
-        picker.ColorMode = ColorPicker.ColorModeType.Rgb;
-        container.AddProperty("RGB+Flow", colorPickerButton.BindColor(Color));
+        container.AddChild(DocumentColorControls.CreateIndependentChannels(container, Color, ActiveBrushFlags,
+            BrushFlags.UseShapeRgb, BrushFlags.UseShapeAlpha, "Independent flow", document));
 
         var blendModeButton = new OptionButton().BindEnum(BlendMode);
         container.AddProperty("Blend mode", blendModeButton);
@@ -189,9 +181,21 @@ public class StrokeBrushSetting
         return setting;
     }
 
-    public Func<float, float> ToRadiusSampler()
+    public static StrokeBrushSetting CreateDefault(string name = "") => new()
     {
-        var baseRadius = BaseRadius.Value;
+        Name = { Value = name },
+        ActiveBrushFlags = { Value = BrushFlags.UseShapeRgb },
+    };
+
+    public Color ResolveColor(Color shapeColor) => new(
+        ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeRgb) ? shapeColor : Color.Value)
+    {
+        A = ActiveBrushFlags.Value.HasFlag(BrushFlags.UseShapeAlpha) ? shapeColor.A : Color.Value.A,
+    };
+
+    public Func<float, float> ToRadiusSampler(float globalRadius)
+    {
+        var baseRadius = IndependentRadius.Value ?? globalRadius;
         if (!ActiveBrushFlags.Value.HasFlag(BrushFlags.Pressure2Radius))
             return _ => baseRadius; // disabled: constant radius, pressure does not affect thickness
         var (polyline, _) = Pressure2RadiusCurve.Value.TessellateWithCache();
@@ -215,6 +219,8 @@ public enum BrushFlags
     Pressure2Flow = 1 << 0,
     Dash = 1 << 1,
     Pressure2Radius = 1 << 2,
+    UseShapeRgb = 1 << 3,
+    UseShapeAlpha = 1 << 4,
 }
 
 [Flags]

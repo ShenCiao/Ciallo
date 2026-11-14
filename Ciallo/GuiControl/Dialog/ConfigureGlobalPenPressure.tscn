@@ -133,7 +133,7 @@ size_flags_horizontal = 3
 
 [node name="Label" type="Label" parent="VBoxContainer/MainArea/Charts/GlobalPanel" unique_id=1000000012]
 layout_mode = 2
-text = "Global remap"
+text = "Pen pressure curve"
 horizontal_alignment = 1
 
 [node name="CurveEdit" type="Control" parent="VBoxContainer/MainArea/Charts/GlobalPanel" unique_id=1000000013]

@@ -130,7 +130,7 @@ public partial class DynamicGridItemList : DynamicGridContainer
     {
         foreach (Node child in GetChildren())
             if (child is Control c && !c.TopLevel)
-                c.MouseFilter = MouseFilterEnum.Ignore;
+                c.MouseBehaviorRecursive = MouseBehaviorRecursiveEnum.Disabled;
     }
 
     public override void _GuiInput(InputEvent et)
@@ -210,22 +210,4 @@ public partial class DynamicGridItemList : DynamicGridContainer
             EmitSignalItemClicked(clickedIndex);
     }
 
-    private int ComputeDropSlot(Vector2 localPos)
-    {
-        if (LayoutChildCount == 0) return 0;
-
-        if (Cols == 1)
-        {
-            // Single-column: drop positions are above/below each element
-            return Mathf.Clamp(Mathf.RoundToInt(localPos.Y / (ItemSize.Y + VSep)), 0, LayoutChildCount);
-        }
-
-        int rows = Mathf.CeilToInt((float)LayoutChildCount / Cols);
-        int row = Mathf.Clamp(Mathf.FloorToInt(localPos.Y / (ItemSize.Y + VSep)), 0, rows - 1);
-        int rowStart = row * Cols;
-        int rowItemCnt = Mathf.Min(Cols, LayoutChildCount - rowStart);
-
-        int gapInRow = Mathf.Clamp(Mathf.RoundToInt(localPos.X / (ItemSize.X + HSep)), 0, rowItemCnt);
-        return Mathf.Min(rowStart + gapInRow, LayoutChildCount);
-    }
 }

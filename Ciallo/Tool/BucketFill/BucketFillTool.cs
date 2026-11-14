@@ -76,10 +76,7 @@ public class BucketFillTool : InteractionScope, ILayerDependent
         brushes.CustomMinimumSize = new(0, 256);
         container.AddChild(brushes);
         brushes.DrawNameProperty(container);
-        var selection = document.Get<SelectionManager>();
-        var color = selection.WorkingVectorFillBrush.Select(e => e.TryGet<FillBrushSetting>()?.FillColor).Flatten();
-        container.AddProperty("Fill color", new ColorPickerButton().BindColor(color))
-            .VisibleIf(selection.WorkingVectorFillBrush, Entity.IsNotNull);
+        container.AddChild(DocumentColorControls.CreateFillBrushControls(container, document));
     }
 
     public Container DrawModeProperty(PropertyContainer container)

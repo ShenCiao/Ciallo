@@ -29,20 +29,37 @@ public partial class SelectionBrushPanel : VBoxContainer
             var manage = new Button
             {
                 Name = "ManageBrushes",
-                Icon = GD.Load<Texture2D>("res://Icon/wrench.svg"),
+                Icon = GD.Load<Texture2D>("res://Icon/plus.svg"),
                 ExpandIcon = true,
                 CustomMinimumSize = new(30, 30),
                 ThemeTypeVariation = "IconToggleButton",
                 TooltipText = "Manage brushes",
             };
             heading.AddChild(manage);
-            manage.Pressed += () => document.Get<StrokeBrushEditor>().Popup();
+            manage.Pressed += () => AppDialogHost.BrushLibrary.PopupCenteredClamped();
         }
 
-        var palette = new BrushPalette(kind) { Name = "Palette" };
+        var palette = new BrushPalette(kind)
+        {
+            Name = "Palette",
+            CustomMinimumSize = Vector2.Zero,
+            CustomMaximumSize = new(-1, 320),
+            SizeFlagsVertical = SizeFlags.Fill,
+        };
+        // Reserve keeps wrapping independent of scrollbar visibility; grow only up to the height cap.
+        palette.Grid.MinimumSizeChanged += () => palette.CustomMinimumSize = new(0,
+            Mathf.Min(palette.Grid.GetCombinedMinimumSize().Y, palette.CustomMaximumSize.Y));
         AddChild(palette);
-        var change = new Button { Name = "ChangeBrush", Text = "Change brush", CustomMinimumSize = new(0, 32) };
-        AddChild(change);
+        var change = new Button
+        {
+            Name = "ChangeBrush",
+            Icon = GD.Load<Texture2D>("res://Icon/wrench.svg"),
+            ExpandIcon = true,
+            CustomMinimumSize = new(30, 30),
+            ThemeTypeVariation = "IconToggleButton",
+            TooltipText = "Change brush",
+        };
+        heading.AddChild(change);
         model.UsedBrushes.Subscribe(brushes =>
         {
             palette.SetBrushes(brushes);

@@ -22,10 +22,11 @@ internal sealed class BucketFillPreview : IDisposable
         _parent.AddChild(_view);
     }
 
-    public void Show(BucketFillRegion region, Entity brush, bool atBottom)
+    public void Show(BucketFillRegion region, Entity brush, Color color, bool atBottom)
     {
         _parent.MoveChild(_view, atBottom ? 0 : -1);
         _view.Material = brush.IsNull ? PolygonFillRendering.HintMaterial : brush.Get<FillBrushMaterial>();
+        _view.SetInstanceShaderParameter("ShapeColor", color);
         if (ReferenceEquals(_cachedRegion, region)) return;
         _cachedRegion = region;
 

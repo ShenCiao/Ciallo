@@ -59,13 +59,6 @@ public class PaintFillHover : Interaction, IPropertyProvider
         container.AddChild(brushPreview);
         brushPreview.DrawNameProperty(container);
 
-        var sm = Document.Get<SelectionManager>();
-
-        var fillColor = sm.WorkingVectorFillBrush
-            .Select(e => e.TryGet<FillBrushSetting>()?.FillColor)
-            .Flatten();
-        container.AddProperty("Fill color",
-            new ColorPickerButton().BindColor(fillColor)
-        ).VisibleIf(sm.WorkingVectorFillBrush, Entity.IsNotNull);
+        container.AddChild(DocumentColorControls.CreateFillBrushControls(container, Document));
     }
 }

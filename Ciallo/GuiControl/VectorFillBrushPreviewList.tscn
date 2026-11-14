@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://ddgqnm1dvnk6w" path="res://Icon/content-copy.svg" id="3_4ist4"]
 
 [node name="VectorFillBrushPreviewList" type="PanelContainer" unique_id=907877715]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
@@ -49,7 +50,7 @@ expand_icon = true
 [node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer" unique_id=1195637118]
 layout_mode = 2
 size_flags_horizontal = 3
-horizontal_scroll_mode = 4
+horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
 [node name="PreviewList" type="Container" parent="HBoxContainer/ScrollContainer" unique_id=476079383]

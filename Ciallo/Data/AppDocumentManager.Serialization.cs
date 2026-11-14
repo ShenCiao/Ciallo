@@ -36,6 +36,8 @@ public static partial class AppDocumentManager
         Dictionary<Entity, Entity> entityMap = new() { { Entity.Null, Entity.Null } };
 
         var resultDocument = Create(dataDocument.Get<DocumentSetting>());
+        resultDocument.Get<ColorManager>().CopyFrom(dataDocument.Get<ColorManager>());
+        resultDocument.Get<BrushManager>().CurrentStrokeRadius.Value = dataDocument.Get<BrushManager>().CurrentStrokeRadius.Value;
         entityMap.Add(dataDocument, resultDocument);
         WorkingDocument.Value = resultDocument;
         // Pre-create all result entities upfront (mirrors Serialize's Tagged<ToSerializeTag> query).

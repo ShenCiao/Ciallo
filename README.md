@@ -48,15 +48,6 @@ Resolution-independent airbrush, adjust the opacity falloff directly, with ultra
 
 The following features may be in your favor:
 
-### No generative AI
-
-<img align="left" width="192" height="192" src="https://upload.wikimedia.org/wikipedia/commons/f/f1/No_AI_art.svg">
-
-Ciallo uses a custom vector format that is aiming to be the game industry standard and hard to generate by the current AI techniques.
-We may offer AI-powered features in the future --- but always designed for professional artists.
-
-<br clear="left">
-
 ### Optimized pen feel
 
 Ciallo aims to provide a drawing/pen feel significantly better than _CSP_,  _Procreate_ and _SAI 2_; this will require several technical advancements in future updates.
@@ -136,34 +127,6 @@ Unless the Owner has given explicit express, written permission, any use of Artw
 
 Explicit prohibition on "no‑copyright" labels and opt‑out schemes:
 Artwork labeled or claimed as "no copyright", "public domain", or similar does not authorize AI training under this project's terms. Likewise, any purported "opt‑out" or "unless the Owner opts out" declarations (i.e., statements that artworks may be used for AI purposes unless an Owner affirmatively opts out) do not and shall not be treated as authorization to use Artwork and this project for AI training. Such uses are violations of this project's terms and may result in injunctive relief, damages, and recovery of costs and attorneys' fees under applicable law.
-
-## License and AI notice
-Unless otherwise specified, files in this repository are licensed under the AGPL-3.0 license.
-
-### Shader code has fewer constraints for games
-
-For the purposes of this Project, "Shader Code" means any GPU shader program, shader graph, material shader, or related code used to render strokes, fills, brushes, or other visual effects in this project.
-
-1. Use in Artwork
-
-    You are explicitly allowed to use the Shader Code render Artwork in closed‑source or commercial games, including shipping binaries and asset bundles containing compiled, optimized, or obfuscated versions of the Shader Code, without any obligation to publish your game source code or shader source code, as long as: 
-    - You do not distribute the Shader Code as a general‑purpose graphics component.
-    - You do not use the rendered Artwork for AI training purposes or give training permission to others.
-
-2. Use in other software
-
-    Parts of the Shader Code implement original rendering algorithms and techniques that are the result of Shen Ciao's own research.
-    Unless you obtain the researcher Shen's explicit permission, if you integrate the Shader Code (or modified versions of it) into any other program, that program and all parts using the Shader Code must be released under the same AGPL‑3.0 license and made publicly available in source form.
-
-    This includes, without limitation:
-    - Using the Shader Code inside AI‑assisted painting tools or AI model pipelines;
-    - Taking the Shader Code and shipping it in a closed‑source or proprietary drawing/painting application without releasing your source code under AGPL‑3.0;
-
-3. No AI‑training opt‑out bypass
-
-   Labeling Shader‑rendered assets or shaders themselves as “no copyright”, “public domain”, or similar does not grant permission for AI training under these terms. Any “opt‑out” or “unless the Owner opts out” AI policies do not override this notice. Unauthorised AI use of the Shader Code or Shader‑rendered assets is a violation of this project’s terms.
-
-These special Shader Code terms are an integral part of the Project’s licensing and must be read together with the AGPL‑3.0 license and the "User‑created content copyright and AI notice" above.
 
 ## Credits
 
